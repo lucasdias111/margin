@@ -1,0 +1,5 @@
+export enum WebSocketMessageType {
+    SEND_DIRECT_MESSAGE = "SEND_DIRECT_MESSAGE",
+    SEND_CHANNEL_MESSAGE = "SEND_CHANNEL_MESSAGE"
+    
+}
