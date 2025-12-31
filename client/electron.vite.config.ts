@@ -3,6 +3,8 @@ import { svelte } from '@sveltejs/vite-plugin-svelte'
 import path from 'path'
 
 export default defineConfig({
+  main: {},
+  preload: {},
   renderer: {
     plugins: [svelte()],
     resolve: {
