@@ -9,14 +9,16 @@ function createWindow(): void {
     width: 900,
     height: 670,
     show: false,
-    autoHideMenuBar: true,
+    frame: false,
+    titleBarStyle: 'hidden',
+    transparent: false,
+    hasShadow: true,
     ...(process.platform === 'linux' ? { icon } : {}),
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
       sandbox: false
     }
   })
-
   mainWindow.on('ready-to-show', () => {
     mainWindow.show()
   })
@@ -24,6 +26,22 @@ function createWindow(): void {
   mainWindow.webContents.setWindowOpenHandler((details) => {
     shell.openExternal(details.url)
     return { action: 'deny' }
+  })
+
+  ipcMain.on('window-minimize', () => {
+    mainWindow.minimize()
+  })
+
+  ipcMain.on('window-maximize', () => {
+    if (mainWindow.isMaximized()) {
+      mainWindow.unmaximize()
+    } else {
+      mainWindow.maximize()
+    }
+  })
+
+  ipcMain.on('window-close', () => {
+    mainWindow.close()
   })
 
   // HMR for renderer base on electron-vite cli.
@@ -69,6 +87,3 @@ app.on('window-all-closed', () => {
     app.quit()
   }
 })
-
-// In this file you can include the rest of your app's specific main process
-// code. You can also put them in separate files and require them here.

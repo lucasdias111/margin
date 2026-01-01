@@ -51,7 +51,7 @@
 
 <style>
   .app {
-    height: 100vh;
+    height: 97vh;
     display: flex;
     flex-direction: column;
   }

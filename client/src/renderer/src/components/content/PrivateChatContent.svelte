@@ -12,11 +12,19 @@
   import { encryptionService } from '$src/services/EncryptionService'
   import voiceCallIcon from '$src/resources/voiceCall.png'
   import videoCallIcon from '$src/resources/videoCall.png'
+  import CallWindow from '$src/components/call/CallWindow.svelte'
+  import type { WebSocketMessage } from '$src/interfaces/WebSocketMessage'
+  import { WebSocketMessageType } from '$src/interfaces/WebSocketMessageType'
 
   let selectedUser = $state<User | null>(null)
   let messages = $state<DirectMessage[]>([])
   let messageInput = $state('')
   let messagesContainer: HTMLDivElement
+
+  let showCallWindow = $state(false)
+  let isIncomingCall = $state(false)
+  let callOffer = $state<WebSocketMessage>(null)
+  let callingUser = $state<User | null>(null)
 
   $effect(() => {
     tick().then(() => {
@@ -31,14 +39,16 @@
   })
 
   onMount(() => {
-    webSocketService.on('SEND_MESSAGE', handleIncomingMessage)
+    webSocketService.on(WebSocketMessageType.RECEIVE_DIRECT_MESSAGE, handleIncomingMessage)
+    webSocketService.on(WebSocketMessageType.CALL_OFFER, handleIncomingCallOffer)
+    webSocketService.on(WebSocketMessageType.CALL_END, handleRemoteCallEnd)
   })
 
   onDestroy(() => {
     webSocketService.off('SEND_MESSAGE', handleIncomingMessage)
   })
 
-  async function handleIncomingMessage(data: any): Promise<void> {
+  async function handleIncomingMessage(data: WebSocketMessage): Promise<void> {
     try {
       console.log('Incoming message data:', data)
 
@@ -75,9 +85,42 @@
   }
 
   function handlePhoneCall(): void {
-    if (selectedUser) {
-      console.log('Starting phone call with', selectedUser.username)
+    if (!selectedUser) return
+
+    callingUser = selectedUser
+    isIncomingCall = false
+    callOffer = null
+    showCallWindow = true
+  }
+
+  function handleIncomingCallOffer(data: WebSocketMessage): void {
+    const caller = JSON.parse(data.userJson)
+    const offer = JSON.parse(data.payload)
+
+    // Show confirmation dialog
+    const accept = confirm(`Incoming call from ${caller.username}. Accept?`)
+
+    if (accept) {
+      callingUser = caller
+      isIncomingCall = true
+      callOffer = offer
+      showCallWindow = true
+    } else {
+      // TODO: Send call rejection message
+      console.log('Call rejected')
     }
+  }
+
+  function handleRemoteCallEnd(): void {
+    console.log('Remote user ended the call')
+    handleCallEnd()
+  }
+
+  function handleCallEnd(): void {
+    showCallWindow = false
+    callingUser = null
+    isIncomingCall = false
+    callOffer = null
   }
 
   function handleVideoCall(): void {
@@ -156,6 +199,17 @@
   <ChatInput selectedContent={!!selectedUser} bind:messageInput onSubmit={handleSubmitMessage} />
 </div>
 
+{#if showCallWindow && callingUser}
+  <div class="call-overlay">
+    <CallWindow
+      selectedUser={callingUser}
+      isIncoming={isIncomingCall}
+      offer={callOffer}
+      onCallEnd={handleCallEnd}
+    />
+  </div>
+{/if}
+
 <style>
   .chat {
     flex: 1;
@@ -211,5 +265,18 @@
     width: 24px;
     height: 24px;
     display: block;
+  }
+
+  .call-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.95);
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
   }
 </style>

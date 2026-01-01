@@ -1,11 +1,21 @@
 <script lang="ts">
   import Router from 'svelte-spa-router'
   import { routes } from '$src/routes'
+  import TitleBar from './TitleBar.svelte'
 </script>
 
+<TitleBar title="margin" />
 <Router {routes} />
 
 <style>
+  :global(html, body) {
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+    width: 100%;
+    height: 100vh;
+  }
+
   :global(button) {
     border-radius: 8px;
     border: 1px solid transparent;

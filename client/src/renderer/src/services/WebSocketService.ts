@@ -1,4 +1,6 @@
-type MessageHandler = (data: any) => void;
+import type { WebSocketMessage } from "$src/interfaces/WebSocketMessage";
+
+type MessageHandler = (data: WebSocketMessage) => void;
 
 class WebSocketService {
     private ws: WebSocket | null = null;
@@ -28,7 +30,7 @@ class WebSocketService {
         this.ws.onmessage = (event) => {
             try {
                 const data = JSON.parse(event.data);
-                console.log("Received message: " + data)
+                console.log('WebSocket received:', data.type, data)
                 const handlers = this.handlers.get(data.type) || [];
 
                 handlers.forEach((handler) => {
