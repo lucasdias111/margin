@@ -5,6 +5,7 @@
   import MessagesContainer from '$src/components/chat/MessagesContainer.svelte'
   import { chatService } from '$src/services/ChatService'
   import type { SpaceMessage } from '$src/interfaces/Messages'
+  import { userState } from '$src/states/UserState.svelte'
 
   let selectedSpace = $state<Space | null>(null)
   let messages = $state<SpaceMessage[]>([])
@@ -22,7 +23,7 @@
   }
 
   function handleSubmit(): void {
-    chatService.getSpaces()
+    chatService.sendSpaceMessage(userState.currentUser, selectedSpace.id, messageInput)
   }
 </script>
 

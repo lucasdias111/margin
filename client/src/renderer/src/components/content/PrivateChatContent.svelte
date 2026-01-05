@@ -19,7 +19,7 @@
   let selectedUser = $state<User | null>(null)
   let messages = $state<DirectMessage[]>([])
   let messageInput = $state('')
-  let messagesContainer: HTMLDivElement
+  let messagesContainer = $state<HTMLDivElement>(null)
 
   let showCallWindow = $state(false)
   let isIncomingCall = $state(false)
