@@ -13,7 +13,7 @@ class ChatService {
                 method: "GET",
                 headers: {
                     "Content-Type": "application/json",
-                },
+                }, 
             },
         );
     }
@@ -49,7 +49,7 @@ class ChatService {
         return newMessage;
     }
 
-    sendSpaceMessage(currentUser: User, recepientSpaceId: number, messageText: string) {
+    async sendSpaceMessage(currentUser: User, recepientSpaceId: number, messageText: string) {
         webSocketService.send({
             type: WebSocketMessageType.SEND_SPACE_MESSAGE,
             toSpaceId: recepientSpaceId,
