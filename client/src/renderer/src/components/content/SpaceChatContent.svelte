@@ -6,36 +6,37 @@
   import { chatService } from '$src/services/ChatService'
   import type { SpaceMessage } from '$src/interfaces/Messages'
   import { userState } from '$src/states/UserState.svelte'
+  import type { Channel } from '$src/interfaces/Channel'
 
-  let selectedSpace = $state<Space | null>(null)
+  let selectedChannel = $state<Space | null>(null)
   let messages = $state<SpaceMessage[]>([])
   let messageInput = $state('')
   let messagesContainer = $state<HTMLDivElement>()
 
   $effect(() => {
-    if (chatState.selectedSpace) {
-      loadSpace(chatState.selectedSpace)
+    if (chatState.selectedChannel) {
+      loadChannel(chatState.selectedChannel)
     }
   })
 
-  function loadSpace(space: Space): void {
-    selectedSpace = space
+  function loadChannel(channel: Channel): void {
+    selectedChannel = channel
   }
 
   function handleSubmit(): void {
-    chatService.sendSpaceMessage(userState.currentUser, selectedSpace.id, messageInput)
+    chatService.sendSpaceMessage(userState.currentUser, selectedChannel.id, messageInput)
   }
 </script>
 
 <div class="chat">
-  {#if selectedSpace}
-    <h1>{selectedSpace.name}</h1>
+  {#if selectedChannel}
+    <h1>{selectedChannel.name}</h1>
   {:else}
-    <h1>No Space selected</h1>
+    <h1>No Channel selected</h1>
   {/if}
 
   <MessagesContainer {messages} bind:messagesContainer />
-  <ChatInput selectedContent={!!selectedSpace} bind:messageInput onSubmit={handleSubmit} />
+  <ChatInput selectedContent={!!selectedChannel} bind:messageInput onSubmit={handleSubmit} />
 </div>
 
 <style>

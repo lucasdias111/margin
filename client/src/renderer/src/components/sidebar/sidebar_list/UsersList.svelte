@@ -18,6 +18,8 @@
   onDestroy(() => {
     webSocketService.off('USER_LOGIN', handleUserLogin)
     webSocketService.off('USER_LOGOUT', handleUserLogout)
+
+    chatState.selectUser(null)
   })
 
   function handleUserLogin(data: any): void {

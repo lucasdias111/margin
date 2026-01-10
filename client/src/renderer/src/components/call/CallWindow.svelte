@@ -76,7 +76,6 @@
     } catch (err) {
       console.error('Error initiating call:', err)
       alert('Failed to start call')
-      window.close()
     }
   }
 

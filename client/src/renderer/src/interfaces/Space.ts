@@ -2,5 +2,4 @@ export interface Space {
     id: number;
     name: string;
     description?: string;
-    memberCount?: number;
 }
