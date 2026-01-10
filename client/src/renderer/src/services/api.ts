@@ -1,3 +1,5 @@
+import { API_CONFIG } from '$src/shared/config'
+
 export async function authenticatedFetch(url: string, options: RequestInit = {}) {
     const token = sessionStorage.getItem('authToken');
 
@@ -5,7 +7,7 @@ export async function authenticatedFetch(url: string, options: RequestInit = {})
         throw new Error('No authentication token found');
     }
 
-    return fetch("http://localhost:8080/" + url, {
+    return fetch(BACKEND_URL + url, {
         ...options,
         headers: {
             'Content-Type': 'application/json',
@@ -16,7 +18,7 @@ export async function authenticatedFetch(url: string, options: RequestInit = {})
 }
 
 export async function loginFetch(username: string, password: string) {
-    const response = await fetch("http://localhost:8080/auth/login", {
+    const response = await fetch(API_CONFIG.baseUrl + "auth/login", {
         method: "POST",
         headers: {
             "Content-Type": "application/json",
@@ -35,7 +37,7 @@ export async function registerFetch(
     email: string,
     keys?: { publicKey: string, encryptedPrivateKey: string, salt: string, iv: string }
 ) {
-    const response = await fetch("http://localhost:8080/auth/register", {
+    const response = await fetch(API_CONFIG.baseUrl + "auth/register", {
         method: "POST",
         headers: {
             "Content-Type": "application/json",

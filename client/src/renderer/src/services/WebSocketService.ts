@@ -1,6 +1,6 @@
-import type { WebSocketMessage } from "$src/interfaces/WebSocketMessage";
+import { API_CONFIG } from "$src/shared/config";
 
-type MessageHandler = (data: WebSocketMessage) => void;
+type MessageHandler = (data: any) => void;
 
 class WebSocketService {
     private ws: WebSocket | null = null;
@@ -20,7 +20,7 @@ class WebSocketService {
             return;
         }
 
-        this.ws = new WebSocket(`ws://localhost:8081/ws?token=${token}`);
+        this.ws = new WebSocket(API_CONFIG.wsUrl + `ws?token=${token}`);
 
         this.ws.onopen = () => {
             console.log("WebSocket connected");
@@ -30,7 +30,7 @@ class WebSocketService {
         this.ws.onmessage = (event) => {
             try {
                 const data = JSON.parse(event.data);
-                console.log('WebSocket received:', data.type, data)
+                console.log("Received message: " + data)
                 const handlers = this.handlers.get(data.type) || [];
 
                 handlers.forEach((handler) => {

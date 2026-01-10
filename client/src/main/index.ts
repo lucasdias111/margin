@@ -2,9 +2,9 @@ import { app, shell, BrowserWindow, ipcMain } from 'electron'
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
+import { API_CONFIG } from '../renderer/src/shared/config'
 
 function createWindow(): void {
-  // Create the browser window.
   const mainWindow = new BrowserWindow({
     width: 900,
     height: 670,
@@ -19,6 +19,18 @@ function createWindow(): void {
       sandbox: false
     }
   })
+
+  mainWindow.webContents.session.webRequest.onHeadersReceived((details, callback) => {
+    callback({
+      responseHeaders: {
+        ...details.responseHeaders,
+        'Content-Security-Policy': [
+          `default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self' ${API_CONFIG.baseUrl} ${API_CONFIG.wsUrl}`
+        ]
+      }
+    })
+  })
+
   mainWindow.on('ready-to-show', () => {
     mainWindow.show()
   })
