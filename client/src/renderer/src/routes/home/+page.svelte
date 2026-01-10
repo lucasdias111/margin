@@ -5,7 +5,7 @@
   import Header from '$src/components/header/MainHeader.svelte'
   import type { User } from '$src/interfaces/User'
   import { webSocketService } from '$src/services/WebSocketService'
-  import { authenticatedFetch } from '$src/services/api'
+  import { authenticatedGet } from '$src/services/api'
   import { userState } from '$src/states/UserState.svelte'
 
   let content: ContentWindow
@@ -21,12 +21,7 @@
 
   async function getCurrentUser(): Promise<void> {
     try {
-      const response = await authenticatedFetch(`users/me`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json'
-        }
-      })
+      const response = await authenticatedGet(`users/me`)
 
       if (!response.ok) {
         throw new Error(`Request failed with status: ${response.status}`)

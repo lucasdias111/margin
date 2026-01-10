@@ -1,58 +1,27 @@
 import { API_CONFIG } from '$src/shared/config'
 
-export async function authenticatedFetch(url: string, options: RequestInit = {}) {
+export async function authenticatedGet(url: string) {
     const token = sessionStorage.getItem('authToken');
 
     if (!token) {
         throw new Error('No authentication token found');
     }
 
-    return fetch(BACKEND_URL + url, {
-        ...options,
+    return fetch(API_CONFIG.baseUrl + url, {
         headers: {
             'Content-Type': 'application/json',
-            ...options.headers,
+            method: "GET",
             'Authorization': `Bearer ${token}`,
         },
     });
 }
 
-export async function loginFetch(username: string, password: string) {
-    const response = await fetch(API_CONFIG.baseUrl + "auth/login", {
+export async function unauthenticatedPost<T>(body: T, url: string): Promise<Response> {
+    return await fetch(API_CONFIG.baseUrl + url, {
         method: "POST",
         headers: {
             "Content-Type": "application/json",
         },
-        body: JSON.stringify({
-            username: username,
-            password: password,
-        }),
+        body: JSON.stringify(body),
     });
-    return response;
-}
-
-export async function registerFetch(
-    username: string,
-    password: string,
-    email: string,
-    keys?: { publicKey: string, encryptedPrivateKey: string, salt: string, iv: string }
-) {
-    const response = await fetch(API_CONFIG.baseUrl + "auth/register", {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-            username: username,
-            password: password,
-            email: email,
-            ...(keys && {
-                publicKey: keys.publicKey,
-                encryptedPrivateKey: keys.encryptedPrivateKey,
-                salt: keys.salt,
-                iv: keys.iv
-            })
-        }),
-    });
-    return response;
 }

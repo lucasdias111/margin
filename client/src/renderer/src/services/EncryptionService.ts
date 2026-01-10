@@ -1,16 +1,8 @@
-import { authenticatedFetch } from "./api";
+import { authenticatedGet } from "./api";
 
 class EncryptionService {
     async getPublicKey(userId: number): Promise<string> {
-        const response = await authenticatedFetch(
-            `users/${userId}/public-key`,
-            {
-                method: "GET",
-                headers: {
-                    "Content-Type": "application/json",
-                },
-            },
-        );
+        const response = await authenticatedGet(`users/${userId}/public-key`);
 
         if (!response.ok) {
             throw new Error('Failed to fetch public key');

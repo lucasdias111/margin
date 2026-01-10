@@ -3,7 +3,7 @@
   import { onMount, onDestroy } from 'svelte'
   import { webSocketService } from '$src/services/WebSocketService'
   import { chatState } from '$src/states/ChatState.svelte'
-  import { authenticatedFetch } from '$src/services/api'
+  import { authenticatedGet } from '$src/services/api'
 
   let users = $state<User[]>([])
 
@@ -20,7 +20,7 @@
     webSocketService.off('USER_LOGOUT', handleUserLogout)
   })
 
-  function handleUserLogin(data: any) {
+  function handleUserLogin(data: any): void {
     console.log('User login event:', data)
     const newUser: User = JSON.parse(data.userJson)
     if (!users.find((u) => u.id === newUser.id)) {
@@ -28,7 +28,7 @@
     }
   }
 
-  function handleUserLogout(data: any) {
+  function handleUserLogout(data: any): void {
     console.log('User logout event:', data)
     const loggedOutUser: User = JSON.parse(data.userJson)
     users = users.filter((user) => user.id !== loggedOutUser.id)
@@ -36,12 +36,7 @@
 
   async function getAllUsersForServer(): Promise<User[]> {
     try {
-      const response = await authenticatedFetch(`users/get_all_users`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json'
-        }
-      })
+      const response = await authenticatedGet(`users/get_all_users`)
 
       if (!response.ok) {
         throw new Error(`Request failed with status: ${response.status}`)
@@ -56,12 +51,7 @@
 
   export async function getCurrentUser(): Promise<User | null> {
     try {
-      const response = await authenticatedFetch(`users/me`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json'
-        }
-      })
+      const response = await authenticatedGet(`users/me`)
 
       if (!response.ok) {
         throw new Error(`Request failed with status: ${response.status}`)
@@ -78,7 +68,7 @@
 <div>
   <h3>Users</h3>
   <ul>
-    {#each users as user}
+    {#each users as user (user.id)}
       <li>
         <button onclick={() => chatState.selectUser(user)}>
           {user.username}

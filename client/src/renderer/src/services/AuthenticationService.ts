@@ -1,10 +1,11 @@
-import { loginFetch, registerFetch } from "./api";
+import { unauthenticatedPost } from "./api";
 import { encryptionService } from "./EncryptionService";
 
 
 class AuthenticationService {
     async login(username: string, password: string) {
-        const response = await loginFetch(username, password);
+        const response = await unauthenticatedPost({ username, password }, "auth/login")
+
         if (!response.ok) {
             throw new Error("Login failed");
         }
@@ -37,12 +38,15 @@ class AuthenticationService {
 
         const { encryptedKey, salt, iv } = await encryptionService.encryptPrivateKey(privateKey, password);
 
-        const response = await registerFetch(username, password, email, {
+        const response = await unauthenticatedPost({
+            username,
+            password,
+            email,
             publicKey,
             encryptedPrivateKey: encryptedKey,
             salt,
             iv
-        });
+        }, "auth/register");
 
         if (response.ok) {
             sessionStorage.setItem("publicKey", publicKey);

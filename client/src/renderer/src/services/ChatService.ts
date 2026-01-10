@@ -1,21 +1,14 @@
 import type { DirectMessage, SpaceMessage } from "$src/interfaces/Messages";
 import type { User } from "$src/interfaces/User";
-import { authenticatedFetch } from "./api";
+import { authenticatedGet } from "./api";
 import { encryptionService } from "./EncryptionService";
 import { webSocketService } from "./WebSocketService";
 import { WebSocketMessageType } from "$src/interfaces/WebSocketMessageType";
 
 class ChatService {
     async getSpaces() {
-        const response = await authenticatedFetch(
-            `users/me`,
-            {
-                method: "GET",
-                headers: {
-                    "Content-Type": "application/json",
-                }, 
-            },
-        );
+        // TODO get spaces from backend
+        const response = await authenticatedGet(`users/me`);
     }
 
     async sendDirectMessage(currentUser: User, toUserId: number, messageText: string) {

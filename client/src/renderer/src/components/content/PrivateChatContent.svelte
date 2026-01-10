@@ -5,7 +5,7 @@
   import { userState } from '$src/states/UserState.svelte'
   import { webSocketService } from '$src/services/WebSocketService'
   import { chatState } from '$src/states/ChatState.svelte'
-  import { authenticatedFetch } from '$src/services/api'
+  import { authenticatedGet } from '$src/services/api'
   import ChatInput from '$src/components/chat/ChatInput.svelte'
   import MessagesContainer from '$src/components/chat/MessagesContainer.svelte'
   import { chatService } from '$src/services/ChatService'
@@ -141,14 +141,8 @@
     const currentUserId = userState.currentUser.id
 
     try {
-      const response = await authenticatedFetch(
-        `chat_messages/get_chat_history?userId=${currentUserId}&toUserId=${user.id}`,
-        {
-          method: 'GET',
-          headers: {
-            'Content-Type': 'application/json'
-          }
-        }
+      const response = await authenticatedGet(
+        `chat_messages/get_chat_history?userId=${currentUserId}&toUserId=${user.id}`
       )
 
       if (!response.ok) {
