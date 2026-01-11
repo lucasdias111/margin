@@ -1,5 +1,5 @@
-import type { User } from "$lib/interfaces/User";
-import type { Space } from "$lib/interfaces/Space";
+import type { User } from "$src/interfaces/User";
+import type { Space } from "$src/interfaces/Space";
 
 export type ChatViewType = 'private' | 'space' | 'explore';
 
