@@ -49,19 +49,15 @@
   })
 
   async function handleIncomingMessage(data: WebSocketMessage): Promise<void> {
-    try {
-      console.log('Incoming message data:', data)
+    console.log('Incoming message data:', data)
 
-      const incomingMsg: DirectMessage = JSON.parse(data.payload)
+    const incomingMsg: DirectMessage = JSON.parse(data.payload)
 
-      if (selectedUser && incomingMsg.fromUserId === selectedUser.id) {
-        incomingMsg.message = await encryptionService.decryptMessage(incomingMsg.message, true)
-        messages = [...messages, incomingMsg]
-      } else {
-        console.log("Message not added - sender doesn't match selected user")
-      }
-    } catch (error) {
-      console.error('Error handling incoming message:', error, data)
+    if (selectedUser && incomingMsg.fromUserId === selectedUser.id) {
+      incomingMsg.message = await encryptionService.decryptMessage(incomingMsg.message, true)
+      messages = [...messages, incomingMsg]
+    } else {
+      console.log("Message not added - sender doesn't match selected user")
     }
   }
 
@@ -97,7 +93,6 @@
     const caller = JSON.parse(data.userJson)
     const offer = JSON.parse(data.payload)
 
-    // Show confirmation dialog
     const accept = confirm(`Incoming call from ${caller.username}. Accept?`)
 
     if (accept) {
@@ -140,35 +135,31 @@
 
     const currentUserId = userState.currentUser.id
 
-    try {
-      const response = await authenticatedGet(
-        `chat_messages/get_chat_history?userId=${currentUserId}&toUserId=${user.id}`
-      )
+    const response = await authenticatedGet(
+      `chat_messages/get_chat_history?userId=${currentUserId}&toUserId=${user.id}`
+    )
 
-      if (!response.ok) {
-        throw new Error(`Request failed with status: ${response.status}`)
-      }
-
-      const loadedMessages: DirectMessage[] = await response.json()
-
-      const decryptedMessages = await Promise.all(
-        loadedMessages.map(async (message) => {
-          try {
-            const isRecipient = message.toUserId === currentUserId
-            message.message = await encryptionService.decryptMessage(message.message, isRecipient)
-            return message
-          } catch (decryptError) {
-            console.error('Failed to decrypt message:', decryptError)
-            message.message = '[Decryption failed]'
-            return message
-          }
-        })
-      )
-
-      messages = decryptedMessages
-    } catch (error) {
-      console.error('Failed to load messages:', error)
+    if (!response.ok) {
+      throw new Error(`Request failed with status: ${response.status}`)
     }
+
+    const loadedMessages: DirectMessage[] = await response.json()
+
+    const decryptedMessages = await Promise.all(
+      loadedMessages.map(async (message) => {
+        try {
+          const isRecipient = message.toUserId === currentUserId
+          message.message = await encryptionService.decryptMessage(message.message, isRecipient)
+          return message
+        } catch (decryptError) {
+          console.error('Failed to decrypt message:', decryptError)
+          message.message = '[Decryption failed]'
+          return message
+        }
+      })
+    )
+
+    messages = decryptedMessages
   }
 </script>
 
