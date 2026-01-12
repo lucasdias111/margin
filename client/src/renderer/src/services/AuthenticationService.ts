@@ -69,9 +69,15 @@ class AuthenticationService {
         }
     }
 
-    async logoutUser() {
-       await fetch('/logout')
-        this.clearToken()
+async logoutUser() {
+        const response = await unauthenticatedPost({}, "auth/logout");
+
+        if (!response.ok) {
+            throw new Error("Logout failed");
+        }
+
+        this.clearToken();
+    }
 }
-}
+
 export const authenticationService = new AuthenticationService();

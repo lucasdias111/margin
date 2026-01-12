@@ -1,6 +1,5 @@
 <script lang="ts">
   import { authenticationService } from '$src/services/AuthenticationService'
-  import { error } from 'console'
   import { push } from 'svelte-spa-router'
 
   // /logout
@@ -10,13 +9,13 @@
       await authenticationService.logoutUser()
       push('/')
     } catch (error) {
-      console.log(error)
+      console.error(error)
     }
   }
 </script>
 
 <div>
-  <button class="logoutbut" onclick={logoutUser}>Log out</button>
+  <button class="logoutbut" on:click={logoutUser}>Log out</button>
 </div>
 
 <style>
