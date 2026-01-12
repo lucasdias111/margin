@@ -68,6 +68,10 @@ class AuthenticationService {
             sessionStorage.removeItem("authToken");
         }
     }
-}
 
+    async logoutUser() {
+       await fetch('/logout')
+        this.clearToken()
+}
+}
 export const authenticationService = new AuthenticationService();
