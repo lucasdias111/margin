@@ -74,15 +74,10 @@ async logoutUser(userId: number) {
             userId
         }, "auth/logout");
 
-        if (response.ok) {
-            this.clearToken,
-            'auth/logout'
-        }
-
-        else if (!response.ok) {
+        if (!response.ok) {
             throw new Error("Logout failed");
         }
+        this.clearToken()
     }
 }
-
-export const authenticationService = new AuthenticationService();
+export const authenticationService = new AuthenticationService()

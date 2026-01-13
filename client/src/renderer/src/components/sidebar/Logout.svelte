@@ -4,14 +4,14 @@
 
   let userId = $state(0)
 
-  async function handleLogout(event: SubmitEvent): Promise<void> {
-    event.preventDefault()
-    return (authenticationService.logoutUser(userId), push('/auth/logout'))
+  async function handleLogout(): Promise<void> {
+    return (authenticationService.logoutUser(userId), push('/'))
   }
 </script>
 
+
 <div>
-  <button class="logoutbut" onsubmit={handleLogout}>Log out</button>
+  <button class="logoutbut" onclick={handleLogout}>Log out</button>
 </div>
 
 <style>
