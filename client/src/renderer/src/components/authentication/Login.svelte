@@ -39,7 +39,6 @@
     justify-content: center;
   }
 
-  h1,
   p {
     text-align: center;
   }

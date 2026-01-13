@@ -2,20 +2,16 @@
   import { authenticationService } from '$src/services/AuthenticationService'
   import { push } from 'svelte-spa-router'
 
-  // /logout
+  let userId = $state(0)
 
-  async function logoutUser(): Promise<void> {
-    try {
-      await authenticationService.logoutUser()
-      push('/')
-    } catch (error) {
-      console.error(error)
-    }
+  async function handleLogout(event: SubmitEvent): Promise<void> {
+    event.preventDefault()
+    return (authenticationService.logoutUser(userId), push('/auth/logout'))
   }
 </script>
 
 <div>
-  <button class="logoutbut" on:click={logoutUser}>Log out</button>
+  <button class="logoutbut" onsubmit={handleLogout}>Log out</button>
 </div>
 
 <style>

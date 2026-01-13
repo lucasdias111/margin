@@ -69,14 +69,19 @@ class AuthenticationService {
         }
     }
 
-async logoutUser() {
-        const response = await unauthenticatedPost({}, "auth/logout");
+async logoutUser(userId: number) {
+        const response = await unauthenticatedPost({
+            userId
+        }, "auth/logout");
 
-        if (!response.ok) {
-            throw new Error("Logout failed");
+        if (response.ok) {
+            this.clearToken,
+            'auth/logout'
         }
 
-        this.clearToken();
+        else if (!response.ok) {
+            throw new Error("Logout failed");
+        }
     }
 }
 
