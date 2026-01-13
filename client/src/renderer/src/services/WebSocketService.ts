@@ -28,17 +28,13 @@ class WebSocketService {
         };
 
         this.ws.onmessage = (event) => {
-            try {
-                const data = JSON.parse(event.data);
-                console.log("Received message: " + data)
-                const handlers = this.handlers.get(data.type) || [];
+            const data = JSON.parse(event.data);
+            console.log("Received message for type: " + data.type)
+            const handlers = this.handlers.get(data.type) || [];
 
-                handlers.forEach((handler) => {
-                    handler(data);
-                });
-            } catch (error) {
-                console.error("Failed to parse WebSocket message:", error);
-            }
+            handlers.forEach((handler) => {
+                handler(data);
+            });
         };
 
         this.ws.onerror = (error) => {
