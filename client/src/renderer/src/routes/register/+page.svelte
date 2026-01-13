@@ -17,6 +17,10 @@
       console.log('Error logging in: ' + error)
     }
   }
+
+  function goBack(): void {
+    push('/')
+  }
 </script>
 
 <div>
@@ -31,6 +35,7 @@
     <label for="email">Email</label>
     <input id="email" type="text" name="email" bind:value={email} />
     <button type="submit">Register</button>
+    <button onclick={goBack}> Go back </button>
   </form>
 </div>
 
