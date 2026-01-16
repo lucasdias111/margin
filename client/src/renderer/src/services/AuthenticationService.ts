@@ -1,3 +1,4 @@
+import type { User } from "$src/interfaces/User";
 import { unauthenticatedPost } from "./api";
 import { encryptionService } from "./EncryptionService";
 
@@ -69,7 +70,7 @@ class AuthenticationService {
         }
     }
 
-async logoutUser(userId: number) {
+async logoutUser(userId: User) {
         const response = await unauthenticatedPost({
             userId
         }, "auth/logout");

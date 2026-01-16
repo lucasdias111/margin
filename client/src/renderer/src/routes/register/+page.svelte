@@ -35,14 +35,21 @@
     <label for="email">Email</label>
     <input id="email" type="text" name="email" bind:value={email} />
     <button type="submit">Register</button>
-    <button onclick={goBack}> Go back </button>
   </form>
+  <button id="backbut" onclick={goBack}> ← </button>
 </div>
 
 <style>
   .row {
     display: grid;
     justify-content: center;
+  }
+
+  #backbut {
+    position: fixed;
+    top: 50px;
+    left: 10px;
+    padding: 10px;
   }
 
   h1 {

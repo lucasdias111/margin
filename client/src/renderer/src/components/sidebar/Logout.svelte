@@ -1,14 +1,14 @@
 <script lang="ts">
   import { authenticationService } from '$src/services/AuthenticationService'
+  import { userState } from '$src/states/UserState.svelte'
   import { push } from 'svelte-spa-router'
 
-  let userId = $state(0)
+  let userId = userState.currentUser
 
   async function handleLogout(): Promise<void> {
     return (authenticationService.logoutUser(userId), push('/'))
   }
 </script>
-
 
 <div>
   <button class="logoutbut" onclick={handleLogout}>Log out</button>
