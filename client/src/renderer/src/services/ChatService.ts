@@ -1,16 +1,10 @@
-import type { DirectMessage, SpaceMessage } from "$src/interfaces/Messages";
+import type { DirectMessage, ChannelMessage } from "$src/interfaces/Messages";
 import type { User } from "$src/interfaces/User";
-import { authenticatedGet } from "./api";
 import { encryptionService } from "./EncryptionService";
 import { webSocketService } from "./WebSocketService";
 import { WebSocketMessageType } from "$src/interfaces/WebSocketMessageType";
 
 class ChatService {
-    async getSpaces() {
-        // TODO get spaces from backend
-        const response = await authenticatedGet(`users/me`);
-    }
-
     async sendDirectMessage(currentUser: User, toUserId: number, messageText: string) {
         const recipientPublicKey = await encryptionService.getPublicKey(toUserId);
         const myPublicKey = await encryptionService.getPublicKey(currentUser.id);
@@ -42,17 +36,17 @@ class ChatService {
         return newMessage;
     }
 
-    async sendSpaceMessage(currentUser: User, recepientSpaceId: number, messageText: string) {
+    async sendChannelMessage(currentUser: User, recepientChannelId: number, messageText: string) {
         webSocketService.send({
-            type: WebSocketMessageType.SEND_SPACE_MESSAGE,
-            toSpaceId: recepientSpaceId,
+            type: WebSocketMessageType.SEND_CHANNEL_MESSAGE,
+            toChannelId: recepientChannelId,
             message: messageText,
         });
 
-        const newMessage: SpaceMessage = {
+        const newMessage: ChannelMessage = {
             id: null,
             fromUserId: currentUser.id,
-            toSpaceId: recepientSpaceId,
+            channelId: recepientChannelId,
             message: messageText,
             isEdited: false,
             createdAt: new Date(),

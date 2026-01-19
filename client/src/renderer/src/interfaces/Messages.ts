@@ -11,7 +11,8 @@ export interface DirectMessage extends BaseMessage{
     isEdited: boolean;
 }
 
-export interface SpaceMessage extends BaseMessage {
-    toSpaceId: number;
+export interface ChannelMessage extends BaseMessage {
+    fromUserId: number;
+    channelId: number;
     isEdited: boolean;
 }
