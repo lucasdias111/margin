@@ -1,3 +1,4 @@
+import type { User } from "$src/interfaces/User";
 import { unauthenticatedPost } from "./api";
 import { encryptionService } from "./EncryptionService";
 
@@ -68,6 +69,16 @@ class AuthenticationService {
             sessionStorage.removeItem("authToken");
         }
     }
-}
 
-export const authenticationService = new AuthenticationService();
+async logoutUser(userId: number) {
+        const response = await unauthenticatedPost({
+            userId
+        }, "auth/logout");
+
+        if (!response.ok) {
+            throw new Error("Logout failed");
+        }
+        this.clearToken()
+    }
+}
+export const authenticationService = new AuthenticationService()

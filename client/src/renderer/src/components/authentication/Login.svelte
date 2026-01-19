@@ -13,7 +13,7 @@
       await authenticationService.login(username, password)
       loginResponse = 'Login successful'
       push('/home')
-    } catch (error: any) {
+    } catch (error) {
       loginResponse = error.message || String(error)
     }
   }
@@ -39,7 +39,6 @@
     justify-content: center;
   }
 
-  h1,
   p {
     text-align: center;
   }

@@ -4,6 +4,7 @@
   import UsersList from './sidebar_list/UsersList.svelte'
   import { chatState } from '$src/states/ChatState.svelte'
   import SpacesList from './sidebar_list/SpacesList.svelte'
+  import Logout from './Logout.svelte'
 
   let selectedContent = $derived(chatState.currentlySelectedContent)
 </script>
@@ -16,6 +17,7 @@
   {:else if selectedContent === 'space'}
     <SpacesList />
   {/if}
+  <Logout />
 </div>
 
 <style>
