@@ -70,7 +70,7 @@ class AuthenticationService {
         }
     }
 
-async logoutUser(userId: User) {
+async logoutUser(userId: number) {
         const response = await unauthenticatedPost({
             userId
         }, "auth/logout");
