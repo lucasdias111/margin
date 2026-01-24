@@ -164,6 +164,7 @@
 </script>
 
 <div class="chat">
+  <p>Test</p>
   <div class="chat-header">
     {#if selectedUser}
       <h1 class="username">{selectedUser.username}</h1>
