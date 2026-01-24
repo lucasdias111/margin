@@ -9,7 +9,9 @@
   "compilerOptions": {
     "composite": true,
     "types": [
-      "electron-vite/node"
+      "electron-vite/node",
+      "vitest/globals",
+      "@testing-library/jest-dom"
     ],
     "baseUrl": ".",
     "paths": {
