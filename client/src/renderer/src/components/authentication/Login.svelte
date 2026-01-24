@@ -25,7 +25,10 @@
 
 <div>
   <form class="row" onsubmit={handleLogin}>
-    <input type="text" name="username" bind:value={username} />
+    <label>
+      Username
+      <input type="text" name="username" bind:value={username} />
+    </label>
     <input type="password" name="password" bind:value={password} />
     <button type="submit">Login</button>
   </form>
