@@ -3,8 +3,8 @@
   import { webSocketService } from '$src/services/WebSocketService'
   import { WebSocketMessageType } from '$src/interfaces/WebSocketMessageType'
   import { callState } from '$src/states/CallState.svelte'
-  import { webrtcService } from '$src/services/WebRTCConnectionService'
   import type { CallCandidatePayload, CallResponsePayload, WebSocketMessage } from '$src/interfaces/WebSocketMessages'
+  import { callService } from '$src/services/CallService'
 
   let remoteAudio: HTMLAudioElement | null = null
 
@@ -13,7 +13,7 @@
 
     const { userId, isIncoming, offer } = callState.activeCall
 
-    webrtcService.onRemoteStream((stream) => {
+    callService.onRemoteStream((stream) => {
       if (remoteAudio) {
         remoteAudio.srcObject = stream
         remoteAudio.play().catch((err) => console.error('Error playing audio:', err))
@@ -24,26 +24,26 @@
     webSocketService.on(WebSocketMessageType.CALL_CANDIDATE, handleIceCandidate)
 
     if (isIncoming && offer) {
-      webrtcService.answerCall(userId, offer)
+      callService.answerCall(userId, offer)
     } else {
-      webrtcService.initiateCall(userId)
+      callService.initiateCall(userId)
     }
   })
 
   onDestroy(() => {
     webSocketService.off(WebSocketMessageType.CALL_RESPONSE, handleCallResponse)
     webSocketService.off(WebSocketMessageType.CALL_CANDIDATE, handleIceCandidate)
-    webrtcService.cleanup()
+    callService.cleanup()
   })
 
   async function handleCallResponse(data: WebSocketMessage<CallResponsePayload>): Promise<void> {
-    await webrtcService.handleCallResponse(data.payload.response)
+    await callService.handleCallResponse(data)
   }
 
   async function handleIceCandidate(data: WebSocketMessage<CallCandidatePayload>): Promise<void> {
     const { candidate, sdpMid, sdpMLineIndex, usernameFragment } = data.payload!
 
-    await webrtcService.handleIceCandidate({
+    await callService.handleIceCandidate({
       candidate,
       sdpMid,
       sdpMLineIndex,
@@ -58,7 +58,7 @@
   }
 
   function endCall(): void {
-    webrtcService.endCall()
+    callService.endCall(false)
   }
 </script>
 

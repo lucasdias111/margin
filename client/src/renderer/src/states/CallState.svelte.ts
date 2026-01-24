@@ -9,6 +9,11 @@ interface CallStateData {
   status: CallStatus
   duration: number
   callId: number | null
+  peerConnection: RTCPeerConnection | null
+  localStream: MediaStream | null
+  remoteStream: MediaStream | null
+  candidateQueue: RTCIceCandidateInit[]
+  durationInterval: number | null
 }
 
 function createCallState() {
@@ -17,10 +22,15 @@ function createCallState() {
     status: 'connecting',
     duration: 0,
     callId: null,
+    peerConnection: null,
+    localStream: null,
+    remoteStream: null,
+    candidateQueue: [],
+    durationInterval: null
   })
 
   return {
-    get activeCall(): { userId: number; isIncoming: boolean; offer?: RTCSessionDescriptionInit } {
+    get activeCall() {
       return state.activeCall
     },
     get status(): CallStatus {
@@ -31,6 +41,21 @@ function createCallState() {
     },
     get callId(): number {
       return state.callId
+    },
+    get peerConnection(): RTCPeerConnection | null {
+      return state.peerConnection
+    },
+    get localStream(): MediaStream | null {
+      return state.localStream
+    },
+    get remoteStream(): MediaStream | null {
+      return state.remoteStream
+    },
+    get candidateQueue(): RTCIceCandidateInit[] {
+      return state.candidateQueue
+    },
+    get durationInterval(): number | null {
+      return state.durationInterval
     },
 
     startCall(
@@ -53,10 +78,41 @@ function createCallState() {
       state.duration++
     },
 
-    endCall() {
+    setConnection(
+      peerConnection: RTCPeerConnection,
+      localStream: MediaStream,
+      remoteStream: MediaStream
+    ): void {
+      state.peerConnection = peerConnection
+      state.localStream = localStream
+      state.remoteStream = remoteStream
+    },
+
+    queueCandidate(candidate: RTCIceCandidateInit): void {
+      state.candidateQueue = [...state.candidateQueue, candidate]
+    },
+
+    clearCandidateQueue(): void {
+      state.candidateQueue = []
+    },
+
+    setDurationInterval(intervalId: number): void {
+      state.durationInterval = intervalId
+    },
+
+    setCallId(callId: number): void {
+      state.callId = callId
+    },
+
+    endCall(): void {
       state.activeCall = null
       state.status = 'ended'
       state.duration = 0
+      state.peerConnection = null
+      state.localStream = null
+      state.remoteStream = null
+      state.candidateQueue = []
+      state.durationInterval = null
     }
   }
 }

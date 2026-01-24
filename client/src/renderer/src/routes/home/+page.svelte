@@ -13,8 +13,6 @@
   import { callService } from '$src/services/CallService'
   import type { CallOfferPayload, WebSocketMessage } from '$src/interfaces/WebSocketMessages'
 
-  let content: ContentWindow
-
   onMount(() => {
     getCurrentUser()
     webSocketService.connect()
@@ -46,7 +44,7 @@
 
   function handleRemoteCallEnd(): void {
     console.log('Remote user ended the call')
-    callService.endCall()
+    callService.endCall(true)
   }
 
   async function getCurrentUser(): Promise<void> {
