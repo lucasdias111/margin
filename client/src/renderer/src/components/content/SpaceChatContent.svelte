@@ -54,7 +54,7 @@
 
     const newMessage: ChannelMessage = await chatService.sendChannelMessage(
       userState.currentUser,
-      selectedChannel.id,
+      selectedChannel,
       messageInput
     )
 

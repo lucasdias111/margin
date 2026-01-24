@@ -8,7 +8,7 @@ class ChatState {
   selectedSpace = $state<Space | null>(null);
   selectedChannel = $state<Channel | null>(null);
   currentlySelectedContent =  $state<ChatViewType | null>(null);
-  
+
   selectUser(user: User) {
     this.selectedUser = user;
   }

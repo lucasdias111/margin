@@ -1,59 +1,69 @@
-import type { DirectMessage, ChannelMessage } from "$src/interfaces/Messages";
-import type { User } from "$src/interfaces/User";
-import { encryptionService } from "./EncryptionService";
-import { webSocketService } from "./WebSocketService";
-import { WebSocketMessageType } from "$src/interfaces/WebSocketMessageType";
+import type { DirectMessage, ChannelMessage } from '$src/interfaces/Messages'
+import type { User } from '$src/interfaces/User'
+import { encryptionService } from './EncryptionService'
+import { webSocketService } from './WebSocketService'
+import { WebSocketMessageType } from '$src/interfaces/WebSocketMessageType'
+import type { Channel } from '$src/interfaces/Channel'
 
 class ChatService {
-    async sendDirectMessage(currentUser: User, toUserId: number, messageText: string) {
-        const recipientPublicKey = await encryptionService.getPublicKey(toUserId);
-        const myPublicKey = await encryptionService.getPublicKey(currentUser.id);
+  async getSpaces(): Promise<void> {
+    // TODO get spaces from backend
+    // const response = await authenticatedGet(`users/me`)
+  }
 
-        const encryptedMessage = await encryptionService.encryptMessage(
-            messageText,
-            recipientPublicKey,
-            myPublicKey
-        );
+  async sendDirectMessage(
+    currentUser: User,
+    toUserId: number,
+    messageText: string
+  ): Promise<DirectMessage> {
+    const recipientPublicKey = await encryptionService.getPublicKey(toUserId)
+    const myPublicKey = await encryptionService.getPublicKey(currentUser.id)
 
-        webSocketService.send({
-            type: WebSocketMessageType.SEND_DIRECT_MESSAGE,
-            toUserId: toUserId,
-            message: encryptedMessage,
-        });
+    const encryptedMessage: string = await encryptionService.encryptMessage(
+      messageText,
+      recipientPublicKey,
+      myPublicKey
+    )
 
-        if (!currentUser) return null;
+    webSocketService.send<string>({
+      type: WebSocketMessageType.SEND_DIRECT_MESSAGE,
+      recipientId: toUserId,
+      payload: encryptedMessage
+    })
 
-        const newMessage: DirectMessage = {
-            id: null,
-            fromUserId: currentUser.id,
-            toUserId: toUserId,
-            message: encryptedMessage,
-            isRead: false,
-            isEdited: false,
-            createdAt: new Date(),
-        };
+    if (!currentUser) return null
 
-        return newMessage;
+    return {
+      id: null,
+      fromUserId: currentUser.id,
+      toUserId: toUserId,
+      message: encryptedMessage,
+      isRead: false,
+      isEdited: false,
+      createdAt: new Date()
     }
+  }
 
-    async sendChannelMessage(currentUser: User, recepientChannelId: number, messageText: string) {
-        webSocketService.send({
-            type: WebSocketMessageType.SEND_CHANNEL_MESSAGE,
-            toChannelId: recepientChannelId,
-            message: messageText,
-        });
+  async sendChannelMessage(
+    currentUser: User,
+    channel: Channel,
+    messageText: string
+  ): Promise<ChannelMessage> {
+    webSocketService.send<string>({
+      type: WebSocketMessageType.SEND_CHANNEL_MESSAGE,
+      recipientId: channel.id,
+      payload: messageText
+    })
 
-        const newMessage: ChannelMessage = {
-            id: null,
-            fromUserId: currentUser.id,
-            channelId: recepientChannelId,
-            message: messageText,
-            isEdited: false,
-            createdAt: new Date(),
-        };
-
-        return newMessage;
+    return {
+      id: null,
+      fromUserId: currentUser.id,
+      channelId: channel.id,
+      message: messageText,
+      isEdited: false,
+      createdAt: new Date()
     }
+  }
 }
 
-export const chatService = new ChatService();
+export const chatService = new ChatService()

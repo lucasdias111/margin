@@ -1,223 +1,54 @@
 <script lang="ts">
   import { onMount, onDestroy } from 'svelte'
   import { webSocketService } from '$src/services/WebSocketService'
-  import type { WebSocketMessage } from '$src/interfaces/WebSocketMessage'
   import { WebSocketMessageType } from '$src/interfaces/WebSocketMessageType'
-  import type { User } from '$src/interfaces/User'
+  import { callState } from '$src/states/CallState.svelte'
+  import { webrtcService } from '$src/services/WebRTCConnectionService'
+  import type { CallCandidatePayload, CallResponsePayload, WebSocketMessage } from '$src/interfaces/WebSocketMessages'
 
-  interface Props {
-    selectedUser: User
-    isIncoming?: boolean
-    offer?: any
-    onCallEnd?: () => void
-  }
-
-  let { selectedUser, isIncoming = false, offer, onCallEnd }: Props = $props()
-
-  let peerConnection: RTCPeerConnection | null = null
-  let localStream: MediaStream | null = null
-  let remoteStream: MediaStream | null = null
-  let candidateQueue: Array<{
-    candidate: string
-    sdpMid: string | null
-    sdpMLineIndex: number | null
-    usernameFragment?: string
-  }> = []
   let remoteAudio: HTMLAudioElement | null = null
-  let callStatus = $state<'connecting' | 'connected' | 'ended'>('connecting')
-  let callDuration = $state(0)
-  let durationInterval: number | null = null
 
   onMount(() => {
+    if (!callState.activeCall) return
+
+    const { userId, isIncoming, offer } = callState.activeCall
+
+    webrtcService.onRemoteStream((stream) => {
+      if (remoteAudio) {
+        remoteAudio.srcObject = stream
+        remoteAudio.play().catch((err) => console.error('Error playing audio:', err))
+      }
+    })
+
     webSocketService.on(WebSocketMessageType.CALL_RESPONSE, handleCallResponse)
     webSocketService.on(WebSocketMessageType.CALL_CANDIDATE, handleIceCandidate)
 
-    if (isIncoming) {
-      handleIncomingCall()
+    if (isIncoming && offer) {
+      webrtcService.answerCall(userId, offer)
     } else {
-      initiateCall()
+      webrtcService.initiateCall(userId)
     }
   })
 
   onDestroy(() => {
-    endCall()
-    if (durationInterval) clearInterval(durationInterval)
+    webSocketService.off(WebSocketMessageType.CALL_RESPONSE, handleCallResponse)
+    webSocketService.off(WebSocketMessageType.CALL_CANDIDATE, handleIceCandidate)
+    webrtcService.cleanup()
   })
 
-  async function initiateCall(): Promise<void> {
-    try {
-      const config = {
-        iceServers: [{ urls: 'stun:stun.l.google.com:19302' }]
-      }
-
-      console.log('[Call] Getting local media')
-      localStream = await navigator.mediaDevices.getUserMedia({ audio: true })
-      peerConnection = new RTCPeerConnection(config)
-      remoteStream = new MediaStream()
-
-      setupPeerConnectionHandlers()
-
-      localStream.getTracks().forEach((track) => {
-        if (peerConnection && localStream) {
-          peerConnection.addTrack(track, localStream)
-        }
-      })
-
-      console.log('[Call] Creating offer')
-      const offer = await peerConnection.createOffer()
-      await peerConnection.setLocalDescription(offer)
-
-      webSocketService.send({
-        type: WebSocketMessageType.CALL_OFFER,
-        toUserId: selectedUser.id,
-        message: offer
-      })
-      console.log('[Call] Offer sent')
-    } catch (err) {
-      console.error('Error initiating call:', err)
-      alert('Failed to start call')
-    }
+  async function handleCallResponse(data: WebSocketMessage<CallResponsePayload>): Promise<void> {
+    await webrtcService.handleCallResponse(data.payload.response)
   }
 
-  async function handleIncomingCall(): Promise<void> {
-    try {
-      console.log('[Call] Handling incoming call')
+  async function handleIceCandidate(data: WebSocketMessage<CallCandidatePayload>): Promise<void> {
+    const { candidate, sdpMid, sdpMLineIndex, usernameFragment } = data.payload!
 
-      const config = {
-        iceServers: [{ urls: 'stun:stun.l.google.com:19302' }]
-      }
-
-      localStream = await navigator.mediaDevices.getUserMedia({ audio: true })
-      peerConnection = new RTCPeerConnection(config)
-      remoteStream = new MediaStream()
-
-      setupPeerConnectionHandlers()
-
-      localStream.getTracks().forEach((track) => {
-        if (peerConnection && localStream) {
-          peerConnection.addTrack(track, localStream)
-        }
-      })
-
-      await peerConnection.setRemoteDescription(new RTCSessionDescription(offer))
-
-      console.log('[Call] Flushing ICE candidate queue')
-      for (const candidate of candidateQueue) {
-        await peerConnection.addIceCandidate(new RTCIceCandidate(candidate))
-      }
-      candidateQueue = []
-
-      console.log('[Call] Creating answer')
-      const answer = await peerConnection.createAnswer()
-      await peerConnection.setLocalDescription(answer)
-
-      webSocketService.send({
-        type: WebSocketMessageType.CALL_RESPONSE,
-        toUserId: selectedUser.id,
-        message: answer
-      })
-      console.log('[Call] Answer sent')
-    } catch (err) {
-      console.error('Error handling incoming call:', err)
-      alert('Failed to answer call')
-      window.close()
-    }
-  }
-
-  function setupPeerConnectionHandlers(): void {
-    if (!peerConnection) return
-
-    peerConnection.ontrack = (event) => {
-      console.log('[Call] Remote track received')
-      if (remoteStream) {
-        remoteStream.addTrack(event.track)
-
-        // Play audio
-        if (remoteAudio) {
-          remoteAudio.srcObject = remoteStream
-          remoteAudio.play().catch((err) => console.error('Error playing audio:', err))
-        }
-
-        // Update call status
-        if (callStatus === 'connecting') {
-          callStatus = 'connected'
-          startCallTimer()
-        }
-      }
-    }
-
-    peerConnection.onicecandidate = (event) => {
-      if (event.candidate) {
-        console.log('[Call] Sending ICE candidate')
-        webSocketService.send({
-          type: WebSocketMessageType.CALL_CANDIDATE,
-          toUserId: selectedUser.id,
-          message: event.candidate
-        })
-      }
-    }
-
-    peerConnection.onconnectionstatechange = () => {
-      console.log('[Call] Connection state:', peerConnection?.connectionState)
-      if (
-        peerConnection?.connectionState === 'disconnected' ||
-        peerConnection?.connectionState === 'failed' ||
-        peerConnection?.connectionState === 'closed'
-      ) {
-        endCall()
-      }
-    }
-  }
-
-  async function handleCallResponse(data: WebSocketMessage): Promise<void> {
-    if (!peerConnection) {
-      console.error('No peer connection exists!')
-      return
-    }
-
-    try {
-      console.log('[Call] Received answer')
-
-      const answer = JSON.parse(data.payload)
-      await peerConnection.setRemoteDescription(new RTCSessionDescription(answer))
-
-      console.log('[Call] Flushing ICE candidate queue')
-      for (const candidate of candidateQueue) {
-        await peerConnection.addIceCandidate(new RTCIceCandidate(candidate))
-      }
-      candidateQueue = []
-      console.log('[Call] Call established!')
-    } catch (err) {
-      console.error('Error handling call response:', err)
-    }
-  }
-
-  async function handleIceCandidate(data: WebSocketMessage): Promise<void> {
-    try {
-      const candidate = JSON.parse(data.payload)
-
-      if (!peerConnection) {
-        console.log('[Call] Queueing ICE candidate (no peer connection yet)')
-        candidateQueue.push(candidate)
-        return
-      }
-
-      if (peerConnection.remoteDescription) {
-        console.log('[Call] Adding ICE candidate immediately')
-        await peerConnection.addIceCandidate(new RTCIceCandidate(candidate))
-      } else {
-        console.log('[Call] Queueing ICE candidate (no remote description yet)')
-        candidateQueue.push(candidate)
-      }
-    } catch (err) {
-      console.error('Error handling ICE candidate:', err)
-    }
-  }
-
-  function startCallTimer(): void {
-    durationInterval = setInterval(() => {
-      callDuration++
-    }, 1000) as unknown as number
+    await webrtcService.handleIceCandidate({
+      candidate,
+      sdpMid,
+      sdpMLineIndex,
+      usernameFragment
+    })
   }
 
   function formatDuration(seconds: number): string {
@@ -227,84 +58,60 @@
   }
 
   function endCall(): void {
-    console.log('[Call] Ending call and cleaning up')
-
-    callStatus = 'ended'
-
-    if (peerConnection) {
-      peerConnection.close()
-      peerConnection = null
-    }
-
-    if (localStream) {
-      localStream.getTracks().forEach((track) => track.stop())
-      localStream = null
-    }
-
-    remoteStream = null
-    candidateQueue = []
-
-    webSocketService.send({
-      type: WebSocketMessageType.CALL_END,
-      toUserId: selectedUser.id,
-      message: null
-    })
-
-    if (onCallEnd) {
-      onCallEnd()
-    }
+    webrtcService.endCall()
   }
 </script>
 
-<div class="call-window">
-  <div class="call-header">
-    <h2>Call with {selectedUser.username}</h2>
-  </div>
+{#if callState.activeCall}
+  <div class="call-window">
+    <div class="call-header">
+      <h2>Call with {callState.activeCall.userId}</h2>
+    </div>
 
-  <div class="call-content">
-    <div class="user-avatar">
-      <div class="avatar-circle">
-        {selectedUser.username.charAt(0).toUpperCase()}
+    <div class="call-content">
+      <div class="user-avatar">
+        <div class="avatar-circle">
+          {callState.activeCall.userId}
+        </div>
+      </div>
+
+      <div class="call-info">
+        {#if callState.status === 'connecting'}
+          <p class="status connecting">Connecting...</p>
+        {:else if callState.status === 'connected'}
+          <p class="status connected">Connected</p>
+          <p class="duration">{formatDuration(callState.duration)}</p>
+        {:else}
+          <p class="status ended">Call Ended</p>
+        {/if}
       </div>
     </div>
 
-    <div class="call-info">
-      {#if callStatus === 'connecting'}
-        <p class="status connecting">Connecting...</p>
-      {:else if callStatus === 'connected'}
-        <p class="status connected">Connected</p>
-        <p class="duration">{formatDuration(callDuration)}</p>
-      {:else}
-        <p class="status ended">Call Ended</p>
-      {/if}
+    <div class="call-controls">
+      <button class="end-call-btn" onclick={endCall}>
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          width="24"
+          height="24"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        >
+          <path
+            d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"
+          />
+          <line x1="18" y1="6" x2="6" y2="18" />
+        </svg>
+        End Call
+      </button>
     </div>
-  </div>
 
-  <div class="call-controls">
-    <button class="end-call-btn" onclick={endCall}>
-      <svg
-        xmlns="http://www.w3.org/2000/svg"
-        width="24"
-        height="24"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        stroke-width="2"
-        stroke-linecap="round"
-        stroke-linejoin="round"
-      >
-        <path
-          d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"
-        />
-        <line x1="18" y1="6" x2="6" y2="18" />
-      </svg>
-      End Call
-    </button>
+    <audio bind:this={remoteAudio} autoplay></audio>
   </div>
-
-  <!-- Hidden audio element for remote stream -->
-  <audio bind:this={remoteAudio} autoplay></audio>
-</div>
+{/if}
 
 <style>
   .call-window {

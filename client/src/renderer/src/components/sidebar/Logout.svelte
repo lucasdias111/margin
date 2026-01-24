@@ -3,10 +3,10 @@
   import { userState } from '$src/states/UserState.svelte'
   import { push } from 'svelte-spa-router'
 
-  let userId = userState.currentUser.id
-
   async function handleLogout(): Promise<void> {
-    return (authenticationService.logoutUser(userId), push('/'))
+    if (!userState.currentUser.id) return
+    await authenticationService.logoutUser(userState.currentUser.id)
+    await push('/')
   }
 </script>
 
