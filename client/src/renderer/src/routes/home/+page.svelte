@@ -7,25 +7,49 @@
   import { webSocketService } from '$src/services/WebSocketService'
   import { authenticatedGet } from '$src/services/api'
   import { userState } from '$src/states/UserState.svelte'
-
-  let content: ContentWindow
+  import { WebSocketMessageType } from '$src/interfaces/WebSocketMessageType'
+  import { callState } from '$src/states/CallState.svelte'
+  import CallWindow from '$src/components/call/CallWindow.svelte'
+  import { callService } from '$src/services/CallService'
+  import type { CallOfferPayload, WebSocketMessage } from '$src/interfaces/WebSocketMessages'
 
   onMount(() => {
     getCurrentUser()
     webSocketService.connect()
+    webSocketService.on(WebSocketMessageType.CALL_OFFER, handleIncomingCallOffer)
+    webSocketService.on(WebSocketMessageType.CALL_END, handleRemoteCallEnd)
   })
 
   onDestroy(() => {
     webSocketService.disconnect()
+    webSocketService.off(WebSocketMessageType.CALL_OFFER, handleIncomingCallOffer)
+    webSocketService.off(WebSocketMessageType.CALL_END, handleRemoteCallEnd)
   })
+
+  function handleIncomingCallOffer(message: WebSocketMessage<CallOfferPayload>): void {
+    const payload = message.payload
+    const accept = confirm(`Incoming call from ${payload.callerId}. Accept?`)
+
+    if (accept) {
+      const offer = {
+        type: 'offer' as const,
+        sdp: payload.sdp
+      }
+
+      callService.startCall(payload.callId, payload.callerId, true, offer)
+    } else {
+      console.log('Call rejected')
+    }
+  }
+
+  function handleRemoteCallEnd(): void {
+    console.log('Remote user ended the call')
+    callService.endCall(true)
+  }
 
   async function getCurrentUser(): Promise<void> {
     try {
       const response = await authenticatedGet(`users/me`)
-
-      if (!response.ok) {
-        throw new Error(`Request failed with status: ${response.status}`)
-      }
 
       const user: User = await response.json()
       userState.setUser(user)
@@ -34,15 +58,22 @@
       console.error('Error getting current user:', error)
     }
   }
+
 </script>
 
 <div class="app">
   <Header />
   <div class="content">
     <Sidebar />
-    <ContentWindow bind:this={content} />
+    <ContentWindow />
   </div>
 </div>
+
+{#if callState.activeCall}
+  <div class="call-overlay">
+    <CallWindow />
+  </div>
+{/if}
 
 <style>
   .app {
@@ -55,5 +86,18 @@
     display: flex;
     flex: 1;
     overflow: hidden;
+  }
+
+  .call-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.95);
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
   }
 </style>

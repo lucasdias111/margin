@@ -1,4 +1,4 @@
-//const BASE_ADDRESS = '135.181.100.126';
+// const BASE_ADDRESS = '135.181.100.126';
 const BASE_ADDRESS = 'localhost';
 
 export const API_CONFIG = {

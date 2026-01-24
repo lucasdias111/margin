@@ -1,84 +1,91 @@
-import type { User } from "$src/interfaces/User";
-import { unauthenticatedPost } from "./api";
-import { encryptionService } from "./EncryptionService";
-
+import { unauthenticatedPost } from './api'
+import { encryptionService } from './EncryptionService'
 
 class AuthenticationService {
-    async login(username: string, password: string) {
-        const response = await unauthenticatedPost({ username, password }, "auth/login")
+  async login(username: string, password: string): Promise<void> {
+    const response = await unauthenticatedPost({ username, password }, 'auth/login')
 
-        if (!response.ok) {
-            throw new Error("Login failed");
-        }
-
-        const authResponse = await response.json();
-
-        if (!authResponse.token) {
-            throw new Error("No token in response");
-        }
-
-        sessionStorage.setItem("authToken", authResponse.token);
-
-        if (authResponse.encryptedPrivateKey && authResponse.salt && authResponse.iv) {
-            const privateKey = await encryptionService.decryptPrivateKey(
-                authResponse.encryptedPrivateKey,
-                password,
-                authResponse.salt,
-                authResponse.iv
-            );
-            sessionStorage.setItem("privateKey", privateKey);
-        }
-
-        if (authResponse.publicKey) {
-            sessionStorage.setItem("publicKey", authResponse.publicKey);
-        }
+    if (!response.ok) {
+      throw new Error('Login failed')
     }
 
-    async register(username: string, password: string, email: string) {
-        const { publicKey, privateKey } = await encryptionService.generateKeyPairFromPassword(password);
+    const authResponse = await response.json()
 
-        const { encryptedKey, salt, iv } = await encryptionService.encryptPrivateKey(privateKey, password);
-
-        const response = await unauthenticatedPost({
-            username,
-            password,
-            email,
-            publicKey,
-            encryptedPrivateKey: encryptedKey,
-            salt,
-            iv
-        }, "auth/register");
-
-        if (response.ok) {
-            sessionStorage.setItem("publicKey", publicKey);
-            sessionStorage.setItem("privateKey", privateKey);
-        }
-
-        return response;
+    if (!authResponse.token) {
+      throw new Error('No token in response')
     }
 
-    getStoredToken(): string | null {
-        if (typeof window !== "undefined") {
-            return sessionStorage.getItem("authToken");
-        }
-        return null;
+    sessionStorage.setItem('authToken', authResponse.token)
+
+    if (authResponse.encryptedPrivateKey && authResponse.salt && authResponse.iv) {
+      const privateKey = await encryptionService.decryptPrivateKey(
+        authResponse.encryptedPrivateKey,
+        password,
+        authResponse.salt,
+        authResponse.iv
+      )
+      sessionStorage.setItem('privateKey', privateKey)
     }
 
-    clearToken() {
-        if (typeof window !== "undefined") {
-            sessionStorage.removeItem("authToken");
-        }
+    if (authResponse.publicKey) {
+      sessionStorage.setItem('publicKey', authResponse.publicKey)
+    }
+  }
+
+  async register(username: string, password: string, email: string): Promise<Response> {
+    const { publicKey, privateKey } = await encryptionService.generateKeyPairFromPassword(password)
+
+    const { encryptedKey, salt, iv } = await encryptionService.encryptPrivateKey(
+      privateKey,
+      password
+    )
+
+    const response = await unauthenticatedPost(
+      {
+        username,
+        password,
+        email,
+        publicKey,
+        encryptedPrivateKey: encryptedKey,
+        salt,
+        iv
+      },
+      'auth/register'
+    )
+
+    if (response.ok) {
+      sessionStorage.setItem('publicKey', publicKey)
+      sessionStorage.setItem('privateKey', privateKey)
     }
 
-async logoutUser(userId: number) {
-        const response = await unauthenticatedPost({
-            userId
-        }, "auth/logout");
+    return response
+  }
 
-        if (!response.ok) {
-            throw new Error("Logout failed");
-        }
-        this.clearToken()
+  getStoredToken(): string | null {
+    if (typeof window !== 'undefined') {
+      return sessionStorage.getItem('authToken')
     }
+    return null
+  }
+
+  clearToken(): void {
+    if (typeof window !== 'undefined') {
+      sessionStorage.removeItem('authToken')
+    }
+  }
+
+  async logoutUser(userId: number): Promise<void> {
+    const response = await unauthenticatedPost(
+      {
+        userId
+      },
+      'auth/logout'
+    )
+
+    if (!response.ok) {
+      throw new Error('Logout failed')
+    }
+    this.clearToken()
+  }
 }
 export const authenticationService = new AuthenticationService()

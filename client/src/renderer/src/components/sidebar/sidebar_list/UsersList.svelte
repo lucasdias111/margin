@@ -1,9 +1,10 @@
 <script lang="ts">
   import type { User } from '$src/interfaces/User'
-  import { onMount, onDestroy } from 'svelte'
+  import { onDestroy, onMount } from 'svelte'
   import { webSocketService } from '$src/services/WebSocketService'
   import { chatState } from '$src/states/ChatState.svelte'
   import { authenticatedGet } from '$src/services/api'
+  import type { WebSocketMessage } from '$src/interfaces/WebSocketMessages'
 
   let users = $state<User[]>([])
 
@@ -22,29 +23,23 @@
     chatState.selectUser(null)
   })
 
-  function handleUserLogin(data: any): void {
+  function handleUserLogin(data: WebSocketMessage<User>): void {
     console.log('User login event:', data)
-    const newUser: User = JSON.parse(data.userJson)
-    if (!users.find((u) => u.id === newUser.id)) {
-      users = [...users, newUser]
+    if (!users.find((u) => u.id === data.payload.id)) {
+      users = [...users, data.payload]
     }
   }
 
-  function handleUserLogout(data: any): void {
+  function handleUserLogout(data: WebSocketMessage<User>): void {
     console.log('User logout event:', data)
-    const loggedOutUser: User = JSON.parse(data.userJson)
-    users = users.filter((user) => user.id !== loggedOutUser.id)
+    users = users.filter((user) => user.id !== data.payload.id)
   }
 
   async function getAllUsersForServer(): Promise<User[]> {
     try {
       const response = await authenticatedGet(`users/get_all_users`)
 
-      if (!response.ok) {
-        throw new Error(`Request failed with status: ${response.status}`)
-      }
-      const users: User[] = await response.json()
-      return users
+      return await response.json()
     } catch (error) {
       console.error('Error getting users:', error)
       return []
