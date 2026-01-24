@@ -1,4 +1,3 @@
-import type { User } from "$src/interfaces/User";
 import { unauthenticatedPost } from './api'
 import { encryptionService } from './EncryptionService'
 

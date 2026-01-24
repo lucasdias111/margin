@@ -72,9 +72,7 @@
       throw new Error(`Request failed with status: ${response.status}`)
     }
 
-    const loadedMessages: ChannelMessage[] = await response.json()
-
-    messages = loadedMessages
+    messages = await response.json()
 
     messagesContainer.scrollTop = messagesContainer.scrollHeight
   }

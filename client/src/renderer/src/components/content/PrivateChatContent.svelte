@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { onMount, onDestroy, tick } from 'svelte'
+  import { onDestroy, onMount, tick } from 'svelte'
   import type { User } from '$src/interfaces/User'
   import type { DirectMessage } from '$src/interfaces/Messages'
   import { userState } from '$src/states/UserState.svelte'
@@ -101,13 +101,9 @@
         `chat_messages/get_chat_history?userId=${currentUserId}&toUserId=${user.id}`
       )
 
-      if (!response.ok) {
-        throw new Error(`Request failed with status: ${response.status}`)
-      }
-
       const loadedMessages: DirectMessage[] = await response.json()
 
-      const decryptedMessages = await Promise.all(
+      messages = await Promise.all(
         loadedMessages.map(async (message) => {
           try {
             const isRecipient = message.toUserId === currentUserId
@@ -120,8 +116,6 @@
           }
         })
       )
-
-      messages = decryptedMessages
     } catch (error) {
       console.error('Failed to load messages:', error)
     }

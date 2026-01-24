@@ -51,10 +51,6 @@
     try {
       const response = await authenticatedGet(`users/me`)
 
-      if (!response.ok) {
-        throw new Error(`Request failed with status: ${response.status}`)
-      }
-
       const user: User = await response.json()
       userState.setUser(user)
       console.log('Current user loaded:', user)
@@ -62,13 +58,14 @@
       console.error('Error getting current user:', error)
     }
   }
+
 </script>
 
 <div class="app">
   <Header />
   <div class="content">
     <Sidebar />
-    <ContentWindow bind:this={content} />
+    <ContentWindow />
   </div>
 </div>
 

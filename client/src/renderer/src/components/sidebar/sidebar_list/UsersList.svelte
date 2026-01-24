@@ -1,6 +1,6 @@
 <script lang="ts">
   import type { User } from '$src/interfaces/User'
-  import { onMount, onDestroy } from 'svelte'
+  import { onDestroy, onMount } from 'svelte'
   import { webSocketService } from '$src/services/WebSocketService'
   import { chatState } from '$src/states/ChatState.svelte'
   import { authenticatedGet } from '$src/services/api'
@@ -39,11 +39,7 @@
     try {
       const response = await authenticatedGet(`users/get_all_users`)
 
-      if (!response.ok) {
-        throw new Error(`Request failed with status: ${response.status}`)
-      }
-      const users: User[] = await response.json()
-      return users
+      return await response.json()
     } catch (error) {
       console.error('Error getting users:', error)
       return []

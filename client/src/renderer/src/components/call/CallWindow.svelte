@@ -3,7 +3,11 @@
   import { webSocketService } from '$src/services/WebSocketService'
   import { WebSocketMessageType } from '$src/interfaces/WebSocketMessageType'
   import { callState } from '$src/states/CallState.svelte'
-  import type { CallCandidatePayload, CallResponsePayload, WebSocketMessage } from '$src/interfaces/WebSocketMessages'
+  import type {
+    CallCandidatePayload,
+    CallResponsePayload,
+    WebSocketMessage
+  } from '$src/interfaces/WebSocketMessages'
   import { callService } from '$src/services/CallService'
 
   let remoteAudio: HTMLAudioElement | null = null
