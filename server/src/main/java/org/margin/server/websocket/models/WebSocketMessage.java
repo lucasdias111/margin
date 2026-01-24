@@ -7,9 +7,9 @@ import lombok.NoArgsConstructor;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class WebSocketMessage {
+public class WebSocketMessage<T> {
 	private WebSocketMessageType type;
-	private Long recipient;
 	private Long timestamp;
-	private String payload;
+	private Long recipientId;
+	private T payload;
 }
