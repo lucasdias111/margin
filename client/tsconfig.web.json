@@ -12,6 +12,7 @@
     "strict": false,
     "allowJs": true,
     "checkJs": true,
+    "types": ["vitest/globals", "@testing-library/jest-dom"],
     "lib": [
       "ESNext",
       "DOM",

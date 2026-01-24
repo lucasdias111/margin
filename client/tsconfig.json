@@ -9,6 +9,13 @@
     }
   ],
   "compilerOptions": {
+    "moduleResolution": "bundler",
+    "allowImportingTsExtensions": true,
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "skipLibCheck": true,
+    "types": ["vitest/globals", "@testing-library/jest-dom"],
+    "lib": ["ES2020", "DOM"],
     "target": "esnext",
     "baseUrl": ".",
     "paths": {
