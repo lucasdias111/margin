@@ -1,5 +1,6 @@
 import { wrap } from 'svelte-spa-router/wrap'
 
+// @ts-ignore
 export const routes = {
   '/': wrap({
     asyncComponent: () => import('$src/routes/+page.svelte')

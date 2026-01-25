@@ -1,19 +1,19 @@
 import type { User } from '$src/interfaces/User';
 
 class UserState {
-  currentUser = $state<User | null>(null);
-  
+  currentUser = $state<User | null>(null)
+
   setUser(user: User | null) {
-    this.currentUser = user;
+    this.currentUser = user
   }
-  
-  clearUser() {
-    this.currentUser = null;
+
+  reset() {
+    this.currentUser = null
   }
-  
+
   updateUser(updates: Partial<User>) {
     if (this.currentUser) {
-      this.currentUser = { ...this.currentUser, ...updates };
+      this.currentUser = { ...this.currentUser, ...updates }
     }
   }
 }

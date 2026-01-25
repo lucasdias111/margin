@@ -5,12 +5,17 @@
   import { chatState } from '$src/states/ChatState.svelte'
   import { authenticatedGet } from '$src/services/api'
   import type { WebSocketMessage } from '$src/interfaces/WebSocketMessages'
+  import { userState } from '$src/states/UserState.svelte'
 
-  let users = $state<User[]>([])
+  let recentUsers = $state<User[]>([])
+  let onlineUsers = $state<User[]>([])
 
   onMount(() => {
+    getRecentChatUsers(userState.currentUser.id).then((fetchedUsers) => {
+      recentUsers = fetchedUsers
+    })
     getAllUsersForServer().then((fetchedUsers) => {
-      users = fetchedUsers
+      onlineUsers = fetchedUsers
     })
     webSocketService.on('USER_LOGIN', handleUserLogin)
     webSocketService.on('USER_LOGOUT', handleUserLogout)
@@ -25,14 +30,34 @@
 
   function handleUserLogin(data: WebSocketMessage<User>): void {
     console.log('User login event:', data)
-    if (!users.find((u) => u.id === data.payload.id)) {
-      users = [...users, data.payload]
+    if (!onlineUsers.find((u) => u.id === data.payload.id)) {
+      onlineUsers = [...onlineUsers, data.payload]
     }
   }
 
   function handleUserLogout(data: WebSocketMessage<User>): void {
     console.log('User logout event:', data)
-    users = users.filter((user) => user.id !== data.payload.id)
+    onlineUsers = onlineUsers.filter((user) => user.id !== data.payload.id)
+  }
+
+  async function getRecentChatUsers(userId: number): Promise<User[]> {
+    try {
+      const response = await authenticatedGet(`users/${userId}/recent_chat_users`)
+
+      console.log('Response status:', response.status)
+      console.log('Response headers:', response.headers)
+
+      if (!response.ok) {
+        const text = await response.text()
+        console.error('Error response:', text)
+        return []
+      }
+
+      return await response.json()
+    } catch (error) {
+      console.error('Error getting users:', error)
+      return []
+    }
   }
 
   async function getAllUsersForServer(): Promise<User[]> {
@@ -63,9 +88,19 @@
 </script>
 
 <div>
-  <h3>Users</h3>
+  <h3>Recent:</h3>
   <ul>
-    {#each users as user (user.id)}
+    {#each recentUsers as user (user.id)}
+      <li>
+        <button onclick={() => chatState.selectUser(user)}>
+          {user.username}
+        </button>
+      </li>
+    {/each}
+  </ul>
+  <h3>Online users:</h3>
+  <ul>
+    {#each onlineUsers as user (user.id)}
       <li>
         <button onclick={() => chatState.selectUser(user)}>
           {user.username}

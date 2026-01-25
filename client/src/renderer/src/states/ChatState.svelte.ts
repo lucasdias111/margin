@@ -4,25 +4,32 @@ import type { ChatViewType } from '$src/interfaces/Content';
 import type { Channel } from '$src/interfaces/Channel';
 
 class ChatState {
-  selectedUser = $state<User | null>(null);
-  selectedSpace = $state<Space | null>(null);
-  selectedChannel = $state<Channel | null>(null);
-  currentlySelectedContent =  $state<ChatViewType | null>(null);
+  selectedUser = $state<User | null>(null)
+  selectedSpace = $state<Space | null>(null)
+  selectedChannel = $state<Channel | null>(null)
+  currentlySelectedContent = $state<ChatViewType | null>(null)
 
   selectUser(user: User) {
-    this.selectedUser = user;
+    this.selectedUser = user
   }
 
   selectSpace(space: Space) {
-    this.selectedSpace = space;
+    this.selectedSpace = space
   }
 
   selectContent(content: ChatViewType) {
-    this.currentlySelectedContent = content;
+    this.currentlySelectedContent = content
   }
 
   selectChannel(channel: Channel) {
-    this.selectedChannel = channel;
+    this.selectedChannel = channel
+  }
+
+  reset() {
+    this.selectedUser = null
+    this.selectedSpace = null
+    this.selectedChannel = null
+    this.currentlySelectedContent = null
   }
 }
 
