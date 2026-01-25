@@ -1,5 +1,8 @@
 import { unauthenticatedPost } from './api'
 import { encryptionService } from './EncryptionService'
+import { userState } from '$src/states/UserState.svelte'
+import { chatState } from '$src/states/ChatState.svelte'
+import { callState } from '$src/states/CallState.svelte'
 
 class AuthenticationService {
   async login(username: string, password: string): Promise<void> {
@@ -85,6 +88,11 @@ class AuthenticationService {
     if (!response.ok) {
       throw new Error('Logout failed')
     }
+
+    userState.reset()
+    chatState.reset()
+    callState.reset()
+
     this.clearToken()
   }
 }

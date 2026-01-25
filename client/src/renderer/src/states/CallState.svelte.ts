@@ -113,6 +113,18 @@ function createCallState() {
       state.remoteStream = null
       state.candidateQueue = []
       state.durationInterval = null
+    },
+
+    reset(): void {
+      state.activeCall = null
+      state.status = 'connecting'
+      state.duration = 0
+      state.callId = null
+      state.peerConnection = null
+      state.localStream = null
+      state.remoteStream = null
+      state.candidateQueue = []
+      state.durationInterval = null
     }
   }
 }
