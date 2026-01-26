@@ -6,6 +6,8 @@
   import { authenticatedGet } from '$src/services/api'
   import type { WebSocketMessage } from '$src/interfaces/WebSocketMessages'
   import { userState } from '$src/states/UserState.svelte'
+  import { notificationState } from '$src/states/NotificationState.svelte'
+  import UnreadNotificationBadge from '$src/components/chat/UnreadNotificationBadge.svelte'
 
   let recentUsers = $state<User[]>([])
   let onlineUsers = $state<User[]>([])
@@ -29,61 +31,33 @@
   })
 
   function handleUserLogin(data: WebSocketMessage<User>): void {
-    console.log('User login event:', data)
     if (!onlineUsers.find((u) => u.id === data.payload.id)) {
       onlineUsers = [...onlineUsers, data.payload]
     }
   }
 
   function handleUserLogout(data: WebSocketMessage<User>): void {
-    console.log('User logout event:', data)
     onlineUsers = onlineUsers.filter((user) => user.id !== data.payload.id)
   }
 
   async function getRecentChatUsers(userId: number): Promise<User[]> {
-    try {
-      const response = await authenticatedGet(`users/${userId}/recent_chat_users`)
+    const response = await authenticatedGet(`users/${userId}/recent_chat_users`)
 
-      console.log('Response status:', response.status)
-      console.log('Response headers:', response.headers)
-
-      if (!response.ok) {
-        const text = await response.text()
-        console.error('Error response:', text)
-        return []
-      }
-
-      return await response.json()
-    } catch (error) {
-      console.error('Error getting users:', error)
+    if (!response.ok) {
       return []
     }
+
+    return await response.json()
   }
 
   async function getAllUsersForServer(): Promise<User[]> {
-    try {
-      const response = await authenticatedGet(`users/get_all_users`)
+    const response = await authenticatedGet(`users/get_all_users`)
 
-      return await response.json()
-    } catch (error) {
-      console.error('Error getting users:', error)
+    if (!response.ok) {
       return []
     }
-  }
 
-  export async function getCurrentUser(): Promise<User | null> {
-    try {
-      const response = await authenticatedGet(`users/me`)
-
-      if (!response.ok) {
-        throw new Error(`Request failed with status: ${response.status}`)
-      }
-      const user: User = await response.json()
-      return user
-    } catch (error) {
-      console.error('Error getting current user:', error)
-      return null
-    }
+    return await response.json()
   }
 </script>
 
@@ -94,6 +68,7 @@
       <li>
         <button onclick={() => chatState.selectUser(user)}>
           {user.username}
+          <UnreadNotificationBadge userId={user.id} />
         </button>
       </li>
     {/each}
