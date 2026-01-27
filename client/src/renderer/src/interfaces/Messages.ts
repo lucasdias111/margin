@@ -13,6 +13,7 @@ export interface DirectMessage extends BaseMessage {
 
 export interface ChannelMessage extends BaseMessage {
   fromUserId: number
+  fromUsername: string
   channelId: number
   isEdited: boolean
 }
