@@ -1,9 +1,11 @@
 <script>
   import { userState } from '$src/states/UserState.svelte'
+  import SearchBar from '$src/components/content/SearchBar.svelte'
 </script>
 
 <div class="topbar">
   <h1>margin</h1>
+  <SearchBar />
   <p>{userState.currentUser?.username}</p>
 </div>
 
