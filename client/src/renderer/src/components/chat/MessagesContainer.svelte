@@ -1,7 +1,9 @@
 <script lang="ts">
-  import type { BaseMessage, DirectMessage } from '$src/interfaces/Messages'
+  import type { BaseMessage, DirectMessage, ChannelMessage } from '$src/interfaces/Messages'
   import { userState } from '$src/states/UserState.svelte'
   import { tick } from 'svelte'
+  import { chatState } from '$src/states/ChatState.svelte';
+
 
   let {
     messages,
@@ -9,6 +11,7 @@
     isDirectMessage = false
   }: {
     messages: BaseMessage[]
+    spaceMessages: ChannelMessage[]
     messagesContainer?: HTMLDivElement
     isDirectMessage?: boolean
   } = $props()
@@ -47,7 +50,12 @@
     {#each messages as message}
       <div class="message" class:sent={message.fromUserId === userState.currentUser?.id}>
         <div class="message-content">
-          <p class="userNameMessageReceived">{userState.currentUser.username}:</p> {message.message}
+           {#if message.fromUserId !== userState.currentUser.id && !isDirectMessage}
+          <p class="userNameMessageReceived">{chatState.selectedUser.username}:</p>
+          {/if}
+          {message.message}
+          
+        
         </div>
         <div class="message-meta">
           <span class="timestamp">{formatTimestamp(message.createdAt)}</span>
