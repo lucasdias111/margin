@@ -6,7 +6,7 @@
   import type { ChannelMessage } from '$src/interfaces/Messages'
   import { userState } from '$src/states/UserState.svelte'
   import type { Channel } from '$src/interfaces/Channel'
-  import { onMount } from 'svelte'
+  import { onDestroy, onMount } from 'svelte'
   import { webSocketService } from '$src/services/WebSocketService'
   import { WebSocketMessageType } from '$src/interfaces/WebSocketMessageType'
   import type { WebSocketMessage } from '$src/interfaces/WebSocketMessage'
@@ -27,18 +27,15 @@
     webSocketService.on(WebSocketMessageType.RECEIVE_CHANNEL_MESSAGE, handleIncomingChannelMessage)
   })
 
+  onDestroy(() => {
+    webSocketService.off(WebSocketMessageType.RECEIVE_CHANNEL_MESSAGE, handleIncomingChannelMessage)
+  })
+
   async function handleIncomingChannelMessage(data: WebSocketMessage): Promise<void> {
-    console.log('Incoming message data:', data)
-
     const incomingMsg: ChannelMessage = JSON.parse(data.payload)
-
-    console.log('Selected channel: ' + selectedChannel)
-    console.log('Incoming channel id: ' + incomingMsg.channelId)
 
     if (selectedChannel && incomingMsg.channelId === selectedChannel.id) {
       messages = [...messages, incomingMsg]
-    } else {
-      console.log("Message not added - sender doesn't match selected channel")
     }
   }
 
