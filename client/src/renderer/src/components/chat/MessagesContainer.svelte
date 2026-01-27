@@ -47,7 +47,7 @@
     {#each messages as message}
       <div class="message" class:sent={message.fromUserId === userState.currentUser?.id}>
         <div class="message-content">
-          {message.message}
+          <p class="userNameMessageReceived">{userState.currentUser.username}:</p> {message.message}
         </div>
         <div class="message-meta">
           <span class="timestamp">{formatTimestamp(message.createdAt)}</span>
@@ -72,6 +72,10 @@
     display: flex;
     flex-direction: column;
     gap: 8px;
+  }
+
+  .userNameMessageReceived {
+    color: darkslategrey
   }
 
   .message {

@@ -6,9 +6,9 @@
   let password = $state('')
   let loginResponse = $state('')
 
-  async function handleLogin(event: SubmitEvent): Promise<void> {
-    event.preventDefault()
-
+  
+async function handleLogin(event: SubmitEvent): Promise<void> {
+  event.preventDefault()
     try {
       await authenticationService.login(username, password)
       loginResponse = 'Login successful'
