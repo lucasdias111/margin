@@ -1,7 +1,7 @@
-import type { Space } from '$src/interfaces/Space';
-import type { User } from '$src/interfaces/User';
-import type { ChatViewType } from '$src/interfaces/Content';
-import type { Channel } from '$src/interfaces/Channel';
+import type { Space } from '$src/interfaces/Space'
+import type { User } from '$src/interfaces/User'
+import type { ChatViewType } from '$src/interfaces/Content'
+import type { Channel } from '$src/interfaces/Channel'
 
 class ChatState {
   selectedUser = $state<User | null>(null)
@@ -31,6 +31,12 @@ class ChatState {
     this.selectedChannel = null
     this.currentlySelectedContent = null
   }
+
+  selectPrivateChatContent() {
+    if (chatState.currentlySelectedContent !== 'private') {
+      chatState.currentlySelectedContent = 'private'
+    }
+  }
 }
 
-export const chatState = new ChatState();
+export const chatState = new ChatState()

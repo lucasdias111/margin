@@ -12,19 +12,58 @@
   import CallWindow from '$src/components/call/CallWindow.svelte'
   import { callService } from '$src/services/CallService'
   import type { CallOfferPayload, WebSocketMessage } from '$src/interfaces/WebSocketMessages'
+  import type { ChannelMessage, DirectMessage } from '$src/interfaces/Messages'
+  import { notificationService } from '$src/services/NotificationService'
 
   onMount(() => {
-    getCurrentUser()
+    setup()
     webSocketService.connect()
     webSocketService.on(WebSocketMessageType.CALL_OFFER, handleIncomingCallOffer)
     webSocketService.on(WebSocketMessageType.CALL_END, handleRemoteCallEnd)
+    webSocketService.on(WebSocketMessageType.RECEIVE_DIRECT_MESSAGE, handleIncomingMessage)
   })
 
   onDestroy(() => {
     webSocketService.disconnect()
     webSocketService.off(WebSocketMessageType.CALL_OFFER, handleIncomingCallOffer)
     webSocketService.off(WebSocketMessageType.CALL_END, handleRemoteCallEnd)
+    webSocketService.off(WebSocketMessageType.RECEIVE_DIRECT_MESSAGE, handleIncomingMessage)
   })
+
+  async function setup(): Promise<void> {
+    await getCurrentUser()
+    await loadUnreadMessages()
+  }
+
+  async function loadUnreadMessages(): Promise<void> {
+    const response = await authenticatedGet(
+      `chat_messages/get_unread_messages_for_user?userId=${userState.currentUser.id}`
+    )
+
+    if (!response.ok) {
+      throw new Error('Failed to fetch public key')
+    }
+
+    notificationService.addIncomingDirectMessages(await response.json())
+  }
+
+  function isDirectMessage(msg: DirectMessage | ChannelMessage): msg is DirectMessage {
+    return 'toUserId' in msg && msg.toUserId !== undefined
+  }
+
+  function isChannelMessage(msg: DirectMessage | ChannelMessage): msg is ChannelMessage {
+    return 'channelId' in msg && msg.channelId !== undefined
+  }
+
+  function handleIncomingMessage(data: WebSocketMessage<string>): void {
+    const incomingMsg: DirectMessage | ChannelMessage = JSON.parse(data.payload)
+
+    if (isDirectMessage(incomingMsg)) {
+      notificationService.handleIncomingDirectMessage(incomingMsg)
+    } else if (isChannelMessage(incomingMsg)) {
+      notificationService.handleIncomingChannelMessage(incomingMsg)
+    }
+  }
 
   function handleIncomingCallOffer(message: WebSocketMessage<CallOfferPayload>): void {
     const payload = message.payload
@@ -58,7 +97,6 @@
       console.error('Error getting current user:', error)
     }
   }
-
 </script>
 
 <div class="app">
