@@ -63,18 +63,14 @@
     )
   }
 
-  async function handleIncomingMessage(data: WebSocketMessage<string>): Promise<void> {
-    try {
-      const incomingMsg: DirectMessage = JSON.parse(data.payload)
+  async function handleIncomingMessage(data: WebSocketMessage<DirectMessage>): Promise<void> {
+    const incomingMsg: DirectMessage = data.payload
 
-      if (selectedUser && incomingMsg.fromUserId === selectedUser.id) {
-        incomingMsg.message = await encryptionService.decryptMessage(incomingMsg.message, true)
-        messages = [...messages, incomingMsg]
+    if (selectedUser && incomingMsg.fromUserId === selectedUser.id) {
+      incomingMsg.message = await encryptionService.decryptMessage(incomingMsg.message, true)
+      messages = [...messages, incomingMsg]
 
-        await setMessagesToRead()
-      }
-    } catch (error) {
-      console.error('Error handling incoming message:', error)
+      await setMessagesToRead()
     }
   }
 

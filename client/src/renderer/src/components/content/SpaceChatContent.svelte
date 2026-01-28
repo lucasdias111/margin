@@ -9,7 +9,7 @@
   import { onDestroy, onMount } from 'svelte'
   import { webSocketService } from '$src/services/WebSocketService'
   import { WebSocketMessageType } from '$src/interfaces/WebSocketMessageType'
-  import type { WebSocketMessage } from '$src/interfaces/WebSocketMessage'
+  import type { WebSocketMessage } from '$src/interfaces/WebSocketMessages'
   import { authenticatedGet } from '$src/services/api'
 
   let selectedChannel = $state<Channel | null>(null)
@@ -31,11 +31,11 @@
     webSocketService.off(WebSocketMessageType.RECEIVE_CHANNEL_MESSAGE, handleIncomingChannelMessage)
   })
 
-  async function handleIncomingChannelMessage(data: WebSocketMessage): Promise<void> {
-    const incomingMsg: ChannelMessage = JSON.parse(data.payload)
-
-    if (selectedChannel && incomingMsg.channelId === selectedChannel.id) {
-      messages = [...messages, incomingMsg]
+  async function handleIncomingChannelMessage(
+    incomingMsg: WebSocketMessage<ChannelMessage>
+  ): Promise<void> {
+    if (selectedChannel && incomingMsg.payload.channelId === selectedChannel.id) {
+      messages = [...messages, incomingMsg.payload]
     }
   }
 
