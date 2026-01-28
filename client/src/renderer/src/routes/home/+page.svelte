@@ -12,7 +12,7 @@
   import CallWindow from '$src/components/call/CallWindow.svelte'
   import { callService } from '$src/services/CallService'
   import type { CallOfferPayload, WebSocketMessage } from '$src/interfaces/WebSocketMessages'
-  import type { ChannelMessage, DirectMessage } from '$src/interfaces/Messages'
+  import type { BaseMessage, ChannelMessage, DirectMessage } from '$src/interfaces/Messages'
   import { notificationService } from '$src/services/NotificationService'
 
   onMount(() => {
@@ -55,8 +55,9 @@
     return 'channelId' in msg && msg.channelId !== undefined
   }
 
-  function handleIncomingMessage(data: WebSocketMessage<string>): void {
-    const incomingMsg: DirectMessage | ChannelMessage = JSON.parse(data.payload)
+  function handleIncomingMessage(data: WebSocketMessage<DirectMessage | ChannelMessage>): void {
+    const incomingMsg = data.payload
+    console.log(JSON.stringify(incomingMsg))
 
     if (isDirectMessage(incomingMsg)) {
       notificationService.handleIncomingDirectMessage(incomingMsg)

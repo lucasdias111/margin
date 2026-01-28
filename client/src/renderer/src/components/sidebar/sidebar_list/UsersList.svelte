@@ -6,7 +6,6 @@
   import { authenticatedGet } from '$src/services/api'
   import type { WebSocketMessage } from '$src/interfaces/WebSocketMessages'
   import { userState } from '$src/states/UserState.svelte'
-  import { notificationState } from '$src/states/NotificationState.svelte'
   import UnreadNotificationBadge from '$src/components/chat/UnreadNotificationBadge.svelte'
 
   let recentUsers = $state<User[]>([])
