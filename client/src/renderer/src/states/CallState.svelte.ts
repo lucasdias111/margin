@@ -14,6 +14,7 @@ interface CallStateData {
   remoteStream: MediaStream | null
   candidateQueue: RTCIceCandidateInit[]
   durationInterval: number | null
+  isVideoEnabled: boolean
 }
 
 function createCallState() {
@@ -26,7 +27,8 @@ function createCallState() {
     localStream: null,
     remoteStream: null,
     candidateQueue: [],
-    durationInterval: null
+    durationInterval: null,
+    isVideoEnabled: false
   })
 
   return {
@@ -57,6 +59,9 @@ function createCallState() {
     get durationInterval(): number | null {
       return state.durationInterval
     },
+    get isVideoEnabled(): boolean {
+      return state.isVideoEnabled
+    },
 
     startCall(
       callId: number,
@@ -68,6 +73,7 @@ function createCallState() {
       state.activeCall = { userId: user, isIncoming, offer }
       state.status = 'connecting'
       state.duration = 0
+      state.isVideoEnabled = false
     },
 
     setStatus(status: CallStatus): void {
@@ -104,6 +110,10 @@ function createCallState() {
       state.callId = callId
     },
 
+    setVideoEnabled(enabled: boolean): void {
+      state.isVideoEnabled = enabled
+    },
+
     endCall(): void {
       state.activeCall = null
       state.status = 'ended'
@@ -113,6 +123,7 @@ function createCallState() {
       state.remoteStream = null
       state.candidateQueue = []
       state.durationInterval = null
+      state.isVideoEnabled = false
     },
 
     reset(): void {
@@ -125,6 +136,7 @@ function createCallState() {
       state.remoteStream = null
       state.candidateQueue = []
       state.durationInterval = null
+      state.isVideoEnabled = false
     }
   }
 }
