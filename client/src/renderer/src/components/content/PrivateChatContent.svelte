@@ -16,6 +16,7 @@
   import videoCallIcon from '$src/resources/videoCall.png'
   import { callService } from '$src/services/CallService'
   import { notificationService } from '$src/services/NotificationService'
+  import { callState } from '$src/states/CallState.svelte'
 
   let selectedUser = $state<User | null>(null)
   let messages = $state<DirectMessage[]>([])
@@ -95,13 +96,15 @@
 
   function startCall(): void {
     if (selectedUser) {
+      callState.setVideoEnabled(false)
       callService.startCall(null, chatState.selectedUser.id, false, null)
     }
   }
 
   function handleVideoCall(): void {
     if (selectedUser) {
-      console.log('Video call not yet implemented')
+      callState.setVideoEnabled(true)
+      callService.startCall(null, chatState.selectedUser.id, false, null)
     }
   }
 
