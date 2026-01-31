@@ -1,10 +1,12 @@
 package org.margin.server.social.models.space;
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import org.margin.server.social.models.space.enums.SpaceVisibility;
+import org.margin.server.social.models.margin.Margin;
+import org.margin.server.social.models.Visibility;
 
 @Data
 @NoArgsConstructor
@@ -17,12 +19,20 @@ public class Space {
     @Column(name = "space_id")
     private Long id;
 
+    @NotNull
     @Column(nullable = false, name = "name")
     private String name;
 
+    @NotNull
     @Column(nullable = false, name = "description")
     private String description;
 
+    @NotNull
     @Column(nullable = false, name = "visibility")
-    private SpaceVisibility visibility;
+    private Visibility visibility;
+
+    @NotNull
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(nullable = false, name = "margin_id")
+    private Margin margin;
 }
