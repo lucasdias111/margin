@@ -28,18 +28,14 @@ class WebSocketMessageService {
   }
 
   private async handleIncomingMessage(data: WebSocketMessage<string>): Promise<void> {
-    try {
-      console.log('Incoming message data:', data)
-      const incomingMsg: DirectMessage = JSON.parse(data.payload)
+    console.log('Incoming message data:', data)
+    const incomingMsg: DirectMessage = JSON.parse(data.payload)
 
-      incomingMsg.message = await encryptionService.decryptMessage(incomingMsg.message, true)
+    incomingMsg.message = await encryptionService.decryptMessage(incomingMsg.message, true)
 
-      this.messageCallbacks.forEach((callback) => {
-        callback(incomingMsg)
-      })
-    } catch (error) {
-      console.error('Error handling incoming message:', error, data)
-    }
+    this.messageCallbacks.forEach((callback) => {
+      callback(incomingMsg)
+    })
   }
 
   subscribe(callback: MessageCallback): () => void {

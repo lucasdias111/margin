@@ -9,13 +9,9 @@
   let loginResponse = $state('')
 
   async function handleRegistration(event: SubmitEvent): Promise<void> {
-    try {
-      event.preventDefault()
-      await authenticationService.register(username, password, email)
-      push('/')
-    } catch (error: any) {
-      console.log('Error logging in: ' + error)
-    }
+    event.preventDefault()
+    await authenticationService.register(username, password, email)
+    push('/')
   }
 
   function goBack(): void {
@@ -36,7 +32,7 @@
     <input id="email" type="text" name="email" bind:value={email} />
     <button type="submit">Register</button>
   </form>
-  <button id="backbut" onclick={goBack}> ← </button>
+  <button id="backbut" onclick={goBack}> ←</button>
 </div>
 
 <style>

@@ -3,19 +3,19 @@
   import { onDestroy, onMount } from 'svelte'
   import { webSocketService } from '$src/services/WebSocketService'
   import { chatState } from '$src/states/ChatState.svelte'
-  import { authenticatedGet } from '$src/services/api'
-  import type { WebSocketMessage } from '$src/interfaces/WebSocketMessages'
   import { userState } from '$src/states/UserState.svelte'
-  import UnreadNotificationBadge from '$src/components/chat/UnreadNotificationBadge.svelte'
+  import UserEntry from '$src/components/sidebar/sidebar_list/UserEntry.svelte'
+  import { userService } from '$src/services/UserService'
+  import type { WebSocketMessage } from '$src/interfaces/WebSocketMessages'
 
   let recentUsers = $state<User[]>([])
   let onlineUsers = $state<User[]>([])
 
   onMount(() => {
-    getRecentChatUsers(userState.currentUser.id).then((fetchedUsers) => {
+    userService.getRecentChatUsers(userState.currentUser.id).then((fetchedUsers) => {
       recentUsers = fetchedUsers
     })
-    getAllUsersForServer().then((fetchedUsers) => {
+    userService.getAllUsersForServer().then((fetchedUsers) => {
       onlineUsers = fetchedUsers
     })
     webSocketService.on('USER_LOGIN', handleUserLogin)
@@ -38,48 +38,13 @@
   function handleUserLogout(data: WebSocketMessage<User>): void {
     onlineUsers = onlineUsers.filter((user) => user.id !== data.payload.id)
   }
-
-  async function getRecentChatUsers(userId: number): Promise<User[]> {
-    const response = await authenticatedGet(`users/${userId}/recent_chat_users`)
-
-    if (!response.ok) {
-      return []
-    }
-
-    return await response.json()
-  }
-
-  async function getAllUsersForServer(): Promise<User[]> {
-    const response = await authenticatedGet(`users/get_all_users`)
-
-    if (!response.ok) {
-      return []
-    }
-
-    return await response.json()
-  }
 </script>
 
 <div>
   <h3>Recent:</h3>
   <ul>
     {#each recentUsers as user (user.id)}
-      <li>
-        <button onclick={() => chatState.selectUser(user)}>
-          {user.username}
-          <UnreadNotificationBadge userId={user.id} />
-        </button>
-      </li>
-    {/each}
-  </ul>
-  <h3>Online users:</h3>
-  <ul>
-    {#each onlineUsers as user (user.id)}
-      <li>
-        <button onclick={() => chatState.selectUser(user)}>
-          {user.username}
-        </button>
-      </li>
+      <UserEntry {user} />
     {/each}
   </ul>
 </div>

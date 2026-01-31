@@ -28,8 +28,6 @@ class CallService {
       callDuration: callState.duration
     }
 
-    console.log('call endCall', callEndPayload)
-
     if (!remoteConnectionEnded) {
       webSocketService.send({
         type: WebSocketMessageType.CALL_END,
@@ -59,11 +57,7 @@ class CallService {
 
     try {
       localStream = await navigator.mediaDevices.getUserMedia(constraints)
-      console.log('Got media stream:', localStream.getTracks())
     } catch (err) {
-      console.warn('Failed to get media devices:', err)
-
-      // Show warning to user
       if (err instanceof Error && err.name === 'NotFoundError') {
         alert(
           "Audio/video device not found. You can still receive the call, but the other person won't hear/see you."
@@ -72,13 +66,11 @@ class CallService {
         alert('Could not access media devices. You can still receive the call.')
       }
 
-      // Create a truly silent audio track so WebRTC can establish connection
       const audioContext = new AudioContext()
       const oscillator = audioContext.createOscillator()
       const gainNode = audioContext.createGain()
       const dst = audioContext.createMediaStreamDestination()
 
-      // Set gain to 0 to make it silent
       gainNode.gain.value = 0
 
       oscillator.connect(gainNode)
@@ -86,7 +78,6 @@ class CallService {
       oscillator.start()
 
       localStream = dst.stream
-      console.log('Created silent audio stream as fallback')
     }
 
     const peerConnection = new RTCPeerConnection(config)
@@ -107,27 +98,17 @@ class CallService {
     }
 
     peerConnection.onicecandidate = (event: RTCPeerConnectionIceEvent) => {
-      if (event.candidate) {
-        console.log('ICE candidate:', event.candidate.candidate)
-        if (callState.activeCall?.userId) {
-          webSocketService.send<RTCIceCandidate>({
-            type: WebSocketMessageType.CALL_CANDIDATE,
-            recipientId: callState.activeCall.userId,
-            payload: event.candidate
-          })
-        }
-      } else {
-        console.log('All ICE candidates sent')
+      if (callState.activeCall?.userId) {
+        webSocketService.send<RTCIceCandidate>({
+          type: WebSocketMessageType.CALL_CANDIDATE,
+          recipientId: callState.activeCall.userId,
+          payload: event.candidate
+        })
       }
-    }
-
-    peerConnection.oniceconnectionstatechange = () => {
-      console.log('ICE connection state:', peerConnection.iceConnectionState)
     }
 
     peerConnection.onconnectionstatechange = () => {
       const connectionState = peerConnection.connectionState
-      console.log('Connection state:', connectionState)
 
       if (connectionState === 'connected') {
         this.startCallTimer()
@@ -205,9 +186,7 @@ class CallService {
   }
 
   async answerCall(userId: number, offer: RTCSessionDescriptionInit | string): Promise<void> {
-    console.log('Answering call from user:', userId)
     const parsedOffer = typeof offer === 'string' ? JSON.parse(offer) : offer
-    console.log('Parsed offer:', parsedOffer)
 
     const connectionObjects = await this.setupConnectionObjects()
     callState.setConnection(
@@ -220,18 +199,10 @@ class CallService {
       this.onLocalStreamCallback(connectionObjects.localStream)
     }
 
-    console.log('Setting remote description...')
     await callState.peerConnection!.setRemoteDescription(new RTCSessionDescription(parsedOffer))
-    console.log('Remote description set')
-
     await this.processQueuedCandidates()
-
-    console.log('Creating answer...')
     const answer = await callState.peerConnection!.createAnswer()
-    console.log('Answer created:', answer)
-
     await callState.peerConnection!.setLocalDescription(answer)
-    console.log('Local description set')
 
     const response: CallResponsePayload = {
       callId: callState.callId,
@@ -239,7 +210,6 @@ class CallService {
       response: answer
     }
 
-    console.log('Sending answer to recipient:', userId)
     webSocketService.send<CallResponsePayload>({
       type: WebSocketMessageType.CALL_RESPONSE,
       recipientId: userId,

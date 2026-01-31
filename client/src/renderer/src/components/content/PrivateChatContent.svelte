@@ -17,6 +17,7 @@
   import { callService } from '$src/services/CallService'
   import { notificationService } from '$src/services/NotificationService'
   import { callState } from '$src/states/CallState.svelte'
+  import ChatHeader from '$src/components/content/ChatHeader.svelte'
 
   let selectedUser = $state<User | null>(null)
   let messages = $state<DirectMessage[]>([])
@@ -138,21 +139,13 @@
 </script>
 
 <div class="chat">
-  <div class="chat-header">
-    {#if selectedUser}
-      <h1 class="username">{selectedUser.username}</h1>
-      <div class="call-buttons">
-        <button class="call-btn" onclick={startCall} title="Voice call">
-          <img src={voiceCallIcon} alt="Voice call" />
-        </button>
-        <button class="call-btn" onclick={handleVideoCall} title="Video call">
-          <img src={videoCallIcon} alt="Video call" />
-        </button>
-      </div>
-    {:else}
-      <h1>No user selected</h1>
-    {/if}
-  </div>
+  {#if selectedUser}
+    <ChatHeader
+      name={selectedUser.username}
+      handleStartCall={startCall}
+      handleStartVideoCall={handleVideoCall}
+    />
+  {/if}
 
   <MessagesContainer {messages} isDirectMessage={true} bind:messagesContainer />
   <ChatInput selectedContent={!!selectedUser} bind:messageInput onSubmit={handleSubmitMessage} />
@@ -163,55 +156,5 @@
     flex: 1;
     display: flex;
     flex-direction: column;
-  }
-
-  .chat-header {
-    height: 60px;
-    background-color: #1a1a1a;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 0 20px;
-    border-bottom: 1px solid #333;
-  }
-
-  h1 {
-    margin: 0;
-    font-size: 20px;
-  }
-
-  .username {
-    color: #b47024;
-  }
-
-  .call-buttons {
-    display: flex;
-    gap: 12px;
-  }
-
-  .call-btn {
-    background: #b47024;
-    border: none;
-    cursor: pointer;
-    padding: 8px;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: background-color 0.2s;
-  }
-
-  .call-btn:hover {
-    background-color: #2a2a2a;
-  }
-
-  .call-btn:active {
-    background-color: #3a3a3a;
-  }
-
-  .call-btn img {
-    width: 24px;
-    height: 24px;
-    display: block;
   }
 </style>

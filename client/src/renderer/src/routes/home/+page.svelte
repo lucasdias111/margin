@@ -88,15 +88,11 @@
   }
 
   async function getCurrentUser(): Promise<void> {
-    try {
-      const response = await authenticatedGet(`users/me`)
+    const response = await authenticatedGet(`users/me`)
 
-      const user: User = await response.json()
-      userState.setUser(user)
-      console.log('Current user loaded:', user)
-    } catch (error) {
-      console.error('Error getting current user:', error)
-    }
+    const user: User = await response.json()
+    userState.setUser(user)
+    console.log('Current user loaded:', user)
   }
 </script>
 

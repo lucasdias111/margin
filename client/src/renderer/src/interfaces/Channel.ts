@@ -3,4 +3,5 @@ export interface Channel {
   name: string
   description: string
   spaceId: number
+  type: string
 }
