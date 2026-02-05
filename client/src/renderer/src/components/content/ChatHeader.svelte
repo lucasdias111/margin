@@ -17,10 +17,10 @@
   <div class="chat-header">
     <h1 class="username">{name}</h1>
     <div class="call-buttons">
-      <button class="call-btn" onclick={handleStartVideoCall} title="Voice call">
+      <button class="call-btn" onclick={handleStartCall} title="Voice call">
         <img src={voiceCallIcon} alt="Voice call" />
       </button>
-      <button class="call-btn" onclick={handleStartCall} title="Video call">
+      <button class="call-btn" onclick={handleStartVideoCall} title="Video call">
         <img src={videoCallIcon} alt="Video call" />
       </button>
     </div>

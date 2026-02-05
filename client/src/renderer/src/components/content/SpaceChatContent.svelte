@@ -12,6 +12,7 @@
   import type { WebSocketMessage } from '$src/interfaces/WebSocketMessages'
   import { authenticatedGet } from '$src/services/api'
   import ChatHeader from '$src/components/content/ChatHeader.svelte'
+  import { joinVoiceChannel } from '$src/services/ChannelCallService'
 
   let selectedChannel = $state<Channel | null>(null)
   let messages = $state<ChannelMessage[]>([])
@@ -76,13 +77,12 @@
   }
 
   function handleVoiceCall(): void {
-    console.log('Not yet implemented')
+    joinVoiceChannel(selectedChannel.id)
   }
 
   function handleVideoCall(): void {
     console.log('Not yet implemented')
   }
-
 </script>
 
 <div class="chat">
@@ -103,9 +103,5 @@
     flex: 1;
     display: flex;
     flex-direction: column;
-  }
-
-  h1 {
-    text-align: center;
   }
 </style>
