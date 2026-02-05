@@ -11,6 +11,7 @@
   import { WebSocketMessageType } from '$src/interfaces/WebSocketMessageType'
   import type { WebSocketMessage } from '$src/interfaces/WebSocketMessages'
   import { authenticatedGet } from '$src/services/api'
+  import ChatHeader from '$src/components/content/ChatHeader.svelte'
 
   let selectedChannel = $state<Channel | null>(null)
   let messages = $state<ChannelMessage[]>([])
@@ -73,13 +74,24 @@
 
     messagesContainer.scrollTop = messagesContainer.scrollHeight
   }
+
+  function handleVoiceCall(): void {
+    console.log('Not yet implemented')
+  }
+
+  function handleVideoCall(): void {
+    console.log('Not yet implemented')
+  }
+
 </script>
 
 <div class="chat">
   {#if selectedChannel}
-    <h1>{selectedChannel.name}</h1>
-  {:else}
-    <h1>No Channel selected</h1>
+    <ChatHeader
+      name={selectedChannel.name}
+      handleStartCall={handleVoiceCall}
+      handleStartVideoCall={handleVideoCall}
+    />
   {/if}
 
   <MessagesContainer {messages} bind:messagesContainer />

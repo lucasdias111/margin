@@ -204,39 +204,34 @@ class EncryptionService {
       throw new Error('No private key available')
     }
 
-    try {
-      const payload = JSON.parse(atob(encryptedPayload))
-      const iv = Uint8Array.from(atob(payload.iv), (c) => c.charCodeAt(0))
-      const encryptedMessage = Uint8Array.from(atob(payload.message), (c) => c.charCodeAt(0))
+    const payload = JSON.parse(atob(encryptedPayload))
+    const iv = Uint8Array.from(atob(payload.iv), (c) => c.charCodeAt(0))
+    const encryptedMessage = Uint8Array.from(atob(payload.message), (c) => c.charCodeAt(0))
 
-      const encryptedKeyBytes = Uint8Array.from(
-        atob(isRecipient ? payload.recipientKey : payload.senderKey),
-        (c) => c.charCodeAt(0)
-      )
+    const encryptedKeyBytes = Uint8Array.from(
+      atob(isRecipient ? payload.recipientKey : payload.senderKey),
+      (c) => c.charCodeAt(0)
+    )
 
-      const privateKey = await this.importPrivateKey(privateKeyPem)
-      const aesKeyBytes = await crypto.subtle.decrypt(
-        { name: 'RSA-OAEP' },
-        privateKey,
-        encryptedKeyBytes
-      )
+    const privateKey = await this.importPrivateKey(privateKeyPem)
+    const aesKeyBytes = await crypto.subtle.decrypt(
+      { name: 'RSA-OAEP' },
+      privateKey,
+      encryptedKeyBytes
+    )
 
-      const aesKey = await crypto.subtle.importKey('raw', aesKeyBytes, { name: 'AES-GCM' }, false, [
-        'decrypt'
-      ])
+    const aesKey = await crypto.subtle.importKey('raw', aesKeyBytes, { name: 'AES-GCM' }, false, [
+      'decrypt'
+    ])
 
-      const decryptedData = await crypto.subtle.decrypt(
-        { name: 'AES-GCM', iv },
-        aesKey,
-        encryptedMessage
-      )
+    const decryptedData = await crypto.subtle.decrypt(
+      { name: 'AES-GCM', iv },
+      aesKey,
+      encryptedMessage
+    )
 
-      const decoder = new TextDecoder()
-      return decoder.decode(decryptedData)
-    } catch (error) {
-      console.error('Hybrid decryption error:', error)
-      throw error
-    }
+    const decoder = new TextDecoder()
+    return decoder.decode(decryptedData)
   }
 
   getStoredPrivateKey(): string | null {

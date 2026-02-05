@@ -6,5 +6,16 @@ export enum WebSocketMessageType {
   CALL_OFFER = 'CALL_OFFER',
   CALL_RESPONSE = 'CALL_RESPONSE',
   CALL_CANDIDATE = 'CALL_CANDIDATE',
-  CALL_END = 'CALL_END'
+  CALL_END = 'CALL_END',
+  GET_ROUTER_RTP_CAPABILITIES = 'getRouterRtpCapabilities',
+  ROUTER_RTP_CAPABILITIES = 'routerRtpCapabilities',
+  CREATE_WEBRTC_TRANSPORT = 'createWebRtcTransport',
+  TRANSPORT_CREATED = 'transportCreated',
+  CONNECT_TRANSPORT = 'connectTransport',
+  TRANSPORT_CONNECTED = 'transportConnected',
+  PRODUCE = 'produce',
+  PRODUCED = 'produced',
+  NEW_PRODUCER = 'newProducer',
+  CONSUME = 'consume',
+  CONSUMED = 'consumed'
 }
