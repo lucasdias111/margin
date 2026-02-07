@@ -1,24 +1,33 @@
 <script lang="ts">
   import voiceCallIcon from '$src/resources/voiceCall.png'
   import videoCallIcon from '$src/resources/videoCall.png'
+  import hangUpCallIcon from '$src/resources/hangUpCall.png'
 
   interface Props {
     name: string
-
     handleStartCall(): void
-
     handleStartVideoCall(): void
+    isInCall?: boolean
   }
 
-  let { name, handleStartVideoCall, handleStartCall }: Props = $props()
+  let { name, handleStartVideoCall, handleStartCall, isInCall = false }: Props = $props()
 </script>
 
 <div>
   <div class="chat-header">
     <h1 class="username">{name}</h1>
     <div class="call-buttons">
-      <button class="call-btn" onclick={handleStartCall} title="Voice call">
-        <img src={voiceCallIcon} alt="Voice call" />
+      <button
+        class="call-btn"
+        class:active-call={isInCall}
+        onclick={handleStartCall}
+        title={isInCall ? "Leave voice call" : "Voice call"}
+      >
+        {#if isInCall}
+          <img src={hangUpCallIcon} alt="Hang up call" />
+        {:else}
+          <img src={voiceCallIcon} alt="Voice call" />
+        {/if}
       </button>
       <button class="call-btn" onclick={handleStartVideoCall} title="Video call">
         <img src={videoCallIcon} alt="Video call" />
@@ -28,7 +37,6 @@
 </div>
 
 <style>
-
   .chat-header {
     height: 60px;
     background-color: #1a1a1a;
@@ -71,6 +79,14 @@
 
   .call-btn:active {
     background-color: #3a3a3a;
+  }
+
+  .call-btn.active-call {
+    background-color: #dc3545;
+  }
+
+  .call-btn.active-call:hover {
+    background-color: #c82333;
   }
 
   .call-btn img {

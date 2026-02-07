@@ -12,8 +12,6 @@
   import { encryptionService } from '$src/services/EncryptionService'
   import { WebSocketMessageType } from '$src/interfaces/WebSocketMessageType'
   import type { WebSocketMessage } from '$src/interfaces/WebSocketMessages'
-  import voiceCallIcon from '$src/resources/voiceCall.png'
-  import videoCallIcon from '$src/resources/videoCall.png'
   import { callService } from '$src/services/CallService'
   import { notificationService } from '$src/services/NotificationService'
   import { callState } from '$src/states/CallState.svelte'

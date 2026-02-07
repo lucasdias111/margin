@@ -91,7 +91,7 @@ class AuthenticationService {
 
     userState.reset()
     chatState.reset()
-    callState.reset()
+    callState.endCall()
 
     this.clearToken()
   }

@@ -43,7 +43,7 @@ describe('CallWindow', () => {
   })
 
   it('renders call window when there is an active call', () => {
-    callState.startCall(1, 123, false)
+    callState.startP2PCall(1, 123, false)
     callState.setStatus('connecting')
 
     render(CallWindow)
@@ -53,7 +53,7 @@ describe('CallWindow', () => {
   })
 
   it('initiates outgoing call on mount', () => {
-    callState.startCall(1, 123, false)
+    callState.startP2PCall(1, 123, false)
 
     render(CallWindow)
 
@@ -62,7 +62,7 @@ describe('CallWindow', () => {
 
   it('answers incoming call on mount', () => {
     const mockOffer = { type: 'offer' as RTCSdpType, sdp: 'mock-sdp' }
-    callState.startCall(1, 123, true, mockOffer)
+    callState.startP2PCall(1, 123, true, mockOffer)
 
     render(CallWindow)
 
@@ -70,7 +70,7 @@ describe('CallWindow', () => {
   })
 
   it('registers websocket event listeners on mount', () => {
-    callState.startCall(1, 123, false)
+    callState.startP2PCall(1, 123, false)
 
     render(CallWindow)
 
@@ -85,7 +85,7 @@ describe('CallWindow', () => {
   })
 
   it('displays connecting status', () => {
-    callState.startCall(1, 123, false)
+    callState.startP2PCall(1, 123, false)
     callState.setStatus('connecting')
 
     render(CallWindow)
@@ -96,7 +96,7 @@ describe('CallWindow', () => {
   })
 
   it('displays connected status with duration', () => {
-    callState.startCall(1, 123, false)
+    callState.startP2PCall(1, 123, false)
     callState.setStatus('connected')
 
     // Simulate 125 seconds (2 minutes 5 seconds)
@@ -111,7 +111,7 @@ describe('CallWindow', () => {
   })
 
   it('formats duration correctly - zero seconds', () => {
-    callState.startCall(1, 123, false)
+    callState.startP2PCall(1, 123, false)
     callState.setStatus('connected')
 
     render(CallWindow)
@@ -120,7 +120,7 @@ describe('CallWindow', () => {
   })
 
   it('formats duration correctly - 59 seconds', () => {
-    callState.startCall(1, 123, false)
+    callState.startP2PCall(1, 123, false)
     callState.setStatus('connected')
 
     for (let i = 0; i < 59; i++) {
@@ -133,7 +133,7 @@ describe('CallWindow', () => {
   })
 
   it('formats duration correctly - 1 minute', () => {
-    callState.startCall(1, 123, false)
+    callState.startP2PCall(1, 123, false)
     callState.setStatus('connected')
 
     for (let i = 0; i < 60; i++) {
@@ -146,7 +146,7 @@ describe('CallWindow', () => {
   })
 
   it('formats duration correctly - over 60 minutes', () => {
-    callState.startCall(1, 123, false)
+    callState.startP2PCall(1, 123, false)
     callState.setStatus('connected')
 
     for (let i = 0; i < 3661; i++) {
@@ -159,7 +159,7 @@ describe('CallWindow', () => {
   })
 
   it('displays ended status', () => {
-    callState.startCall(1, 123, false)
+    callState.startP2PCall(1, 123, false)
     callState.setStatus('ended')
 
     render(CallWindow)
@@ -170,7 +170,7 @@ describe('CallWindow', () => {
   })
 
   it('calls endCall when end call button is clicked', async () => {
-    callState.startCall(1, 123, false)
+    callState.startP2PCall(1, 123, false)
 
     render(CallWindow)
 
@@ -181,7 +181,7 @@ describe('CallWindow', () => {
   })
 
   it('sets up remote audio stream handler', () => {
-    callState.startCall(1, 123, false)
+    callState.startP2PCall(1, 123, false)
 
     render(CallWindow)
 
@@ -189,7 +189,7 @@ describe('CallWindow', () => {
   })
 
   it('cleans up event listeners on unmount', () => {
-    callState.startCall(1, 123, false)
+    callState.startP2PCall(1, 123, false)
 
     const { unmount } = render(CallWindow)
     unmount()
@@ -206,7 +206,7 @@ describe('CallWindow', () => {
   })
 
   it('displays user avatar with userId', () => {
-    callState.startCall(1, 456, false)
+    callState.startP2PCall(1, 456, false)
 
     render(CallWindow)
 
@@ -216,7 +216,7 @@ describe('CallWindow', () => {
   })
 
   it('renders audio element with autoplay', () => {
-    callState.startCall(1, 123, false)
+    callState.startP2PCall(1, 123, false)
 
     render(CallWindow)
 
@@ -226,7 +226,7 @@ describe('CallWindow', () => {
   })
 
   it('handles call response message', async () => {
-    callState.startCall(1, 123, false)
+    callState.startP2PCall(1, 123, false)
 
     render(CallWindow)
 
@@ -245,7 +245,7 @@ describe('CallWindow', () => {
   })
 
   it('handles ICE candidate message', async () => {
-    callState.startCall(1, 123, false)
+    callState.startP2PCall(1, 123, false)
 
     render(CallWindow)
 

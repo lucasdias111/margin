@@ -2,263 +2,191 @@ import { authenticatedGet } from '$src/services/api'
 import { userState } from '$src/states/UserState.svelte'
 import { Device } from 'mediasoup-client'
 import type { Transport, TransportOptions } from 'mediasoup-client/types'
+import { callState } from '$src/states/CallState.svelte'
 
-async function connectToWebSocket(wsUrl: string | URL): Promise<WebSocket> {
-  const sfuWs = new WebSocket(wsUrl)
+class ChannelCallService {
+  private async connectToWebSocket(wsUrl: string): Promise<WebSocket> {
+    const ws = new WebSocket(wsUrl)
+    await new Promise((resolve, reject) => {
+      ws.onopen = resolve
+      ws.onerror = reject
+    })
+    return ws
+  }
 
-  await new Promise((resolve, reject) => {
-    sfuWs.onopen = resolve
-    sfuWs.onerror = reject
-  })
-  return sfuWs
-}
+  private sendMessage(ws: WebSocket, type: string, data: Record<string, any> = {}): void {
+    ws.send(JSON.stringify({ type, ...data }))
+  }
 
-async function getRtpCapabilities(sfuWs: WebSocket, channelId: number): Promise<never> {
-  return await new Promise<never>((resolve, reject) => {
-    const timeout = setTimeout(() => reject(new Error('RTP capabilities timeout')), 5000)
+  private waitForMessage(
+    ws: WebSocket,
+    messageType: string,
+    filter?: (msg: any) => boolean
+  ): Promise<any> {
+    return new Promise((resolve, reject) => {
+      const timeout = setTimeout(() => reject(new Error(`${messageType} timeout`)), 5000)
 
-    sfuWs.onmessage = (event) => {
-      const msg = JSON.parse(event.data)
-      if (msg.type === 'routerRtpCapabilities') {
-        clearTimeout(timeout)
-        resolve(msg.rtpCapabilities)
-      }
-    }
-
-    sfuWs.send(
-      JSON.stringify({
-        type: 'getRouterRtpCapabilities',
-        roomId: String(channelId),
-        peerId: String(userState.currentUser.id)
-      })
-    )
-  })
-}
-
-async function createSendTransport(sfuWs: WebSocket, channelId: number): Promise<TransportOptions> {
-  return await new Promise<never>((resolve, reject) => {
-    const timeout = setTimeout(() => reject(new Error('Send transport timeout')), 5000)
-
-    sfuWs.onmessage = (event) => {
-      const msg = JSON.parse(event.data)
-      if (msg.type === 'transportCreated' && msg.direction === 'send') {
-        clearTimeout(timeout)
-        resolve(msg.params)
-      }
-    }
-
-    sfuWs.send(
-      JSON.stringify({
-        type: 'createWebRtcTransport',
-        direction: 'send',
-        roomId: String(channelId)
-      })
-    )
-  })
-}
-
-function connectTransport(sendTransport: Transport, sfuWs: WebSocket): void {
-  sendTransport.on('connect', async ({ dtlsParameters }, callback, errback) => {
-    try {
-      // Send our DTLS parameters to complete the handshake
-      await new Promise<void>((resolve, reject) => {
-        const timeout = setTimeout(() => reject(new Error('Connect timeout')), 5000)
-
-        sfuWs.onmessage = (event) => {
-          const msg = JSON.parse(event.data)
-          if (msg.type === 'transportConnected' && msg.transportId === sendTransport.id) {
-            clearTimeout(timeout)
-            resolve()
-          }
-        }
-
-        sfuWs.send(
-          JSON.stringify({
-            type: 'connectTransport',
-            transportId: sendTransport.id,
-            dtlsParameters
-          })
-        )
-      })
-
-      callback() // Tell mediasoup the connection succeeded
-      console.log('✓ Send transport connected')
-    } catch (error) {
-      errback(error as Error)
-    }
-  })
-}
-
-function createSendProducer(sendTransport: Transport, sfuWs: WebSocket): void {
-  sendTransport.on('produce', async ({ kind, rtpParameters }, callback) => {
-    const { producerId } = await new Promise<{ producerId: string }>((resolve, reject) => {
-      const timeout = setTimeout(() => reject(new Error('Produce timeout')), 5000)
-
-      sfuWs.onmessage = (event) => {
+      const handler = (event: MessageEvent) => {
         const msg = JSON.parse(event.data)
-        if (msg.type === 'produced') {
+        if (msg.type === messageType && (!filter || filter(msg))) {
           clearTimeout(timeout)
-          resolve({ producerId: msg.producerId })
+          ws.removeEventListener('message', handler)
+          resolve(msg)
         }
       }
 
-      sfuWs.send(
-        JSON.stringify({
-          type: 'produce',
-          transportId: sendTransport.id,
-          kind,
-          rtpParameters
-        })
-      )
+      ws.addEventListener('message', handler)
+    })
+  }
+
+  private async getRtpCapabilities(ws: WebSocket, channelId: number): Promise<any> {
+    this.sendMessage(ws, 'getRouterRtpCapabilities', {
+      roomId: String(channelId),
+      peerId: String(userState.currentUser.id)
     })
 
-    callback({ id: producerId })
-    console.log(`✓ Producer created: ${producerId} (${kind})`)
-  })
-}
+    const msg = await this.waitForMessage(ws, 'routerRtpCapabilities')
+    return msg.rtpCapabilities
+  }
 
-async function handleReceiveProducer(
-  sfuWs: WebSocket,
-  channelId: number
-): Promise<TransportOptions> {
-  return await new Promise<never>((resolve, reject) => {
-    const timeout = setTimeout(() => reject(new Error('Recv transport timeout')), 5000)
+  private async createTransport(
+    ws: WebSocket,
+    direction: 'send' | 'recv',
+    channelId: number
+  ): Promise<TransportOptions> {
+    this.sendMessage(ws, 'createWebRtcTransport', {
+      direction,
+      roomId: String(channelId)
+    })
 
-    sfuWs.onmessage = (event) => {
-      const msg = JSON.parse(event.data)
-      if (msg.type === 'transportCreated' && msg.direction === 'recv') {
-        clearTimeout(timeout)
-        resolve(msg.params)
-      }
-    }
+    const msg = await this.waitForMessage(ws, 'transportCreated', (m) => m.direction === direction)
+    return msg.params
+  }
 
-    sfuWs.send(
-      JSON.stringify({
-        type: 'createWebRtcTransport',
-        direction: 'recv',
-        roomId: String(channelId)
-      })
-    )
-  })
-}
-
-function handleReceiveTransport(recvTransport: Transport, sfuWs: WebSocket): void {
-  recvTransport.on('connect', async ({ dtlsParameters }, callback) => {
-    await new Promise<void>((resolve, reject) => {
-      const timeout = setTimeout(() => reject(new Error('Connect timeout')), 5000)
-
-      sfuWs.onmessage = (event) => {
-        const msg = JSON.parse(event.data)
-        if (msg.type === 'transportConnected' && msg.transportId === recvTransport.id) {
-          clearTimeout(timeout)
-          resolve()
-        }
-      }
-
-      sfuWs.send(
-        JSON.stringify({
-          type: 'connectTransport',
-          transportId: recvTransport.id,
+  private setupTransportConnection(transport: Transport, ws: WebSocket): void {
+    transport.on('connect', async ({ dtlsParameters }, callback, errback) => {
+      try {
+        this.sendMessage(ws, 'connectTransport', {
+          transportId: transport.id,
           dtlsParameters
         })
-      )
-    })
 
-    callback()
-  })
-}
-
-function receiveExternalProducers(
-  sfuWs: WebSocket,
-  recvTransport: Transport,
-  device: Device
-): void {
-  sfuWs.onmessage = async (event) => {
-    const msg = JSON.parse(event.data)
-
-    if (msg.type === 'newProducer') {
-      if (String(msg.peerId) === String(userState.currentUser.id)) {
-        return
+        await this.waitForMessage(ws, 'transportConnected', (m) => m.transportId === transport.id)
+        callback()
+      } catch (error) {
+        errback(error as Error)
       }
+    })
+  }
 
-      sfuWs.send(
-        JSON.stringify({
-          type: 'consume',
+  private setupProducer(transport: Transport, ws: WebSocket): void {
+    transport.on('produce', async ({ kind, rtpParameters }, callback) => {
+      this.sendMessage(ws, 'produce', {
+        transportId: transport.id,
+        kind,
+        rtpParameters
+      })
+
+      const msg = await this.waitForMessage(ws, 'produced')
+      callback({ id: msg.producerId })
+    })
+  }
+
+  private setupConsumer(recvTransport: Transport, device: Device, ws: WebSocket): void {
+    ws.onmessage = async (event) => {
+      const msg = JSON.parse(event.data)
+
+      if (msg.type === 'newProducer' && String(msg.peerId) !== String(userState.currentUser.id)) {
+        this.sendMessage(ws, 'consume', {
           transportId: recvTransport.id,
           producerId: msg.producerId,
           rtpCapabilities: device.rtpCapabilities
         })
-      )
 
-      const consumeHandler = async (event: MessageEvent): Promise<void> => {
-        const response = JSON.parse(event.data)
-        if (response.type === 'consumed' && response.producerId === msg.producerId) {
-          const consumer = await recvTransport.consume({
-            id: response.id,
-            producerId: response.producerId,
-            kind: response.kind,
-            rtpParameters: response.rtpParameters
-          })
+        const response = await this.waitForMessage(
+          ws,
+          'consumed',
+          (m) => m.producerId === msg.producerId
+        )
 
-          const audioElement = new Audio()
-          audioElement.srcObject = new MediaStream([consumer.track])
-          audioElement.autoplay = true
+        const consumer = await recvTransport.consume({
+          id: response.id,
+          producerId: response.producerId,
+          kind: response.kind,
+          rtpParameters: response.rtpParameters
+        })
 
-          console.log(`✓ Now receiving ${response.kind} from peer ${msg.peerId}`)
-
-          sfuWs.removeEventListener('message', consumeHandler)
-        }
+        const audio = new Audio()
+        audio.srcObject = new MediaStream([consumer.track])
+        audio.autoplay = true
       }
-
-      sfuWs.addEventListener('message', consumeHandler)
     }
   }
-}
 
-export async function joinVoiceChannel(channelId: number): Promise<void> {
-  console.log(`Joining voice channel ${channelId}`)
+  async joinVoiceChannel(channelId: number): Promise<void> {
+    const permissionResponse = await authenticatedGet(`sfu/create_or_join?roomId=${channelId}`)
+    if (!permissionResponse.ok) {
+      throw new Error('Not authorized to join this voice channel')
+    }
 
-  const permissionResponse = await authenticatedGet(`sfu/connection-info?roomId=${channelId}`)
-  if (!permissionResponse.ok) {
-    throw new Error('Not authorized to join this voice channel')
-  }
-  const { wsUrl } = await permissionResponse.json()
+    const wsUrl = await permissionResponse.text()
+    const sfuWs = await this.connectToWebSocket(wsUrl)
 
-  const sfuWs = await connectToWebSocket(wsUrl)
+    callState.startGroupCall(channelId, channelId)
 
-  const rtpCapabilities = await getRtpCapabilities(sfuWs, channelId)
+    const rtpCapabilities = await this.getRtpCapabilities(sfuWs, channelId)
 
-  const device = new Device()
-  await device.load({ routerRtpCapabilities: rtpCapabilities })
+    const device = new Device()
+    await device.load({ routerRtpCapabilities: rtpCapabilities })
 
-  const sendTransportParams = await createSendTransport(sfuWs, channelId)
-  const sendTransport = device.createSendTransport(sendTransportParams)
+    const sendParams = await this.createTransport(sfuWs, 'send', channelId)
+    const sendTransport = device.createSendTransport(sendParams)
+    this.setupTransportConnection(sendTransport, sfuWs)
+    this.setupProducer(sendTransport, sfuWs)
 
-  connectTransport(sendTransport, sfuWs)
+    const receiveParameters = await this.createTransport(sfuWs, 'recv', channelId)
+    const receiveTransport = device.createRecvTransport(receiveParameters)
+    this.setupTransportConnection(receiveTransport, sfuWs)
+    this.setupConsumer(receiveTransport, device, sfuWs)
 
-  createSendProducer(sendTransport, sfuWs)
-  const recvTransportParams = await handleReceiveProducer(sfuWs, channelId)
-  const recvTransport = device.createRecvTransport(recvTransportParams)
-
-  handleReceiveTransport(recvTransport, sfuWs)
-
-  const stream = await navigator.mediaDevices.getUserMedia({
-    audio: {
-      echoCancellation: true,
-      noiseSuppression: true,
-      autoGainControl: true
-    },
-    video: false
-  })
-  const audioTrack = stream.getAudioTracks()[0]
-  await sendTransport.produce({ track: audioTrack })
-
-  receiveExternalProducers(sfuWs, recvTransport, device)
-
-  sfuWs.send(
-    JSON.stringify({
-      type: 'getProducers',
-      roomId: String(channelId)
+    const localStream = await navigator.mediaDevices.getUserMedia({
+      audio: {
+        echoCancellation: true,
+        noiseSuppression: true,
+        autoGainControl: true
+      },
+      video: false
     })
-  )
+
+    const audioTrack = localStream.getAudioTracks()[0]
+    await sendTransport.produce({ track: audioTrack })
+
+    this.sendMessage(sfuWs, 'getProducers', { roomId: String(channelId) })
+
+    callState.setGroupSession({
+      sfuWebsocket: sfuWs,
+      rtpCapabilities,
+      device,
+      sendTransport,
+      receiveTransport,
+      localStream
+    })
+  }
+
+  endChannelCall(): void {
+    const group = callState.groupCallState
+    const session = group?.session
+    if (!session) return
+
+    const { localStream, sendTransport, receiveTransport, sfuWebsocket } = session
+
+    localStream.getTracks().forEach((t) => t.stop())
+    sendTransport.close()
+    receiveTransport.close()
+    sfuWebsocket?.close()
+
+    callState.endCall()
+  }
 }
+
+export const channelCallService = new ChannelCallService()

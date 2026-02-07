@@ -16,6 +16,16 @@ export default defineConfig(
     }
   },
   {
+    files: ['**/*.ts', '**/*.svelte.ts'],
+    languageOptions: {
+      parser: tseslint.parser,
+      parserOptions: {
+        project: true,
+        extraFileExtensions: ['.svelte']
+      }
+    }
+  },
+  {
     files: ['**/*.{tsx,svelte}'],
     rules: {
       'svelte/no-unused-svelte-ignore': 'off'

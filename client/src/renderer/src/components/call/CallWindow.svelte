@@ -15,9 +15,9 @@
   let localVideo: HTMLVideoElement | null = null
 
   onMount(() => {
-    if (!callState.activeCall) return
+    if (!callState.isP2PCall || !callState.p2pCallState) return
 
-    const { userId, isIncoming, offer } = callState.activeCall
+    const { userId, isIncoming, offer } = callState.p2pCallState
 
     callService.onRemoteStream((stream) => {
       if (remoteAudio) {
@@ -83,14 +83,14 @@
   }
 </script>
 
-{#if callState.activeCall}
+{#if callState.isP2PCall && callState.p2pCallState}
   <div class="call-window">
     <div class="call-header">
-      <h2>Call with {callState.activeCall.userId}</h2>
+      <h2>Call with {callState.p2pCallState.userId}</h2>
     </div>
 
     <div class="call-content">
-      {#if callState.isVideoEnabled}
+      {#if callState.p2pCallState.isVideoEnabled}
         <div class="video-container">
           <video bind:this={remoteVideo} autoplay playsinline class="remote-video"></video>
           <video bind:this={localVideo} autoplay playsinline muted class="local-video"></video>
@@ -98,7 +98,7 @@
       {:else}
         <div class="user-avatar">
           <div class="avatar-circle">
-            {callState.activeCall.userId}
+            {callState.p2pCallState.userId}
           </div>
         </div>
       {/if}
@@ -117,7 +117,7 @@
 
     <div class="call-controls">
       <button class="toggle-video-btn" onclick={toggleVideo}>
-        {#if callState.isVideoEnabled}
+        {#if callState.p2pCallState.isVideoEnabled}
           <svg
             xmlns="http://www.w3.org/2000/svg"
             width="24"

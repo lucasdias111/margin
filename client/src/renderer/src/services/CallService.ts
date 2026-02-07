@@ -2,7 +2,6 @@ import { webSocketService } from '$src/services/WebSocketService'
 import { WebSocketMessageType } from '$src/interfaces/WebSocketMessageType'
 import { callState } from '$src/states/CallState.svelte'
 import type {
-  CallEndPayload,
   CallResponsePayload,
   WebSocketMessage
 } from '$src/interfaces/WebSocketMessages'
@@ -17,46 +16,32 @@ class CallService {
     incomingCall: boolean,
     offer?: RTCSessionDescriptionInit
   ): void {
-    callState.startCall(callId, callerId, incomingCall, offer)
+    callState.startP2PCall(callId, callerId, incomingCall, offer)
   }
 
   endCall(remoteConnectionEnded: boolean): void {
     this.cleanupConnection()
 
-    const callEndPayload: CallEndPayload = {
-      callId: callState.callId,
-      callDuration: callState.duration
-    }
-
-    if (!remoteConnectionEnded) {
+    if (!remoteConnectionEnded && callState.isP2PCall) {
       webSocketService.send({
         type: WebSocketMessageType.CALL_END,
-        recipientId: callState.activeCall.userId,
-        payload: callEndPayload
+        recipientId: callState.p2pCallState!.userId,
+        payload: {
+          callId: callState.callId!,
+          callDuration: callState.duration
+        }
       })
     }
 
     callState.endCall()
   }
 
-  private async setupConnectionObjects(): Promise<{
-    peerConnection: RTCPeerConnection
-    localStream: MediaStream
-    remoteStream: MediaStream
-  }> {
-    const config = {
-      iceServers: [{ urls: 'stun:stun.l.google.com:19302' }]
-    }
-
-    const constraints = {
-      audio: true,
-      video: callState.isVideoEnabled
-    }
-
-    let localStream: MediaStream
-
+  private async getUserMedia(includeVideo: boolean): Promise<MediaStream> {
     try {
-      localStream = await navigator.mediaDevices.getUserMedia(constraints)
+      return await navigator.mediaDevices.getUserMedia({
+        audio: true,
+        video: includeVideo
+      })
     } catch (err) {
       if (err instanceof Error && err.name === 'NotFoundError') {
         alert(
@@ -72,24 +57,26 @@ class CallService {
       const dst = audioContext.createMediaStreamDestination()
 
       gainNode.gain.value = 0
-
       oscillator.connect(gainNode)
       gainNode.connect(dst)
       oscillator.start()
 
-      localStream = dst.stream
+      return dst.stream
     }
+  }
 
-    const peerConnection = new RTCPeerConnection(config)
-    const remoteStream = new MediaStream()
+  private setupPeerConnection(localStream: MediaStream, userId: number): RTCPeerConnection {
+    const peerConnection = new RTCPeerConnection({
+      iceServers: [{ urls: 'stun:stun.l.google.com:19302' }]
+    })
 
     localStream.getTracks().forEach((track) => {
-      console.log('Adding track to peer connection:', track.kind)
       peerConnection.addTrack(track, localStream)
     })
 
+    const remoteStream = new MediaStream()
+
     peerConnection.ontrack = (event) => {
-      console.log('Received remote track:', event.track.kind)
       remoteStream.addTrack(event.track)
       if (this.onRemoteStreamCallback) {
         this.onRemoteStreamCallback(remoteStream)
@@ -98,38 +85,34 @@ class CallService {
     }
 
     peerConnection.onicecandidate = (event: RTCPeerConnectionIceEvent) => {
-      if (callState.activeCall?.userId) {
-        webSocketService.send<RTCIceCandidate>({
-          type: WebSocketMessageType.CALL_CANDIDATE,
-          recipientId: callState.activeCall.userId,
-          payload: event.candidate
-        })
-      }
+      webSocketService.send<RTCIceCandidate>({
+        type: WebSocketMessageType.CALL_CANDIDATE,
+        recipientId: userId,
+        payload: event.candidate
+      })
     }
 
     peerConnection.onconnectionstatechange = () => {
-      const connectionState = peerConnection.connectionState
+      const state = peerConnection.connectionState
 
-      if (connectionState === 'connected') {
+      if (state === 'connected') {
         this.startCallTimer()
         callState.setStatus('connected')
-      } else if (
-        connectionState === 'disconnected' ||
-        connectionState === 'failed' ||
-        connectionState === 'closed'
-      ) {
+      } else if (state === 'disconnected' || state === 'failed' || state === 'closed') {
         this.endCall(true)
       }
     }
 
-    return { peerConnection, localStream, remoteStream }
+    return peerConnection
   }
 
   private async processQueuedCandidates(): Promise<void> {
-    const pc = callState.peerConnection
+    if (!callState.isP2PCall) return
+
+    const pc = callState.p2pCallState?.peerConnection
     if (!pc) return
 
-    for (const candidate of callState.candidateQueue) {
+    for (const candidate of callState.p2pCallState!.candidateQueue) {
       await pc.addIceCandidate(new RTCIceCandidate(candidate))
     }
 
@@ -137,8 +120,6 @@ class CallService {
   }
 
   private startCallTimer(): void {
-    if (callState.durationInterval) return
-
     const intervalId = setInterval(() => {
       callState.incrementDuration()
     }, 1000) as unknown as number
@@ -146,38 +127,27 @@ class CallService {
     callState.setDurationInterval(intervalId)
   }
 
-  private stopCallTimer(): void {
-    if (callState.durationInterval) {
-      clearInterval(callState.durationInterval)
-    }
-  }
-
   private cleanupConnection(): void {
-    this.stopCallTimer()
+    if (!callState.isP2PCall || !callState.p2pCallState) return
 
-    if (callState.peerConnection) {
-      callState.peerConnection.close()
-    }
-
-    if (callState.localStream) {
-      callState.localStream.getTracks().forEach((track) => track.stop())
-    }
+    callState.p2pCallState.peerConnection?.close()
+    callState.p2pCallState.localStream?.getTracks().forEach((track) => track.stop())
   }
 
   async initiateCall(userId: number): Promise<void> {
-    const connectionObjects = await this.setupConnectionObjects()
-    callState.setConnection(
-      connectionObjects.peerConnection,
-      connectionObjects.localStream,
-      connectionObjects.remoteStream
-    )
+    const localStream = await this.getUserMedia(callState.p2pCallState?.isVideoEnabled ?? false)
+    const peerConnection = this.setupPeerConnection(localStream, userId)
+    const remoteStream = new MediaStream()
+
+    callState.setConnection(peerConnection, localStream, remoteStream)
 
     if (this.onLocalStreamCallback) {
-      this.onLocalStreamCallback(connectionObjects.localStream)
+      this.onLocalStreamCallback(localStream)
     }
 
-    const offer: RTCSessionDescriptionInit = await callState.peerConnection!.createOffer()
-    await callState.peerConnection!.setLocalDescription(offer)
+    const offer = await peerConnection.createOffer()
+    await peerConnection.setLocalDescription(offer)
+
     webSocketService.send<RTCSessionDescriptionInit>({
       type: WebSocketMessageType.CALL_OFFER,
       recipientId: userId,
@@ -188,68 +158,70 @@ class CallService {
   async answerCall(userId: number, offer: RTCSessionDescriptionInit | string): Promise<void> {
     const parsedOffer = typeof offer === 'string' ? JSON.parse(offer) : offer
 
-    const connectionObjects = await this.setupConnectionObjects()
-    callState.setConnection(
-      connectionObjects.peerConnection,
-      connectionObjects.localStream,
-      connectionObjects.remoteStream
-    )
+    const localStream = await this.getUserMedia(callState.p2pCallState?.isVideoEnabled ?? false)
+    const peerConnection = this.setupPeerConnection(localStream, userId)
+    const remoteStream = new MediaStream()
+
+    callState.setConnection(peerConnection, localStream, remoteStream)
 
     if (this.onLocalStreamCallback) {
-      this.onLocalStreamCallback(connectionObjects.localStream)
+      this.onLocalStreamCallback(localStream)
     }
 
-    await callState.peerConnection!.setRemoteDescription(new RTCSessionDescription(parsedOffer))
+    await peerConnection.setRemoteDescription(new RTCSessionDescription(parsedOffer))
     await this.processQueuedCandidates()
-    const answer = await callState.peerConnection!.createAnswer()
-    await callState.peerConnection!.setLocalDescription(answer)
 
-    const response: CallResponsePayload = {
-      callId: callState.callId,
-      callerId: userId,
-      response: answer
-    }
+    const answer = await peerConnection.createAnswer()
+    await peerConnection.setLocalDescription(answer)
 
     webSocketService.send<CallResponsePayload>({
       type: WebSocketMessageType.CALL_RESPONSE,
       recipientId: userId,
-      payload: response
+      payload: {
+        callId: callState.callId!,
+        callerId: userId,
+        response: answer
+      }
     })
   }
 
   async handleCallResponse(data: WebSocketMessage<CallResponsePayload>): Promise<void> {
-    if (!callState.peerConnection) {
-      return
-    }
+    if (!callState.isP2PCall || !callState.p2pCallState?.peerConnection) return
 
-    callState.setCallId(data.payload.callId)
     const response = data.payload.response
     const parsedAnswer = typeof response === 'string' ? JSON.parse(response) : response
-    await callState.peerConnection.setRemoteDescription(new RTCSessionDescription(parsedAnswer))
+
+    await callState.p2pCallState.peerConnection.setRemoteDescription(
+      new RTCSessionDescription(parsedAnswer)
+    )
     await this.processQueuedCandidates()
   }
 
   async handleIceCandidate(candidate: RTCIceCandidateInit | string): Promise<void> {
+    if (!callState.isP2PCall) return
+
     const parsedCandidate = typeof candidate === 'string' ? JSON.parse(candidate) : candidate
 
-    if (!callState.peerConnection) {
+    if (!callState.p2pCallState?.peerConnection) {
       callState.queueCandidate(parsedCandidate)
       return
     }
 
-    if (callState.peerConnection.remoteDescription) {
-      await callState.peerConnection.addIceCandidate(new RTCIceCandidate(parsedCandidate))
+    if (callState.p2pCallState.peerConnection.remoteDescription) {
+      await callState.p2pCallState.peerConnection.addIceCandidate(
+        new RTCIceCandidate(parsedCandidate)
+      )
     } else {
       callState.queueCandidate(parsedCandidate)
     }
   }
 
   async toggleVideo(): Promise<void> {
-    if (!callState.localStream) return
+    if (!callState.isP2PCall || !callState.p2pCallState?.localStream) return
 
-    const videoTrack = callState.localStream.getVideoTracks()[0]
+    const videoTrack = callState.p2pCallState.localStream.getVideoTracks()[0]
 
-    if (callState.isVideoEnabled && videoTrack) {
+    if (callState.p2pCallState.isVideoEnabled && videoTrack) {
       videoTrack.stop()
       callState.setVideoEnabled(false)
     } else {
@@ -257,24 +229,27 @@ class CallService {
         const videoStream = await navigator.mediaDevices.getUserMedia({ video: true })
         const newVideoTrack = videoStream.getVideoTracks()[0]
 
-        callState.localStream.addTrack(newVideoTrack)
+        callState.p2pCallState.localStream.addTrack(newVideoTrack)
 
-        if (callState.peerConnection) {
-          const sender = callState.peerConnection
+        if (callState.p2pCallState.peerConnection) {
+          const sender = callState.p2pCallState.peerConnection
             .getSenders()
             .find((s) => s.track?.kind === 'video')
 
           if (sender) {
             await sender.replaceTrack(newVideoTrack)
           } else {
-            callState.peerConnection.addTrack(newVideoTrack, callState.localStream)
+            callState.p2pCallState.peerConnection.addTrack(
+              newVideoTrack,
+              callState.p2pCallState.localStream
+            )
           }
         }
 
         callState.setVideoEnabled(true)
 
         if (this.onLocalStreamCallback) {
-          this.onLocalStreamCallback(callState.localStream)
+          this.onLocalStreamCallback(callState.p2pCallState.localStream)
         }
       } catch (err) {
         console.error('Error enabling video:', err)

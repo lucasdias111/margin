@@ -12,12 +12,18 @@
   import type { WebSocketMessage } from '$src/interfaces/WebSocketMessages'
   import { authenticatedGet } from '$src/services/api'
   import ChatHeader from '$src/components/content/ChatHeader.svelte'
-  import { joinVoiceChannel } from '$src/services/ChannelCallService'
+  import { callState } from '$src/states/CallState.svelte'
+  import { channelCallService } from '$src/services/ChannelCallService'
 
   let selectedChannel = $state<Channel | null>(null)
   let messages = $state<ChannelMessage[]>([])
   let messageInput = $state('')
   let messagesContainer = $state<HTMLDivElement>()
+
+  let isInChannelCall = $derived(
+    callState.isGroupCall &&
+    callState.groupCallState?.channelId === selectedChannel?.id
+  )
 
   $effect(() => {
     if (chatState.selectedChannel) {
@@ -77,7 +83,11 @@
   }
 
   function handleVoiceCall(): void {
-    joinVoiceChannel(selectedChannel.id)
+    if (isInChannelCall) {
+      channelCallService.endChannelCall()
+    } else {
+      channelCallService.joinVoiceChannel(selectedChannel.id)
+    }
   }
 
   function handleVideoCall(): void {
@@ -91,6 +101,7 @@
       name={selectedChannel.name}
       handleStartCall={handleVoiceCall}
       handleStartVideoCall={handleVideoCall}
+      isInCall={isInChannelCall}
     />
   {/if}
 

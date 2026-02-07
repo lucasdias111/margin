@@ -1,144 +1,155 @@
-export type CallStatus = 'connecting' | 'connected' | 'ended'
+import type {
+  BaseCallState,
+  CallStatus,
+  ChannelCallSession,
+  GroupCallData,
+  P2PCallData
+} from '$src/interfaces/Calls'
 
-interface CallStateData {
-  activeCall: {
-    userId: number
-    isIncoming: boolean
-    offer?: RTCSessionDescriptionInit
-  } | null
-  status: CallStatus
-  duration: number
-  callId: number | null
-  peerConnection: RTCPeerConnection | null
-  localStream: MediaStream | null
-  remoteStream: MediaStream | null
-  candidateQueue: RTCIceCandidateInit[]
-  durationInterval: number | null
-  isVideoEnabled: boolean
-}
+type CallType = 'p2p' | 'group'
 
-function createCallState() {
-  let state = $state<CallStateData>({
-    activeCall: null,
+
+class CallState {
+  private baseState = $state<BaseCallState>({
+    callId: null,
     status: 'connecting',
     duration: 0,
-    callId: null,
-    peerConnection: null,
-    localStream: null,
-    remoteStream: null,
-    candidateQueue: [],
-    durationInterval: null,
-    isVideoEnabled: false
+    durationInterval: null
   })
 
-  return {
-    get activeCall() {
-      return state.activeCall
-    },
-    get status(): CallStatus {
-      return state.status
-    },
-    get duration(): number {
-      return state.duration
-    },
-    get callId(): number {
-      return state.callId
-    },
-    get peerConnection(): RTCPeerConnection | null {
-      return state.peerConnection
-    },
-    get localStream(): MediaStream | null {
-      return state.localStream
-    },
-    get remoteStream(): MediaStream | null {
-      return state.remoteStream
-    },
-    get candidateQueue(): RTCIceCandidateInit[] {
-      return state.candidateQueue
-    },
-    get durationInterval(): number | null {
-      return state.durationInterval
-    },
-    get isVideoEnabled(): boolean {
-      return state.isVideoEnabled
-    },
+  private activeCallType = $state<CallType | null>(null)
 
-    startCall(
-      callId: number,
-      user: number,
-      isIncoming: boolean = false,
-      offer?: RTCSessionDescriptionInit
-    ): void {
-      state.callId = callId
-      state.activeCall = { userId: user, isIncoming, offer }
-      state.status = 'connecting'
-      state.duration = 0
-      state.isVideoEnabled = false
-    },
+  private p2pData = $state<P2PCallData | null>(null)
+  private groupData = $state<GroupCallData | null>(null)
 
-    setStatus(status: CallStatus): void {
-      state.status = status
-    },
+  get callType(): CallType | null {
+    return this.activeCallType
+  }
 
-    incrementDuration(): void {
-      state.duration++
-    },
+  get isActive(): boolean {
+    return this.activeCallType !== null
+  }
 
-    setConnection(
-      peerConnection: RTCPeerConnection,
-      localStream: MediaStream,
-      remoteStream: MediaStream
-    ): void {
-      state.peerConnection = peerConnection
-      state.localStream = localStream
-      state.remoteStream = remoteStream
-    },
+  get isP2PCall(): boolean {
+    return this.activeCallType === 'p2p'
+  }
 
-    queueCandidate(candidate: RTCIceCandidateInit): void {
-      state.candidateQueue = [...state.candidateQueue, candidate]
-    },
+  get isGroupCall(): boolean {
+    return this.activeCallType === 'group'
+  }
 
-    clearCandidateQueue(): void {
-      state.candidateQueue = []
-    },
+  get callId(): number | null {
+    return this.baseState.callId
+  }
 
-    setDurationInterval(intervalId: number): void {
-      state.durationInterval = intervalId
-    },
+  get status(): CallStatus {
+    return this.baseState.status
+  }
 
-    setCallId(callId: number): void {
-      state.callId = callId
-    },
+  get duration(): number {
+    return this.baseState.duration
+  }
 
-    setVideoEnabled(enabled: boolean): void {
-      state.isVideoEnabled = enabled
-    },
+  get p2pCallState(): P2PCallData | null {
+    return this.isP2PCall ? this.p2pData : null
+  }
 
-    endCall(): void {
-      state.activeCall = null
-      state.status = 'ended'
-      state.duration = 0
-      state.peerConnection = null
-      state.localStream = null
-      state.remoteStream = null
-      state.candidateQueue = []
-      state.durationInterval = null
-      state.isVideoEnabled = false
-    },
+  get groupCallState(): GroupCallData | null {
+    return this.isGroupCall ? this.groupData : null
+  }
 
-    reset(): void {
-      state.activeCall = null
-      state.status = 'connecting'
-      state.duration = 0
-      state.callId = null
-      state.peerConnection = null
-      state.localStream = null
-      state.remoteStream = null
-      state.candidateQueue = []
-      state.durationInterval = null
-      state.isVideoEnabled = false
+  startP2PCall(
+    callId: number,
+    userId: number,
+    isIncoming: boolean = false,
+    offer?: RTCSessionDescriptionInit
+  ): void {
+    this.activeCallType = 'p2p'
+    this.baseState.callId = callId
+    this.baseState.status = 'connecting'
+    this.baseState.duration = 0
+
+    this.p2pData = {
+      userId,
+      isIncoming,
+      offer,
+      peerConnection: null,
+      localStream: null,
+      remoteStream: null,
+      candidateQueue: [],
+      isVideoEnabled: false
     }
+  }
+
+  startGroupCall(callId: number, channelId: number): void {
+    this.activeCallType = 'group'
+    this.baseState.callId = callId
+    this.baseState.status = 'connecting'
+    this.baseState.duration = 0
+
+    this.groupData = {
+      channelId,
+      session: null
+    }
+  }
+
+  setGroupSession(session: ChannelCallSession): void {
+    if (!this.isGroupCall || !this.groupData) return
+    this.groupData.session = session
+  }
+
+  setStatus(status: CallStatus): void {
+    this.baseState.status = status
+  }
+
+  incrementDuration(): void {
+    this.baseState.duration++
+  }
+
+  setDurationInterval(intervalId: number): void {
+    this.baseState.durationInterval = intervalId
+  }
+
+  setConnection(
+    peerConnection: RTCPeerConnection,
+    localStream: MediaStream,
+    remoteStream: MediaStream
+  ): void {
+    if (!this.isP2PCall || !this.p2pData) return
+
+    this.p2pData.peerConnection = peerConnection
+    this.p2pData.localStream = localStream
+    this.p2pData.remoteStream = remoteStream
+  }
+
+  queueCandidate(candidate: RTCIceCandidateInit): void {
+    if (!this.isP2PCall || !this.p2pData) return
+    this.p2pData.candidateQueue = [...this.p2pData.candidateQueue, candidate]
+  }
+
+  clearCandidateQueue(): void {
+    if (!this.isP2PCall || !this.p2pData) return
+    this.p2pData.candidateQueue = []
+  }
+
+  setVideoEnabled(enabled: boolean): void {
+    if (!this.isP2PCall || !this.p2pData) return
+    this.p2pData.isVideoEnabled = enabled
+  }
+
+  endCall(): void {
+    if (this.baseState.durationInterval) {
+      clearInterval(this.baseState.durationInterval)
+    }
+
+    this.activeCallType = null
+    this.baseState.callId = null
+    this.baseState.status = 'ended'
+    this.baseState.duration = 0
+    this.baseState.durationInterval = null
+    this.p2pData = null
+    this.groupData = null
   }
 }
 
-export const callState = createCallState()
+export const callState = new CallState()
