@@ -25,7 +25,7 @@ function createWindow(): void {
       responseHeaders: {
         ...details.responseHeaders,
         'Content-Security-Policy': [
-          `default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self' ${API_CONFIG.baseUrl} ${API_CONFIG.wsUrl}`
+          `default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self' ${API_CONFIG.baseUrl} ${API_CONFIG.wsUrl} ${API_CONFIG.sfuUrl}`
         ]
       }
     })

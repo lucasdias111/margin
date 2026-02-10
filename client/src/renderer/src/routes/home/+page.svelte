@@ -12,7 +12,7 @@
   import CallWindow from '$src/components/call/CallWindow.svelte'
   import { callService } from '$src/services/CallService'
   import type { CallOfferPayload, WebSocketMessage } from '$src/interfaces/WebSocketMessages'
-  import type { BaseMessage, ChannelMessage, DirectMessage } from '$src/interfaces/Messages'
+  import type { ChannelMessage, DirectMessage } from '$src/interfaces/Messages'
   import { notificationService } from '$src/services/NotificationService'
 
   onMount(() => {
@@ -77,8 +77,6 @@
       }
 
       callService.startCall(payload.callId, payload.callerId, true, offer)
-    } else {
-      console.log('Call rejected')
     }
   }
 
@@ -104,7 +102,7 @@
   </div>
 </div>
 
-{#if callState.activeCall}
+{#if callState.isP2PCall}
   <div class="call-overlay">
     <CallWindow />
   </div>

@@ -1,7 +1,7 @@
 {
   "name": "margin-desktop",
   "version": "1.0.0",
-  "description": "An Electron application with Svelte and TypeScript",
+  "description": "Desktop app for margin",
   "main": "./out/main/index.js",
   "author": "example.com",
   "homepage": "https://electron-vite.org",
@@ -30,6 +30,7 @@
     "@electron-toolkit/preload": "^3.0.2",
     "@electron-toolkit/utils": "^4.0.0",
     "electron-updater": "^6.3.9",
+    "mediasoup-client": "^3.18.6",
     "svelte-spa-router": "^4.0.1"
   },
   "devDependencies": {
