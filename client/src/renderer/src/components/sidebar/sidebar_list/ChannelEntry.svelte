@@ -20,7 +20,7 @@
     <button class="channel-button" onclick={() => selectChannel(channel)}>
       {channel.name}
       <UnreadNotificationBadge
-        shouldShow={notificationState.getTotalUnreadDirectMessagesForChannel(channel.conversationId)
+        shouldShow={notificationState.getTotalUnreadMessagesForChannel(channel.conversationId)
           .length > 0}
       />
     </button>

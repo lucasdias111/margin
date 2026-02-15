@@ -24,7 +24,7 @@ class NotificationStateManager {
       msg.fromUserId === userId).length
   }
 
-  getTotalUnreadDirectMessagesForChannel(conversationId: number) {
+  getTotalUnreadMessagesForChannel(conversationId: number) {
     return this.state.unreadChannelMessages.filter((msg) =>
       msg.conversationId === conversationId)
   }
