@@ -1,11 +1,11 @@
 <script lang="ts">
   import { onDestroy, onMount, tick } from 'svelte'
   import type { User } from '$src/interfaces/User'
-  import type { DirectMessage } from '$src/interfaces/Messages'
+  import type { ConversationMessagesResponse, Message } from '$src/interfaces/Messages'
   import { userState } from '$src/states/UserState.svelte'
   import { webSocketService } from '$src/services/WebSocketService'
   import { chatState } from '$src/states/ChatState.svelte'
-  import { authenticatedGet, authenticatedPost } from '$src/services/api'
+  import { authenticatedGet } from '$src/services/api'
   import ChatInput from '$src/components/chat/ChatInput.svelte'
   import MessagesContainer from '$src/components/chat/MessagesContainer.svelte'
   import { chatService } from '$src/services/ChatService'
@@ -13,12 +13,13 @@
   import { WebSocketMessageType } from '$src/interfaces/WebSocketMessageType'
   import type { WebSocketMessage } from '$src/interfaces/WebSocketMessages'
   import { callService } from '$src/services/CallService'
-  import { notificationService } from '$src/services/NotificationService'
   import { callState } from '$src/states/CallState.svelte'
   import ChatHeader from '$src/components/content/ChatHeader.svelte'
+  import type { Conversation } from '$src/interfaces/Conversation'
 
   let selectedUser = $state<User | null>(null)
-  let messages = $state<DirectMessage[]>([])
+  let currentConversation = $state<Conversation | null>(null)
+  let messages = $state<Message[]>([])
   let messageInput = $state('')
   let messagesContainer = $state<HTMLDivElement>(null)
 
@@ -32,78 +33,71 @@
     if (chatState.selectedUser) {
       loadMessagesForUser(chatState.selectedUser)
     }
-
-    setMessagesToRead()
   })
 
   onMount(() => {
-    webSocketService.on(WebSocketMessageType.RECEIVE_DIRECT_MESSAGE, handleIncomingMessage)
+    webSocketService.on(WebSocketMessageType.RECEIVE_MESSAGE, handleIncomingMessage)
   })
 
   onDestroy(() => {
-    webSocketService.off(WebSocketMessageType.RECEIVE_DIRECT_MESSAGE, handleIncomingMessage)
+    webSocketService.off(WebSocketMessageType.RECEIVE_MESSAGE, handleIncomingMessage)
   })
 
-  async function setMessagesToRead(): Promise<void> {
-    if (!selectedUser || !userState.currentUser) return
+  async function handleIncomingMessage(data: WebSocketMessage<Message>): Promise<void> {
+    const incomingMsg: Message = data.payload
 
-    const unreadMessageIds = messages
-      .filter((msg) => msg.fromUserId === selectedUser.id && !msg.isRead)
-      .map((msg) => msg.id)
+    if (currentConversation && incomingMsg.conversationId === currentConversation.id) {
+      try {
+        const isFromMe = incomingMsg.fromUserId === userState.currentUser?.id
 
-    if (unreadMessageIds.length === 0) return
+        incomingMsg.content = await encryptionService.decryptMessage(
+          incomingMsg.content,
+          !isFromMe
+        )
+      } catch (error) {
+        console.error('Failed to decrypt message:', error)
+        incomingMsg.content = '[Decryption failed]'
+      }
 
-    await authenticatedPost(
-      {
-        fromUserId: selectedUser.id,
-        toUserId: userState.currentUser.id,
-        messageIds: unreadMessageIds
-      },
-      'chat_messages/set_messages_to_read'
-    )
-  }
-
-  async function handleIncomingMessage(data: WebSocketMessage<DirectMessage>): Promise<void> {
-    const incomingMsg: DirectMessage = data.payload
-
-    if (selectedUser && incomingMsg.fromUserId === selectedUser.id) {
-      incomingMsg.message = await encryptionService.decryptMessage(incomingMsg.message, true)
       messages = [...messages, incomingMsg]
-
-      await setMessagesToRead()
+      await chatService.markConversationAsRead(currentConversation.id)
     }
   }
 
   async function handleSubmitMessage(event: SubmitEvent): Promise<void> {
     event.preventDefault()
 
-    if (selectedUser && messageInput.trim() && userState.currentUser) {
-      const newMessage = await chatService.sendDirectMessage(
+    if (!selectedUser || !messageInput.trim() || !userState.currentUser) return
+
+    const messageContent = messageInput
+    messageInput = ''
+
+    if (currentConversation) {
+      await chatService.sendMessage(
+        userState.currentUser,
+        currentConversation,
+        messageContent
+      )
+    } else {
+      await chatService.sendMessageAndStartConversation(
         userState.currentUser,
         selectedUser.id,
-        messageInput
+        messageContent
       )
-
-      if (newMessage) {
-        newMessage.message = messageInput
-        messages = [...messages, newMessage]
-      }
     }
-
-    messageInput = ''
   }
 
   function startCall(): void {
     if (selectedUser) {
       callState.setVideoEnabled(false)
-      callService.startCall(null, chatState.selectedUser.id, false, null)
+      callService.startCall(null, selectedUser.id, false, null)
     }
   }
 
   function handleVideoCall(): void {
     if (selectedUser) {
       callState.setVideoEnabled(true)
-      callService.startCall(null, chatState.selectedUser.id, false, null)
+      callService.startCall(null, selectedUser.id, false, null)
     }
   }
 
@@ -112,27 +106,40 @@
 
     selectedUser = user
 
-    notificationService.markAsRead(user.id)
+    try {
+      const response = await authenticatedGet(
+        `api/conversations/${user.id}/direct_messages?limit=100`
+      )
 
-    const response = await authenticatedGet(
-      `chat_messages/get_chat_history?userId=${userState.currentUser.id}&toUserId=${user.id}`
-    )
+      if (!response.ok) {
+        console.error('Failed to load messages')
+        messages = []
+        return
+      }
 
-    const loadedMessages: DirectMessage[] = await response.json()
+      const messageResponse: ConversationMessagesResponse = await response.json()
+      const loadedMessages = messageResponse.messages
+      currentConversation = messageResponse.conversation
 
-    messages = await Promise.all(
-      loadedMessages.map(async (message) => {
-        try {
-          const isRecipient = message.toUserId === userState.currentUser.id
-          message.message = await encryptionService.decryptMessage(message.message, isRecipient)
-          return message
-        } catch (decryptError) {
-          console.error('Failed to decrypt message:', decryptError)
-          message.message = '[Decryption failed]'
-          return message
-        }
-      })
-    )
+      messages = await Promise.all(
+        loadedMessages.map(async (message) => {
+          try {
+            const isRecipient = message.fromUserId !== userState.currentUser.id
+            message.content = await encryptionService.decryptMessage(message.content, isRecipient)
+            return message
+          } catch (decryptError) {
+            console.error('Failed to decrypt message:', decryptError)
+            message.content = '[Decryption failed]'
+            return message
+          }
+        })
+      )
+
+      await chatService.markConversationAsRead(currentConversation.id)
+    } catch (error) {
+      console.error('Error loading messages:', error)
+      messages = []
+    }
   }
 </script>
 

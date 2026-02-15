@@ -1,5 +1,5 @@
 <script lang="ts">
-  import type { DirectMessage, ChannelMessage } from '$src/interfaces/Messages'
+  import type { Message } from '$src/interfaces/Messages'
   import { tick } from 'svelte'
   import DirectMessageBubble from './DirectMessageBubble.svelte'
   import ChannelMessageBubble from '$src/components/chat/ChannelMessageBubble.svelte'
@@ -9,7 +9,7 @@
     messages,
     messagesContainer = $bindable()
   }: {
-    messages: (DirectMessage | ChannelMessage)[]
+    messages: (Message | undefined)[]
     messagesContainer?: HTMLDivElement
     isDirectMessage?: boolean
   } = $props()
@@ -20,11 +20,12 @@
     }
   }
 
-  function isDirectMessageType(message: DirectMessage | ChannelMessage): message is DirectMessage {
-    return 'toUserId' in message
+  function isDirectMessageType(message: Message): message is Message {
+    return message.fromUserId !== null
   }
 
   $effect(() => {
+    void messages.length
     tick().then(scrollToBottom)
   })
 </script>

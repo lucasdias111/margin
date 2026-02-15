@@ -3,7 +3,7 @@ import { authenticatedGet } from '$src/services/api'
 
 class UserService {
   async getRecentChatUsers(userId: number): Promise<User[]> {
-    const response = await authenticatedGet(`users/${userId}/recent_chat_users`)
+    const response = await authenticatedGet(`api/users/${userId}/recent_chat_users`)
 
     if (!response.ok) {
       return []
@@ -13,7 +13,7 @@ class UserService {
   }
 
   async getAllUsersForServer(): Promise<User[]> {
-    const response = await authenticatedGet(`users/get_all_users`)
+    const response = await authenticatedGet(`api/users/get_all_users`)
 
     if (!response.ok) {
       return []

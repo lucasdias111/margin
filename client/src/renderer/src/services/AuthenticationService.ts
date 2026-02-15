@@ -3,6 +3,7 @@ import { encryptionService } from './EncryptionService'
 import { userState } from '$src/states/UserState.svelte'
 import { chatState } from '$src/states/ChatState.svelte'
 import { callState } from '$src/states/CallState.svelte'
+import { API_CONFIG } from '$src/shared/config'
 
 class AuthenticationService {
   async login(username: string, password: string): Promise<void> {
@@ -35,7 +36,12 @@ class AuthenticationService {
     }
   }
 
-  async register(username: string, password: string, email: string): Promise<Response> {
+  async register(
+    username: string,
+    password: string,
+    email: string,
+    profilePicture?: File
+  ): Promise<Response> {
     const { publicKey, privateKey } = await encryptionService.generateKeyPairFromPassword(password)
 
     const { encryptedKey, salt, iv } = await encryptionService.encryptPrivateKey(
@@ -43,18 +49,33 @@ class AuthenticationService {
       password
     )
 
-    const response = await unauthenticatedPost(
-      {
-        username,
-        password,
-        email,
-        publicKey,
-        encryptedPrivateKey: encryptedKey,
-        salt,
-        iv
-      },
-      'auth/register'
+    const formData = new FormData()
+
+    const registrationData = {
+      username,
+      password,
+      email,
+      publicKey,
+      encryptedPrivateKey: encryptedKey,
+      salt,
+      iv
+    }
+
+    formData.append(
+      'data',
+      new Blob([JSON.stringify(registrationData)], {
+        type: 'application/json'
+      })
     )
+
+    if (profilePicture) {
+      formData.append('profilePicture', profilePicture)
+    }
+
+    const response = await fetch(API_CONFIG.baseUrl + 'auth/register', {
+      method: 'POST',
+      body: formData
+    })
 
     if (response.ok) {
       sessionStorage.setItem('publicKey', publicKey)

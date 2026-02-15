@@ -1,10 +1,9 @@
 <script lang="ts">
-  import type { ChannelMessage } from '$src/interfaces/Messages'
-  import { userState } from '$src/states/UserState.svelte'
   import MessageBubble from './MessageBubble.svelte'
+  import type { Message } from '$src/interfaces/Messages'
 
   interface Props {
-    message: ChannelMessage
+    message: Message
   }
 
   let { message }: Props = $props()
@@ -13,7 +12,7 @@
 <MessageBubble
   fromUserId={message.fromUserId}
   createdAt={message.createdAt}
-  message={message.message}
+  message={message.content}
   isEdited={message.isEdited}
-  username={message.fromUserId !== userState.currentUser?.id ? message.fromUsername : undefined}
+  username={message.content}
 />

@@ -1,9 +1,9 @@
 <script lang="ts">
-  import type { DirectMessage } from '$src/interfaces/Messages'
+  import type { Message } from '$src/interfaces/Messages'
   import MessageBubble from './MessageBubble.svelte'
 
   interface Props {
-    message: DirectMessage
+    message: Message
   }
 
   let { message }: Props = $props()
@@ -12,7 +12,7 @@
 <MessageBubble
   fromUserId={message.fromUserId}
   createdAt={message.createdAt}
-  message={message.message}
+  message={message.content}
   isEdited={message.isEdited}
   showReadStatus={true}
 />
