@@ -5,6 +5,7 @@ export interface Message {
   conversationId: number
   conversationType: 'DIRECT' | 'GROUP' | 'CHANNEL'
   fromUserId: number
+  fromUsername: string
   content: string
   isEdited: boolean
   createdAt: string

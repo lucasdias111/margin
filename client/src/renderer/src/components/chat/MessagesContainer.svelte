@@ -20,10 +20,6 @@
     }
   }
 
-  function isDirectMessageType(message: Message): message is Message {
-    return message.fromUserId !== null
-  }
-
   $effect(() => {
     void messages.length
     tick().then(scrollToBottom)
@@ -34,7 +30,7 @@
   <div class="messages" bind:this={messagesContainer}>
     {#each messages as message (message.id)}
       <div class="message-container" class:sent={message.fromUserId === userState.currentUser?.id}>
-        {#if isDirectMessageType(message)}
+        {#if message.conversationType === 'DIRECT'}
           <DirectMessageBubble {message} />
         {:else}
           <ChannelMessageBubble {message} />
