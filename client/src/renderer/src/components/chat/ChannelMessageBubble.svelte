@@ -14,5 +14,5 @@
   createdAt={message.createdAt}
   message={message.content}
   isEdited={message.isEdited}
-  username={message.content}
+  username={message.fromUsername}
 />

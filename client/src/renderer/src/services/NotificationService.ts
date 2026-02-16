@@ -1,6 +1,6 @@
 import { notificationState } from '$src/states/NotificationState.svelte'
 import { chatState } from '$src/states/ChatState.svelte'
-import { userState } from '$src/states/UserState.svelte' // Import userState
+import { userState } from '$src/states/UserState.svelte'
 import type { UnreadCount } from '$src/interfaces/UnreadCount'
 import type { Message } from '$src/interfaces/Messages'
 
@@ -50,7 +50,6 @@ class NotificationService {
   }
 
   private handleIncomingGroupMessage(message: Message): void {
-    // Check if user is viewing this group conversation
     if (chatState.selectedChannel?.conversationId === message.conversationId) {
       return
     }

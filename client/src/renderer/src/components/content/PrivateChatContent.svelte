@@ -50,10 +50,7 @@
       try {
         const isFromMe = incomingMsg.fromUserId === userState.currentUser?.id
 
-        incomingMsg.content = await encryptionService.decryptMessage(
-          incomingMsg.content,
-          !isFromMe
-        )
+        incomingMsg.content = await encryptionService.decryptMessage(incomingMsg.content, !isFromMe)
       } catch (error) {
         console.error('Failed to decrypt message:', error)
         incomingMsg.content = '[Decryption failed]'

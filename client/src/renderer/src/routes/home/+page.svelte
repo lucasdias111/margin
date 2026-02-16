@@ -16,6 +16,7 @@
   import { notificationService } from '$src/services/NotificationService'
   import type { UnreadCount } from '$src/interfaces/UnreadCount'
   import { notificationState } from '$src/states/NotificationState.svelte'
+  import { chatState } from '$src/states/ChatState.svelte'
 
   onMount(() => {
     setup()
@@ -56,6 +57,9 @@
   }
 
   function handleIncomingMessage(data: WebSocketMessage<Message>): void {
+    if (!chatState.selectedUser) {
+      return
+    }
     notificationService.handleIncomingMessage(data.payload)
   }
 
