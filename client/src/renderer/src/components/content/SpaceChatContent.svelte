@@ -3,7 +3,6 @@
   import ChatInput from '$src/components/chat/ChatInput.svelte'
   import MessagesContainer from '$src/components/chat/MessagesContainer.svelte'
   import { chatService } from '$src/services/ChatService'
-  import type { ChannelMessage } from '$src/interfaces/Messages'
   import { userState } from '$src/states/UserState.svelte'
   import type { Channel } from '$src/interfaces/Channel'
   import { onDestroy, onMount } from 'svelte'
@@ -14,9 +13,10 @@
   import ChatHeader from '$src/components/content/ChatHeader.svelte'
   import { callState } from '$src/states/CallState.svelte'
   import { channelCallService } from '$src/services/ChannelCallService'
+  import type { ConversationMessagesResponse, Message } from '$src/interfaces/Messages'
 
   let selectedChannel = $state<Channel | null>(null)
-  let messages = $state<ChannelMessage[]>([])
+  let messages = $state<Message[]>([])
   let messageInput = $state('')
   let messagesContainer = $state<HTMLDivElement>()
 
@@ -32,24 +32,24 @@
   })
 
   onMount(() => {
-    webSocketService.on(WebSocketMessageType.RECEIVE_CHANNEL_MESSAGE, handleIncomingChannelMessage)
+    webSocketService.on(WebSocketMessageType.RECEIVE_MESSAGE, handleIncomingChannelMessage)
   })
 
   onDestroy(() => {
-    webSocketService.off(WebSocketMessageType.RECEIVE_CHANNEL_MESSAGE, handleIncomingChannelMessage)
+    webSocketService.off(WebSocketMessageType.RECEIVE_MESSAGE, handleIncomingChannelMessage)
   })
 
   async function handleIncomingChannelMessage(
-    incomingMsg: WebSocketMessage<ChannelMessage>
+    incomingMsg: WebSocketMessage<Message>
   ): Promise<void> {
-    if (selectedChannel && incomingMsg.payload.channelId === selectedChannel.id) {
+    if (selectedChannel && incomingMsg.payload.conversationId === selectedChannel.conversationId) {
       messages = [...messages, incomingMsg.payload]
     }
   }
 
   function loadChannel(channel: Channel): void {
     selectedChannel = channel
-    loadMesagesForChannel(selectedChannel.id)
+    loadMessagesForChannel(selectedChannel)
   }
 
   async function handleSubmit(event?: Event): Promise<void> {
@@ -57,29 +57,26 @@
       event.preventDefault()
     }
 
-    const newMessage: ChannelMessage = await chatService.sendChannelMessage(
+    await chatService.sendChannelMessage(
       userState.currentUser,
       selectedChannel,
       messageInput
     )
-
-    if (newMessage) {
-      newMessage.message = messageInput
-      messages = [...messages, newMessage]
-      messageInput = ''
-    }
   }
 
-  async function loadMesagesForChannel(channelId: number): Promise<void> {
-    const response = await authenticatedGet(`chat_messages/${channelId}/get_messages_for_channel`)
+  async function loadMessagesForChannel(channel: Channel): Promise<void> {
+    const response = await authenticatedGet(`api/conversations/${channel.id}/channel_messages`)
 
     if (!response.ok) {
       throw new Error(`Request failed with status: ${response.status}`)
     }
 
-    messages = await response.json()
+    const messageResponse: ConversationMessagesResponse = await response.json()
+    messages = messageResponse.messages
 
     messagesContainer.scrollTop = messagesContainer.scrollHeight
+
+    await chatService.markConversationAsRead(channel.conversationId)
   }
 
   function handleVoiceCall(): void {

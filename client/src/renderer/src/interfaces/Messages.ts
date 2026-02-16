@@ -1,19 +1,17 @@
-export interface BaseMessage {
-  id: number | null
-  message: string
-  fromUserId: number
-  createdAt: Date
-}
+import type { Conversation } from '$src/interfaces/Conversation'
 
-export interface DirectMessage extends BaseMessage {
-  toUserId: number
-  isRead: boolean
-  isEdited: boolean
-}
-
-export interface ChannelMessage extends BaseMessage {
+export interface Message {
+  id: number
+  conversationId: number
+  conversationType: 'DIRECT' | 'GROUP' | 'CHANNEL'
   fromUserId: number
   fromUsername: string
-  channelId: number
+  content: string
   isEdited: boolean
+  createdAt: string
+}
+
+export interface ConversationMessagesResponse {
+  messages: Message[]
+  conversation: Conversation
 }

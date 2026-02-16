@@ -1,18 +1,13 @@
 <script lang="ts">
-  import { notificationState } from '$src/states/NotificationState.svelte'
-
   let {
-    userId = null
+    shouldShow
   }: {
-    userId?: number | null
+    shouldShow: boolean
   } = $props()
 </script>
 
 <div>
-  {#if userId === null && notificationState.getTotalUnreadDirectMessages() > 0}
-    <span class="badge">■</span>
-  {/if}
-  {#if notificationState.getTotalUnreadDirectMessagesForUser(userId) > 0}
+  {#if shouldShow}
     <span class="badge">■</span>
   {/if}
 </div>

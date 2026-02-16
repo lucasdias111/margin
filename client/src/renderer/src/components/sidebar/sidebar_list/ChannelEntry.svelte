@@ -1,6 +1,8 @@
 <script lang="ts">
   import type { Channel } from '$src/interfaces/Channel'
   import { chatState } from '$src/states/ChatState.svelte'
+  import { notificationState } from '$src/states/NotificationState.svelte'
+  import UnreadNotificationBadge from '$src/components/chat/UnreadNotificationBadge.svelte'
 
   interface Props {
     channel: Channel
@@ -10,7 +12,6 @@
 
   function selectChannel(channel: Channel): void {
     chatState.selectChannel(channel)
-    console.log('Selected channel:', channel)
   }
 </script>
 
@@ -18,6 +19,10 @@
   <li class="channel-item">
     <button class="channel-button" onclick={() => selectChannel(channel)}>
       {channel.name}
+      <UnreadNotificationBadge
+        shouldShow={notificationState.getTotalUnreadMessagesForChannel(channel.conversationId)
+          .length > 0}
+      />
     </button>
   </li>
 </div>

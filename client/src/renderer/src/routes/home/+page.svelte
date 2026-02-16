@@ -12,22 +12,25 @@
   import CallWindow from '$src/components/call/CallWindow.svelte'
   import { callService } from '$src/services/CallService'
   import type { CallOfferPayload, WebSocketMessage } from '$src/interfaces/WebSocketMessages'
-  import type { ChannelMessage, DirectMessage } from '$src/interfaces/Messages'
+  import type { Message } from '$src/interfaces/Messages'
   import { notificationService } from '$src/services/NotificationService'
+  import type { UnreadCount } from '$src/interfaces/UnreadCount'
+  import { notificationState } from '$src/states/NotificationState.svelte'
+  import { chatState } from '$src/states/ChatState.svelte'
 
   onMount(() => {
     setup()
     webSocketService.connect()
     webSocketService.on(WebSocketMessageType.CALL_OFFER, handleIncomingCallOffer)
     webSocketService.on(WebSocketMessageType.CALL_END, handleRemoteCallEnd)
-    webSocketService.on(WebSocketMessageType.RECEIVE_DIRECT_MESSAGE, handleIncomingMessage)
+    webSocketService.on(WebSocketMessageType.RECEIVE_MESSAGE, handleIncomingMessage)
   })
 
   onDestroy(() => {
     webSocketService.disconnect()
     webSocketService.off(WebSocketMessageType.CALL_OFFER, handleIncomingCallOffer)
     webSocketService.off(WebSocketMessageType.CALL_END, handleRemoteCallEnd)
-    webSocketService.off(WebSocketMessageType.RECEIVE_DIRECT_MESSAGE, handleIncomingMessage)
+    webSocketService.off(WebSocketMessageType.RECEIVE_MESSAGE, handleIncomingMessage)
   })
 
   async function setup(): Promise<void> {
@@ -36,34 +39,28 @@
   }
 
   async function loadUnreadMessages(): Promise<void> {
-    const response = await authenticatedGet(
-      `chat_messages/get_unread_messages_for_user?userId=${userState.currentUser.id}`
-    )
+    notificationState.clearUnreadMessages()
+
+    const response = await authenticatedGet(`api/conversations/unread`)
 
     if (!response.ok) {
-      throw new Error('Failed to fetch public key')
+      throw new Error('Failed to fetch unread messages')
     }
 
-    notificationService.addIncomingDirectMessages(await response.json())
+    const unreadCounts: UnreadCount[] = await response.json()
+
+    const dms = unreadCounts.filter((count) => count.unreadDmsCount > 0)
+    const channels = unreadCounts.filter((count) => count.unreadChannelsCount > 0)
+
+    notificationService.addIncomingDirectMessages(dms)
+    notificationService.addIncomingChannelMessages(channels)
   }
 
-  function isDirectMessage(msg: DirectMessage | ChannelMessage): msg is DirectMessage {
-    return 'toUserId' in msg && msg.toUserId !== undefined
-  }
-
-  function isChannelMessage(msg: DirectMessage | ChannelMessage): msg is ChannelMessage {
-    return 'channelId' in msg && msg.channelId !== undefined
-  }
-
-  function handleIncomingMessage(data: WebSocketMessage<DirectMessage | ChannelMessage>): void {
-    const incomingMsg = data.payload
-    console.log(JSON.stringify(incomingMsg))
-
-    if (isDirectMessage(incomingMsg)) {
-      notificationService.handleIncomingDirectMessage(incomingMsg)
-    } else if (isChannelMessage(incomingMsg)) {
-      notificationService.handleIncomingChannelMessage(incomingMsg)
+  function handleIncomingMessage(data: WebSocketMessage<Message>): void {
+    if (!chatState.selectedUser) {
+      return
     }
+    notificationService.handleIncomingMessage(data.payload)
   }
 
   function handleIncomingCallOffer(message: WebSocketMessage<CallOfferPayload>): void {
@@ -86,7 +83,7 @@
   }
 
   async function getCurrentUser(): Promise<void> {
-    const response = await authenticatedGet(`users/me`)
+    const response = await authenticatedGet(`api/users/me`)
 
     const user: User = await response.json()
     userState.setUser(user)

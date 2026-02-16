@@ -23,7 +23,7 @@
     }
 
     try {
-      const response = await authenticatedGet(`users/search?query=${encodeURIComponent(query)}`)
+      const response = await authenticatedGet(`api/users/search?query=${encodeURIComponent(query)}`)
       const data = await response.json()
       searchResults = data || []
     } catch (error) {

@@ -25,7 +25,7 @@
     chatState.selectSpace(space)
 
     if (!channelsBySpace.has(space.id)) {
-      const response = await authenticatedGet(`channels/${space.id}/get_channels_for_space`)
+      const response = await authenticatedGet(`api/channels/${space.id}/get_channels_for_space`)
       if (response.ok) {
         const channels: Channel[] = await response.json()
         channelsBySpace.set(space.id, channels)

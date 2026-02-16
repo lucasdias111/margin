@@ -1,8 +1,8 @@
-import type { ChannelMessage, DirectMessage } from '$src/interfaces/Messages'
+import type { UnreadCount } from '$src/interfaces/UnreadCount'
 
 interface NotificationState {
-  unreadDirectMessages: DirectMessage[]
-  unreadChannelMessages: ChannelMessage[]
+  unreadDirectMessages: UnreadCount[]
+  unreadChannelMessages: UnreadCount[]
 }
 
 class NotificationStateManager {
@@ -11,26 +11,44 @@ class NotificationStateManager {
     unreadChannelMessages: []
   })
 
-  addUnreadDirectMessages(directMessages: DirectMessage[]) {
+  addUnreadDirectMessages(directMessages: UnreadCount[]) {
     this.state.unreadDirectMessages = this.state.unreadDirectMessages.concat(directMessages)
   }
 
-  getTotalUnreadDirectMessagesForUser(userId: number): number {
-    return this.state.unreadDirectMessages.filter((msg) => msg.fromUserId === userId).length
+  addUnreadChannelMessages(channelMessages: UnreadCount[]) {
+    this.state.unreadChannelMessages = this.state.unreadChannelMessages.concat(channelMessages)
   }
 
-  clearUnreadDirectMessages(userId: number): void {
+  getTotalUnreadDirectMessagesForUser(userId: number): number {
+    return this.state.unreadDirectMessages.filter((msg) =>
+      msg.fromUserId === userId).length
+  }
+
+  getTotalUnreadMessagesForChannel(conversationId: number) {
+    return this.state.unreadChannelMessages.filter((msg) =>
+      msg.conversationId === conversationId)
+  }
+
+  clearUnreadMessagesForConversation(conversationId: number): void {
     this.state.unreadDirectMessages = this.state.unreadDirectMessages.filter(
-      (msg) => msg.fromUserId !== userId
+      (msg) => msg.conversationId !== conversationId
     )
+    this.state.unreadChannelMessages = this.state.unreadChannelMessages.filter(
+      (msg) => msg.conversationId !== conversationId
+    )
+  }
+
+  clearUnreadMessages(): void {
+    this.state.unreadChannelMessages = this.state.unreadChannelMessages.slice()
+    this.state.unreadDirectMessages = this.state.unreadDirectMessages.slice()
   }
 
   getTotalUnreadDirectMessages(): number {
     return this.state.unreadDirectMessages.length
   }
 
-  addUnreadChannelMessages(channelMessages: ChannelMessage[]) {
-    this.state.unreadChannelMessages = this.state.unreadChannelMessages.concat(channelMessages)
+  getTotalUnreadChannelMessages(): number {
+    return this.state.unreadChannelMessages.length
   }
 }
 

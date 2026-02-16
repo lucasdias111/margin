@@ -4,7 +4,7 @@
 
   interface Props {
     fromUserId: number
-    createdAt: Date
+    createdAt: string
     message: string
     isEdited?: boolean
     showReadStatus?: boolean
