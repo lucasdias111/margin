@@ -110,6 +110,7 @@
     height: 97vh;
     display: flex;
     flex-direction: column;
+    background-color: rgb(232, 234, 251);
   }
 
   .content {

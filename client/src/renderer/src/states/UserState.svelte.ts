@@ -1,4 +1,4 @@
-import type { User } from '$src/interfaces/User';
+import type { User } from '$src/interfaces/User'
 
 class UserState {
   currentUser = $state<User | null>(null)
@@ -18,4 +18,4 @@ class UserState {
   }
 }
 
-export const userState = new UserState();
+export const userState = new UserState()

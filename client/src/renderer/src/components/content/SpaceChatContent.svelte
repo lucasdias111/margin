@@ -21,8 +21,7 @@
   let messagesContainer = $state<HTMLDivElement>()
 
   let isInChannelCall = $derived(
-    callState.isGroupCall &&
-    callState.groupCallState?.channelId === selectedChannel?.id
+    callState.isGroupCall && callState.groupCallState?.channelId === selectedChannel?.id
   )
 
   $effect(() => {
@@ -57,11 +56,7 @@
       event.preventDefault()
     }
 
-    await chatService.sendChannelMessage(
-      userState.currentUser,
-      selectedChannel,
-      messageInput
-    )
+    await chatService.sendChannelMessage(userState.currentUser, selectedChannel, messageInput)
   }
 
   async function loadMessagesForChannel(channel: Channel): Promise<void> {

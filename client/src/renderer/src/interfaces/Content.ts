@@ -1,20 +1,20 @@
-import type { User } from "$src/interfaces/User";
-import type { Space } from "$src/interfaces/Space";
+import type { User } from '$src/interfaces/User'
+import type { Space } from '$src/interfaces/Space'
 
-export type ChatViewType = 'private' | 'space' | 'explore';
+export type ChatViewType = 'private' | 'space' | 'explore' | 'settings'
 
 export interface PrivateChatView {
-    type: 'private';
-    user: User;
+  type: 'private'
+  user: User
 }
 
 export interface SpaceView {
-    type: 'space';
-    space: Space;
+  type: 'space'
+  space: Space
 }
 
 export interface ExploreView {
-    type: 'explore';
+  type: 'explore'
 }
 
-export type ChatView = PrivateChatView | SpaceView | ExploreView;
+export type ChatView = PrivateChatView | SpaceView | ExploreView

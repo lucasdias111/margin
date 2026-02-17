@@ -6,11 +6,11 @@
   }
 
   function maximize(): void {
-    window.api?.maximizeWindow();
+    window.api?.maximizeWindow()
   }
 
   function close(): void {
-    window.api?.closeWindow();
+    window.api?.closeWindow()
   }
 </script>
 
@@ -21,17 +21,17 @@
   <div class="window-controls">
     <button class="window-button minimize" on:click={minimize} title="Minimize">
       <svg width="10" height="10" viewBox="0 0 10 10">
-        <path d="M0,5 L10,5" stroke="currentColor" stroke-width="1"/>
+        <path d="M0,5 L10,5" stroke="currentColor" stroke-width="1" />
       </svg>
     </button>
     <button class="window-button maximize" on:click={maximize} title="Maximize">
       <svg width="10" height="10" viewBox="0 0 10 10">
-        <path d="M0,0 L10,0 L10,10 L0,10 Z" stroke="currentColor" stroke-width="1" fill="none"/>
+        <path d="M0,0 L10,0 L10,10 L0,10 Z" stroke="currentColor" stroke-width="1" fill="none" />
       </svg>
     </button>
     <button class="window-button close" on:click={close} title="Close">
       <svg width="10" height="10" viewBox="0 0 10 10">
-        <path d="M0,0 L10,10 M10,0 L0,10" stroke="currentColor" stroke-width="1"/>
+        <path d="M0,0 L10,10 M10,0 L0,10" stroke="currentColor" stroke-width="1" />
       </svg>
     </button>
   </div>

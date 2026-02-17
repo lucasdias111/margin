@@ -70,11 +70,7 @@
     messageInput = ''
 
     if (currentConversation) {
-      await chatService.sendMessage(
-        userState.currentUser,
-        currentConversation,
-        messageContent
-      )
+      await chatService.sendMessage(userState.currentUser, currentConversation, messageContent)
     } else {
       await chatService.sendMessageAndStartConversation(
         userState.currentUser,

@@ -1,10 +1,7 @@
 import { webSocketService } from '$src/services/WebSocketService'
 import { WebSocketMessageType } from '$src/interfaces/WebSocketMessageType'
 import { callState } from '$src/states/CallState.svelte'
-import type {
-  CallResponsePayload,
-  WebSocketMessage
-} from '$src/interfaces/WebSocketMessages'
+import type { CallResponsePayload, WebSocketMessage } from '$src/interfaces/WebSocketMessages'
 
 class CallService {
   private onRemoteStreamCallback: ((stream: MediaStream) => void) | null = null

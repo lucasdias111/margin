@@ -1,4 +1,4 @@
-<script>
+<!-- <script>
   import { userState } from '$src/states/UserState.svelte'
   import SearchBar from '$src/components/content/SearchBar.svelte'
 </script>
@@ -28,4 +28,4 @@
   .topbar p {
     margin: 0;
   }
-</style>
+</style> -->

@@ -6,9 +6,8 @@
   let password = $state('')
   let loginResponse = $state('')
 
-  
-async function handleLogin(event: SubmitEvent): Promise<void> {
-  event.preventDefault()
+  async function handleLogin(event: SubmitEvent): Promise<void> {
+    event.preventDefault()
     try {
       await authenticationService.login(username, password)
       loginResponse = 'Login successful'
@@ -23,26 +22,103 @@ async function handleLogin(event: SubmitEvent): Promise<void> {
   }
 </script>
 
-<div>
-  <form class="row" onsubmit={handleLogin}>
-    <label>
-      Username
-      <input type="text" name="username" bind:value={username} />
-    </label>
-    <input type="password" name="password" bind:value={password} />
-    <button type="submit">Login</button>
+<div class="loginpage">
+  <form class="formWrap" onsubmit={handleLogin}>
+    <input
+      class="loginInput"
+      type="text"
+      name="username"
+      placeholder="Username"
+      bind:value={username}
+    />
+
+    <input
+      class="loginInput"
+      type="password"
+      name="password"
+      placeholder="Password"
+      bind:value={password}
+    />
+
+    <button class="logbut" type="submit">Login</button>
   </form>
+
+  <p class="or">or</p>
+
   <p>{loginResponse}</p>
-  <button onclick={goToRegister}>Register</button>
+
+  <button class="regbut" onclick={goToRegister}>Register</button>
 </div>
 
 <style>
-  .row {
+  .loginpage {
+    min-height: 100vh;
     display: flex;
-    justify-content: center;
+    justify-content: flex-start;
+    align-items: center;
+    flex-direction: column;
+    background-color: whitesmoke;
+    padding: 0px;
+    margin-bottom: 15px;
+  }
+
+  .formWrap {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    width: 280px;
+  }
+
+  .loginInput {
+    height: 40px;
+    width: 100%;
+    border-radius: 10px;
+    border: 1px solid black;
+    outline: none;
+    padding: 0 12px;
+    font-size: 14px;
+    box-sizing: border-box;
+    border-color: #4e4d4d;
+  }
+
+  .logbut {
+    background-color: #da6b10;
+    width: 100%;
+    border-radius: 10px;
+    border: none;
+    flex-direction: column;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    font-size: 12px;
+    color: whitesmoke;
+    cursor: pointer;
+  }
+
+  .regbut {
+    background-color: #da6b10;
+    width: 100%;
+    border-radius: 10px;
+    border: none;
+    padding: 8px;
+    flex-direction: column;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    font-size: 12px;
+    color: whitesmoke;
+    cursor: pointer;
+  }
+
+  .logbut:hover,
+  .regbut:hover {
+    opacity: 0.9;
   }
 
   p {
     text-align: center;
+    margin: 0;
+  }
+
+  .or {
+    color: black;
+    margin: 8px 0;
+    font-size: 14px;
   }
 </style>

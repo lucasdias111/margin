@@ -8,7 +8,6 @@ import type {
 
 type CallType = 'p2p' | 'group'
 
-
 class CallState {
   private baseState = $state<BaseCallState>({
     callId: null,

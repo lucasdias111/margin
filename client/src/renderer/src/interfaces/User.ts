@@ -4,4 +4,5 @@ export interface User {
   email: string
   serverDomain: string
   createdAt: string
+  imageUrl: string | null
 }

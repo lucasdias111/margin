@@ -21,7 +21,7 @@
         class="call-btn"
         class:active-call={isInCall}
         onclick={handleStartCall}
-        title={isInCall ? "Leave voice call" : "Voice call"}
+        title={isInCall ? 'Leave voice call' : 'Voice call'}
       >
         {#if isInCall}
           <img src={hangUpCallIcon} alt="Hang up call" />

@@ -39,7 +39,7 @@ class ChatService {
       fromUserId: currentUser.id,
       fromUsername: currentUser.username,
       content: encryptedMessage,
-      conversationType: "DIRECT",
+      conversationType: 'DIRECT',
       isEdited: false,
       createdAt: new Date().toISOString()
     }
@@ -71,7 +71,7 @@ class ChatService {
       fromUserId: currentUser.id,
       fromUsername: currentUser.username,
       content: content,
-      conversationType: "DIRECT",
+      conversationType: 'DIRECT',
       isEdited: false,
       createdAt: new Date().toISOString()
     }
@@ -94,7 +94,7 @@ class ChatService {
       fromUserId: currentUser.id,
       fromUsername: currentUser.username,
       content: messageText,
-      conversationType: "CHANNEL",
+      conversationType: 'CHANNEL',
       isEdited: false,
       createdAt: new Date().toISOString()
     }
@@ -103,7 +103,7 @@ class ChatService {
   async markConversationAsRead(conversationId: number): Promise<void> {
     if (!conversationId) return
 
-    console.log("Marked as read for conversation id", conversationId)
+    console.log('Marked as read for conversation id', conversationId)
     try {
       await authenticatedPost(null, `api/conversations/${conversationId}/read`)
       notificationService.markConversationAsRead(conversationId)

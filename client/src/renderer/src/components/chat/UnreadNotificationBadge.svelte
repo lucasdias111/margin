@@ -8,7 +8,7 @@
 
 <div>
   {#if shouldShow}
-    <span class="badge">■</span>
+    <span class="badge">feeeeeeee</span>
   {/if}
 </div>
 
