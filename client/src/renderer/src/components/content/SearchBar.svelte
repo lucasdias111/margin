@@ -62,6 +62,7 @@
   <input
     type="text"
     placeholder="Search users..."
+    class="search-user-input"
     on:input={handleInput}
     bind:value={searchQuery}
   />
@@ -69,21 +70,49 @@
   {#if searchResults.length > 0}
     <div class="search-results">
       {#each searchResults as user (user.id)}
-        <div class="user-result">
-          <button on:click={() => openChat(user)}>
-            <span>{user.username}</span>
-          </button>
+        <div class="user-result" on:click={() => openChat(user)} role="button" tabindex="0">
+          <span>{user.username}</span>
         </div>
       {/each}
     </div>
   {/if}
+
+  <button class="add-user-button"> +</button>
 </div>
 
 <style>
   .search-container {
     position: relative;
-    width: 100%;
-    max-width: 400px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    margin-top: 10px;
+  }
+
+  .search-user-input {
+    flex: 1;
+    width: 160px;
+    padding: 10px 16px;
+    border-radius: 999px;
+    border: 2px solid rgb(207, 207, 207);
+    outline: none;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  }
+
+  .search-results {
+    position: absolute;
+    top: calc(100% + 6px);
+    left: 0;
+    right: 40px;
+    background: white;
+    border: 2px solid rgb(207, 207, 207);
+    border-radius: 16px;
+    max-height: 300px;
+    overflow-y: auto;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    z-index: 1000;
+    padding: 6px;
   }
 
   input {
@@ -93,41 +122,26 @@
     border-radius: 4px;
   }
 
-  .search-results {
-    position: absolute;
-    top: 100%;
-    left: 0;
-    right: 0;
-    margin-top: 4px;
-    background: white;
-    border: 1px solid #ccc;
-    border-radius: 4px;
-    max-height: 300px;
-    overflow-y: auto;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-    z-index: 1000;
-  }
-
   .user-result {
-    border-bottom: 1px solid #eee;
-  }
-
-  .user-result:last-child {
-    border-bottom: none;
-  }
-
-  .user-result button {
-    width: 100%;
-    padding: 10px 12px;
-    background: none;
-    border: none;
-    text-align: left;
+    padding: 8px 14px;
+    border-radius: 999px;
     cursor: pointer;
     transition: background-color 0.2s;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    font-size: 14px;
     color: black;
   }
 
-  .user-result button:hover {
+  .user-result:hover {
     background-color: #f5f5f5;
+  }
+
+  .add-user-button {
+    background-color: #da6b10;
+    border-radius: 40%;
+    border: none;
+    color: white;
+    cursor: pointer;
+    padding: 8px 12px;
   }
 </style>

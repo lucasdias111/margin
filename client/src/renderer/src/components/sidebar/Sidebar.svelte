@@ -6,6 +6,7 @@
   import SpacesList from './sidebar_list/SpacesList.svelte'
   import Avatar from './sidebar_list/Avatar.svelte'
   import { userState } from '$src/states/UserState.svelte'
+  import SearchBar from '$src/components/content/SearchBar.svelte'
 
   let selectedContent = $derived(chatState.currentlySelectedContent)
   let currentUser = $derived(userState.currentUser)
@@ -26,16 +27,8 @@
 
       <div class="dm-header">
         {#if selectedContent === 'private'}
-          <h3 class="dmhead">Private chat</h3>
-          <div class="search_row">
-            <input
-              class="searchuser"
-              type="text"
-              placeholder="Search user..."
-              bind:value={searchUser}
-            />
-            <button class="dmplusbut"> +</button>
-          </div>
+          <h3 class="dm-head">Private chat</h3>
+          <SearchBar />
         {/if}
       </div>
     </div>
@@ -105,38 +98,11 @@
     padding: 20px;
   }
 
-  .dmhead {
+  .dm-head {
     color: black;
     font-size: 20px;
     margin: 0;
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     text-align: center;
-  }
-
-  .search_row {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: 12px;
-    margin-top: 10px;
-  }
-
-  .searchuser {
-    flex: 1;
-    width: 160px;
-    padding: 10px 16px;
-    border-radius: 999px;
-    border: 2px solid rgb(207, 207, 207);
-    outline: none;
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  }
-
-  .dmplusbut {
-    background-color: #da6b10;
-    border-radius: 40%;
-    border: none;
-    color: white;
-    cursor: pointer;
-    padding: 8px 12px;
   }
 </style>

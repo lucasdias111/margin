@@ -6,6 +6,7 @@
   }
 
   let { profilePictureUrl, height = 40, width = 40 }: Props = $props()
+
 </script>
 
 <img
