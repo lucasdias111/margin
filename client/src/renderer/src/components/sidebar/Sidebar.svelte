@@ -5,7 +5,6 @@
   import { chatState } from '$src/states/ChatState.svelte'
   import SpacesList from './sidebar_list/SpacesList.svelte'
   import Avatar from './sidebar_list/Avatar.svelte'
-  import Logout from './Logout.svelte'
   import { userState } from '$src/states/UserState.svelte'
 
   let selectedContent = $derived(chatState.currentlySelectedContent)
@@ -22,9 +21,9 @@
     <div class="search_bar">
 
       {#if currentUser && selectedContent === null}
-      <Avatar user={currentUser}/>
+        <Avatar user={currentUser} />
       {/if}
-      
+
       <div class="dm-header">
         {#if selectedContent === 'private'}
           <h3 class="dmhead">Private chat</h3>
@@ -35,10 +34,8 @@
               placeholder="Search user..."
               bind:value={searchUser}
             />
-            <button class="dmplusbut"> + </button>
+            <button class="dmplusbut"> +</button>
           </div>
-          <!-- {:else if selectedContent === 'space'}
-    <SpacesNav /> -->
         {/if}
       </div>
     </div>
@@ -53,6 +50,51 @@
 </div>
 
 <style>
+  .sidebars {
+    display: flex;
+    height: 100%;
+    padding: 10px;
+    box-sizing: border-box;
+    gap: 10px;
+  }
+
+  .sidebar_left {
+    width: 80px;
+    display: flex;
+    flex-direction: column;
+    background-color: #1b1919;
+    border-radius: 20px;
+    padding: 20px;
+    overflow-y: auto;
+    box-sizing: border-box;
+    flex-shrink: 0;
+  }
+
+  .sidebar_right {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    gap: 10px;
+  }
+
+  .search_bar {
+    background-color: white;
+    width: 300px;
+    border-radius: 20px;
+    flex-shrink: 0;
+  }
+
+  .sidebar_content {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
+    width: 300px;
+    background-color: #ffffff;
+    border-radius: 20px;
+    overflow-y: auto;
+  }
+
   .dm-header {
     display: flex;
     flex-direction: column;
@@ -74,7 +116,7 @@
   .search_row {
     display: flex;
     justify-content: space-between;
-    align-items: left;
+    align-items: center;
     gap: 12px;
     margin-top: 10px;
   }
@@ -95,40 +137,6 @@
     border: none;
     color: white;
     cursor: pointer;
-  }
-
-  .sidebars {
-    display: flex;
-  }
-
-  .sidebar_left {
-    width: 80px;
-    height: 88.5vh;
-    margin: 10px;
-    background-color: #1b1919;
-    border-right: 1px solid #333;
-    padding: 20px;
-    overflow-y: auto;
-    border-radius: 20px;
-  }
-
-  .sidebar_content {
-    display: flex;
-    flex: 1;
-    flex-direction: column;
-    width: 300px;
-    margin-top: 10px;
-    height: 78vh;
-    background-color: white;
-    border-radius: 20px;
-  }
-
-  .search_bar {
-    background-color: white;
-    gap: 10px;
-    width: 300px;
-    height: 115px;
-    border-radius: 20px;
-    margin-top: 13px;
+    padding: 8px 12px;
   }
 </style>

@@ -7,18 +7,23 @@
   import UserEntry from '$src/components/sidebar/sidebar_list/UserEntry.svelte'
   import { userService } from '$src/services/UserService'
   import type { WebSocketMessage } from '$src/interfaces/WebSocketMessages'
-  import UnreadNotificationBadge from '$src/components/chat/UnreadNotificationBadge.svelte'
 
   let recentUsers = $state<User[]>([])
   let onlineUsers = $state<User[]>([])
 
-  onMount(() => {
-    userService.getRecentChatUsers(userState.currentUser.id).then((fetchedUsers) => {
+  let currentUserId = $derived(userState.currentUser?.id)
+
+  $effect(() => {
+    if (!currentUserId) return
+    userService.getRecentChatUsers(currentUserId).then((fetchedUsers) => {
       recentUsers = fetchedUsers
     })
     userService.getAllUsersForServer().then((fetchedUsers) => {
       onlineUsers = fetchedUsers
     })
+  })
+
+  onMount(() => {
     webSocketService.on('USER_LOGIN', handleUserLogin)
     webSocketService.on('USER_LOGOUT', handleUserLogout)
   })
@@ -26,7 +31,6 @@
   onDestroy(() => {
     webSocketService.off('USER_LOGIN', handleUserLogin)
     webSocketService.off('USER_LOGOUT', handleUserLogout)
-
     chatState.selectUser(null)
   })
 
@@ -50,48 +54,25 @@
 
 <div class="chat_overview">
   <ul>
-    {#each recentUsers as user (user.id)}
+    {#each filteredUsers as user (user.id)}
       <UserEntry {user} />
-    {/each}
-    {#each Array.from({ length: 10 })}
-      <li class="placeholder"></li>
     {/each}
   </ul>
 </div>
 
 <style>
   .chat_overview {
-    display: flex;
     flex: 1;
-    flex-direction: column;
-    height: 100%;
+    min-height: 0;
+    overflow-y: auto;
     width: 100%;
   }
 
   .chat_overview ul {
-    flex: 1;
     display: flex;
     flex-direction: column;
     padding: 0;
     margin: 0;
-  }
-
-  .chat_overview li {
-    flex: 1;
     list-style: none;
-    padding: 0;
-    margin: 10;
-  }
-
-  .chat_overview li:last-child {
-    border-bottom: none;
-  }
-
-  .placeholder {
-    align-items: center;
-    justify-content: center;
-    flex: 1;
-    border-bottom: 1px solid rgb(211, 210, 210);
-    color: black;
   }
 </style>

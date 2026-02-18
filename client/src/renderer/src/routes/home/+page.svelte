@@ -107,7 +107,7 @@
 
 <style>
   .app {
-    height: 97vh;
+    height: 95vh;
     display: flex;
     flex-direction: column;
     background-color: rgb(232, 234, 251);

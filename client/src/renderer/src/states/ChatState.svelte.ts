@@ -7,7 +7,7 @@ class ChatState {
   selectedUser = $state<User | null>(null)
   selectedSpace = $state<Space | null>(null)
   selectedChannel = $state<Channel | null>(null)
-  currentlySelectedContent = $state<ChatViewType | null>(null)
+  currentlySelectedContent = $state<ChatViewType | null>('private')
 
   selectUser(user: User) {
     this.selectedUser = user
