@@ -106,5 +106,9 @@
     flex: 1;
     display: flex;
     flex-direction: column;
+    min-height: 0;
+    overflow: hidden;
+    background-color: white;
+    border-radius: 20px;
   }
 </style>

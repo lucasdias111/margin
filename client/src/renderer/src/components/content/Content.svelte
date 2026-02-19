@@ -19,5 +19,9 @@
     display: flex;
     flex: 1;
     overflow: hidden;
+    padding: 0;
+    height: 100%;
+    box-sizing: border-box;
+    gap: 10px;
   }
 </style>
