@@ -26,10 +26,10 @@
   })
 </script>
 
-<div>
+<div class="messages-wrapper">
   <div class="messages" bind:this={messagesContainer}>
     {#each messages as message (message.id)}
-      <div class="message-container" class:sent={message.fromUserId === userState.currentUser?.id}>
+      <div class="messages-container" class:sent={message.fromUserId === userState.currentUser?.id}>
         {#if message.conversationType === 'DIRECT'}
           <DirectMessageBubble {message} />
         {:else}
@@ -41,27 +41,30 @@
 </div>
 
 <style>
+  .messages-wrapper {
+    flex: 1;
+    min-height: 0;
+    overflow: hidden;
+  }
+
   .messages {
-    height: calc(100vh - 300px);
+    height: 100%;
     padding: 20px;
     overflow-y: auto;
     scroll-behavior: smooth;
     display: flex;
     flex-direction: column;
     gap: 8px;
+    box-sizing: border-box;
   }
 
-  .message-container {
-    flex: 1;
-    min-height: 0;
-    overflow-y: auto;
-  }
-
-  .message-container:not(.sent) {
+  .messages-container {
+    display: flex;
     justify-content: flex-start;
+    width: 100%;
   }
 
-  .message-container.sent {
+  .messages-container.sent {
     justify-content: flex-end;
   }
 </style>

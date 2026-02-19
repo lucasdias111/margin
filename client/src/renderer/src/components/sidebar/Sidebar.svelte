@@ -20,7 +20,6 @@
   </div>
   <div class="sidebar_right">
     <div class="search_bar">
-
       {#if currentUser && selectedContent === null}
         <Avatar user={currentUser} />
       {/if}
@@ -29,6 +28,11 @@
         {#if selectedContent === 'private'}
           <h3 class="dm-head">Private chat</h3>
           <SearchBar />
+        {:else if selectedContent === 'space'}
+          <div>
+            <h3 class="dm-head">Margin</h3>
+            <button class="manage-button">Manage</button>
+          </div>
         {/if}
       </div>
     </div>
@@ -73,6 +77,7 @@
   .search_bar {
     background-color: white;
     width: 300px;
+    height: 20%;
     border-radius: 20px;
     flex-shrink: 0;
   }
@@ -104,5 +109,20 @@
     margin: 0;
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     text-align: center;
+  }
+
+  .manage-button {
+    background-color: #da6b10;
+    border-radius: 10px;
+    font-size: 3vh;
+    border: none;
+    color: white;
+    cursor: pointer;
+    padding: 8px 12px;
+    margin-top: 10px;
+  }
+
+  .manage-button:hover {
+    background-color: #e19a5d;
   }
 </style>

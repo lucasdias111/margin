@@ -72,13 +72,10 @@
 
 <style>
   .chat-page {
-    width: 98%;
     flex-shrink: 0;
     background-color: white;
     border-radius: 20px;
     outline: none;
-    margin-top: auto;
-    margin-bottom: 10px;
   }
 
   .sendbut {
@@ -107,9 +104,8 @@
     padding: 10px;
     background-color: white;
     border: 1px solid rgb(206, 206, 206);
-    border-radius: 4px;
-    color: #f6f6f6;
-    border-radius: 999px;
+    border-radius: 15px;
+    color: #1d2021;
   }
 
   .input-area button {

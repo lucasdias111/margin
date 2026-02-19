@@ -107,8 +107,8 @@
     display: flex;
     flex-direction: column;
     min-height: 0;
-    overflow: hidden;
-    background-color: white;
-    border-radius: 20px;
+    gap: 10px;
+    width: 100%;
+    padding: 10px;
   }
 </style>
