@@ -1,7 +1,11 @@
 import { webSocketService } from '$src/services/WebSocketService'
 import { WebSocketMessageType } from '$src/interfaces/WebSocketMessageType'
 import { callState } from '$src/states/CallState.svelte'
-import type { CallResponsePayload, WebSocketMessage } from '$src/interfaces/WebSocketMessages'
+import type {
+  CallCandidatePayload,
+  CallResponsePayload,
+  WebSocketMessage
+} from '$src/interfaces/WebSocketMessages'
 
 class CallService {
   private onRemoteStreamCallback: ((stream: MediaStream) => void) | null = null
@@ -82,6 +86,7 @@ class CallService {
     }
 
     peerConnection.onicecandidate = (event: RTCPeerConnectionIceEvent) => {
+      if (!event.candidate) return
       webSocketService.send<RTCIceCandidate>({
         type: WebSocketMessageType.CALL_CANDIDATE,
         recipientId: userId,
@@ -194,22 +199,22 @@ class CallService {
     await this.processQueuedCandidates()
   }
 
-  async handleIceCandidate(candidate: RTCIceCandidateInit | string): Promise<void> {
+  async handleIceCandidate(data: WebSocketMessage<CallCandidatePayload>): Promise<void> {
+    if (!data.payload) return
+    const { candidate, sdpMid, sdpMLineIndex, usernameFragment } = data.payload
     if (!callState.isP2PCall) return
 
-    const parsedCandidate = typeof candidate === 'string' ? JSON.parse(candidate) : candidate
+    const rtcCandidate = new RTCIceCandidate({ candidate, sdpMid, sdpMLineIndex, usernameFragment })
 
     if (!callState.p2pCallState?.peerConnection) {
-      callState.queueCandidate(parsedCandidate)
+      callState.queueCandidate({ candidate, sdpMid, sdpMLineIndex, usernameFragment })
       return
     }
 
     if (callState.p2pCallState.peerConnection.remoteDescription) {
-      await callState.p2pCallState.peerConnection.addIceCandidate(
-        new RTCIceCandidate(parsedCandidate)
-      )
+      await callState.p2pCallState.peerConnection.addIceCandidate(rtcCandidate)
     } else {
-      callState.queueCandidate(parsedCandidate)
+      callState.queueCandidate({ candidate, sdpMid, sdpMLineIndex, usernameFragment })
     }
   }
 

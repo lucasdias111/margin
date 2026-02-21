@@ -17,6 +17,9 @@
   import type { UnreadCount } from '$src/interfaces/UnreadCount'
   import { notificationState } from '$src/states/NotificationState.svelte'
   import { chatState } from '$src/states/ChatState.svelte'
+  import Navigation from '$src/components/sidebar/Navigation.svelte'
+  import type { contentType } from '$src/interfaces/Content'
+  import ManageWindow from '$src/components/manage/ManageWindow.svelte'
 
   onMount(() => {
     setup()
@@ -93,9 +96,14 @@
 
 <div class="app">
   <Header />
-  <div class="content">
-    <Sidebar />
-    <ContentWindow />
+  <div class="window">
+    <Navigation />
+    {#if chatState.currentlySelectedContent === 'manage'}
+      <ManageWindow />
+    {:else}
+      <Sidebar />
+      <ContentWindow />
+    {/if}
   </div>
 </div>
 
@@ -113,22 +121,24 @@
     background-color: rgb(232, 234, 251);
   }
 
-  .content {
-    display: flex;
-    flex: 1;
-    overflow: hidden;
-  }
-
   .call-overlay {
     position: fixed;
     top: 0;
     left: 0;
     right: 0;
     bottom: 0;
-    background: rgba(0, 0, 0, 0.95);
+    background: #2d2d2d;
     z-index: 1000;
     display: flex;
     align-items: center;
     justify-content: center;
+  }
+
+  .window {
+    display: flex;
+    height: 100%;
+    padding: 10px;
+    box-sizing: border-box;
+    gap: 10px;
   }
 </style>

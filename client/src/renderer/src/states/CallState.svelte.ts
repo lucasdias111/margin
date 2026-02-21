@@ -109,6 +109,10 @@ class CallState {
     this.baseState.durationInterval = intervalId
   }
 
+  setCallId(callId: number): void {
+    this.baseState.callId = callId
+  }
+
   setConnection(
     peerConnection: RTCPeerConnection,
     localStream: MediaStream,

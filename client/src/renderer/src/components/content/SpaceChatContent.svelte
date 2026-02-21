@@ -109,6 +109,5 @@
     min-height: 0;
     gap: 10px;
     width: 100%;
-    padding: 10px;
   }
 </style>

@@ -3,86 +3,52 @@
   import type { Space } from '$src/interfaces/Space'
   import type { Channel } from '$src/interfaces/Channel'
   import { onDestroy, onMount } from 'svelte'
-  import { authenticatedGet } from '$src/services/api'
-  import { SvelteMap } from 'svelte/reactivity'
+  import { spacesService } from '$src/services/SpacesService'
 
   let spaces = $state<Space[]>([])
   let expandedSpaceId = $state<number | null>(null)
-  let channelsBySpace = new SvelteMap<number, Channel[]>()
 
   onMount(async () => {
-    spaces = await getAllSpacesForServer()
+    spaces = await spacesService.getAllSpacesForServer()
   })
 
   onDestroy(() => {
     chatState.selectChannel(null)
   })
 
-  async function getAllSpacesForServer(): Promise<Space[]> {
-    try {
-      const response = await authenticatedGet(`spaces/get_all_spaces`)
-
-      if (!response.ok) {
-        throw new Error(`Request failed with status: ${response.status}`)
-      }
-      return await response.json()
-    } catch (error) {
-      console.error('Error getting spaces:', error)
-      return []
-    }
-  }
-
   async function toggleSpace(space: Space): Promise<void> {
-    if (expandedSpaceId === space.id) {
-      expandedSpaceId = null
-      return
-    }
-
-    expandedSpaceId = space.id
+    expandedSpaceId = expandedSpaceId === space.spaceId ? null : space.spaceId
     chatState.selectSpace(space)
-
-    if (!channelsBySpace.has(space.id)) {
-      const response = await authenticatedGet(`api/channels/${space.id}/get_channels_for_space`)
-      if (response.ok) {
-        const channels: Channel[] = await response.json()
-        channelsBySpace.set(space.id, channels)
-      }
-    }
   }
 
   function selectChannel(channel: Channel): void {
     chatState.selectChannel(channel)
-    console.log('Selected channel:', channel)
   }
 </script>
 
 <div class="spaces-container">
-  <h3>Channels</h3>
+  <h3>Spaces</h3>
   <ul class="spaces-list">
-    {#each spaces as space (space.id)}
+    {#each spaces as space (space.spaceId)}
       <li class="space-item">
         <button
           class="space-button"
-          class:expanded={expandedSpaceId === space.id}
+          class:expanded={expandedSpaceId === space.spaceId}
           onclick={() => toggleSpace(space)}
         >
-          <span class="arrow">{expandedSpaceId === space.id ? '▼' : '▶'}</span>
-          {space.name}
+          <span class="arrow">{expandedSpaceId === space.spaceId ? '▼' : '▶'}</span>
+          {space.spaceName}
         </button>
 
-        {#if expandedSpaceId === space.id}
+        {#if expandedSpaceId === space.spaceId}
           <ul class="channels-list">
-            {#if channelsBySpace.get(space.id)}
-              {#each channelsBySpace.get(space.id) || [] as channel (channel.id)}
-                <li class="channel-item">
-                  <button class="channel-button" onclick={() => selectChannel(channel)}>
-                    # {channel.name}
-                  </button>
-                </li>
-              {/each}
-            {:else}
-              <li class="loading">Loading channels...</li>
-            {/if}
+            {#each space.channels as channel (channel.id)}
+              <li class="channel-item">
+                <button class="channel-button" onclick={() => selectChannel(channel)}>
+                  # {channel.name}
+                </button>
+              </li>
+            {/each}
           </ul>
         {/if}
       </li>
@@ -163,7 +129,7 @@
   }
 
   .channel-button:hover {
-    background-color: rgba(255, 255, 255, 0.08);
+    background-color: #c1c1c1;
     color: black;
   }
 

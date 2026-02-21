@@ -1,6 +1,4 @@
 <script lang="ts">
-  import ServerSelection from '$src/components/sidebar/ServerSelection.svelte'
-  import Navigation from './Navigation.svelte'
   import UsersList from './sidebar_list/UsersList.svelte'
   import { chatState } from '$src/states/ChatState.svelte'
   import SpacesList from './sidebar_list/SpacesList.svelte'
@@ -11,63 +9,41 @@
   let selectedContent = $derived(chatState.currentlySelectedContent)
   let currentUser = $derived(userState.currentUser)
   let searchUser = $state('')
+
+  function goToManage(): void {
+    chatState.currentlySelectedContent = 'manage'
+  }
 </script>
 
-<div class="sidebars">
-  <div class="sidebar_left">
-    <Navigation />
-    <ServerSelection />
-  </div>
-  <div class="sidebar_right">
-    <div class="search_bar">
-      {#if currentUser && selectedContent === null}
-        <Avatar user={currentUser} />
-      {/if}
+<div class="sidebar">
+  <div class="search_bar">
+    {#if currentUser && selectedContent === null}
+      <Avatar user={currentUser} />
+    {/if}
 
-      <div class="dm-header">
-        {#if selectedContent === 'private'}
-          <h3 class="dm-head">Private chat</h3>
-          <SearchBar />
-        {:else if selectedContent === 'space'}
-          <div>
-            <h3 class="dm-head">Margin</h3>
-            <button class="manage-button">Manage</button>
-          </div>
-        {/if}
-      </div>
-    </div>
-    <div class="sidebar_content">
+    <div class="dm-header">
       {#if selectedContent === 'private'}
-        <UsersList {searchUser} />
+        <h3 class="dm-head">Private chat</h3>
+        <SearchBar />
       {:else if selectedContent === 'space'}
-        <SpacesList />
+        <div>
+          <h3 class="dm-head">Margin</h3>
+          <button class="manage-button" onclick={goToManage}>Manage</button>
+        </div>
       {/if}
     </div>
+  </div>
+  <div class="sidebar_content">
+    {#if selectedContent === 'private'}
+      <UsersList {searchUser} />
+    {:else if selectedContent === 'space'}
+      <SpacesList />
+    {/if}
   </div>
 </div>
 
 <style>
-  .sidebars {
-    display: flex;
-    height: 100%;
-    padding: 10px;
-    box-sizing: border-box;
-    gap: 10px;
-  }
-
-  .sidebar_left {
-    width: 80px;
-    display: flex;
-    flex-direction: column;
-    background-color: #1b1919;
-    border-radius: 20px;
-    padding: 20px;
-    overflow-y: auto;
-    box-sizing: border-box;
-    flex-shrink: 0;
-  }
-
-  .sidebar_right {
+  .sidebar {
     display: flex;
     flex-direction: column;
     min-height: 0;
@@ -77,7 +53,6 @@
   .search_bar {
     background-color: white;
     width: 300px;
-    height: 20%;
     border-radius: 20px;
     flex-shrink: 0;
   }
@@ -104,7 +79,7 @@
   }
 
   .dm-head {
-    color: black;
+    color: #2d2d2d;
     font-size: 20px;
     margin: 0;
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;

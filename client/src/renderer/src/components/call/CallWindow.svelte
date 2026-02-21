@@ -39,6 +39,7 @@
 
     webSocketService.on(WebSocketMessageType.CALL_RESPONSE, handleCallResponse)
     webSocketService.on(WebSocketMessageType.CALL_CANDIDATE, handleIceCandidate)
+    webSocketService.on(WebSocketMessageType.CALL_CREATED, handleCallCreated)
 
     if (isIncoming && offer) {
       callService.answerCall(userId, offer)
@@ -50,22 +51,20 @@
   onDestroy(() => {
     webSocketService.off(WebSocketMessageType.CALL_RESPONSE, handleCallResponse)
     webSocketService.off(WebSocketMessageType.CALL_CANDIDATE, handleIceCandidate)
+    webSocketService.off(WebSocketMessageType.CALL_CREATED, handleCallCreated)
     callService.cleanup()
   })
+
+  function handleCallCreated(data: WebSocketMessage<{ callId: number }>): void {
+    callState.setCallId(data.payload!.callId)
+  }
 
   async function handleCallResponse(data: WebSocketMessage<CallResponsePayload>): Promise<void> {
     await callService.handleCallResponse(data)
   }
 
   async function handleIceCandidate(data: WebSocketMessage<CallCandidatePayload>): Promise<void> {
-    const { candidate, sdpMid, sdpMLineIndex, usernameFragment } = data.payload!
-
-    await callService.handleIceCandidate({
-      candidate,
-      sdpMid,
-      sdpMLineIndex,
-      usernameFragment
-    })
+    await callService.handleIceCandidate(data)
   }
 
   function formatDuration(seconds: number): string {
