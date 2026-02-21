@@ -2,13 +2,15 @@
   import type { User } from '$src/interfaces/User'
   import { onDestroy, onMount } from 'svelte'
   import { webSocketService } from '$src/services/WebSocketService'
-  import { chatState } from '$src/states/ChatState.svelte'
   import { userState } from '$src/states/UserState.svelte'
   import UserEntry from '$src/components/sidebar/sidebar_list/UserEntry.svelte'
   import { userService } from '$src/services/UserService'
   import type { WebSocketMessage } from '$src/interfaces/WebSocketMessages'
+  import type { RecentChatUsers } from '$src/interfaces/RecentChatUsers'
+  import { chatState } from '$src/states/ChatState.svelte'
 
-  let recentUsers = $state<User[]>([])
+
+  let recentUsers = $state<RecentChatUsers[]>([])
   let onlineUsers = $state<User[]>([])
 
   let currentUserId = $derived(userState.currentUser?.id)
@@ -46,16 +48,16 @@
 
   let { searchUser = '' }: { searchUser?: string } = $props()
   let filteredUsers = $derived(
-    recentUsers.filter((user) =>
-      user.username.toLowerCase().includes((searchUser ?? '').toLowerCase())
+    recentUsers.filter((recentUser) =>
+      recentUser.user.username.toLowerCase().includes((searchUser ?? '').toLowerCase())
     )
   )
 </script>
 
 <div class="chat_overview">
   <ul>
-    {#each filteredUsers as user (user.id)}
-      <UserEntry {user} />
+    {#each filteredUsers as recentUser (recentUser.user.id)}
+      <UserEntry {recentUser} isSelected={chatState.selectedUser?.id === recentUser.user.id} />
     {/each}
   </ul>
 </div>

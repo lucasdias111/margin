@@ -6,6 +6,9 @@
   }
 
   let { selectedSpace }: Props = $props()
+  if (selectedSpace) {
+    console.log(selectedSpace.members)
+  }
 </script>
 
 <div class="space-members">
