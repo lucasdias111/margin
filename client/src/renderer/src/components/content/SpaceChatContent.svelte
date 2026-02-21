@@ -88,6 +88,7 @@
 </script>
 
 <div class="chat">
+
   {#if selectedChannel}
     <ChatHeader
       name={selectedChannel.name}
@@ -96,9 +97,10 @@
       isInCall={isInChannelCall}
     />
   {/if}
-
+  <div class="chat-background">
   <MessagesContainer {messages} bind:messagesContainer />
-  <ChatInput selectedContent={!!selectedChannel} bind:messageInput onSubmit={handleSubmit} />
+</div>
+<ChatInput selectedContent={!!selectedChannel} bind:messageInput onSubmit={handleSubmit} />
 </div>
 
 <style>
@@ -109,5 +111,14 @@
     min-height: 0;
     gap: 10px;
     width: 100%;
+    z-index: 999;
+  }
+
+  .chat-background {
+    z-index: 1;
+    background-color: white;
+    height: 100vh;
+    width: auto;
+    border-radius: 15px;
   }
 </style>

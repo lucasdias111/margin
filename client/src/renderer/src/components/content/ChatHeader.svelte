@@ -38,13 +38,14 @@
 
 <style>
   .chat-header {
-    height: 60px;
-    background-color: #1a1a1a;
+    height: 80px;
+    background-color: #2d2d2d;
     display: flex;
     align-items: center;
     justify-content: space-between;
     padding: 0 20px;
-    border-bottom: 1px solid #333;
+    border-bottom: none;
+    border-radius: 15px;
   }
 
   h1 {
@@ -53,16 +54,17 @@
   }
 
   .username {
-    color: #b47024;
+    color: #da6b10;
   }
 
   .call-buttons {
     display: flex;
     gap: 12px;
+    
   }
 
   .call-btn {
-    background: #b47024;
+    background: #da6b10;
     border: none;
     cursor: pointer;
     padding: 8px;
