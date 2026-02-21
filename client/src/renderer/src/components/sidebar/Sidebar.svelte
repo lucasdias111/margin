@@ -2,12 +2,11 @@
   import UsersList from './sidebar_list/UsersList.svelte'
   import { chatState } from '$src/states/ChatState.svelte'
   import SpacesList from './sidebar_list/SpacesList.svelte'
-  import Avatar from './sidebar_list/Avatar.svelte'
-  import { userState } from '$src/states/UserState.svelte'
   import SearchBar from '$src/components/content/SearchBar.svelte'
+  import marginLogo from '$src/assets/pics/margin-lo.png'
+  
 
   let selectedContent = $derived(chatState.currentlySelectedContent)
-  let currentUser = $derived(userState.currentUser)
   let searchUser = $state('')
 
   function goToManage(): void {
@@ -17,9 +16,7 @@
 
 <div class="sidebar">
   <div class="search_bar">
-    {#if currentUser && selectedContent === null}
-      <Avatar user={currentUser} />
-    {/if}
+   
 
     <div class="dm-header">
       {#if selectedContent === 'private'}
@@ -27,8 +24,9 @@
         <SearchBar />
       {:else if selectedContent === 'space'}
         <div>
-          <h3 class="dm-head">Margin</h3>
-          <button class="manage-button" onclick={goToManage}>Manage</button>
+        <img src={marginLogo} alt="logo" />
+          <!-- <h3 class="dm-head">Margin</h3> -->
+          <button class="manage-button" onclick={goToManage}>Manage spaces</button>
         </div>
       {/if}
     </div>
@@ -36,6 +34,8 @@
   <div class="sidebar_content">
     {#if selectedContent === 'private'}
       <UsersList {searchUser} />
+  <div class="chat-window">
+  </div>
     {:else if selectedContent === 'space'}
       <SpacesList />
     {/if}
@@ -89,7 +89,7 @@
   .manage-button {
     background-color: #da6b10;
     border-radius: 10px;
-    font-size: 3vh;
+    font-size: 1.5vh;
     border: none;
     color: white;
     cursor: pointer;

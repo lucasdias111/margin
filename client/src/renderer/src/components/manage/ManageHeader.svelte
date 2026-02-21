@@ -1,17 +1,20 @@
 <script lang="ts">
+  import { chatState } from "$src/states/ChatState.svelte";
+
   let activeTab = 'Spaces';
   const tabs = ['Spaces', 'Members', 'Visibility'];
+
 </script>
 
 <div class="manage-header">
-  <button class="back-btn">&#8592;</button>
+  <button class="back-btn" onclick={() => {chatState.currentlySelectedContent = 'private'}}>&#8592; </button>
   <h1>Manage</h1>
   <nav class="tabs">
     {#each tabs as tab}
       <button
         class="tab-btn"
         class:active={activeTab === tab}
-        on:click={() => (activeTab = tab)}
+        onclick={() => (activeTab = tab)}
       >
         {tab}
       </button>

@@ -89,7 +89,7 @@
   .attachbut {
     display: flex;
     border-radius: 20px;
-    background-color: #1b1919;
+    background-color: #2d2d2d;
   }
 
   .input-area {

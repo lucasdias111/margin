@@ -137,7 +137,7 @@
     align-items: center;
     justify-content: center;
     flex-direction: column;
-    gap: 0.75rem;
+    gap: 1.75rem;
   }
 
   .setbut {

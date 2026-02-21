@@ -36,7 +36,7 @@
           class:expanded={expandedSpaceId === space.spaceId}
           onclick={() => toggleSpace(space)}
         >
-          <span class="arrow">{expandedSpaceId === space.spaceId ? '▼' : '▶'}</span>
+          <span class="arrow">{expandedSpaceId === space.spaceId ? '▾' : '▸'}</span>
           {space.spaceName}
         </button>
 
@@ -45,7 +45,7 @@
             {#each space.channels as channel (channel.id)}
               <li class="channel-item">
                 <button class="channel-button" onclick={() => selectChannel(channel)}>
-                  # {channel.name}
+                 ›  {channel.name}
                 </button>
               </li>
             {/each}
@@ -60,6 +60,7 @@
   .spaces-container {
     padding: 1rem;
     color: black;
+    font-family:'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
   }
 
   .spaces-list {
@@ -87,6 +88,7 @@
     gap: 0.5rem;
     border-radius: 4px;
     transition: background-color 0.2s;
+    font-family:'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
   }
 
   .space-button:hover {
@@ -94,7 +96,6 @@
   }
 
   .space-button.expanded {
-    font-weight: bold;
     color: black;
   }
 
