@@ -1,41 +1,56 @@
 <script lang="ts">
   import { chatState } from '$src/states/ChatState.svelte'
   import UnreadNotificationBadge from '$src/components/chat/UnreadNotificationBadge.svelte'
-  import type { User } from '$src/interfaces/User'
   import { notificationState } from '$src/states/NotificationState.svelte'
+  import type { RecentChatUsers } from '$src/interfaces/RecentChatUsers'
+  import UserAvatar from '$src/components/user/UserAvatar.svelte'
+  import { encryptionService } from '$src/services/EncryptionService'
 
   interface Props {
-    user: User
-    lastMessage?: string
-    lastMessageTime?: string
-    isSelected?: boolean
+    recentUser: RecentChatUsers
+    isSelected: boolean
   }
 
-  let { user, lastMessage = 'Test besked bliver nævnt her', lastMessageTime = '', isSelected = false }: Props = $props()
+  let decryptedMessage = $state('')
+  let { recentUser, isSelected = false }: Props = $props()
+  const { user: chatUser, lastMessage, lastMessageTime } = $derived(recentUser)
 
-  const unreadCount = $derived(notificationState.getTotalUnreadDirectMessagesForUser(user.id))
+  $effect(() => {
+    encryptionService.decryptMessage(lastMessage, true).then((result) => {
+      decryptedMessage = result
+    })
+  })
+  const unreadCount = $derived(notificationState.getTotalUnreadDirectMessagesForUser(chatUser.id))
+
+  function formatTime(dateTime: string): string {
+    return new Date(dateTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+  }
 </script>
 
-<button class="user-button" class:selected={isSelected} onclick={() => chatState.selectUser(user)}>
+<button
+  class="user-button"
+  class:selected={isSelected}
+  onclick={() => chatState.selectUser(chatUser)}
+>
   <div class="avatar">
-    {#if user.profilePictureUrl}
-      <img src={user.profilePictureUrl} alt={user.username} />
+    {#if chatUser.profilePictureUrl}
+      <UserAvatar profilePictureUrl={chatUser.profilePictureUrl} />
     {:else}
       <span class="avatar-initials">
-        {user.username.slice(0, 2).toUpperCase()}
+        {chatUser.username.slice(0, 2).toUpperCase()}
       </span>
     {/if}
   </div>
 
   <div class="user-info">
     <div class="top-row">
-      <span class="username">{user.username}</span>
+      <span class="username">{chatUser.username}</span>
       {#if lastMessageTime}
-        <span class="timestamp">{lastMessageTime}</span>
+        <span class="timestamp">{formatTime(lastMessageTime)}</span>
       {/if}
     </div>
     <div class="bottom-row">
-      <span class="last-message">{lastMessage}</span>
+      <span class="last-message">{decryptedMessage}</span>
       {#if unreadCount > 0}
         <UnreadNotificationBadge shouldShow={true} count={unreadCount} />
       {/if}

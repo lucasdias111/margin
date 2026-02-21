@@ -1,14 +1,10 @@
 <script lang="ts">
-  let {
-    shouldShow
-  }: {
-    shouldShow: boolean
-  } = $props()
+  let { shouldShow, count }: { shouldShow: boolean; count: number } = $props()
 </script>
 
 <div>
   {#if shouldShow}
-    <span class="badge">&#183;</span>
+    <span class="badge">{count}</span>
   {/if}
 </div>
 
