@@ -42,7 +42,9 @@
         <path d="M21.75,20.5h-7.5a1,1,0,0,0,0,2h7.5a1,1,0,0,0,0-2Z" fill="currentColor" />
         <path d="M11.28,12.5H24.72a1,1,0,0,0,0-2H11.28a1,1,0,0,0,0,2Z" fill="currentColor" />
       </svg>
-      <UnreadNotificationBadge shouldShow={notificationState.getTotalUnreadDirectMessages() > 0} />
+      <UnreadNotificationBadge 
+      shouldShow={notificationState.getTotalUnreadDirectMessages() > 0}
+      count={notificationState.getTotalUnreadDirectMessages()} />
     </button>
     <button
       onclick={() => onContentSelected('space')}
@@ -82,7 +84,11 @@
           fill="currentColor"
         />
       </svg>
-      <UnreadNotificationBadge shouldShow={notificationState.getTotalUnreadChannelMessages() > 0} />
+      
+      <UnreadNotificationBadge 
+      shouldShow={notificationState.getTotalUnreadChannelMessages() > 0}
+      count={notificationState.getTotalUnreadChannelMessages()} />
+      
     </button>
     <button
       onclick={() => onContentSelected('explore')}

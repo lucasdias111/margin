@@ -60,7 +60,7 @@
   }
 
   .message.sent {
-    background-color: #252525;
+    background-color: #460e0f;
     color: #e5e5e5;
     border-bottom-right-radius: 4px;
   }

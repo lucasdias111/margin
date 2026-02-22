@@ -2,6 +2,8 @@
   import voiceCallIcon from '$src/resources/voiceCall.png'
   import videoCallIcon from '$src/resources/videoCall.png'
   import hangUpCallIcon from '$src/resources/hangUpCall.png'
+  import UserAvatar from '../user/UserAvatar.svelte';
+  import { chatState } from '$src/states/ChatState.svelte'
 
   interface Props {
     name: string
@@ -15,7 +17,18 @@
 
 <div>
   <div class="chat-header">
-    <h1 class="username">{name}</h1>
+    <div class="header-content">
+      <UserAvatar 
+    profilePictureUrl={chatState.selectedUser.profilePictureUrl} 
+    width={32} 
+    height={32} 
+    />
+
+    <div class="user-info">
+    <span class="username">{name}</span>
+    <span class="status">Offline</span>
+    </div>
+    </div>
     <div class="call-buttons">
       <button
         class="call-btn"
@@ -39,21 +52,30 @@
 <style>
   .chat-header {
     height: 80px;
-    background-color: #2d2d2d;
+    background-color: #f8ebd2;
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 0 20px;
+    padding: 0px 12px;
     border-bottom: none;
     border-radius: 15px;
   }
 
-  h1 {
-    margin: 0;
-    font-size: 20px;
+  .header-content {
+    display: flex;
+    align-items: center;
+    gap: 10px; 
   }
 
-  .username {
+  .user-info {
+    color: #da6b10;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  
+  .status {
+    font-size: 0.75rem;
     color: #da6b10;
   }
 
