@@ -57,7 +57,6 @@
     </div>
   </div>
 </button>
-
 <style>
   .user-button {
     width: 100%;

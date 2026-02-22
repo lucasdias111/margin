@@ -39,15 +39,13 @@
       placeholder="Password"
       bind:value={password}
     />
-
     <button class="logbut" type="submit">Login</button>
   </form>
 
   <p class="or">or</p>
 
-  <p>{loginResponse}</p>
-
   <button class="regbut" onclick={goToRegister}>Register</button>
+  <p class="response">{loginResponse}</p>
 </div>
 
 <style>
@@ -91,6 +89,10 @@
     font-size: 12px;
     color: whitesmoke;
     cursor: pointer;
+  }
+
+  .response {
+    color: black;
   }
 
   .regbut {

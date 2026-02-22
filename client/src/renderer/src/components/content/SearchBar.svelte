@@ -139,7 +139,7 @@
   .add-user-button {
     background-color: #da6b10;
     border-radius: 10px;
-    font-size: 3vh;
+    font-size: 18px;
     border: none;
     color: white;
     cursor: pointer;

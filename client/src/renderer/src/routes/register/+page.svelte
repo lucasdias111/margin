@@ -46,9 +46,15 @@
   }
 </script>
 
-<div>
+<div class="page">
   <form class="row" onsubmit={handleRegistration}>
     <img class="marginlogo" src={marginLogo} alt="Margin logo" />
+
+    {#if previewUrl}
+    <div class="preview">
+      <img src={previewUrl} alt="Profile Preview" />
+    </div>
+    {/if}
     <input
       id="username"
       type="text"
@@ -88,16 +94,9 @@
       {profilePicture ? profilePicture.name : 'Upload'}
     </label>
 
-    {#if previewUrl}
-      <div class="preview">
-        <img src={previewUrl} alt="Profile preview" />
-      </div>
-    {/if}
-
     {#if loginResponse}
       <p class="error">{loginResponse}</p>
     {/if}
-
     <button class="register" type="submit">Register</button>
   </form>
   <button id="backbut" onclick={goBack} aria-label="Back" title="Back">
@@ -115,9 +114,9 @@
 </div>
 
 <style>
-  div {
+  .page {
     background-color: whitesmoke;
-    height: 100vh;
+    min-height: 100vh;
     padding: 10px;
   }
 
@@ -139,6 +138,7 @@
     justify-content: center;
     gap: 18px;
     margin-top: 120px;
+    min-height: 500px;
   }
 
   #backbut {
@@ -153,15 +153,15 @@
   .preview {
     display: flex;
     justify-content: center;
-    margin: 10px 0;
+    margin: 10px 0 5px 0;
   }
 
   .preview img {
-    width: 150px;
-    height: 150px;
+    width: 70px;
+    height: 70px;
     border-radius: 50%;
     object-fit: cover;
-    border: 2px solid #ccc;
+    border: 3px solid #ccc;
   }
 
   .error {
@@ -183,20 +183,20 @@
   }
 
   .upload {
-    color: rgb(81, 26, 26);
+    color: #da610b;
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
   }
   .fileUpload {
     height: 40px;
     border-radius: 10px;
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    border: 2px solid #4e4d4d;
+    border: 1px solid #4e4d4d;
     display: flex;
     align-items: center;
     padding: 0 12px;
     font-size: 14px;
     cursor: pointer;
     background-color: rgb(255, 255, 255);
-    color: #662929;
+    color: #da610b;
   }
 </style>

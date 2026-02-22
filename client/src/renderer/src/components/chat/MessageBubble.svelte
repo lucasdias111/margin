@@ -55,12 +55,12 @@
   }
 
   .message:not(.sent) {
-    background-color: #b47024;
+    background-color: #da6b10;
     border-bottom-left-radius: 4px;
   }
 
   .message.sent {
-    background-color: #69685f;
+    background-color: #460e0f;
     color: #e5e5e5;
     border-bottom-right-radius: 4px;
   }
