@@ -18,10 +18,10 @@
 <div>
   <div class="chat-header">
     <div class="header-content">
-      <UserAvatar 
-    profilePictureUrl={chatState.selectedUser.profilePictureUrl} 
-    width={32} 
-    height={32} 
+      <UserAvatar
+    profilePictureUrl={chatState.selectedUser.profilePictureUrl}
+    width={32}
+    height={32}
     />
 
     <div class="user-info">
@@ -64,7 +64,7 @@
   .header-content {
     display: flex;
     align-items: center;
-    gap: 10px; 
+    gap: 10px;
   }
 
   .user-info {
@@ -73,7 +73,7 @@
     flex-direction: column;
     gap: 10px;
   }
-  
+
   .status {
     font-size: 0.75rem;
     color: #da6b10;
@@ -82,7 +82,7 @@
   .call-buttons {
     display: flex;
     gap: 12px;
-    
+
   }
 
   .call-btn {
