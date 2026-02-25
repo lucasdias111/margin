@@ -1,7 +1,7 @@
 import type { User } from '$src/interfaces/User'
-import type { Space } from '$src/interfaces/Space'
+import type { Margin } from '$src/interfaces/Margin'
 
-export type ContentType = 'private' | 'space' | 'explore' | 'settings' | 'manage'
+export type ContentType = 'private' | 'margin' | 'explore' | 'settings' | 'manage'
 
 export interface PrivateChatView {
   type: 'private'
@@ -9,8 +9,8 @@ export interface PrivateChatView {
 }
 
 export interface SpaceView {
-  type: 'space'
-  space: Space
+  type: 'margin'
+  margin: Margin
 }
 
 export interface ExploreView {

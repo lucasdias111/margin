@@ -88,7 +88,6 @@
 </script>
 
 <div class="chat">
-
   {#if selectedChannel}
     <ChatHeader
       name={selectedChannel.name}
@@ -98,9 +97,9 @@
     />
   {/if}
   <div class="chat-background">
-  <MessagesContainer {messages} bind:messagesContainer />
-</div>
-<ChatInput selectedContent={!!selectedChannel} bind:messageInput onSubmit={handleSubmit} />
+    <MessagesContainer {messages} bind:messagesContainer />
+  </div>
+  <ChatInput selectedContent={!!selectedChannel} bind:messageInput onSubmit={handleSubmit} />
 </div>
 
 <style>

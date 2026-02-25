@@ -1,43 +1,63 @@
 <script lang="ts">
-  import type { Space } from '$src/interfaces/Space'
+  import type { Space, SpaceMember } from '$src/interfaces/Space'
+  import AddSpaceMemberModal from '$src/components/manage/spaces/modals/AddSpaceMemberModal.svelte'
+  import { formatTimestamp } from '$src/commons/DateUtils'
+  import ListView from '$src/components/datatables/ListView.svelte'
 
   interface Props {
     selectedSpace: Space
+    onAddMember: (user: SpaceMember) => Promise<void>
   }
 
-  let { selectedSpace }: Props = $props()
-  if (selectedSpace) {
-    console.log(selectedSpace.members)
-  }
+  let { selectedSpace, onAddMember }: Props = $props()
+  let addMemberOpen = $state(false)
 </script>
 
 <div class="space-members">
   {#if selectedSpace}
     <div class="members-header">
       <h2>Members</h2>
-      <button class="add-member-btn">Add member</button>
+      <button class="add-member-btn" onclick={() => (addMemberOpen = true)}>Add member</button>
     </div>
-    <div class="search-bar">
-      <input type="text" placeholder="Search member" />
-    </div>
-    <div class="members-table">
-      <div class="members-table-header">
-        <span>Member</span>
-        <span>Role</span>
-        <span>Added date</span>
-        <span></span>
-      </div>
-      {#each selectedSpace.members as member (member.user.id)}
-        <div class="member-row">
-          <span class="member-name">{member.user.username}</span>
-          <span>{member.role}</span>
-          <span>{member.joinedAt}</span>
-          <button class="icon-btn">⋮</button>
-        </div>
-      {/each}
-    </div>
+    <ListView
+      columns={[
+        {
+          key: 'username',
+          label: 'Member',
+          flex: 1,
+          sortable: true,
+          render: (m) => m.user.username
+        },
+        {
+          key: 'role',
+          label: 'Role',
+          flex: 1,
+          sortable: true,
+          render: (m) => m.role
+        },
+        {
+          key: 'joinedAt',
+          label: 'Added date',
+          flex: 1.5,
+          sortable: true,
+          render: (m) => formatTimestamp(m.joinedAt)
+        }
+      ]}
+      rows={selectedSpace.members}
+      getKey={(member) => member.user.id}
+      searchPlaceholder="Search member"
+      searchFilter={(member, query) => member.user.username.toLowerCase().includes(query)}
+      onAction={(member) => console.log('action', member)}
+    />
   {/if}
 </div>
+
+<AddSpaceMemberModal
+  space={selectedSpace}
+  open={addMemberOpen}
+  onClose={() => (addMemberOpen = false)}
+  {onAddMember}
+/>
 
 <style>
   .space-members {
@@ -72,44 +92,5 @@
     font-size: 0.88rem;
     font-weight: 600;
     cursor: pointer;
-  }
-
-  .search-bar input {
-    border: 1px solid #d9d9d9;
-    border-radius: 20px;
-    padding: 8px 16px;
-    font-size: 0.88rem;
-    outline: none;
-    width: 180px;
-    background: #f5f5f5;
-  }
-
-  .members-table {
-    display: flex;
-    flex-direction: column;
-    gap: 0;
-  }
-
-  .members-table-header {
-    display: grid;
-    grid-template-columns: 2fr 1fr 1.5fr 30px;
-    font-size: 0.78rem;
-    color: #888;
-    padding: 6px 0 8px 0;
-    border-bottom: 1px solid #d9d9d9;
-  }
-
-  .member-row {
-    display: grid;
-    grid-template-columns: 2fr 1fr 1.5fr 30px;
-    align-items: center;
-    padding: 12px 0;
-    border-bottom: 1px solid #f0f0f0;
-    font-size: 0.9rem;
-    color: #2d2d2d;
-  }
-
-  .member-name {
-    font-weight: 700;
   }
 </style>

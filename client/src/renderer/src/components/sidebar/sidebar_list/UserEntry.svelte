@@ -5,6 +5,7 @@
   import type { RecentChatUsers } from '$src/interfaces/RecentChatUsers'
   import UserAvatar from '$src/components/user/UserAvatar.svelte'
   import { encryptionService } from '$src/services/EncryptionService'
+  import { formatTime } from '$src/commons/DateUtils'
 
   interface Props {
     recentUser: RecentChatUsers
@@ -13,18 +14,14 @@
 
   let decryptedMessage = $state('')
   let { recentUser, isSelected = false }: Props = $props()
-  const { user: chatUser, lastMessage, lastMessageTime } = $derived(recentUser)
+  const { user: chatUser, lastMessage, lastMessageTime, lastMessageIncoming } = $derived(recentUser)
 
   $effect(() => {
-    encryptionService.decryptMessage(lastMessage, true).then((result) => {
+    encryptionService.decryptMessage(lastMessage, lastMessageIncoming).then((result) => {
       decryptedMessage = result
     })
   })
   const unreadCount = $derived(notificationState.getTotalUnreadDirectMessagesForUser(chatUser.id))
-
-  function formatTime(dateTime: string): string {
-    return new Date(dateTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-  }
 </script>
 
 <button

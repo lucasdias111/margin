@@ -1,42 +1,48 @@
 <script lang="ts">
   import UsersList from './sidebar_list/UsersList.svelte'
-  import { chatState } from '$src/states/ChatState.svelte'
   import SpacesList from './sidebar_list/SpacesList.svelte'
-  import SearchBar from '$src/components/content/SearchBar.svelte'
+  import UserSearchBar from '$src/components/content/UserSearchBar.svelte'
   import marginLogo from '$src/assets/pics/margin-lo.png'
-  
+  import { chatState } from '$src/states/ChatState.svelte'
+  import type { User } from '$src/interfaces/User'
+  import type { ContentType } from '$src/interfaces/Content'
+  import { marginService } from '$src/interfaces/MarginsService'
 
-  let selectedContent = $derived(chatState.currentlySelectedContent)
-  let searchUser = $state('')
+  let selectedContent = $derived<ContentType>(chatState.currentlySelectedContent)
 
-  function goToManage(): void {
+  function onSelectUser(user: User): void {
+    chatState.selectUser(user)
+    chatState.selectPrivateChatContent()
+  }
+
+  function onManageSpaces(): void {
     chatState.currentlySelectedContent = 'manage'
   }
+
+  $effect(() => {
+    if (selectedContent === 'margin') {
+      marginService.getMargins().then((margins) => {
+        chatState.selectMargin(margins[0])
+      })
+    }
+  })
 </script>
 
 <div class="sidebar">
-  <div class="search_bar">
-   
-
-    <div class="dm-header">
-      {#if selectedContent === 'private'}
-        <h3 class="dm-head">Private chat</h3>
-        <SearchBar />
-      {:else if selectedContent === 'space'}
-        <div>
-        <img src={marginLogo} alt="logo" />
-          <!-- <h3 class="dm-head">Margin</h3> -->
-          <button class="manage-button" onclick={goToManage}>Manage spaces</button>
-        </div>
-      {/if}
-    </div>
-  </div>
-  <div class="sidebar_content">
+  <div class="sidebar-header">
     {#if selectedContent === 'private'}
-      <UsersList {searchUser} />
-  <div class="chat-window">
+      <h3 class="sidebar-title">Private chat</h3>
+      <UserSearchBar {onSelectUser} />
+    {:else if selectedContent === 'margin'}
+      <img src={marginLogo} alt="Margin logo" />
+      <button class="manage-button" onclick={onManageSpaces}>Manage spaces</button>
+    {/if}
   </div>
-    {:else if selectedContent === 'space'}
+
+  <div class="sidebar-content">
+    {#if selectedContent === 'private'}
+      <UsersList />
+    {:else if selectedContent === 'margin'}
       <SpacesList />
     {/if}
   </div>
@@ -46,55 +52,49 @@
   .sidebar {
     display: flex;
     flex-direction: column;
+    width: 300px;
     min-height: 0;
     gap: 10px;
   }
 
-  .search_bar {
-    background-color: white;
-    width: 300px;
-    border-radius: 20px;
+  .sidebar-header {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 20px;
     flex-shrink: 0;
+    background-color: #fff;
+    border-radius: 20px;
+    text-align: center;
   }
 
-  .sidebar_content {
+  .sidebar-content {
     display: flex;
     flex-direction: column;
     flex: 1;
     min-height: 0;
-    width: 300px;
-    background-color: #ffffff;
+    background-color: #fff;
     border-radius: 20px;
     overflow-y: auto;
   }
 
-  .dm-header {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
+  .sidebar-title {
     margin: 0;
-    justify-content: space-between;
-    text-align: center;
-    padding: 20px;
-  }
-
-  .dm-head {
-    color: #2d2d2d;
     font-size: 20px;
-    margin: 0;
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    text-align: center;
+    color: #2d2d2d;
   }
 
   .manage-button {
-    background-color: #da6b10;
-    border-radius: 10px;
-    font-size: 1.5vh;
-    border: none;
-    color: white;
-    cursor: pointer;
     padding: 8px 12px;
     margin-top: 10px;
+    background-color: #da6b10;
+    border: none;
+    border-radius: 10px;
+    color: #fff;
+    font-size: 1.5vh;
+    cursor: pointer;
   }
 
   .manage-button:hover {

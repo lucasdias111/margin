@@ -47,8 +47,8 @@
       count={notificationState.getTotalUnreadDirectMessages()} />
     </button>
     <button
-      onclick={() => onContentSelected('space')}
-      class:selected={chatState.currentlySelectedContent === 'space'}
+      onclick={() => onContentSelected('margin')}
+      class:selected={chatState.currentlySelectedContent === 'margin'}
       aria-label="Spaces"
       title="Spaces"
     >
@@ -96,7 +96,13 @@
       aria-label="Explore"
       title="Explore"
     >
-      <svg width="30px" height="64px" viewBox="0 0 1024 1024" class="icon exploreicon" fill="#ffffff">
+      <svg
+        width="30px"
+        height="64px"
+        viewBox="0 0 1024 1024"
+        class="icon exploreicon"
+        fill="#ffffff"
+      >
         <path
           d="M511.8 1023.7C229.6 1023.7 0 794.1 0 511.8S229.6 0 511.8 0s511.8 229.6 511.8 511.8-229.5 511.9-511.8 511.9z m0-938.4c-235.2 0-426.5 191.3-426.5 426.5s191.3 426.5 426.5 426.5S938.3 747 938.3 511.8 747 85.3 511.8 85.3z"
           fill="currentColor"
@@ -124,13 +130,14 @@
     </svg>
   </button>
 </div>
+
 <style>
   .navigation {
     width: 80px;
     display: flex;
     flex-direction: column;
     align-items: center;
-    justify-content: space-between; /* evenly spaces all items top to bottom */
+    justify-content: space-between;
     background-color: #2d2d2d;
     border-radius: 20px;
     padding: 20px;

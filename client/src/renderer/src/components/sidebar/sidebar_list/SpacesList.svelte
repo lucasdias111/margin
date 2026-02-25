@@ -9,7 +9,7 @@
   let expandedSpaceId = $state<number | null>(null)
 
   onMount(async () => {
-    spaces = await spacesService.getAllSpacesForServer()
+    spaces = await spacesService.getAllSpacesForUser()
   })
 
   onDestroy(() => {
@@ -18,7 +18,6 @@
 
   async function toggleSpace(space: Space): Promise<void> {
     expandedSpaceId = expandedSpaceId === space.spaceId ? null : space.spaceId
-    chatState.selectSpace(space)
   }
 
   function selectChannel(channel: Channel): void {
@@ -45,7 +44,7 @@
             {#each space.channels as channel (channel.id)}
               <li class="channel-item">
                 <button class="channel-button" onclick={() => selectChannel(channel)}>
-                 ›  {channel.name}
+                  › {channel.name}
                 </button>
               </li>
             {/each}
@@ -60,7 +59,7 @@
   .spaces-container {
     padding: 1rem;
     color: black;
-    font-family:'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
   }
 
   .spaces-list {
@@ -88,7 +87,7 @@
     gap: 0.5rem;
     border-radius: 4px;
     transition: background-color 0.2s;
-    font-family:'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
   }
 
   .space-button:hover {
@@ -132,11 +131,5 @@
   .channel-button:hover {
     background-color: #c1c1c1;
     color: black;
-  }
-
-  .loading {
-    padding: 0.375rem 0.5rem;
-    color: black;
-    font-style: italic;
   }
 </style>

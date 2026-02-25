@@ -1,6 +1,6 @@
 <script lang="ts">
   import { userState } from '$src/states/UserState.svelte'
-  import { formatTimestamp } from '$src/components/chat/ChatMessageUtils.svelte'
+  import { formatTimestamp } from '$src/commons/DateUtils'
 
   interface Props {
     fromUserId: number

@@ -1,6 +1,6 @@
 <!-- <script>
   import { userState } from '$src/states/UserState.svelte'
-  import SearchBar from '$src/components/content/SearchBar.svelte'
+  import SearchBar from '$src/components/content/UserSearchBar.svelte'
 </script>
 
 <div class="topbar">

@@ -137,7 +137,6 @@
 </script>
 
 <div class="chat">
-
   {#if selectedUser}
     <ChatHeader
       name={selectedUser.username}
@@ -145,9 +144,9 @@
       handleStartVideoCall={handleVideoCall}
     />
   {/if}
-<div class="chat-background">
-  <MessagesContainer {messages} isDirectMessage={true} bind:messagesContainer />
-</div>
+  <div class="chat-background">
+    <MessagesContainer {messages} isDirectMessage={true} bind:messagesContainer />
+  </div>
   <ChatInput selectedContent={!!selectedUser} bind:messageInput onSubmit={handleSubmitMessage} />
 </div>
 
@@ -161,12 +160,14 @@
     z-index: 2;
   }
 
-
   .chat-background {
-    z-index: 1;
+    flex: 1;
+    min-height: 0;
     background-color: white;
-    height: 100vh;
-    width: auto;
     border-radius: 15px;
+    overflow: hidden;
+    z-index: 1;
+    display: flex;
+    flex-direction: column;
   }
 </style>

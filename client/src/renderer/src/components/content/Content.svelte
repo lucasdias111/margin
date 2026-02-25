@@ -9,7 +9,7 @@
 <div class="content">
   {#if selectedContent === 'private'}
     <PrivateChatContent />
-  {:else if selectedContent === 'space'}
+  {:else if selectedContent === 'margin'}
     <SpaceChatContent />
   {/if}
 </div>

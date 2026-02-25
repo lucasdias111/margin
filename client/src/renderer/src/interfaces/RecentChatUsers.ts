@@ -4,4 +4,5 @@ export interface RecentChatUsers {
   user: User
   lastMessage?: string
   lastMessageTime?: string
+  lastMessageIncoming: boolean
 }

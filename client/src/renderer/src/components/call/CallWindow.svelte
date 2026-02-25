@@ -9,6 +9,7 @@
     WebSocketMessage
   } from '$src/interfaces/WebSocketMessages'
   import { callService } from '$src/services/CallService'
+  import { formatDuration } from '$src/commons/DateUtils'
 
   let remoteAudio: HTMLAudioElement | null = null
   let remoteVideo: HTMLVideoElement | null = null
@@ -65,12 +66,6 @@
 
   async function handleIceCandidate(data: WebSocketMessage<CallCandidatePayload>): Promise<void> {
     await callService.handleIceCandidate(data)
-  }
-
-  function formatDuration(seconds: number): string {
-    const mins = Math.floor(seconds / 60)
-    const secs = seconds % 60
-    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`
   }
 
   function endCall(): void {

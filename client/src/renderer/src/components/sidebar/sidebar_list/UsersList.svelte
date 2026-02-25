@@ -9,10 +9,8 @@
   import type { RecentChatUsers } from '$src/interfaces/RecentChatUsers'
   import { chatState } from '$src/states/ChatState.svelte'
 
-
   let recentUsers = $state<RecentChatUsers[]>([])
   let onlineUsers = $state<User[]>([])
-
   let currentUserId = $derived(userState.currentUser?.id)
 
   $effect(() => {

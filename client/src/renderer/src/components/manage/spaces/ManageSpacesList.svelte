@@ -1,13 +1,19 @@
 <script lang="ts">
-  import type { Space } from '$src/interfaces/Space'
+  import type { CreateSpace, Space } from '$src/interfaces/Space'
+  import AddSpaceModal from '$src/components/manage/spaces/modals/AddSpaceModal.svelte'
+  import { chatState } from '$src/states/ChatState.svelte'
 
   interface Props {
     spaces: Space[]
     selectedSpace: Space | null
     onSelectSpace: (space: Space) => void
+    onAddSpace: (name: CreateSpace) => void
   }
 
-  let { spaces, selectedSpace, onSelectSpace }: Props = $props()</script>
+  let { spaces, selectedSpace, onSelectSpace, onAddSpace }: Props = $props()
+
+  let addSpaceOpen = $state(false)
+</script>
 
 <div class="spaces-list">
   {#each spaces as space (space.spaceId)}
@@ -19,8 +25,15 @@
       {space.spaceName}
     </button>
   {/each}
-  <button class="add-space-btn">Add space</button>
+  <button class="add-space-btn" onclick={() => (addSpaceOpen = true)}>Add space</button>
 </div>
+
+<AddSpaceModal
+  marginId={chatState.selectedMargin.marginId}
+  open={addSpaceOpen}
+  onClose={() => (addSpaceOpen = false)}
+  {onAddSpace}
+/>
 
 <style>
   .spaces-list {
@@ -32,7 +45,6 @@
     flex-direction: column;
     gap: 4px;
     overflow-y: auto;
-
   }
 
   .space-item {
@@ -51,9 +63,13 @@
     background: #ffebe5;
   }
 
+  .space-item:hover:not(.selected) {
+    background: #f6f2f2;
+  }
+
   .add-space-btn {
     margin-top: 12px;
-    background: #ff6203;
+    background: #da6b10;
     border: none;
     border-radius: 20px;
     color: #fff;

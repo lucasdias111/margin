@@ -26,8 +26,8 @@
   })
 </script>
 
-<div class="messages-wrapper">
-  <div class="messages" bind:this={messagesContainer}>
+<div class="messages-wrapper" bind:this={messagesContainer}>
+  <div class="messages">
     {#each messages as message (message.id)}
       <div class="messages-container" class:sent={message.fromUserId === userState.currentUser?.id}>
         {#if message.conversationType === 'DIRECT'}
@@ -44,13 +44,11 @@
   .messages-wrapper {
     flex: 1;
     min-height: 0;
-    overflow: hidden;
+    overflow-y: auto;
   }
 
   .messages {
-    height: 100%;
     padding: 20px;
-    overflow-y: auto;
     scroll-behavior: smooth;
     display: flex;
     flex-direction: column;
