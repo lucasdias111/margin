@@ -42,9 +42,10 @@
         <path d="M21.75,20.5h-7.5a1,1,0,0,0,0,2h7.5a1,1,0,0,0,0-2Z" fill="currentColor" />
         <path d="M11.28,12.5H24.72a1,1,0,0,0,0-2H11.28a1,1,0,0,0,0,2Z" fill="currentColor" />
       </svg>
-      <UnreadNotificationBadge 
-      shouldShow={notificationState.getTotalUnreadDirectMessages() > 0}
-      count={notificationState.getTotalUnreadDirectMessages()} />
+      <UnreadNotificationBadge
+        shouldShow={notificationState.getTotalUnreadDirectMessages() > 0}
+        count={notificationState.getTotalUnreadDirectMessages()}
+      />
     </button>
     <button
       onclick={() => onContentSelected('margin')}
@@ -84,11 +85,11 @@
           fill="currentColor"
         />
       </svg>
-      
-      <UnreadNotificationBadge 
-      shouldShow={notificationState.getTotalUnreadChannelMessages() > 0}
-      count={notificationState.getTotalUnreadChannelMessages()} />
-      
+
+      <UnreadNotificationBadge
+        shouldShow={notificationState.getTotalUnreadChannelMessages() > 0}
+        count={notificationState.getTotalUnreadChannelMessages()}
+      />
     </button>
     <button
       onclick={() => onContentSelected('explore')}
@@ -170,11 +171,11 @@
   }
 
   button:hover .icon {
-    color: #da6b10;
+    color: #f47e3a;
   }
 
   button.selected .icon {
-    color: #da6b10;
+    color: #f47e3a;
   }
 
   button {

@@ -1,87 +1,120 @@
 <script lang="ts">
   import { userState } from '$src/states/UserState.svelte'
   import { formatTimestamp } from '$src/commons/DateUtils'
+  import UserAvatar from '$src/components/user/UserAvatar.svelte'
+  import type { Message } from '$src/interfaces/Messages'
 
   interface Props {
-    fromUserId: number
-    createdAt: string
-    message: string
-    isEdited?: boolean
+    message: Message
     showReadStatus?: boolean
-    username?: string
   }
 
   let {
-    fromUserId,
-    createdAt,
     message,
-    isEdited = false,
-    showReadStatus = false,
-    username
+    showReadStatus = false
   }: Props = $props()
 
-  let isSent = $derived(fromUserId === userState.currentUser?.id)
+  let isSent = $derived(message.user.id === userState.currentUser?.id)
 </script>
 
-<div class="message" class:sent={isSent}>
-  <div class="message-content">
-    {#if username}
-      <p class="username">{username}:</p>
+<div class="wrapper" class:sent={isSent}>
+  {#if !isSent}
+    <div class="avatar">
+      <UserAvatar profilePictureUrl={message.user.profilePictureUrl} width={32} height={32} />
+    </div>
+  {/if}
+
+  <div class="bubble" class:sent={isSent}>
+    {#if message.conversationType === 'CHANNEL' && message.user.id !== userState.currentUser?.id}
+      <span class="username">{message.user.username}</span>
     {/if}
-    {message}
-  </div>
-  <div class="message-meta">
-    <span class="timestamp">{formatTimestamp(createdAt)}</span>
-    {#if isEdited}
-      <span class="edited">edited</span>
-    {/if}
-    {#if showReadStatus && isSent}
-      <span class="read-status">read</span>
-    {/if}
+    <p class="text">{message.content}</p>
+    <div class="meta">
+      {#if message.isEdited}
+        <span class="edited">edited</span>
+      {/if}
+      <span class="timestamp">{formatTimestamp(message.createdAt)}</span>
+      {#if showReadStatus && isSent}
+        <span class="checkmark">✓✓</span>
+      {/if}
+    </div>
   </div>
 </div>
 
 <style>
-  .message {
-    padding: 8px 16px;
-    border-radius: 18px;
+  .wrapper {
+    display: flex;
+    align-items: flex-end;
+    gap: 8px;
+    width: 100%;
+    justify-content: flex-start;
+  }
+
+  .wrapper.sent {
+    justify-content: flex-end;
+  }
+
+  .avatar {
+    flex-shrink: 0;
+    margin-bottom: 2px;
+  }
+
+  .bubble {
+    position: relative;
+    padding: 10px 14px 8px;
+    border-radius: 20px;
     max-width: 60%;
-    word-wrap: break-word;
     width: fit-content;
     display: flex;
     flex-direction: column;
+    gap: 2px;
+    word-break: break-word;
+    line-height: 1.45;
     font-size: 14px;
-    gap: 4px;
   }
 
-  .message:not(.sent) {
-    background-color: #da6b10;
+  .bubble:not(.sent) {
+    background-color: #f5ecd5;
+    color: #2d2d2d;
     border-bottom-left-radius: 4px;
   }
 
-  .message.sent {
-    background-color: #460e0f;
-    color: #e5e5e5;
+  .bubble.sent {
+    background-color: #f47e3a;
+    color: #2d2d2d;
     border-bottom-right-radius: 4px;
   }
 
-  .message-meta {
+  .username {
+    font-size: 12px;
+    font-weight: 700;
+    color: #f47e3a;
+    letter-spacing: 0.01em;
+    margin-bottom: 2px;
+  }
+
+  .text {
+    margin: 0;
+    white-space: pre-wrap;
+  }
+
+  .meta {
     display: flex;
     align-items: center;
-    gap: 6px;
-    font-size: 9px;
-    opacity: 0.6;
-    margin-top: 2px;
-  }
-
-  .edited,
-  .read-status {
-    font-style: italic;
+    gap: 4px;
+    margin-top: 3px;
     font-size: 10px;
+    opacity: 0.55;
+    align-self: flex-end;
   }
 
-  .username {
-    color: #0f0f0f;
-    margin: 6px 0;
+  .bubble.sent .checkmark {
+    opacity: 1;
+    font-size: 11px;
+    color: rgba(255, 255, 255, 0.9);
+  }
+
+  .edited {
+    font-style: italic;
   }
 </style>

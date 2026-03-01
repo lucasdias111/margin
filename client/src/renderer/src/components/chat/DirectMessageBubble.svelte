@@ -9,10 +9,4 @@
   let { message }: Props = $props()
 </script>
 
-<MessageBubble
-  fromUserId={message.fromUserId}
-  createdAt={message.createdAt}
-  message={message.content}
-  isEdited={message.isEdited}
-  showReadStatus={true}
-/>
+<MessageBubble {message} showReadStatus={true} />

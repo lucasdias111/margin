@@ -16,6 +16,12 @@
     height: 100vh;
   }
 
+  :global(p) {
+    font-family: 'Inter', sans-serif;
+    font-weight: 300;
+    font-size: 13px;
+  }
+
   :global(button) {
     padding: 0.6em 1.2em;
     transition: border-color 0.25s;

@@ -132,7 +132,7 @@
   }
 
   .search-user-input:focus {
-    border-color: #da6b10;
+    border-color: #f47e3a;
   }
 
   .search-results {

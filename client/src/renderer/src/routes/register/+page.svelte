@@ -100,7 +100,7 @@
     <button class="register" type="submit">Register</button>
   </form>
   <button id="backbut" onclick={goBack} aria-label="Back" title="Back">
-    <svg width="12px" height="12px" viewBox="0 0 1024 1024" fill="#da6b10">
+    <svg width="12px" height="12px" viewBox="0 0 1024 1024" fill="#f47e3a">
       <path
         d="M669.6 849.6c8.8 8 22.4
             7.2 30.4-1.6s7.2-22.4-1.6-30.4l-309.6-280c-8-7.2-8-17.6

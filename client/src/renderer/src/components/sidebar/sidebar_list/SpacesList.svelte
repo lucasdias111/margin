@@ -1,135 +1,239 @@
 <script lang="ts">
   import { chatState } from '$src/states/ChatState.svelte'
   import type { Space } from '$src/interfaces/Space'
-  import type { Channel } from '$src/interfaces/Channel'
   import { onDestroy, onMount } from 'svelte'
   import { spacesService } from '$src/services/SpacesService'
+  import ChannelEntry from '$src/components/sidebar/sidebar_list/ChannelEntry.svelte'
 
   let spaces = $state<Space[]>([])
   let expandedSpaceId = $state<number | null>(null)
+
+  let selectedChannelId = $derived(chatState.selectedChannel?.id)
 
   onMount(async () => {
     spaces = await spacesService.getAllSpacesForUser()
   })
 
   onDestroy(() => {
+    chatState.selectSpace(null)
     chatState.selectChannel(null)
   })
 
   async function toggleSpace(space: Space): Promise<void> {
+    chatState.selectSpace(space)
     expandedSpaceId = expandedSpaceId === space.spaceId ? null : space.spaceId
   }
 
-  function selectChannel(channel: Channel): void {
-    chatState.selectChannel(channel)
+  const SPACE_COLORS = [
+    { bg: '#FFF0E6', dot: '#E8712A', text: '#C45A18' },
+    { bg: '#E8F4F8', dot: '#4A9EBF', text: '#2E7A96' },
+    { bg: '#EEF6EE', dot: '#5BAD6F', text: '#3D8A52' },
+    { bg: '#F3EEF8', dot: '#9B72CF', text: '#7850AD' },
+    { bg: '#FDF5E6', dot: '#C9A227', text: '#9E7D10' }
+  ]
+
+  function spaceColor(spaceId: number) {
+    return SPACE_COLORS[spaceId % SPACE_COLORS.length]
+  }
+
+  function spaceInitials(name: string): string {
+    return name
+      .split(/\s+/)
+      .slice(0, 2)
+      .map((w) => w[0]?.toUpperCase() ?? '')
+      .join('')
   }
 </script>
 
-<div class="spaces-container">
-  <h3>Spaces</h3>
-  <ul class="spaces-list">
+<div class="spaces-list">
+  <div class="spaces-header">
+    <span class="header-label">Spaces</span>
+    <span class="header-count">{spaces.length}</span>
+  </div>
+
+  <div class="spaces-stack">
     {#each spaces as space (space.spaceId)}
-      <li class="space-item">
-        <button
-          class="space-button"
-          class:expanded={expandedSpaceId === space.spaceId}
-          onclick={() => toggleSpace(space)}
-        >
-          <span class="arrow">{expandedSpaceId === space.spaceId ? '▾' : '▸'}</span>
-          {space.spaceName}
+      {@const color = spaceColor(space.spaceId)}
+      {@const isOpen = expandedSpaceId === space.spaceId}
+
+      <div
+        class="space-card"
+        class:is-open={isOpen}
+        style="--dot: {color.dot}; --card-bg: {color.bg}; --text: {color.text};"
+      >
+        <button class="space-row" onclick={() => toggleSpace(space)} aria-expanded={isOpen}>
+          <span class="space-avatar" style="background: {color.bg}; color: {color.text};">
+            {spaceInitials(space.spaceName)}
+          </span>
+
+          <span class="space-info">
+            <span class="space-name">{space.spaceName}</span>
+            <span class="space-meta">{space.channels?.length ?? 0} channels</span>
+          </span>
+
+          <span class="chevron" class:rotated={isOpen}>
+            <svg
+              width="10"
+              height="10"
+              viewBox="0 0 10 10"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.8"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <polyline points="2,3.5 5,6.5 8,3.5" />
+            </svg>
+          </span>
         </button>
 
-        {#if expandedSpaceId === space.spaceId}
-          <ul class="channels-list">
-            {#each space.channels as channel (channel.id)}
-              <li class="channel-item">
-                <button class="channel-button" onclick={() => selectChannel(channel)}>
-                  › {channel.name}
-                </button>
-              </li>
-            {/each}
-          </ul>
+        {#if isOpen}
+          <div class="channels-zone">
+            <div class="channels-divider"></div>
+            <ul class="channels">
+              {#each space.channels as channel (channel.id)}
+                <ChannelEntry {channel} active={selectedChannelId === channel.id} />
+              {/each}
+            </ul>
+          </div>
         {/if}
-      </li>
+      </div>
     {/each}
-  </ul>
+  </div>
 </div>
 
 <style>
-  .spaces-container {
-    padding: 1rem;
-    color: black;
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  }
-
   .spaces-list {
-    list-style: none;
-    padding: 0;
-    margin: 0;
-    color: black;
+    padding: 10px 0 20px;
   }
 
-  .space-item {
-    margin-bottom: 0.25rem;
-    color: black;
-  }
-
-  .space-button {
-    width: 100%;
-    padding: 0.5rem;
-    background: transparent;
-    color: black;
-    border: none;
-    cursor: pointer;
-    text-align: left;
+  .spaces-header {
     display: flex;
     align-items: center;
-    gap: 0.5rem;
-    border-radius: 4px;
-    transition: background-color 0.2s;
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    gap: 6px;
+    padding: 0 18px 10px;
   }
 
-  .space-button:hover {
-    background-color: rgba(255, 255, 255, 0.1);
+  .header-label {
+    font-size: 14px;
+    color: #2d2d2d;
+    letter-spacing: 0.09em;
+    text-transform: uppercase;
   }
 
-  .space-button.expanded {
-    color: black;
+  .header-count {
+    font-size: 10px;
+    font-weight: 600;
+    color: #2d2d2d;
+    background: #f2f2f2;
+    border-radius: 20px;
+    padding: 1px 6px;
+    line-height: 1.5;
   }
 
-  .arrow {
-    font-size: 0.75rem;
-    transition: transform 0.2s;
-    color: black;
+  .spaces-stack {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 0 10px;
   }
 
-  .channels-list {
-    list-style: none;
-    padding-left: 1.5rem;
-    margin: 0.25rem 0 0 0;
-    color: black;
+  .space-card {
+    border-radius: 12px;
+    border: 1px solid transparent;
+    background: #fafafa;
+    transition:
+      border-color 0.15s,
+      box-shadow 0.15s;
+    overflow: hidden;
   }
 
-  .channel-item {
-    margin-bottom: 0.25rem;
-    color: black;
+  .space-card:hover {
+    border-color: #ebebeb;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
   }
 
-  .channel-button {
+  .space-card.is-open {
+    border-color: var(--dot);
+    background: white;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.07);
+  }
+
+  .space-row {
     width: 100%;
-    padding: 0.375rem 0.5rem;
-    background: transparent;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 9px 12px 9px 10px;
+    background: none;
     border: none;
     cursor: pointer;
     text-align: left;
-    border-radius: 4px;
-    transition: background-color 0.2s;
-    color: black;
   }
 
-  .channel-button:hover {
-    background-color: #c1c1c1;
-    color: black;
+  .space-avatar {
+    position: relative;
+    flex-shrink: 0;
+    width: 34px;
+    height: 34px;
+    border-radius: 9px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+  }
+
+  .space-info {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    min-width: 0;
+  }
+
+  .space-name {
+    font-size: 14px;
+    font-weight: 550;
+    color: #2a2a2a;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    line-height: 1.3;
+  }
+
+  .space-meta {
+    font-size: 12px;
+    font-weight: 400;
+    line-height: 1.2;
+  }
+
+  .chevron {
+    flex-shrink: 0;
+    color: #ccc;
+    display: flex;
+    align-items: center;
+    transition:
+      transform 0.2s ease,
+      color 0.15s;
+  }
+
+  .chevron.rotated {
+    transform: rotate(180deg);
+    color: var(--dot);
+  }
+
+  .channels-zone {
+    background: rgba(0, 0, 0, 0.025);
+    border-top: 1px solid rgba(0, 0, 0, 0.06);
+    padding-bottom: 8px;
+  }
+
+  .channels {
+    position: relative;
+    padding: 10px 10px 0 25px;
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    margin: 0;
   }
 </style>

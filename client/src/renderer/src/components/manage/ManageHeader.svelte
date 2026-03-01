@@ -2,7 +2,7 @@
   import { chatState } from '$src/states/ChatState.svelte'
 
   let activeTab = 'Spaces'
-  const tabs = ['Spaces', 'Members', 'Visibility']
+  const tabs = ['Margin', 'Plugins', 'Spaces', 'Members', 'Visibility']
 </script>
 
 <div class="manage-header">

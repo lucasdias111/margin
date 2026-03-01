@@ -1,7 +1,7 @@
 <script lang="ts">
   import PrivateChatContent from '$src/components/content/PrivateChatContent.svelte'
+  import MarginContent from '$src/components/content/margin/MarginContent.svelte'
   import { chatState } from '$src/states/ChatState.svelte'
-  import SpaceChatContent from '$src/components/content/SpaceChatContent.svelte'
 
   let selectedContent = $derived(chatState.currentlySelectedContent)
 </script>
@@ -10,7 +10,7 @@
   {#if selectedContent === 'private'}
     <PrivateChatContent />
   {:else if selectedContent === 'margin'}
-    <SpaceChatContent />
+    <MarginContent />
   {/if}
 </div>
 

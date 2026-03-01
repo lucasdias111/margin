@@ -6,46 +6,65 @@
 
   interface Props {
     channel: Channel
+    active: boolean
   }
 
-  let { channel }: Props = $props()
+  let { channel, active }: Props = $props()
 
-  function selectChannel(channel: Channel): void {
+  let hasUnread = $derived(
+    notificationState.getTotalUnreadMessagesForChannel(channel.conversationId).length > 0
+  )
+
+  function selectChannel(): void {
     chatState.selectChannel(channel)
   }
 </script>
 
-<div>
-  <li class="channel-item">
-    <button class="channel-button" onclick={() => selectChannel(channel)}>
-      {channel.name}
-      <UnreadNotificationBadge
-        shouldShow={notificationState.getTotalUnreadMessagesForChannel(channel.conversationId)
-          .length > 0}
-      />
-    </button>
-  </li>
-</div>
+<li class="channel-item">
+  <button class="channel-button" class:active onclick={selectChannel}>
+    <span class="channel-name">{channel.name}</span>
+    <UnreadNotificationBadge
+      shouldShow={hasUnread}
+      count={notificationState.getTotalUnreadMessagesForChannel(channel.conversationId).length}
+    />
+  </button>
+</li>
 
 <style>
   .channel-item {
-    margin-bottom: 0.25rem;
+    list-style: none;
   }
 
   .channel-button {
+    position: relative;
     width: 100%;
-    padding: 0.375rem 0.5rem;
-    background: transparent;
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    padding: 5px 8px;
+    background: none;
     border: none;
+    border-radius: 7px;
+    font-size: 13px;
+    color: #888;
     cursor: pointer;
     text-align: left;
-    border-radius: 4px;
-    transition: background-color 0.2s;
-    color: #888;
+    transition: background 0.12s,
+    color 0.12s;
   }
 
   .channel-button:hover {
-    background-color: rgba(255, 255, 255, 0.08);
-    color: #fff;
+    background: rgba(0, 0, 0, 0.05);
+    color: #444;
+  }
+
+  .channel-button.active {
+    background: rgba(228, 113, 42, 0.1);
+    color: #d4621a;
+    font-weight: 600;
+  }
+
+  .channel-name {
+    flex: 1;
   }
 </style>

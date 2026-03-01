@@ -14,11 +14,13 @@
   import { callState } from '$src/states/CallState.svelte'
   import { channelCallService } from '$src/services/ChannelCallService'
   import type { ConversationMessagesResponse, Message } from '$src/interfaces/Messages'
+  import ChannelSidebar from '$src/components/content/ChannelSidebar.svelte'
 
-  let selectedChannel = $state<Channel | null>(null)
+  let selectedChannel = $derived(chatState.selectedChannel)
   let messages = $state<Message[]>([])
   let messageInput = $state('')
   let messagesContainer = $state<HTMLDivElement>()
+  let sidebarOpen = $state(true)
 
   let isInChannelCall = $derived(
     callState.isGroupCall && callState.groupCallState?.channelId === selectedChannel?.id
@@ -85,6 +87,10 @@
   function handleVideoCall(): void {
     console.log('Not yet implemented')
   }
+
+  function toggleSidebar(): void {
+    sidebarOpen = !sidebarOpen
+  }
 </script>
 
 <div class="chat">
@@ -94,11 +100,19 @@
       handleStartCall={handleVoiceCall}
       handleStartVideoCall={handleVideoCall}
       isInCall={isInChannelCall}
+      onToggleSidebar={toggleSidebar}
+      {sidebarOpen}
     />
   {/if}
-  <div class="chat-background">
-    <MessagesContainer {messages} bind:messagesContainer />
+
+  <div class="chat-body">
+    <div class="chat-background">
+      <MessagesContainer {messages} bind:messagesContainer />
+    </div>
+
+    <ChannelSidebar channel={selectedChannel} bind:isOpen={sidebarOpen} />
   </div>
+
   <ChatInput selectedContent={!!selectedChannel} bind:messageInput onSubmit={handleSubmit} />
 </div>
 
@@ -113,11 +127,24 @@
     z-index: 999;
   }
 
+  .chat-body {
+    flex: 1;
+    display: flex;
+    min-height: 0;
+    gap: 10px;
+    overflow: hidden;
+    align-items: stretch;
+  }
+
   .chat-background {
+    flex: 1;
     z-index: 1;
     background-color: white;
-    height: 100vh;
-    width: auto;
     border-radius: 15px;
+    min-width: 0;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
   }
 </style>

@@ -10,16 +10,12 @@
   import { chatState } from '$src/states/ChatState.svelte'
 
   let recentUsers = $state<RecentChatUsers[]>([])
-  let onlineUsers = $state<User[]>([])
   let currentUserId = $derived(userState.currentUser?.id)
 
   $effect(() => {
     if (!currentUserId) return
     userService.getRecentChatUsers(currentUserId).then((fetchedUsers) => {
       recentUsers = fetchedUsers
-    })
-    userService.getAllUsersForServer().then((fetchedUsers) => {
-      onlineUsers = fetchedUsers
     })
   })
 
@@ -35,13 +31,19 @@
   })
 
   function handleUserLogin(data: WebSocketMessage<User>): void {
-    if (!onlineUsers.find((u) => u.id === data.payload.id)) {
-      onlineUsers = [...onlineUsers, data.payload]
-    }
+    recentUsers = recentUsers.map((recentUser) =>
+      recentUser.user.id === data.payload.id
+        ? { ...recentUser, user: { ...recentUser.user, isOnline: true } }
+        : recentUser
+    )
   }
 
   function handleUserLogout(data: WebSocketMessage<User>): void {
-    onlineUsers = onlineUsers.filter((user) => user.id !== data.payload.id)
+    recentUsers = recentUsers.map((recentUser) =>
+      recentUser.user.id === data.payload.id
+        ? { ...recentUser, user: { ...recentUser.user, isOnline: false } }
+        : recentUser
+    )
   }
 
   let { searchUser = '' }: { searchUser?: string } = $props()

@@ -84,13 +84,13 @@ class ChatService {
   ): Promise<Message> {
     webSocketService.send<string>({
       type: WebSocketMessageType.SEND_MESSAGE,
-      recipientId: channel.id,
+      recipientId: channel.conversationId,
       payload: messageText
     })
 
     return {
       id: null,
-      conversationId: null,
+      conversationId: channel.conversationId,
       fromUserId: currentUser.id,
       fromUsername: currentUser.username,
       content: messageText,

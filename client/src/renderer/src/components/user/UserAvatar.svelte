@@ -1,5 +1,5 @@
 <script lang="ts">
-import avatar from '$src/assets/pics/anonym-avatar.png'
+  import avatar from '$src/assets/pics/anonym-avatar.png'
 
   interface Props {
     profilePictureUrl: string | null
@@ -9,25 +9,23 @@ import avatar from '$src/assets/pics/anonym-avatar.png'
 
   let { profilePictureUrl, height = 40, width = 40 }: Props = $props()
 
-
 </script>
 
 {#if profilePictureUrl}
-<img
-
-  src={profilePictureUrl}
-  alt="Profile"
-  style="width: {width}px; height: {height}px;"
-  class="user-avatar" 
-/>
+  <img
+    src={profilePictureUrl}
+    alt="Profile"
+    style="width: {width}px; height: {height}px;"
+    class="user-avatar"
+  />
 
 {:else}
-<img 
-  src={avatar}
-  alt="Profile"
-  style="width: {width}px; height: {height}px"
-  class="anon-avatar" />
-
+  <img
+    src={avatar}
+    alt="Profile"
+    style="width: {width}px; height: {height}px"
+    class="anon-avatar"
+  />
 {/if}
 
 <style>

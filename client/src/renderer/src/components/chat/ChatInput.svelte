@@ -15,7 +15,7 @@
     <input bind:value={messageInput} placeholder="Type a message..." disabled={!selectedContent} />
     <button class="attachbut" type="submit" aria-label="Attach file(s)">
       <svg
-        fill="#da6b10"
+        fill="#f47e3a"
         height="18px"
         width="18px"
         viewBox="0 0 511.36 511.36"
@@ -79,7 +79,7 @@
   }
 
   .sendbut {
-    background-color: #da6b10;
+    background-color: #f47e3a;
     display: flex;
     border-radius: 20px;
     border: none;

@@ -15,7 +15,7 @@
   import { callService } from '$src/services/CallService'
   import { callState } from '$src/states/CallState.svelte'
   import ChatHeader from '$src/components/content/ChatHeader.svelte'
-  import type { Conversation } from '$src/interfaces/Conversation'
+  import type { Conversation, DirectConversation } from '$src/interfaces/Conversation'
 
   let selectedUser = $state<User | null>(null)
   let currentConversation = $state<Conversation | null>(null)
@@ -46,19 +46,31 @@
   async function handleIncomingMessage(data: WebSocketMessage<Message>): Promise<void> {
     const incomingMsg: Message = data.payload
 
-    if (currentConversation && incomingMsg.conversationId === currentConversation.id) {
-      try {
-        const isFromMe = incomingMsg.fromUserId === userState.currentUser?.id
-
-        incomingMsg.content = await encryptionService.decryptMessage(incomingMsg.content, !isFromMe)
-      } catch (error) {
-        console.error('Failed to decrypt message:', error)
-        incomingMsg.content = '[Decryption failed]'
+    if (!currentConversation) {
+      if (incomingMsg.conversationType === 'DIRECT' && selectedUser) {
+        currentConversation = {
+          id: incomingMsg.conversationId,
+          type: 'DIRECT',
+          otherUserId: selectedUser.id, // ← always the person we're chatting with, not the sender
+          createdAt: incomingMsg.createdAt
+        } satisfies DirectConversation
+      } else {
+        return
       }
-
-      messages = [...messages, incomingMsg]
-      await chatService.markConversationAsRead(currentConversation.id)
     }
+
+    if (incomingMsg.conversationId !== currentConversation.id) return
+
+    try {
+      const isFromMe = incomingMsg.user.id === userState.currentUser?.id
+      incomingMsg.content = await encryptionService.decryptMessage(incomingMsg.content, !isFromMe)
+    } catch (error) {
+      console.error('Failed to decrypt message:', error)
+      incomingMsg.content = '[Decryption failed]'
+    }
+
+    messages = [...messages, incomingMsg]
+    await chatService.markConversationAsRead(currentConversation.id)
   }
 
   async function handleSubmitMessage(event: SubmitEvent): Promise<void> {
@@ -94,10 +106,15 @@
     }
   }
 
+  let isLoading = $state(false)
+
   export async function loadMessagesForUser(user: User): Promise<void> {
     if (selectedUser && selectedUser.id === user.id) return
 
     selectedUser = user
+    currentConversation = null
+    messages = []
+    isLoading = true
 
     try {
       const response = await authenticatedGet(
@@ -106,18 +123,21 @@
 
       if (!response.ok) {
         console.error('Failed to load messages')
-        messages = []
         return
       }
 
       const messageResponse: ConversationMessagesResponse = await response.json()
-      const loadedMessages = messageResponse.messages
+
+      if (messageResponse.conversation == null) {
+        return
+      }
+
       currentConversation = messageResponse.conversation
 
       messages = await Promise.all(
-        loadedMessages.map(async (message) => {
+        messageResponse.messages.map(async (message) => {
           try {
-            const isRecipient = message.fromUserId !== userState.currentUser.id
+            const isRecipient = message.user.id !== userState.currentUser.id
             message.content = await encryptionService.decryptMessage(message.content, isRecipient)
             return message
           } catch (decryptError) {
@@ -132,6 +152,8 @@
     } catch (error) {
       console.error('Error loading messages:', error)
       messages = []
+    } finally {
+      isLoading = false
     }
   }
 </script>
@@ -145,7 +167,7 @@
     />
   {/if}
   <div class="chat-background">
-    <MessagesContainer {messages} isDirectMessage={true} bind:messagesContainer />
+    <MessagesContainer {messages} {isLoading} isDirectMessage={true} bind:messagesContainer />
   </div>
   <ChatInput selectedContent={!!selectedUser} bind:messageInput onSubmit={handleSubmitMessage} />
 </div>

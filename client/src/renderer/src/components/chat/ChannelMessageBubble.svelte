@@ -10,9 +10,5 @@
 </script>
 
 <MessageBubble
-  fromUserId={message.fromUserId}
-  createdAt={message.createdAt}
-  message={message.content}
-  isEdited={message.isEdited}
-  username={message.fromUsername}
+  message={message}
 />

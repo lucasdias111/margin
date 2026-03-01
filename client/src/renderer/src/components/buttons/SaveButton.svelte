@@ -21,8 +21,8 @@
 <style>
   .save-btn {
     background: transparent;
-    color: #da6b10;
-    border: 1px solid #da6b10;
+    color: #f47e3a;
+    border: 1px solid #f47e3a;
     border-radius: 6px;
     padding: 4px 12px;
     font-size: 0.8rem;
@@ -41,7 +41,7 @@
   }
 
   .save-btn:not(:disabled):hover {
-    background: #da6b10;
+    background: #f47e3a;
     color: #fff;
   }
 </style>

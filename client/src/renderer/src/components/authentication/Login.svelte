@@ -80,7 +80,7 @@
   }
 
   .logbut {
-    background-color: #da6b10;
+    background-color: #f47e3a;
     width: 100%;
     border-radius: 10px;
     border: none;
@@ -96,7 +96,7 @@
   }
 
   .regbut {
-    background-color: #da6b10;
+    background-color: #f47e3a;
     width: 100%;
     border-radius: 10px;
     border: none;

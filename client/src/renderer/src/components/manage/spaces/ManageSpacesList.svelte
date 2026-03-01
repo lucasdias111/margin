@@ -69,7 +69,7 @@
 
   .add-space-btn {
     margin-top: 12px;
-    background: #da6b10;
+    background: #f47e3a;
     border: none;
     border-radius: 20px;
     color: #fff;

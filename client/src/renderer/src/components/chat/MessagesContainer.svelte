@@ -7,9 +7,11 @@
 
   let {
     messages,
+    isLoading = false,
     messagesContainer = $bindable()
   }: {
     messages: (Message | undefined)[]
+    isLoading?: boolean
     messagesContainer?: HTMLDivElement
     isDirectMessage?: boolean
   } = $props()
@@ -27,17 +29,26 @@
 </script>
 
 <div class="messages-wrapper" bind:this={messagesContainer}>
-  <div class="messages">
-    {#each messages as message (message.id)}
-      <div class="messages-container" class:sent={message.fromUserId === userState.currentUser?.id}>
-        {#if message.conversationType === 'DIRECT'}
-          <DirectMessageBubble {message} />
-        {:else}
-          <ChannelMessageBubble {message} />
-        {/if}
-      </div>
-    {/each}
-  </div>
+  {#if isLoading}
+    <div class="loading">
+      <div class="spinner"></div>
+    </div>
+  {:else}
+    <div class="messages">
+      {#each messages as message (message.id)}
+        <div
+          class="messages-container"
+          class:sent={message.user.id === userState.currentUser?.id}
+        >
+          {#if message.conversationType === 'DIRECT'}
+            <DirectMessageBubble {message} />
+          {:else}
+            <ChannelMessageBubble {message} />
+          {/if}
+        </div>
+      {/each}
+    </div>
+  {/if}
 </div>
 
 <style>
@@ -64,5 +75,29 @@
 
   .messages-container.sent {
     justify-content: flex-end;
+  }
+
+  .loading {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    padding: 40px 0;
+  }
+
+  .spinner {
+    width: 28px;
+    height: 28px;
+    border: 3px solid rgba(218, 107, 16, 0.2);
+    border-top-color: #da6b10;
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+  }
+
+  @keyframes spin {
+    to {
+      transform: rotate(360deg);
+    }
   }
 </style>
