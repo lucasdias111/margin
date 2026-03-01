@@ -3,24 +3,22 @@
   import { userState } from '$src/states/UserState.svelte'
   import { push } from 'svelte-spa-router'
 
-  async function handleLogout(): Promise<void> {
+  export async function handleLogout(): Promise<void> {
     if (!userState.currentUser.id) return
     await authenticationService.logoutUser(userState.currentUser.id)
     await push('/')
   }
 </script>
 
-<div>
-  <button class="logoutbut" onclick={handleLogout}>Log out</button>
-</div>
+
+<button class="logoutbut" onclick={handleLogout}>Log out</button>
 
 <style>
   .logoutbut {
-    background: darkslategrey;
+    background: #da6b10;
     color: white;
     padding: 8px;
-    position: absolute;
-    left: 100px;
-    bottom: 10px;
+    border: none;
+    opacity: 1;
   }
 </style>
