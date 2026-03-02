@@ -1,5 +1,5 @@
 <script lang="ts">
-  import AppModal from '$src/components/modals/AppModal.svelte'
+  import AppModal from '$src/components/common/modals/AppModal.svelte'
   import { ChannelType, type Channel, type CreateChannel } from '$src/interfaces/Channel'
 
   interface Props {

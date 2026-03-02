@@ -3,19 +3,14 @@
   import videoCallIcon from '$src/resources/videoCall.png'
   import hangUpCallIcon from '$src/resources/hangUpCall.png'
   import UserAvatar from '../user/UserAvatar.svelte'
-  import { chatState } from '$src/states/ChatState.svelte'
+  import { chatState } from '$src/states/ChatState.svelte.js'
 
   interface Props {
     name: string
-
     handleStartCall(): void
-
     handleStartVideoCall(): void
-
     isInCall?: boolean
-
     onToggleSidebar?(): void
-
     sidebarOpen?: boolean
   }
 
@@ -145,8 +140,9 @@
     align-items: center;
     justify-content: center;
     color: #da6b10;
-    transition: background-color 0.2s,
-    color 0.2s;
+    transition:
+      background-color 0.2s,
+      color 0.2s;
   }
 
   .action-btn:hover {

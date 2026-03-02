@@ -1,6 +1,5 @@
 <script lang="ts">
-  import { onMount, onDestroy } from 'svelte'
-  import { webSocketService } from '$src/services/WebSocketService'
+  import { onMount } from 'svelte'
   import { WebSocketMessageType } from '$src/interfaces/WebSocketMessageType'
   import { callState } from '$src/states/CallState.svelte'
   import type {
@@ -9,7 +8,8 @@
     WebSocketMessage
   } from '$src/interfaces/WebSocketMessages'
   import { callService } from '$src/services/CallService'
-  import { formatDuration } from '$src/commons/DateUtils'
+  import { formatDuration } from '$src/utils/DateUtils'
+  import { useWebsocketSvelte } from '$src/composables/useWebsocket.svelte'
 
   let remoteAudio: HTMLAudioElement | null = null
   let remoteVideo: HTMLVideoElement | null = null
@@ -38,10 +38,6 @@
       }
     })
 
-    webSocketService.on(WebSocketMessageType.CALL_RESPONSE, handleCallResponse)
-    webSocketService.on(WebSocketMessageType.CALL_CANDIDATE, handleIceCandidate)
-    webSocketService.on(WebSocketMessageType.CALL_CREATED, handleCallCreated)
-
     if (isIncoming && offer) {
       callService.answerCall(userId, offer)
     } else {
@@ -49,11 +45,10 @@
     }
   })
 
-  onDestroy(() => {
-    webSocketService.off(WebSocketMessageType.CALL_RESPONSE, handleCallResponse)
-    webSocketService.off(WebSocketMessageType.CALL_CANDIDATE, handleIceCandidate)
-    webSocketService.off(WebSocketMessageType.CALL_CREATED, handleCallCreated)
-    callService.cleanup()
+  useWebsocketSvelte({
+    [WebSocketMessageType.CALL_RESPONSE]: handleCallResponse,
+    [WebSocketMessageType.CALL_CANDIDATE]: handleIceCandidate,
+    [WebSocketMessageType.CALL_CREATED]: handleCallCreated
   })
 
   function handleCallCreated(data: WebSocketMessage<{ callId: number }>): void {

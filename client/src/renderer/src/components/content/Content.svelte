@@ -1,6 +1,6 @@
 <script lang="ts">
-  import PrivateChatContent from '$src/components/content/PrivateChatContent.svelte'
-  import MarginContent from '$src/components/content/margin/MarginContent.svelte'
+  import PrivateChatContent from '$src/components/chat/private/PrivateChatContent.svelte'
+  import MarginContent from '$src/components/chat/margin/MarginContent.svelte'
   import { chatState } from '$src/states/ChatState.svelte'
 
   let selectedContent = $derived(chatState.currentlySelectedContent)

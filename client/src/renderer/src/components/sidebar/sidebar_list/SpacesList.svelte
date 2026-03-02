@@ -5,7 +5,7 @@
   import { spacesService } from '$src/services/SpacesService'
   import ChannelEntry from '$src/components/sidebar/sidebar_list/ChannelEntry.svelte'
   import { notificationState } from '$src/states/NotificationState.svelte'
-  import UnreadNotificationBadge from '$src/components/chat/UnreadNotificationBadge.svelte'
+  import UnreadNotificationBadge from '$src/components/common/chat/UnreadNotificationBadge.svelte'
 
   let spaces = $state<Space[]>([])
   let expandedSpaceId = $state<number | null>(null)

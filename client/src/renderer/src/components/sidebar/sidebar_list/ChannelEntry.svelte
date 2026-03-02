@@ -2,7 +2,7 @@
   import type { Channel } from '$src/interfaces/Channel'
   import { chatState } from '$src/states/ChatState.svelte'
   import { notificationState } from '$src/states/NotificationState.svelte'
-  import UnreadNotificationBadge from '$src/components/chat/UnreadNotificationBadge.svelte'
+  import UnreadNotificationBadge from '$src/components/common/chat/UnreadNotificationBadge.svelte'
 
   interface Props {
     channel: Channel

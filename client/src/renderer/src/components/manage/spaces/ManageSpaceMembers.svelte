@@ -1,8 +1,8 @@
 <script lang="ts">
   import type { Space, SpaceMember } from '$src/interfaces/Space'
   import AddSpaceMemberModal from '$src/components/manage/spaces/modals/AddSpaceMemberModal.svelte'
-  import { formatTimestamp } from '$src/commons/DateUtils'
-  import ListView from '$src/components/datatables/ListView.svelte'
+  import { formatTimestamp } from '$src/utils/DateUtils'
+  import ListView from '$src/components/common/datatables/ListView.svelte'
 
   interface Props {
     selectedSpace: Space

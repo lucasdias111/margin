@@ -1,9 +1,9 @@
 <script lang="ts">
   import type { Message } from '$src/interfaces/Messages'
   import { tick } from 'svelte'
-  import DirectMessageBubble from './DirectMessageBubble.svelte'
-  import ChannelMessageBubble from '$src/components/chat/ChannelMessageBubble.svelte'
-  import { userState } from '$src/states/UserState.svelte'
+  import DirectMessageBubble from '../../chat/private/DirectMessageBubble.svelte'
+  import ChannelMessageBubble from '$src/components/chat/channel/ChannelMessageBubble.svelte'
+  import { userState } from '$src/states/UserState.svelte.js'
 
   let {
     messages,
@@ -24,6 +24,7 @@
 
   $effect(() => {
     void messages.length
+    if (isLoading) return
     tick().then(scrollToBottom)
   })
 </script>
@@ -36,10 +37,7 @@
   {:else}
     <div class="messages">
       {#each messages as message (message.id)}
-        <div
-          class="messages-container"
-          class:sent={message.user.id === userState.currentUser?.id}
-        >
+        <div class="messages-container" class:sent={message.user.id === userState.currentUser?.id}>
           {#if message.conversationType === 'DIRECT'}
             <DirectMessageBubble {message} />
           {:else}

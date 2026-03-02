@@ -1,7 +1,7 @@
 <script lang="ts">
   import type { Space } from '$src/interfaces/Space'
   import type { Channel, CreateChannel } from '$src/interfaces/Channel'
-  import DataTable from '$src/components/datatables/DataTable.svelte'
+  import DataTable from '$src/components/common/datatables/DataTable.svelte'
   import ChannelModal from '$src/components/manage/spaces/modals/ChannelModal.svelte'
 
   interface Props {

@@ -1,17 +1,16 @@
 <script lang="ts">
   import { chatState } from '$src/states/ChatState.svelte'
   import type { ContentType } from '$src/interfaces/Content'
-  import UnreadNotificationBadge from '$src/components/chat/UnreadNotificationBadge.svelte'
+  import UnreadNotificationBadge from '$src/components/common/chat/UnreadNotificationBadge.svelte'
   import { notificationState } from '$src/states/NotificationState.svelte'
   import { userState } from '$src/states/UserState.svelte'
-  import UserAvatar from '$src/components/user/UserAvatar.svelte'
+  import UserAvatar from '$src/components/common/user/UserAvatar.svelte'
   import SetIcon from '$src/components/svg/Settings.svelte'
   import MsgIgon from '$src/components/svg/MessagesIcon.svelte'
   import SpaceIcon from '$src/components/svg/SpacesIcon.svelte'
   import ExpIcon from '$src/components/svg/SpacesIcon.svelte'
-
   import { onMount } from 'svelte'
-  import Logout from '$src/components/sidebar/Logout.svelte'
+  import Logout from '$src/components/authentication/Logout.svelte'
 
   function onContentSelected(selectedContent: ContentType): void {
     chatState.selectContent(selectedContent)

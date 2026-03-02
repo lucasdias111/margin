@@ -1,10 +1,9 @@
 <script lang="ts">
-  import { onMount, onDestroy } from 'svelte'
+  import { onMount } from 'svelte'
   import Sidebar from '$src/components/sidebar/Sidebar.svelte'
   import ContentWindow from '$src/components/content/Content.svelte'
-  import Header from '$src/components/header/MainHeader.svelte'
+  import Header from '$src/components/common/header/MainHeader.svelte'
   import type { User } from '$src/interfaces/User'
-  import { webSocketService } from '$src/services/WebSocketService'
   import { authenticatedGet } from '$src/services/api'
   import { userState } from '$src/states/UserState.svelte'
   import { WebSocketMessageType } from '$src/interfaces/WebSocketMessageType'
@@ -12,32 +11,38 @@
   import CallWindow from '$src/components/call/CallWindow.svelte'
   import { callService } from '$src/services/CallService'
   import type { CallOfferPayload, WebSocketMessage } from '$src/interfaces/WebSocketMessages'
-  import type { Message } from '$src/interfaces/Messages'
   import { notificationService } from '$src/services/NotificationService'
   import type { UnreadCount } from '$src/interfaces/UnreadCount'
   import { notificationState } from '$src/states/NotificationState.svelte'
   import { chatState } from '$src/states/ChatState.svelte'
   import Navigation from '$src/components/sidebar/Navigation.svelte'
   import ManageWindow from '$src/components/manage/ManageWindow.svelte'
+  import { useWebsocketSvelte } from '$src/composables/useWebsocket.svelte'
+  import { chatService } from '$src/services/ChatService'
+  import { webSocketService } from '$src/services/WebSocketService'
+  import { userService } from '$src/services/UserService'
+  import { presenceState } from '$src/states/PresenceState.svelte'
+  import { userListState } from '$src/states/UserListState.svelte'
 
   onMount(() => {
     setup()
     webSocketService.connect()
-    webSocketService.on(WebSocketMessageType.CALL_OFFER, handleIncomingCallOffer)
-    webSocketService.on(WebSocketMessageType.CALL_END, handleRemoteCallEnd)
-    webSocketService.on(WebSocketMessageType.RECEIVE_MESSAGE, handleIncomingMessage)
   })
 
-  onDestroy(() => {
-    webSocketService.disconnect()
-    webSocketService.off(WebSocketMessageType.CALL_OFFER, handleIncomingCallOffer)
-    webSocketService.off(WebSocketMessageType.CALL_END, handleRemoteCallEnd)
-    webSocketService.off(WebSocketMessageType.RECEIVE_MESSAGE, handleIncomingMessage)
+  useWebsocketSvelte({
+    [WebSocketMessageType.RECEIVE_MESSAGE]: chatService.handleIncomingMessage,
+    [WebSocketMessageType.CALL_OFFER]: handleIncomingCallOffer,
+    [WebSocketMessageType.CALL_END]: handleRemoteCallEnd,
+    [WebSocketMessageType.USER_LOGIN]: (data: WebSocketMessage<User>) =>
+      presenceState.setOnline(data.payload.id),
+    [WebSocketMessageType.USER_LOGOUT]: (data: WebSocketMessage<User>) =>
+      presenceState.setOffline(data.payload.id)
   })
 
   async function setup(): Promise<void> {
     await getCurrentUser()
     await loadUnreadMessages()
+    await loadRecentUsers()
   }
 
   async function loadUnreadMessages(): Promise<void> {
@@ -58,8 +63,10 @@
     notificationService.addIncomingChannelMessages(channels)
   }
 
-  function handleIncomingMessage(data: WebSocketMessage<Message>): void {
-    notificationService.handleIncomingMessage(data.payload)
+  async function loadRecentUsers(): Promise<void> {
+    const users = await userService.getRecentChatUsers(userState.currentUser.id)
+    userListState.setUsers(users)
+    await presenceState.fetchAndTrack(users.map((u) => u.user.id))
   }
 
   function handleIncomingCallOffer(message: WebSocketMessage<CallOfferPayload>): void {

@@ -1,9 +1,9 @@
 <script lang="ts">
-  import AppModal from '$src/components/modals/AppModal.svelte'
-  import UserSearchBar from '$src/components/content/UserSearchBar.svelte'
+  import AppModal from '$src/components/common/modals/AppModal.svelte'
+  import UserSearchBar from '$src/components/common/user/UserSearchBar.svelte'
   import type { User } from '$src/interfaces/User'
   import type { Space, SpaceMember } from '$src/interfaces/Space'
-  import UserAvatar from '$src/components/user/UserAvatar.svelte'
+  import UserAvatar from '$src/components/common/user/UserAvatar.svelte'
 
   interface Props {
     space: Space

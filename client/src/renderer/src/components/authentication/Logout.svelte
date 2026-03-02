@@ -1,6 +1,6 @@
 <script lang="ts">
   import { authenticationService } from '$src/services/AuthenticationService'
-  import { userState } from '$src/states/UserState.svelte'
+  import { userState } from '$src/states/UserState.svelte.js'
   import { push } from 'svelte-spa-router'
 
   export async function handleLogout(): Promise<void> {

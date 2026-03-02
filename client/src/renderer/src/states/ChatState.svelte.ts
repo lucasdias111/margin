@@ -3,6 +3,7 @@ import type { ContentType } from '$src/interfaces/Content'
 import type { Channel } from '$src/interfaces/Channel'
 import type { Margin } from '$src/interfaces/Margin'
 import type { Space } from '$src/interfaces/Space'
+import { conversationState } from '$src/states/ConversationState.svelte'
 
 class ChatState {
   selectedUser = $state<User | null>(null)
@@ -20,6 +21,10 @@ class ChatState {
   }
 
   selectContent(content: ContentType): void {
+    if (this.currentlySelectedContent !== content) {
+      this.selectedUser = null
+      conversationState.clear()
+    }
     this.currentlySelectedContent = content
     this.selectedChannel = null
   }

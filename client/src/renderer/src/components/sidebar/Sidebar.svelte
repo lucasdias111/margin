@@ -1,7 +1,7 @@
 <script lang="ts">
   import UsersList from './sidebar_list/UsersList.svelte'
   import SpacesList from './sidebar_list/SpacesList.svelte'
-  import UserSearchBar from '$src/components/content/UserSearchBar.svelte'
+  import UserSearchBar from '$src/components/common/user/UserSearchBar.svelte'
   import { chatState } from '$src/states/ChatState.svelte'
   import type { User } from '$src/interfaces/User'
   import type { ContentType } from '$src/interfaces/Content'

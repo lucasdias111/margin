@@ -1,7 +1,7 @@
 <script lang="ts">
   import type { Space } from '$src/interfaces/Space'
-  import SaveButton from '$src/components/buttons/SaveButton.svelte'
-  import DangerButton from '$src/components/buttons/DangerButton.svelte'
+  import SaveButton from '$src/components/common/buttons/SaveButton.svelte'
+  import DangerButton from '$src/components/common/buttons/DangerButton.svelte'
 
   interface Props {
     selectedSpace: Space

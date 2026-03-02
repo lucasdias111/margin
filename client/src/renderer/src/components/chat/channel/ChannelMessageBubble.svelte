@@ -1,6 +1,6 @@
 <script lang="ts">
+  import MessageBubble from '../../common/chat/MessageBubble.svelte'
   import type { Message } from '$src/interfaces/Messages'
-  import MessageBubble from './MessageBubble.svelte'
 
   interface Props {
     message: Message
@@ -9,4 +9,6 @@
   let { message }: Props = $props()
 </script>
 
-<MessageBubble {message} showReadStatus={true} />
+<MessageBubble
+  message={message}
+/>

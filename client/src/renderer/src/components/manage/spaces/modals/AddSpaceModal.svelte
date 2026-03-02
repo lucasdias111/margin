@@ -1,5 +1,5 @@
 <script lang="ts">
-  import AppModal from '$src/components/modals/AppModal.svelte'
+  import AppModal from '$src/components/common/modals/AppModal.svelte'
   import type { CreateSpace } from '$src/interfaces/Space'
   import { Visibility } from '$src/interfaces/Visibility'
 

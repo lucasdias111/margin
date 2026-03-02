@@ -1,7 +1,7 @@
 import { API_CONFIG } from '$src/shared/config'
-import type { WebSocketMessageOut } from '$src/interfaces/WebSocketMessages'
+import type { WebSocketMessage, WebSocketMessageOut } from '$src/interfaces/WebSocketMessages'
 
-type MessageHandler = (data: any) => void
+type MessageHandler = (data: WebSocketMessage<unknown>) => void
 
 class WebSocketService {
   private ws: WebSocket | null = null
@@ -68,12 +68,13 @@ class WebSocketService {
   }
 
   on(messageType: string, handler: MessageHandler): void {
-    console.log(`Registering handler for: ${messageType}`)
     if (!this.handlers.has(messageType)) {
       this.handlers.set(messageType, [])
     }
-    this.handlers.get(messageType)!.push(handler)
-    console.log(`Total handlers for ${messageType}:`, this.handlers.get(messageType)!.length)
+    const existing = this.handlers.get(messageType)!
+    if (!existing.includes(handler)) {
+      existing.push(handler)
+    }
   }
 
   off(messageType: string, handler: MessageHandler): void {

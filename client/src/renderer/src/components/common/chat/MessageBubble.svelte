@@ -1,7 +1,7 @@
 <script lang="ts">
-  import { userState } from '$src/states/UserState.svelte'
-  import { formatTimestamp } from '$src/commons/DateUtils'
-  import UserAvatar from '$src/components/user/UserAvatar.svelte'
+  import { userState } from '$src/states/UserState.svelte.js'
+  import { formatTimestamp } from '$src/utils/DateUtils'
+  import UserAvatar from '$src/components/common/user/UserAvatar.svelte'
   import type { Message } from '$src/interfaces/Messages'
 
   interface Props {

@@ -1,19 +1,20 @@
 <script lang="ts">
   import { chatState } from '$src/states/ChatState.svelte'
-  import UnreadNotificationBadge from '$src/components/chat/UnreadNotificationBadge.svelte'
+  import UnreadNotificationBadge from '$src/components/common/chat/UnreadNotificationBadge.svelte'
   import { notificationState } from '$src/states/NotificationState.svelte'
   import type { RecentChatUsers } from '$src/interfaces/RecentChatUsers'
-  import UserAvatar from '$src/components/user/UserAvatar.svelte'
+  import UserAvatar from '$src/components/common/user/UserAvatar.svelte'
   import { encryptionService } from '$src/services/EncryptionService'
-  import { formatTime } from '$src/commons/DateUtils'
+  import { formatTime } from '$src/utils/DateUtils'
 
   interface Props {
     recentUser: RecentChatUsers
     isSelected: boolean
+    isOnline: boolean
   }
 
   let decryptedMessage = $state('')
-  let { recentUser, isSelected = false }: Props = $props()
+  let { recentUser, isSelected = false, isOnline }: Props = $props()
   const { user: chatUser, lastMessage, lastMessageTime, lastMessageIncoming } = $derived(recentUser)
 
   $effect(() => {
@@ -37,6 +38,7 @@
         {chatUser.username.slice(0, 2).toUpperCase()}
       </span>
     {/if}
+    <span class="presence-dot" class:online={isOnline}></span>
   </div>
 
   <div class="user-info">
@@ -54,6 +56,7 @@
     </div>
   </div>
 </button>
+
 <style>
   .user-button {
     width: 100%;
@@ -80,6 +83,7 @@
   }
 
   .avatar {
+    position: relative;
     width: 46px;
     height: 46px;
     border-radius: 50%;
@@ -89,12 +93,6 @@
     display: flex;
     align-items: center;
     justify-content: center;
-  }
-
-  .avatar img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
   }
 
   .avatar-initials {
@@ -146,5 +144,20 @@
     overflow: hidden;
     text-overflow: ellipsis;
     flex: 1;
+  }
+
+  .presence-dot {
+    position: absolute;
+    bottom: 2px;
+    right: 2px;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: #ccc;
+    border: 2px solid white;
+  }
+
+  .presence-dot.online {
+    background: #3dd68c;
   }
 </style>
