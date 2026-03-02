@@ -10,7 +10,7 @@
         <img src=".{marginLogo}" alt="Margin Logo" class="logo" />
       </div>
       <button class="manage-btn" onclick={() => (chatState.currentlySelectedContent = 'manage')}>
-        Manage spaces
+        Manage Margin
       </button>
     </div>
   </div>

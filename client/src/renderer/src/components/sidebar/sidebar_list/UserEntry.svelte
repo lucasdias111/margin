@@ -49,7 +49,7 @@
     <div class="bottom-row">
       <span class="last-message">{decryptedMessage}</span>
       {#if unreadCount > 0}
-        <UnreadNotificationBadge shouldShow={true} count={unreadCount} />
+        <UnreadNotificationBadge shouldShow={true} count={unreadCount} variant="inline" />
       {/if}
     </div>
   </div>

@@ -36,8 +36,7 @@ class ChatService {
     return {
       id: null,
       conversationId: null,
-      fromUserId: currentUser.id,
-      fromUsername: currentUser.username,
+      user: currentUser,
       content: encryptedMessage,
       conversationType: 'DIRECT',
       isEdited: false,
@@ -68,8 +67,7 @@ class ChatService {
     return {
       id: null,
       conversationId: conversation.id,
-      fromUserId: currentUser.id,
-      fromUsername: currentUser.username,
+      user: currentUser,
       content: content,
       conversationType: 'DIRECT',
       isEdited: false,
@@ -91,8 +89,7 @@ class ChatService {
     return {
       id: null,
       conversationId: channel.conversationId,
-      fromUserId: currentUser.id,
-      fromUsername: currentUser.username,
+      user: currentUser,
       content: messageText,
       conversationType: 'CHANNEL',
       isEdited: false,

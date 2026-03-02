@@ -26,6 +26,7 @@
     <UnreadNotificationBadge
       shouldShow={hasUnread}
       count={notificationState.getTotalUnreadMessagesForChannel(channel.conversationId).length}
+      variant="inline"
     />
   </button>
 </li>

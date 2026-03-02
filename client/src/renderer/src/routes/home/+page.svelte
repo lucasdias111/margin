@@ -18,7 +18,6 @@
   import { notificationState } from '$src/states/NotificationState.svelte'
   import { chatState } from '$src/states/ChatState.svelte'
   import Navigation from '$src/components/sidebar/Navigation.svelte'
-  import type { contentType } from '$src/interfaces/Content'
   import ManageWindow from '$src/components/manage/ManageWindow.svelte'
 
   onMount(() => {
@@ -60,9 +59,6 @@
   }
 
   function handleIncomingMessage(data: WebSocketMessage<Message>): void {
-    if (!chatState.selectedUser) {
-      return
-    }
     notificationService.handleIncomingMessage(data.payload)
   }
 

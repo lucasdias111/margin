@@ -144,6 +144,7 @@
   }
 
   button {
+    position: relative;
     background: none;
     border: none;
     padding: 0;

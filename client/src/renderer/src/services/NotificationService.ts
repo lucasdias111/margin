@@ -6,7 +6,7 @@ import type { Message } from '$src/interfaces/Messages'
 
 class NotificationService {
   handleIncomingMessage(message: Message): void {
-    if (message.fromUserId === userState.currentUser.id) {
+    if (message.user.id === userState.currentUser.id) {
       return
     }
 
@@ -26,7 +26,7 @@ class NotificationService {
   private handleIncomingDirectMessage(message: Message): void {
     const unreadCount: UnreadCount = {
       conversationId: message.conversationId,
-      fromUserId: message.fromUserId,
+      fromUserId: message.user.id,
       unreadDmsCount: 1,
       unreadChannelsCount: 0
     }
@@ -41,7 +41,7 @@ class NotificationService {
 
     const unreadCount: UnreadCount = {
       conversationId: message.conversationId,
-      fromUserId: message.fromUserId,
+      fromUserId: message.user.id,
       unreadDmsCount: 0,
       unreadChannelsCount: 1
     }
@@ -56,7 +56,7 @@ class NotificationService {
 
     const unreadCount: UnreadCount = {
       conversationId: message.conversationId,
-      fromUserId: message.fromUserId,
+      fromUserId: message.user.id,
       unreadDmsCount: 0,
       unreadChannelsCount: 1
     }
@@ -69,7 +69,7 @@ class NotificationService {
   }
 
   addIncomingChannelMessages(messages: UnreadCount[]): void {
-    notificationState.addUnreadDirectMessages(messages)
+    notificationState.addUnreadChannelMessages(messages)
   }
 
   markConversationAsRead(conversationId: number): void {

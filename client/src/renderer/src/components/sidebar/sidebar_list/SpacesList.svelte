@@ -4,6 +4,8 @@
   import { onDestroy, onMount } from 'svelte'
   import { spacesService } from '$src/services/SpacesService'
   import ChannelEntry from '$src/components/sidebar/sidebar_list/ChannelEntry.svelte'
+  import { notificationState } from '$src/states/NotificationState.svelte'
+  import UnreadNotificationBadge from '$src/components/chat/UnreadNotificationBadge.svelte'
 
   let spaces = $state<Space[]>([])
   let expandedSpaceId = $state<number | null>(null)
@@ -55,6 +57,7 @@
     {#each spaces as space (space.spaceId)}
       {@const color = spaceColor(space.spaceId)}
       {@const isOpen = expandedSpaceId === space.spaceId}
+      {@const unreadCount = notificationState.getTotalUnreadMessagesForSpace(space).length}
 
       <div
         class="space-card"
@@ -70,6 +73,14 @@
             <span class="space-name">{space.spaceName}</span>
             <span class="space-meta">{space.channels?.length ?? 0} channels</span>
           </span>
+
+          {#if !isOpen}
+            <UnreadNotificationBadge
+              shouldShow={unreadCount > 0}
+              count={unreadCount}
+              variant="inline"
+            />
+          {/if}
 
           <span class="chevron" class:rotated={isOpen}>
             <svg

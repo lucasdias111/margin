@@ -58,7 +58,12 @@
       event.preventDefault()
     }
 
-    await chatService.sendChannelMessage(userState.currentUser, selectedChannel, messageInput)
+    if (!messageInput.trim()) return
+
+    const messageContent = messageInput
+    messageInput = ''
+
+    await chatService.sendChannelMessage(userState.currentUser, selectedChannel, messageContent)
   }
 
   async function loadMessagesForChannel(channel: Channel): Promise<void> {

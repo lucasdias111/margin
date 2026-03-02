@@ -1,4 +1,5 @@
 import type { UnreadCount } from '$src/interfaces/UnreadCount'
+import type { Space } from '$src/interfaces/Space'
 
 interface NotificationState {
   unreadDirectMessages: UnreadCount[]
@@ -47,6 +48,12 @@ class NotificationStateManager {
 
   getTotalUnreadChannelMessages(): number {
     return this.state.unreadChannelMessages.length
+  }
+
+  getTotalUnreadMessagesForSpace(space: Space): UnreadCount[] {
+    return space.channels.flatMap((channel) =>
+      this.getTotalUnreadMessagesForChannel(channel.conversationId)
+    )
   }
 }
 
