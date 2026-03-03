@@ -16,7 +16,7 @@
     height: 100vh;
   }
 
-  :global(p) {
+  :global(p, span) {
     font-family: 'Inter', sans-serif;
     font-weight: 300;
     font-size: 13px;

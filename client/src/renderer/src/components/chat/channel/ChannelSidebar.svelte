@@ -24,6 +24,10 @@
       channelCallService.joinVoiceChannel(channel.id)
     }
   }
+
+  function onLeaveChannel(): void {
+    channelCallService.endChannelCall()
+  }
 </script>
 
 <aside class="sidebar" class:closed={!isOpen || !channel}>
@@ -60,9 +64,14 @@
         <span class="section-title">Voice</span>
       </div>
       <div class="voice-empty">
-        <span class="voice-empty-text">No one in voice</span>
+        {#if callState.isGroupCall}
+          <p class="voice-joined-text">In voice</p>
+          <button class="leave-voice-btn" onclick={onLeaveChannel}> Leave channel →</button>
+        {:else}
+          <p class="voice-empty-text">No one in voice</p>
+          <button class="join-voice-btn" onclick={onJoinChannel}> Join channel →</button>
+        {/if}
       </div>
-      <button class="join-voice-btn" onclick={onJoinChannel}> Join channel →</button>
     </section>
 
     <section class="sidebar-section">
@@ -259,6 +268,11 @@
     color: #aaa;
   }
 
+  .voice-joined-text {
+    font-size: 12px;
+    color: #2d2d2d;
+  }
+
   .join-voice-btn {
     width: 100%;
     padding: 5px 0;
@@ -268,6 +282,20 @@
     font-size: 12px;
     font-weight: 600;
     color: #3dd68c;
+    cursor: pointer;
+    font-family: inherit;
+    transition: background 0.15s;
+  }
+
+  .leave-voice-btn {
+    width: 100%;
+    padding: 5px 0;
+    background: rgba(214, 61, 61, 0.1);
+    border: 1px solid rgb(228, 99, 99);
+    border-radius: 7px;
+    font-size: 12px;
+    font-weight: 600;
+    color: #ff6203;
     cursor: pointer;
     font-family: inherit;
     transition: background 0.15s;
