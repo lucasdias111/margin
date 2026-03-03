@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { onMount } from 'svelte'
+  import { onMount, tick } from 'svelte'
   import { WebSocketMessageType } from '$src/interfaces/WebSocketMessageType'
   import { callState } from '$src/states/CallState.svelte'
   import type {
@@ -14,6 +14,7 @@
   let remoteAudio: HTMLAudioElement | null = null
   let remoteVideo: HTMLVideoElement | null = null
   let localVideo: HTMLVideoElement | null = null
+  let screenShareVideo: HTMLVideoElement | null = null
 
   onMount(() => {
     if (!callState.isP2PCall || !callState.p2pCallState) return
@@ -38,6 +39,20 @@
       }
     })
 
+    callService.onRemoteScreenShare(async (stream) => {
+      if (stream) {
+        callState.setRemoteScreenSharing(true)
+        await tick()
+        if (screenShareVideo) {
+          screenShareVideo.srcObject = stream
+          screenShareVideo.play().catch((err) => console.error('Error playing screen share:', err))
+        }
+      } else {
+        if (screenShareVideo) screenShareVideo.srcObject = null
+        callState.setRemoteScreenSharing(false)
+      }
+    })
+
     if (isIncoming && offer) {
       callService.answerCall(userId, offer)
     } else {
@@ -48,7 +63,11 @@
   useWebsocketSvelte({
     [WebSocketMessageType.CALL_RESPONSE]: handleCallResponse,
     [WebSocketMessageType.CALL_CANDIDATE]: handleIceCandidate,
-    [WebSocketMessageType.CALL_CREATED]: handleCallCreated
+    [WebSocketMessageType.CALL_CREATED]: handleCallCreated,
+    [WebSocketMessageType.SCREEN_SHARE_OFFER]: handleScreenShareOffer,
+    [WebSocketMessageType.SCREEN_SHARE_ANSWER]: handleScreenShareAnswer,
+    [WebSocketMessageType.SCREEN_SHARE_STARTED]: handleScreenShareStarted,
+    [WebSocketMessageType.SCREEN_SHARE_STOPPED]: handleScreenShareStopped
   })
 
   function handleCallCreated(data: WebSocketMessage<{ callId: number }>): void {
@@ -63,12 +82,43 @@
     await callService.handleIceCandidate(data)
   }
 
+  async function handleScreenShareOffer(
+    // eslint-disable-next-line no-undef
+    data: WebSocketMessage<RTCSessionDescriptionInit>
+  ): Promise<void> {
+    await callService.handleScreenShareOffer(data)
+  }
+
+  async function handleScreenShareAnswer(
+    // eslint-disable-next-line no-undef
+    data: WebSocketMessage<RTCSessionDescriptionInit>
+  ): Promise<void> {
+    await callService.handleScreenShareAnswer(data)
+  }
+
+  function handleScreenShareStarted(): void {
+    // intentionally empty — state is set in onRemoteScreenShare callback
+  }
+
+  function handleScreenShareStopped(): void {
+    callState.setRemoteScreenSharing(false)
+    if (screenShareVideo) screenShareVideo.srcObject = null
+  }
+
   function endCall(): void {
     callService.endCall(false)
   }
 
   function toggleVideo(): void {
     callService.toggleVideo()
+  }
+
+  function toggleScreenShare(): void {
+    if (callState.p2pCallState?.isScreenSharing) {
+      callService.stopScreenShare()
+    } else {
+      callService.startScreenShare()
+    }
   }
 </script>
 
@@ -79,7 +129,39 @@
     </div>
 
     <div class="call-content">
-      {#if callState.p2pCallState.isVideoEnabled}
+      {#if callState.p2pCallState.isScreenSharing}
+        <div class="screen-sharing-banner">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="24"
+            height="24"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <rect x="2" y="3" width="20" height="14" rx="2" ry="2" />
+            <line x1="8" y1="21" x2="16" y2="21" />
+            <line x1="12" y1="17" x2="12" y2="21" />
+          </svg>
+          You are sharing your screen
+        </div>
+        {#if callState.p2pCallState.isVideoEnabled}
+          <div class="video-container">
+            <video bind:this={remoteVideo} autoplay playsinline class="remote-video"></video>
+          </div>
+        {:else}
+          <div class="user-avatar">
+            <div class="avatar-circle">{callState.p2pCallState.userId}</div>
+          </div>
+        {/if}
+      {:else if callState.p2pCallState.isRemoteScreenSharing}
+        <div class="video-container">
+          <video bind:this={screenShareVideo} autoplay playsinline class="remote-video"></video>
+        </div>
+      {:else if callState.p2pCallState.isVideoEnabled}
         <div class="video-container">
           <video bind:this={remoteVideo} autoplay playsinline class="remote-video"></video>
           <video bind:this={localVideo} autoplay playsinline muted class="local-video"></video>
@@ -142,6 +224,37 @@
         {/if}
       </button>
 
+      <button
+        class="toggle-screenshare-btn"
+        class:active={callState.p2pCallState.isScreenSharing}
+        onclick={toggleScreenShare}
+        disabled={callState.p2pCallState.isRemoteScreenSharing}
+        title={callState.p2pCallState.isRemoteScreenSharing
+          ? 'Other user is sharing their screen'
+          : ''}
+      >
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          width="24"
+          height="24"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        >
+          <rect x="2" y="3" width="20" height="14" rx="2" ry="2" />
+          <line x1="8" y1="21" x2="16" y2="21" />
+          <line x1="12" y1="17" x2="12" y2="21" />
+        </svg>
+        {#if callState.p2pCallState.isScreenSharing}
+          Stop Sharing
+        {:else}
+          Share Screen
+        {/if}
+      </button>
+
       <button class="end-call-btn" onclick={endCall}>
         <svg
           xmlns="http://www.w3.org/2000/svg"
@@ -197,6 +310,18 @@
     justify-content: center;
     gap: 30px;
     padding: 20px;
+  }
+
+  .screen-sharing-banner {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: #b47024;
+    color: white;
+    padding: 16px 32px;
+    border-radius: 12px;
+    font-size: 18px;
+    font-weight: 600;
   }
 
   .video-container {
@@ -263,11 +388,9 @@
     color: #ffa500;
     animation: pulse 1.5s ease-in-out infinite;
   }
-
   .status.connected {
     color: #4caf50;
   }
-
   .status.ended {
     color: #999;
   }
@@ -286,7 +409,8 @@
     gap: 20px;
   }
 
-  .toggle-video-btn {
+  .toggle-video-btn,
+  .toggle-screenshare-btn {
     background: #555;
     border: none;
     color: white;
@@ -302,10 +426,21 @@
     box-shadow: 0 4px 15px rgba(85, 85, 85, 0.3);
   }
 
-  .toggle-video-btn:hover {
+  .toggle-video-btn:hover,
+  .toggle-screenshare-btn:hover:not(:disabled) {
     background: #666;
     transform: translateY(-2px);
     box-shadow: 0 6px 20px rgba(85, 85, 85, 0.4);
+  }
+
+  .toggle-screenshare-btn.active {
+    background: #b47024;
+    box-shadow: 0 4px 15px rgba(180, 112, 36, 0.4);
+  }
+
+  .toggle-screenshare-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
   }
 
   .end-call-btn {
@@ -331,7 +466,8 @@
   }
 
   .end-call-btn:active,
-  .toggle-video-btn:active {
+  .toggle-video-btn:active,
+  .toggle-screenshare-btn:active {
     transform: translateY(0);
   }
 

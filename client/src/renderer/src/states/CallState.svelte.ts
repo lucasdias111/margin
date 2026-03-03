@@ -17,42 +17,27 @@ class CallState {
   })
 
   private activeCallType = $state<CallType | null>(null)
-
   private p2pData = $state<P2PCallData | null>(null)
   private groupData = $state<GroupCallData | null>(null)
-
-  get callType(): CallType | null {
-    return this.activeCallType
-  }
-
-  get isActive(): boolean {
-    return this.activeCallType !== null
-  }
 
   get isP2PCall(): boolean {
     return this.activeCallType === 'p2p'
   }
-
   get isGroupCall(): boolean {
     return this.activeCallType === 'group'
   }
-
   get callId(): number | null {
     return this.baseState.callId
   }
-
   get status(): CallStatus {
     return this.baseState.status
   }
-
   get duration(): number {
     return this.baseState.duration
   }
-
   get p2pCallState(): P2PCallData | null {
     return this.isP2PCall ? this.p2pData : null
   }
-
   get groupCallState(): GroupCallData | null {
     return this.isGroupCall ? this.groupData : null
   }
@@ -76,7 +61,11 @@ class CallState {
       localStream: null,
       remoteStream: null,
       candidateQueue: [],
-      isVideoEnabled: false
+      isVideoEnabled: false,
+      isScreenSharing: false,
+      isRemoteScreenSharing: false,
+      screenShareTrack: null,
+      screenShareStream: null
     }
   }
 
@@ -100,15 +89,12 @@ class CallState {
   setStatus(status: CallStatus): void {
     this.baseState.status = status
   }
-
   incrementDuration(): void {
     this.baseState.duration++
   }
-
   setDurationInterval(intervalId: number): void {
     this.baseState.durationInterval = intervalId
   }
-
   setCallId(callId: number): void {
     this.baseState.callId = callId
   }
@@ -119,7 +105,6 @@ class CallState {
     remoteStream: MediaStream
   ): void {
     if (!this.isP2PCall || !this.p2pData) return
-
     this.p2pData.peerConnection = peerConnection
     this.p2pData.localStream = localStream
     this.p2pData.remoteStream = remoteStream
@@ -138,6 +123,22 @@ class CallState {
   setVideoEnabled(enabled: boolean): void {
     if (!this.isP2PCall || !this.p2pData) return
     this.p2pData.isVideoEnabled = enabled
+  }
+
+  setScreenSharing(
+    enabled: boolean,
+    track: MediaStreamTrack | null = null,
+    stream: MediaStream | null = null
+  ): void {
+    if (!this.isP2PCall || !this.p2pData) return
+    this.p2pData.isScreenSharing = enabled
+    this.p2pData.screenShareTrack = track
+    this.p2pData.screenShareStream = stream
+  }
+
+  setRemoteScreenSharing(enabled: boolean): void {
+    if (!this.isP2PCall || !this.p2pData) return
+    this.p2pData.isRemoteScreenSharing = enabled
   }
 
   endCall(): void {

@@ -19,6 +19,10 @@ export interface P2PCallData {
   remoteStream: MediaStream | null
   candidateQueue: RTCIceCandidateInit[]
   isVideoEnabled: boolean
+  isScreenSharing: boolean
+  isRemoteScreenSharing: boolean
+  screenShareTrack: MediaStreamTrack | null
+  screenShareStream: MediaStream | null
 }
 
 export interface GroupCallData {
