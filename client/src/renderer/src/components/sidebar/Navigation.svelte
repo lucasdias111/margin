@@ -8,7 +8,7 @@
   import SetIcon from '$src/components/svg/Settings.svelte'
   import MsgIgon from '$src/components/svg/MessagesIcon.svelte'
   import SpaceIcon from '$src/components/svg/SpacesIcon.svelte'
-  import ExpIcon from '$src/components/svg/SpacesIcon.svelte'
+  import ExpIcon from '$src/components/svg/ExploreIcon.svelte'
   import { onMount } from 'svelte'
   import Logout from '$src/components/authentication/Logout.svelte'
 
@@ -16,13 +16,13 @@
     chatState.selectContent(selectedContent)
   }
 
-  let isDropOpen = true
+  let isDropOpen = false
   let container: HTMLDivElement
 
   onMount(() => {
     const handleOutsideClick = (event: MouseEvent): void => {
       if (container && event.target instanceof Node && !container.contains(event.target)) {
-        isDropOpen = true
+        isDropOpen = false
       }
     }
     document.addEventListener('click', handleOutsideClick)
@@ -99,13 +99,40 @@
 </div>
 
 <style>
+  .avatar-container {
+    position: relative;
+  }
+
   .avatar-container .dropdown {
-    opacity: 0.5;
-    background-color: #da6b10;
-    border-radius: 999px;
+    position: absolute;
+    top: 50px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 100;
+  }
+
+  .avatar-container .dropdown :global(button) {
+    background: none;
+    border: none;
+    padding: 0;
+    margin: 0;
+    cursor: pointer;
+    appearance: none;
+    box-shadow: none;
+    outline: none;
+    -webkit-appearance: none;
     display: flex;
-    flex-direction: column;
-    height: 10vh;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .avatar-container .dropdown :global(button) :global(svg) {
+    color: #888;
+    transition: color 0.15s ease;
+  }
+
+  .avatar-container .dropdown :global(button:hover) :global(svg) {
+    color: #f47e3a;
   }
 
   .navigation {
@@ -129,16 +156,14 @@
     gap: 1.75rem;
   }
 
-  .icon {
-    color: #ffffff;
-    transition: color 0.2s ease;
+  button :global(svg) {
+    display: block;
+    color: #888;
+    transition: color 0.15s ease;
   }
 
-  button:hover .icon {
-    color: #f47e3a;
-  }
-
-  button.selected .icon {
+  button:hover :global(svg),
+  button.selected :global(svg) {
     color: #f47e3a;
   }
 

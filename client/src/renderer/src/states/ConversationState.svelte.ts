@@ -11,6 +11,17 @@ class ConversationState {
     this.currentConversation = null
     this.isLoading = false
   }
+  deleteMessage(id: number): void {
+    console.log('message deleted', id)
+    this.messages = this.messages.filter((message) => message.id !== id)
+  }
+  editMessage(id: number, newContent: string): void {
+    this.messages = this.messages.map((message) => {
+      if (message.id === id) return { ...message, content: newContent }
+
+      return message
+    })
+  }
 }
 
 export const conversationState = new ConversationState()

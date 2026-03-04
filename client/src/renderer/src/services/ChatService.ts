@@ -228,6 +228,24 @@ class ChatService {
     }
   }
 
+  async deleteMessage(messageId: number): Promise<void> {
+    try {
+      await authenticatedPost(null, `api/messages/${messageId}/delete`)
+      conversationState.deleteMessage(messageId)
+    } catch (error) {
+      console.error('Failed to delete message:', error)
+    }
+  }
+
+  async editMessage(messageId: number, newContent: string): Promise<void> {
+    try {
+      await authenticatedPost({ content: newContent }, `api/messages/${messageId}/edit`)
+      conversationState.editMessage(messageId, newContent)
+    } catch (error) {
+      console.error('Failed to edit message:', error)
+    }
+  }
+
   async markConversationAsRead(conversationId: number): Promise<void> {
     if (!conversationId) return
 

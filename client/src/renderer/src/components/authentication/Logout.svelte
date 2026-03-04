@@ -2,6 +2,8 @@
   import { authenticationService } from '$src/services/AuthenticationService'
   import { userState } from '$src/states/UserState.svelte.js'
   import { push } from 'svelte-spa-router'
+  import LogoutIcon from '$src/components/svg/LogoutIcon.svelte'
+
 
   export async function handleLogout(): Promise<void> {
     if (!userState.currentUser.id) return
@@ -10,15 +12,6 @@
   }
 </script>
 
-
-<button class="logoutbut" onclick={handleLogout}>Log out</button>
-
-<style>
-  .logoutbut {
-    background: #da6b10;
-    color: white;
-    padding: 8px;
-    border: none;
-    opacity: 1;
-  }
-</style>
+<button onclick={handleLogout}>
+  <LogoutIcon />
+</button>
