@@ -1,6 +1,16 @@
 <script lang="ts">
   import Login from '$src/components/authentication/Login.svelte'
   import marginLogo from '$src/assets/pics/margin.png'
+  import { onMount } from 'svelte'
+  import { push } from 'svelte-spa-router'
+  import { authenticationService } from '$src/services/AuthenticationService'
+
+  onMount(async () => {
+    const restored = await authenticationService.tryRestoreSession()
+    if (restored) {
+      await push('/home')
+    }
+  })
 </script>
 
 <div class="container">

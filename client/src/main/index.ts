@@ -1,8 +1,40 @@
-import { app, shell, BrowserWindow, ipcMain, session, desktopCapturer } from 'electron'
+import { app, shell, BrowserWindow, ipcMain, session, desktopCapturer, safeStorage } from 'electron'
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
 import { API_CONFIG } from '../renderer/src/shared/config'
+import { readFileSync, writeFileSync, existsSync, unlinkSync } from 'fs'
+
+const SECURE_FILE = join(app.getPath('userData'), 'secure.bin')
+const TOKEN_FILE = join(app.getPath('userData'), 'session.bin')
+
+function writeEncrypted(filePath: string, plaintext: string): void {
+  const encrypted = safeStorage.encryptString(plaintext)
+  writeFileSync(filePath, encrypted)
+}
+
+function readEncrypted(filePath: string): string | null {
+  if (!existsSync(filePath)) return null
+  const encrypted = readFileSync(filePath)
+  return safeStorage.decryptString(encrypted)
+}
+
+ipcMain.handle('secure:saveSession', (_event, token: string, privateKey: string) => {
+  writeEncrypted(TOKEN_FILE, token)
+  writeEncrypted(SECURE_FILE, privateKey)
+})
+
+ipcMain.handle('secure:loadSession', () => {
+  const token = readEncrypted(TOKEN_FILE)
+  const privateKey = readEncrypted(SECURE_FILE)
+  if (!token || !privateKey) return null
+  return { token, privateKey }
+})
+
+ipcMain.handle('secure:clearSession', () => {
+  if (existsSync(TOKEN_FILE)) unlinkSync(TOKEN_FILE)
+  if (existsSync(SECURE_FILE)) unlinkSync(SECURE_FILE)
+})
 
 function createWindow(): void {
   const mainWindow = new BrowserWindow({
@@ -15,7 +47,7 @@ function createWindow(): void {
     hasShadow: true,
     ...(process.platform === 'linux' ? { icon } : {}),
     webPreferences: {
-      preload: join(__dirname, '../preload/index.js'),
+      preload: join(__dirname, '../preload/index.cjs'),
       sandbox: false
     }
   })

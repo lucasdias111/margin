@@ -4,7 +4,6 @@
   import ListView from '$src/components/common/datatables/ListView.svelte'
   import { formatTimestamp } from '$src/utils/DateUtils'
   import type { User } from '$src/interfaces/User'
-  import { onMount } from 'svelte'
 
   interface Props {
     margin: Margin
@@ -14,14 +13,8 @@
   }
 
   let { margin, onAddMember, onUpdateMemberRole, onRemoveMember }: Props = $props()
-
   let addMemberOpen = $state(false)
-
   const marginRoles = Object.values(MarginRole)
-
-  onMount(() => {
-    console.log('margin', margin)
-  })
 
   function handleRoleSelectChange(member: MarginMember, e: Event): void {
     const value = (e.currentTarget as HTMLSelectElement).value as MarginRole

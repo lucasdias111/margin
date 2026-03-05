@@ -55,7 +55,6 @@
       </div>
     {:else}
       <div class="channel-info">
-        <span class="channel-hash">#</span>
         <span class="username">{name}</span>
       </div>
     {/if}
@@ -193,13 +192,6 @@
     display: flex;
     align-items: center;
     gap: 4px;
-  }
-
-  .channel-hash {
-    font-size: 1.1rem;
-    font-weight: 700;
-    color: #e07a30;
-    line-height: 1;
   }
 
   .call-group {

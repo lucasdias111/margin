@@ -1,9 +1,6 @@
 import type { ConversationMessagesResponse, Message } from '$src/interfaces/Messages'
 import type { User } from '$src/interfaces/User'
-import {
-  isDirectConversation,
-  type Conversation,
-} from '$src/interfaces/Conversation'
+import { isDirectConversation, type Conversation } from '$src/interfaces/Conversation'
 import { encryptionService } from './EncryptionService'
 import { webSocketService } from './WebSocketService'
 import { WebSocketMessageType } from '$src/interfaces/WebSocketMessageType'
@@ -18,7 +15,7 @@ import { userListState } from '$src/states/UserListState.svelte'
 import type { ContentType } from '$src/interfaces/Content'
 
 class ChatService {
-  async handleIncomingMessage(data: WebSocketMessage<Message>): Promise<void> {
+  handleIncomingMessage = async (data: WebSocketMessage<Message>): Promise<void> => {
     const msg = data.payload
     notificationService.handleIncomingMessage(msg)
 
@@ -226,13 +223,13 @@ class ChatService {
     chatState.selectedChannel = null
   }
 
-  private async handleIncomingChannelMessage(msg: Message): Promise<void> {
+  private handleIncomingChannelMessage = async (msg: Message): Promise<void> => {
     if (msg.conversationId === chatState.selectedChannel?.conversationId) {
       conversationState.messages = [...conversationState.messages, msg]
     }
   }
 
-  private async handleIncomingDirectMessage(msg: Message): Promise<void> {
+  private handleIncomingDirectMessage = async (msg: Message): Promise<void> => {
     const isFromMe = msg.user.id === userState.currentUser?.id
     const otherUser = isFromMe ? chatState.selectedUser : msg.user
     const otherUserId = otherUser?.id
@@ -263,12 +260,12 @@ class ChatService {
     await this.markConversationAsRead(conversationState.currentConversation!.id)
   }
 
-  private async ensureUserInRecentList(
+  private ensureUserInRecentList = async (
     user: User,
     preview: string,
     msg: Message,
     isFromMe: boolean
-  ): Promise<void> {
+  ): Promise<void> => {
     const alreadyInList = userListState.recentUsers.find((u) => u.user.id === user.id)
     if (alreadyInList) return
 

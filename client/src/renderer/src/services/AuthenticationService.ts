@@ -6,23 +6,18 @@ import { callState } from '$src/states/CallState.svelte'
 import { API_CONFIG } from '$src/shared/config'
 
 class AuthenticationService {
-  async login(username: string, password: string): Promise<void> {
+  async login(username: string, password: string, rememberMe: boolean = false): Promise<void> {
     const response = await unauthenticatedPost({ username, password }, 'auth/login')
-
-    if (!response.ok) {
-      throw new Error('Login failed')
-    }
+    if (!response.ok) throw new Error('Login failed')
 
     const authResponse = await response.json()
-
-    if (!authResponse.token) {
-      throw new Error('No token in response')
-    }
+    if (!authResponse.token) throw new Error('No token in response')
 
     sessionStorage.setItem('authToken', authResponse.token)
 
+    let privateKey: string | undefined
     if (authResponse.encryptedPrivateKey && authResponse.salt && authResponse.iv) {
-      const privateKey = await encryptionService.decryptPrivateKey(
+      privateKey = await encryptionService.decryptPrivateKey(
         authResponse.encryptedPrivateKey,
         password,
         authResponse.salt,
@@ -34,6 +29,22 @@ class AuthenticationService {
     if (authResponse.publicKey) {
       sessionStorage.setItem('publicKey', authResponse.publicKey)
     }
+
+    if (rememberMe && privateKey) {
+      await window.secureStorage.saveSession(authResponse.token, privateKey)
+    }
+  }
+
+  async tryRestoreSession(): Promise<boolean> {
+    console.log('trying to restore session...')
+    const stored = await window.secureStorage.loadSession()
+    console.log('stored session:', stored)
+
+    if (!stored) return false
+
+    sessionStorage.setItem('authToken', stored.token)
+    sessionStorage.setItem('privateKey', stored.privateKey)
+    return true
   }
 
   async register(
@@ -85,13 +96,6 @@ class AuthenticationService {
     return response
   }
 
-  getStoredToken(): string | null {
-    if (typeof window !== 'undefined') {
-      return sessionStorage.getItem('authToken')
-    }
-    return null
-  }
-
   clearToken(): void {
     if (typeof window !== 'undefined') {
       sessionStorage.removeItem('authToken')
@@ -107,7 +111,6 @@ class AuthenticationService {
     )
 
     if (!response.ok) {
-
       throw new Error('Logout failed')
     }
 
@@ -115,6 +118,7 @@ class AuthenticationService {
     chatState.reset()
     callState.endCall()
 
+    await window.secureStorage.clearSession()
     this.clearToken()
   }
 }

@@ -14,6 +14,12 @@ if (process.contextIsolated) {
   try {
     contextBridge.exposeInMainWorld('electron', electronAPI)
     contextBridge.exposeInMainWorld('api', api)
+    contextBridge.exposeInMainWorld('secureStorage', {
+      saveSession: (token: string, privateKey: string) =>
+        ipcRenderer.invoke('secure:saveSession', token, privateKey),
+      loadSession: () => ipcRenderer.invoke('secure:loadSession'),
+      clearSession: () => ipcRenderer.invoke('secure:clearSession')
+    })
   } catch (error) {
     console.error(error)
   }

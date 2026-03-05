@@ -5,13 +5,14 @@
   let username = $state('')
   let password = $state('')
   let loginResponse = $state('')
+  let rememberMe = $state(false)
 
   async function handleLogin(event: SubmitEvent): Promise<void> {
     event.preventDefault()
     try {
-      await authenticationService.login(username, password)
+      await authenticationService.login(username, password, rememberMe)
       loginResponse = 'Login successful'
-      push('/home')
+      await push('/home')
     } catch (error) {
       loginResponse = error.message || String(error)
     }
@@ -39,6 +40,12 @@
       placeholder="Password"
       bind:value={password}
     />
+
+    <label class="rememberMe">
+      <input type="checkbox" bind:checked={rememberMe} />
+      Remember me
+    </label>
+
     <button class="logbut" type="submit">Login</button>
   </form>
 
@@ -58,6 +65,15 @@
     background-color: whitesmoke;
     padding: 0px;
     margin-bottom: 15px;
+  }
+
+  .rememberMe {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    color: #4e4d4d;
+    cursor: pointer;
   }
 
   .formWrap {

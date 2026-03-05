@@ -1,6 +1,16 @@
 <script lang="ts">
   import { chatState } from '$src/states/ChatState.svelte.js'
   import marginLogo from '$src/assets/pics/margin.png'
+  import { MarginRole } from '$src/interfaces/Margin'
+  import { userState } from '$src/states/UserState.svelte'
+
+  const currentUserRole = $derived(
+    chatState.selectedMargin?.members.find((m) => m.user.id === userState.currentUser?.id)?.role
+  )
+
+  const canManage = $derived(
+    currentUserRole === MarginRole.ADMIN || currentUserRole === MarginRole.OWNER
+  )
 </script>
 
 <div class="margin-home">
@@ -9,9 +19,11 @@
       <div class="logo-mark">
         <img src=".{marginLogo}" alt="Margin Logo" class="logo" />
       </div>
-      <button class="manage-btn" onclick={() => (chatState.currentlySelectedContent = 'manage')}>
-        Manage Margin
-      </button>
+      {#if canManage}
+        <button class="manage-btn" onclick={() => (chatState.currentlySelectedContent = 'manage')}>
+          Manage Margin
+        </button>
+      {/if}
     </div>
   </div>
 
