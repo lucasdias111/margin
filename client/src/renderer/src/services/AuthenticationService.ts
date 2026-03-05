@@ -1,4 +1,4 @@
-import { unauthenticatedPost } from './api'
+import { authenticatedPost, unauthenticatedPost } from './api'
 import { encryptionService } from './EncryptionService'
 import { userState } from '$src/states/UserState.svelte'
 import { chatState } from '$src/states/ChatState.svelte'
@@ -6,8 +6,8 @@ import { callState } from '$src/states/CallState.svelte'
 import { API_CONFIG } from '$src/shared/config'
 
 class AuthenticationService {
-  async login(username: string, password: string, rememberMe: boolean = false): Promise<void> {
-    const response = await unauthenticatedPost({ username, password }, 'auth/login')
+  async login(email: string, password: string, rememberMe: boolean = false): Promise<void> {
+    const response = await unauthenticatedPost({ email, password }, 'auth/login')
     if (!response.ok) throw new Error('Login failed')
 
     const authResponse = await response.json()
@@ -102,13 +102,8 @@ class AuthenticationService {
     }
   }
 
-  async logoutUser(userId: number): Promise<void> {
-    const response = await unauthenticatedPost(
-      {
-        userId
-      },
-      'auth/logout'
-    )
+  async logoutUser(): Promise<void> {
+    const response = await authenticatedPost({}, 'auth/logout')
 
     if (!response.ok) {
       throw new Error('Logout failed')

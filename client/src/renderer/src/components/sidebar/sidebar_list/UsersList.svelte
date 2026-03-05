@@ -7,7 +7,7 @@
 
   let filteredUsers = $derived(
     userListState.recentUsers.filter((recentUser) =>
-      recentUser.user.username.toLowerCase().includes((searchUser ?? '').toLowerCase())
+      recentUser.user.displayName.toLowerCase().includes((searchUser ?? '').toLowerCase())
     )
   )
 </script>

@@ -7,7 +7,8 @@
   import { userState } from '$src/states/UserState.svelte.js'
   import ChatInput from '$src/components/common/chat/ChatInput.svelte'
   import MessagesContainer from '$src/components/common/chat/MessagesContainer.svelte'
-  import ChatHeader from '$src/components/common/chat/ChatHeader.svelte'
+  import ChatHeaderShell from '$src/components/common/chat/ChatHeaderShell.svelte'
+  import PrivateChatHeader from '$src/components/chat/private/PrivateChatHeader.svelte'
 
   let messageInput = $state('')
 
@@ -57,12 +58,11 @@
 
 <div class="chat">
   {#if chatState.selectedUser}
-    <ChatHeader
-      userId={chatState.selectedUser.id}
-      name={chatState.selectedUser.username}
-      isLoading={conversationState.isLoading}
+    <PrivateChatHeader
       handleStartCall={startCall}
       handleStartVideoCall={handleVideoCall}
+      isLoading={conversationState.isLoading}
+      isInCall={callState.isInCall}
     />
   {/if}
   <div class="chat-background">

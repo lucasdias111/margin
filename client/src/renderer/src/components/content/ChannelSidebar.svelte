@@ -71,7 +71,7 @@
         {#each chatState.selectedSpace.members as member (member.user.id)}
           <div class="member-entry">
             <span class="live-dot"></span>
-            <p class="member-entry-text">{member.user.username}</p>
+            <p class="member-entry-text">{member.user.displayName}</p>
           </div>
         {/each}
       </div>

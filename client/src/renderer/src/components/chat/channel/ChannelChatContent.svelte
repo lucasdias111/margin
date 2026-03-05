@@ -5,17 +5,11 @@
   import MessagesContainer from '$src/components/common/chat/MessagesContainer.svelte'
   import { chatService } from '$src/services/ChatService'
   import { userState } from '$src/states/UserState.svelte.js'
-  import { callState } from '$src/states/CallState.svelte.js'
-  import { channelCallService } from '$src/services/ChannelCallService'
-  import ChatHeader from '$src/components/common/chat/ChatHeader.svelte'
   import ChannelSidebar from '$src/components/chat/channel/ChannelSidebar.svelte'
+  import ChannelChatHeader from '$src/components/chat/channel/ChannelChatHeader.svelte'
 
   let messageInput = $state('')
   let sidebarOpen = $state(true)
-
-  let isInChannelCall = $derived(
-    callState.isGroupCall && callState.groupCallState?.channelId === chatState.selectedChannel?.id
-  )
 
   $effect(() => {
     if (chatState.selectedChannel) {
@@ -37,31 +31,17 @@
     )
   }
 
-  function handleVoiceCall(): void {
-    if (isInChannelCall) {
-      channelCallService.endChannelCall()
-    } else {
-      channelCallService.joinVoiceChannel(chatState.selectedChannel.id)
-    }
-  }
-
-  function handleVideoCall(): void {
-    console.log('Not yet implemented')
-  }
-
-  function toggleSidebar(): void {
+  function onToggleSidebar(): void {
     sidebarOpen = !sidebarOpen
   }
 </script>
 
 <div class="chat">
   {#if chatState.selectedChannel}
-    <ChatHeader
+    <ChannelChatHeader
       name={chatState.selectedChannel.name}
-      handleStartCall={handleVoiceCall}
-      handleStartVideoCall={handleVideoCall}
-      isInCall={isInChannelCall}
-      onToggleSidebar={toggleSidebar}
+      description={chatState.selectedChannel.description}
+      {onToggleSidebar}
       {sidebarOpen}
     />
   {/if}

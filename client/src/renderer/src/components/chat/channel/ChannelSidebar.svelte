@@ -95,7 +95,7 @@
           <div class="member-entry">
             <span class="presence-dot" class:online={member.user.isOnline}></span>
             <p class="member-entry-text" class:offline={!member.user.isOnline}>
-              {member.user.username}
+              {member.user.displayName}
             </p>
           </div>
         {/each}

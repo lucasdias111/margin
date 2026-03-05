@@ -5,7 +5,6 @@
   import { chatState } from '$src/states/ChatState.svelte'
   import type { User } from '$src/interfaces/User'
   import type { ContentType } from '$src/interfaces/Content'
-  import { marginService } from '$src/services/MarginService'
 
   let selectedContent = $derived<ContentType>(chatState.currentlySelectedContent)
   let isHome = $derived(!chatState.selectedChannel)
@@ -18,18 +17,6 @@
   function goHome(): void {
     chatState.selectChannel(null)
   }
-
-  $effect(() => {
-    if (selectedContent === 'margin') {
-      marginService.getMargins().then((margins) => {
-        if (margins.length === 0) {
-          chatState.hasMargin = false
-        } else {
-          chatState.selectMargin(margins[0])
-        }
-      })
-    }
-  })
 </script>
 
 <div class="sidebar">

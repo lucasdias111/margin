@@ -2,7 +2,7 @@
   import { authenticationService } from '$src/services/AuthenticationService'
   import { push } from 'svelte-spa-router'
 
-  let username = $state('')
+  let email = $state('')
   let password = $state('')
   let loginResponse = $state('')
   let rememberMe = $state(false)
@@ -10,7 +10,7 @@
   async function handleLogin(event: SubmitEvent): Promise<void> {
     event.preventDefault()
     try {
-      await authenticationService.login(username, password, rememberMe)
+      await authenticationService.login(email, password, rememberMe)
       loginResponse = 'Login successful'
       await push('/home')
     } catch (error) {
@@ -27,10 +27,10 @@
   <form class="formWrap" onsubmit={handleLogin}>
     <input
       class="loginInput"
-      type="text"
-      name="username"
-      placeholder="Username"
-      bind:value={username}
+      type="email"
+      name="email"
+      placeholder="Email"
+      bind:value={email}
     />
 
     <input

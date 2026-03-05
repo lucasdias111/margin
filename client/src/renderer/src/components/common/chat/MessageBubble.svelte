@@ -64,7 +64,7 @@
 
   <div class="bubble" class:sent={isSent}>
     {#if message.conversationType === 'CHANNEL' && message.user.id !== userState.currentUser?.id}
-      <span class="username">{message.user.username}</span>
+      <span class="username">{message.user.displayName}</span>
     {/if}
 
     {#if isEditing}

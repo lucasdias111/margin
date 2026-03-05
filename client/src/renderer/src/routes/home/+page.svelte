@@ -25,6 +25,7 @@
   import { userListState } from '$src/states/UserListState.svelte'
   import NoMarginEmptyState from '$src/components/content/NoMarginEmptyState.svelte'
   import { encryptionService } from '$src/services/EncryptionService'
+  import { marginService } from '$src/services/MarginService'
 
   onMount(() => {
     setup()
@@ -45,6 +46,13 @@
     await getCurrentUser()
     await loadUnreadMessages()
     await loadRecentUsers()
+    await marginService.getMargins().then((margins) => {
+      if (margins.length === 0) {
+        chatState.hasMargin = false
+      } else {
+        chatState.selectMargin(margins[0])
+      }
+    })
   }
 
   async function loadUnreadMessages(): Promise<void> {

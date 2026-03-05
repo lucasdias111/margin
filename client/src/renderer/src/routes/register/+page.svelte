@@ -20,7 +20,7 @@
     }
 
     await authenticationService.register(username, password, email, profilePicture || undefined)
-    push('/')
+    await push('/')
   }
 
   function handleFileChange(event: Event): void {
@@ -51,9 +51,9 @@
     <img class="marginlogo" src={marginLogo} alt="Margin logo" />
 
     {#if previewUrl}
-    <div class="preview">
-      <img src={previewUrl} alt="Profile Preview" />
-    </div>
+      <div class="preview">
+        <img src={previewUrl} alt="Profile Preview" />
+      </div>
     {/if}
     <input
       id="username"
@@ -124,7 +124,6 @@
     height: 40px;
     width: 20%;
     border-radius: 10px;
-    border: 1px solid black;
     outline: none;
     padding: 0 12px;
     font-size: 14px;

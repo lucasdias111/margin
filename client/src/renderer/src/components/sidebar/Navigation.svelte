@@ -21,7 +21,7 @@
 
   async function handleLogout(): Promise<void> {
     if (!userState.currentUser?.id) return
-    await authenticationService.logoutUser(userState.currentUser.id)
+    await authenticationService.logoutUser()
     await push('/')
   }
 
@@ -41,7 +41,7 @@
       {#if showDropdown}
         <div class="dropdown">
           <div class="dropdown-header">
-            <span class="dropdown-username">{userState.currentUser.username}</span>
+            <span class="dropdown-username">{userState.currentUser.displayName}</span>
           </div>
           <div class="divider"></div>
           <button class="dropdown-item" onclick={handleLogout}>

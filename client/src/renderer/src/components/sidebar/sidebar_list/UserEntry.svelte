@@ -28,7 +28,7 @@
       <UserAvatar profilePictureUrl={chatUser.profilePictureUrl} />
     {:else}
       <span class="avatar-initials">
-        {chatUser.username.slice(0, 2).toUpperCase()}
+        {chatUser.displayName.slice(0, 2).toUpperCase()}
       </span>
     {/if}
     <span class="presence-dot" class:online={isOnline}></span>
@@ -36,7 +36,7 @@
 
   <div class="user-info">
     <div class="top-row">
-      <span class="username">{chatUser.username}</span>
+      <span class="username">{chatUser.displayName}</span>
       {#if lastMessageTime}
         <span class="timestamp">{formatTime(lastMessageTime)}</span>
       {/if}

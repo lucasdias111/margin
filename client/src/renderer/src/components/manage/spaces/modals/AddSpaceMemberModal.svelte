@@ -48,7 +48,7 @@
 
   function onSelectUser(user: User): void {
     memberToAdd = user
-    title = `Add ${user.username} to space?`
+    title = `Add ${user.displayName} to space?`
   }
 </script>
 
@@ -56,7 +56,7 @@
   {#if memberToAdd}
     <div class="selected-user">
       <UserAvatar profilePictureUrl={memberToAdd.profilePictureUrl} />
-      <span class="username">{memberToAdd.username}</span>
+      <span class="username">{memberToAdd.displayName}</span>
     </div>
 
     <div class="role-field">
