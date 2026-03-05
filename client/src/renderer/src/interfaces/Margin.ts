@@ -1,5 +1,6 @@
 import type { Space } from '$src/interfaces/Space'
 import type { User } from '$src/interfaces/User'
+import type { Visibility } from '$src/interfaces/Visibility'
 
 export interface Margin {
   marginId: number
@@ -18,7 +19,19 @@ export interface MarginMember {
 }
 
 export enum MarginRole {
-  ADMIN = 'Admin',
-  MEMBER = 'Member',
-  OWNER = 'Owner'
+  ADMIN = 'ADMIN',
+  MEMBER = 'MEMBER',
+  OWNER = 'OWNER'
+}
+
+export interface UpdateMargin {
+  marginId: number
+  marginName: string
+  description?: string
+}
+
+export interface CreateMargin {
+  marginName: string
+  marginDescription?: string
+  visibility: Visibility
 }

@@ -1,6 +1,5 @@
 <script lang="ts">
   import { userListState } from '$src/states/UserListState.svelte'
-  import { presenceState } from '$src/states/PresenceState.svelte'
   import { chatState } from '$src/states/ChatState.svelte'
   import UserEntry from '$src/components/sidebar/sidebar_list/UserEntry.svelte'
 
@@ -18,7 +17,7 @@
     {#each filteredUsers as recentUser (recentUser.user.id)}
       <UserEntry
         {recentUser}
-        isOnline={presenceState.isOnline(recentUser.user.id)}
+        isOnline={recentUser.user.isOnline}
         isSelected={chatState.selectedUser?.id === recentUser.user.id}
       />
     {/each}

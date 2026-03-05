@@ -1,8 +1,14 @@
 <script lang="ts">
   import { chatState } from '$src/states/ChatState.svelte'
 
-  let activeTab = 'Spaces'
-  const tabs = ['Margin', 'Plugins', 'Spaces', 'Members', 'Visibility']
+  interface Props {
+    activeTab: string
+    onTabChange: (tab: string) => void
+  }
+
+  let { activeTab, onTabChange }: Props = $props()
+
+  const tabs = ['Margin', 'Spaces']
 </script>
 
 <div class="manage-header">
@@ -11,12 +17,13 @@
     onclick={() => {
       chatState.currentlySelectedContent = 'margin'
     }}
-    >&#8592;
+  >
+    &#8592;
   </button>
   <h1>Manage</h1>
   <nav class="tabs">
     {#each tabs as tab}
-      <button class="tab-btn" class:active={activeTab === tab} onclick={() => (activeTab = tab)}>
+      <button class="tab-btn" class:active={activeTab === tab} onclick={() => onTabChange(tab)}>
         {tab}
       </button>
     {/each}

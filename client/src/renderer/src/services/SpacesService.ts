@@ -54,6 +54,12 @@ class SpacesService {
     const response = await authenticatedPost(channel.id, 'api/channels/delete_channel')
     if (!response.ok) throw new Error(`Failed to delete channel: ${response.status}`)
   }
+
+  async updateSpaceMemberRole(spaceMember: SpaceMember): Promise<SpaceMember> {
+    const response = await authenticatedPost(spaceMember, 'api/spaces/update_space_member_role')
+    if (!response.ok) throw new Error(`Failed to update space member role: ${response.status}`)
+    return response.json()
+  }
 }
 
 export const spacesService = new SpacesService()

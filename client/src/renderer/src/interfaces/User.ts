@@ -4,4 +4,5 @@ export interface User {
   email: string
   createdAt: string
   profilePictureUrl: string | null
+  isOnline: boolean
 }

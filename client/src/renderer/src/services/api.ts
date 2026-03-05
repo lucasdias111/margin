@@ -33,6 +33,22 @@ export async function authenticatedPost<T>(body: T, url: string): Promise<Respon
   })
 }
 
+export async function authenticatedPostForm(formData: FormData, url: string): Promise<Response> {
+  const token = sessionStorage.getItem('authToken')
+
+  if (!token) {
+    throw new Error('No authentication token found')
+  }
+
+  return fetch(API_CONFIG.baseUrl + url, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${token}`
+    },
+    body: formData
+  })
+}
+
 export async function unauthenticatedPost<T>(body: T, url: string): Promise<Response> {
   return await fetch(API_CONFIG.baseUrl + url, {
     method: 'POST',

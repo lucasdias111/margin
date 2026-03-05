@@ -4,13 +4,13 @@
   import hangUpCallIcon from '$src/resources/hangUpCall.png'
   import UserAvatar from '../user/UserAvatar.svelte'
   import { chatState } from '$src/states/ChatState.svelte.js'
-  import { presenceState } from '$src/states/PresenceState.svelte'
 
   interface Props {
     userId: number
     name: string
     handleStartCall(): void
     handleStartVideoCall(): void
+    isLoading?: boolean
     isInCall?: boolean
     onToggleSidebar?(): void
     sidebarOpen?: boolean
@@ -21,17 +21,24 @@
     name,
     handleStartVideoCall,
     handleStartCall,
+    isLoading = false,
     isInCall = false,
     onToggleSidebar,
     sidebarOpen = true
   }: Props = $props()
 
-  const isOnline = $derived(presenceState.isOnline(userId))
+  const isOnline = $derived(chatState.selectedUser?.isOnline ?? false)
 </script>
 
 <div class="chat-header">
   <div class="header-left">
-    {#if !chatState.selectedChannel}
+    {#if isLoading}
+      <div class="skeleton avatar"></div>
+      <div class="skeleton-info">
+        <div class="skeleton name"></div>
+        <div class="skeleton status"></div>
+      </div>
+    {:else if !chatState.selectedChannel}
       <div class="avatar-wrapper">
         <UserAvatar
           profilePictureUrl={chatState.selectedUser.profilePictureUrl}
@@ -55,7 +62,7 @@
   </div>
 
   <div class="header-right">
-    {#if !chatState.selectedChannel}
+    {#if !isLoading && !chatState.selectedChannel}
       <div class="call-group">
         <button
           class="call-btn"
@@ -112,13 +119,14 @@
 
 <style>
   .chat-header {
-    height: 68px;
+    height: 80px;
+    background-color: #f8ebd2;
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 0 20px;
-    background: #ffffff;
-    border-bottom: 1px solid #f0ece6;
+    padding: 0 12px;
+    border-bottom: none;
+    border-radius: 15px;
   }
 
   .header-left {
@@ -265,5 +273,45 @@
   .icon-btn.active {
     background: #f0ebe1;
     color: #e07a30;
+  }
+
+  /* Skeleton */
+  .skeleton-info {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .skeleton {
+    background: linear-gradient(90deg, #f0ece6 25%, #e8e4de 50%, #f0ece6 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.2s ease-in-out infinite;
+    border-radius: 6px;
+  }
+
+  .skeleton.avatar {
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  .skeleton.name {
+    width: 110px;
+    height: 13px;
+  }
+
+  .skeleton.status {
+    width: 48px;
+    height: 10px;
+  }
+
+  @keyframes shimmer {
+    0% {
+      background-position: 200% 0;
+    }
+    100% {
+      background-position: -200% 0;
+    }
   }
 </style>

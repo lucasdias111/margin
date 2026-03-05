@@ -3,7 +3,6 @@
   import { chatState } from '$src/states/ChatState.svelte.js'
   import { channelCallService } from '$src/services/ChannelCallService'
   import { callState } from '$src/states/CallState.svelte'
-  import { presenceState } from '$src/states/PresenceState.svelte'
 
   let {
     channel,
@@ -94,8 +93,8 @@
       <div class="members-empty">
         {#each chatState.selectedSpace.members as member (member.user.id)}
           <div class="member-entry">
-            <span class="presence-dot" class:online={presenceState.isOnline(member.user.id)}></span>
-            <p class="member-entry-text" class:offline={!presenceState.isOnline(member.user.id)}>
+            <span class="presence-dot" class:online={member.user.isOnline}></span>
+            <p class="member-entry-text" class:offline={!member.user.isOnline}>
               {member.user.username}
             </p>
           </div>

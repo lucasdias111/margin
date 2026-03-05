@@ -58,7 +58,9 @@
 <div class="chat">
   {#if chatState.selectedUser}
     <ChatHeader
+      userId={chatState.selectedUser.id}
       name={chatState.selectedUser.username}
+      isLoading={conversationState.isLoading}
       handleStartCall={startCall}
       handleStartVideoCall={handleVideoCall}
     />

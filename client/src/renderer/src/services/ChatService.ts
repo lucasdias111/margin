@@ -3,7 +3,6 @@ import type { User } from '$src/interfaces/User'
 import {
   isDirectConversation,
   type Conversation,
-  type DirectConversation
 } from '$src/interfaces/Conversation'
 import { encryptionService } from './EncryptionService'
 import { webSocketService } from './WebSocketService'
@@ -15,46 +14,20 @@ import type { WebSocketMessage } from '$src/interfaces/WebSocketMessages'
 import { userState } from '$src/states/UserState.svelte'
 import { chatState } from '$src/states/ChatState.svelte'
 import { conversationState } from '$src/states/ConversationState.svelte'
-import { presenceState } from '$src/states/PresenceState.svelte'
+import { userListState } from '$src/states/UserListState.svelte'
+import type { ContentType } from '$src/interfaces/Content'
 
 class ChatService {
   async handleIncomingMessage(data: WebSocketMessage<Message>): Promise<void> {
-    const incomingMsg: Message = data.payload
+    const msg = data.payload
+    notificationService.handleIncomingMessage(msg)
 
-    notificationService.handleIncomingMessage(incomingMsg)
-
-    if (incomingMsg.conversationType === 'CHANNEL') {
-      if (incomingMsg.conversationId === chatState.selectedChannel?.conversationId) {
-        conversationState.messages = [...conversationState.messages, incomingMsg]
-      }
+    if (msg.conversationType === 'CHANNEL') {
+      await this.handleIncomingChannelMessage(msg)
       return
     }
 
-    if (!conversationState.currentConversation) {
-      if (chatState.selectedUser) {
-        conversationState.currentConversation = {
-          id: incomingMsg.conversationId,
-          type: 'DIRECT',
-          otherUserId: chatState.selectedUser.id,
-          createdAt: incomingMsg.createdAt
-        } satisfies DirectConversation
-      } else {
-        return
-      }
-    }
-
-    if (incomingMsg.conversationId !== conversationState.currentConversation.id) return
-
-    try {
-      const isFromMe = incomingMsg.user.id === userState.currentUser?.id
-      incomingMsg.content = await encryptionService.decryptMessage(incomingMsg.content, !isFromMe)
-    } catch (error) {
-      console.error('Failed to decrypt message:', error)
-      incomingMsg.content = '[Decryption failed]'
-    }
-
-    conversationState.messages = [...conversationState.messages, incomingMsg]
-    await chatService.markConversationAsRead(conversationState.currentConversation.id)
+    await this.handleIncomingDirectMessage(msg)
   }
 
   async loadConversationForUser(user: User): Promise<void> {
@@ -64,7 +37,6 @@ class ChatService {
       conversationState.currentConversation.otherUserId === user.id
     )
       return
-
     conversationState.currentConversation = null
     conversationState.messages = []
     conversationState.isLoading = true
@@ -81,12 +53,9 @@ class ChatService {
 
       const messageResponse: ConversationMessagesResponse = await response.json()
 
-      if (messageResponse.conversation == null) {
-        return
-      }
+      if (messageResponse.conversation == null) return
 
       conversationState.currentConversation = messageResponse.conversation
-
       conversationState.messages = await Promise.all(
         messageResponse.messages.map(async (message) => {
           try {
@@ -113,10 +82,6 @@ class ChatService {
   async loadMessagesForChannel(channel: Channel): Promise<void> {
     if (conversationState.currentConversation?.id === channel.conversationId) return
 
-    if (chatState.selectedSpace?.members) {
-      presenceState.untrack(chatState.selectedSpace.members.map((m) => m.user.id))
-    }
-
     conversationState.messages = []
     conversationState.isLoading = true
 
@@ -132,10 +97,6 @@ class ChatService {
       conversationState.messages = messageResponse.messages
 
       await this.markConversationAsRead(channel.conversationId)
-
-      if (chatState.selectedSpace?.members) {
-        await presenceState.fetchAndTrack(chatState.selectedSpace.members.map((m) => m.user.id))
-      }
     } catch (error) {
       console.error('Error loading channel messages:', error)
       conversationState.messages = []
@@ -185,7 +146,6 @@ class ChatService {
     if (isDirectConversation(conversation)) {
       const recipientPublicKey = await encryptionService.getPublicKey(conversation.otherUserId)
       const myPublicKey = await encryptionService.getPublicKey(currentUser.id)
-
       content = await encryptionService.encryptMessage(messageText, recipientPublicKey, myPublicKey)
     }
 
@@ -249,13 +209,75 @@ class ChatService {
   async markConversationAsRead(conversationId: number): Promise<void> {
     if (!conversationId) return
 
-    console.log('Marked as read for conversation id', conversationId)
     try {
       await authenticatedPost(null, `api/conversations/${conversationId}/read`)
       notificationService.markConversationAsRead(conversationId)
     } catch (error) {
       console.error('Failed to mark conversationId as read:', error)
     }
+  }
+
+  selectContent(content: ContentType): void {
+    if (chatState.currentlySelectedContent !== content) {
+      chatState.selectedUser = null
+      conversationState.clear()
+    }
+    chatState.currentlySelectedContent = content
+    chatState.selectedChannel = null
+  }
+
+  private async handleIncomingChannelMessage(msg: Message): Promise<void> {
+    if (msg.conversationId === chatState.selectedChannel?.conversationId) {
+      conversationState.messages = [...conversationState.messages, msg]
+    }
+  }
+
+  private async handleIncomingDirectMessage(msg: Message): Promise<void> {
+    const isFromMe = msg.user.id === userState.currentUser?.id
+    const otherUser = isFromMe ? chatState.selectedUser : msg.user
+    const otherUserId = otherUser?.id
+
+    if (!otherUser || !otherUserId) {
+      return
+    }
+
+    const preview = await encryptionService.decryptMessage(msg.content, !isFromMe)
+
+    await this.ensureUserInRecentList(otherUser, preview, msg, isFromMe)
+
+    const isActiveConversation = conversationState.currentConversation?.id === msg.conversationId
+
+    if (!isActiveConversation) {
+      userListState.updateLastMessage(otherUserId, preview, !isFromMe, msg.createdAt)
+      return
+    }
+
+    try {
+      msg.content = await encryptionService.decryptMessage(msg.content, !isFromMe)
+    } catch {
+      msg.content = '[Decryption failed]'
+    }
+
+    conversationState.messages = [...conversationState.messages, msg]
+    userListState.updateLastMessage(otherUserId, preview, !isFromMe, msg.createdAt)
+    await this.markConversationAsRead(conversationState.currentConversation!.id)
+  }
+
+  private async ensureUserInRecentList(
+    user: User,
+    preview: string,
+    msg: Message,
+    isFromMe: boolean
+  ): Promise<void> {
+    const alreadyInList = userListState.recentUsers.find((u) => u.user.id === user.id)
+    if (alreadyInList) return
+
+    userListState.addUser({
+      user,
+      lastMessage: preview,
+      lastMessageTime: msg.createdAt,
+      lastMessageIncoming: !isFromMe
+    })
   }
 }
 

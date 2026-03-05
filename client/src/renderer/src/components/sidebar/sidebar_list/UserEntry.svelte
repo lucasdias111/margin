@@ -2,26 +2,19 @@
   import { chatState } from '$src/states/ChatState.svelte'
   import UnreadNotificationBadge from '$src/components/common/chat/UnreadNotificationBadge.svelte'
   import { notificationState } from '$src/states/NotificationState.svelte'
-  import type { RecentChatUsers } from '$src/interfaces/RecentChatUsers'
+  import type { RecentChatUser } from '$src/interfaces/RecentChatUser'
   import UserAvatar from '$src/components/common/user/UserAvatar.svelte'
-  import { encryptionService } from '$src/services/EncryptionService'
   import { formatTime } from '$src/utils/DateUtils'
 
   interface Props {
-    recentUser: RecentChatUsers
+    recentUser: RecentChatUser
     isSelected: boolean
     isOnline: boolean
   }
 
-  let decryptedMessage = $state('')
   let { recentUser, isSelected = false, isOnline }: Props = $props()
-  const { user: chatUser, lastMessage, lastMessageTime, lastMessageIncoming } = $derived(recentUser)
+  const { user: chatUser, lastMessage, lastMessageTime } = $derived(recentUser)
 
-  $effect(() => {
-    encryptionService.decryptMessage(lastMessage, lastMessageIncoming).then((result) => {
-      decryptedMessage = result
-    })
-  })
   const unreadCount = $derived(notificationState.getTotalUnreadDirectMessagesForUser(chatUser.id))
 </script>
 
@@ -49,7 +42,7 @@
       {/if}
     </div>
     <div class="bottom-row">
-      <span class="last-message">{decryptedMessage}</span>
+      <span class="last-message">{lastMessage}</span>
       {#if unreadCount > 0}
         <UnreadNotificationBadge shouldShow={true} count={unreadCount} variant="inline" />
       {/if}

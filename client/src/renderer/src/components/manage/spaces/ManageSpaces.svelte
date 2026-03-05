@@ -40,6 +40,16 @@
     }
   }
 
+  async function onUpdateMemberRole(spaceMember: SpaceMember): Promise<void> {
+    try {
+      const updated = await spacesService.updateSpaceMemberRole(spaceMember)
+      selectedSpace.members = selectedSpace.members.map((m) =>
+        m.user.id === updated.user.id ? updated : m
+      )
+    } catch (e) {
+      console.error('Failed to update member role:', e)
+    }
+  }
   async function onAddChannel(channel: CreateChannel): Promise<void> {
     try {
       const newChannel = await spacesService.createChannel(channel)
@@ -100,7 +110,7 @@
     {onUpdateChannel}
     {onDeleteChannel}
   />
-  <ManageSpaceMembers {selectedSpace} {onAddMember} />
+  <ManageSpaceMembers {selectedSpace} {onAddMember} {onUpdateMemberRole} />
 </div>
 
 <style>

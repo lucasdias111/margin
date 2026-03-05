@@ -1,7 +1,7 @@
 <script lang="ts">
   import { authenticationService } from '$src/services/AuthenticationService'
   import { push } from 'svelte-spa-router'
-  import marginLogo from '$src/assets/pics/margin-lo.png'
+  import marginLogo from '$src/assets/pics/margin.png'
 
   let username = $state('')
   let password = $state('')

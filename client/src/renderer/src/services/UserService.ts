@@ -1,8 +1,8 @@
 import { authenticatedGet } from '$src/services/api'
-import type { RecentChatUsers } from '$src/interfaces/RecentChatUsers'
+import type { RecentChatUser } from '$src/interfaces/RecentChatUser'
 
 class UserService {
-  async getRecentChatUsers(userId: number): Promise<RecentChatUsers[]> {
+  async getRecentChatUsers(userId: number): Promise<RecentChatUser[]> {
     const response = await authenticatedGet(`api/users/${userId}/recent_chat_users`)
 
     if (!response.ok) {

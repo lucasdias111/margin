@@ -21,8 +21,10 @@
   import { chatService } from '$src/services/ChatService'
   import { webSocketService } from '$src/services/WebSocketService'
   import { userService } from '$src/services/UserService'
-  import { presenceState } from '$src/states/PresenceState.svelte'
+  import { presenceService } from '$src/services/PrecenseService.js'
   import { userListState } from '$src/states/UserListState.svelte'
+  import NoMarginEmptyState from '$src/components/content/NoMarginEmptyState.svelte'
+  import { encryptionService } from '$src/services/EncryptionService'
 
   onMount(() => {
     setup()
@@ -34,9 +36,9 @@
     [WebSocketMessageType.CALL_OFFER]: handleIncomingCallOffer,
     [WebSocketMessageType.CALL_END]: handleRemoteCallEnd,
     [WebSocketMessageType.USER_LOGIN]: (data: WebSocketMessage<User>) =>
-      presenceState.setOnline(data.payload.id),
+      presenceService.setOnline(data.payload.id),
     [WebSocketMessageType.USER_LOGOUT]: (data: WebSocketMessage<User>) =>
-      presenceState.setOffline(data.payload.id)
+      presenceService.setOffline(data.payload.id)
   })
 
   async function setup(): Promise<void> {
@@ -65,8 +67,17 @@
 
   async function loadRecentUsers(): Promise<void> {
     const users = await userService.getRecentChatUsers(userState.currentUser.id)
-    userListState.setUsers(users)
-    await presenceState.fetchAndTrack(users.map((u) => u.user.id))
+    const decryptedUsers = await Promise.all(
+      users.map(async (recentUser) => {
+        if (!recentUser.lastMessage) return recentUser
+        recentUser.lastMessage = await encryptionService.decryptMessage(
+          recentUser.lastMessage,
+          recentUser.lastMessageIncoming
+        )
+        return recentUser
+      })
+    )
+    userListState.setUsers(decryptedUsers)
   }
 
   function handleIncomingCallOffer(message: WebSocketMessage<CallOfferPayload>): void {
@@ -103,6 +114,8 @@
     <Navigation />
     {#if chatState.currentlySelectedContent === 'manage'}
       <ManageWindow />
+    {:else if chatState.currentlySelectedContent === 'margin' && !chatState.hasMargin}
+      <NoMarginEmptyState />
     {:else}
       <Sidebar />
       <ContentWindow />

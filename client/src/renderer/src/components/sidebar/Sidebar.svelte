@@ -5,7 +5,7 @@
   import { chatState } from '$src/states/ChatState.svelte'
   import type { User } from '$src/interfaces/User'
   import type { ContentType } from '$src/interfaces/Content'
-  import { marginService } from '$src/interfaces/MarginsService'
+  import { marginService } from '$src/services/MarginService'
 
   let selectedContent = $derived<ContentType>(chatState.currentlySelectedContent)
   let isHome = $derived(!chatState.selectedChannel)
@@ -22,7 +22,11 @@
   $effect(() => {
     if (selectedContent === 'margin') {
       marginService.getMargins().then((margins) => {
-        chatState.selectMargin(margins[0])
+        if (margins.length === 0) {
+          chatState.hasMargin = false
+        } else {
+          chatState.selectMargin(margins[0])
+        }
       })
     }
   })
@@ -39,7 +43,7 @@
         <UsersList />
       </div>
     </div>
-  {:else if selectedContent === 'margin'}
+  {:else if selectedContent === 'margin' && chatState.hasMargin}
     <div class="panel">
       <div class="panel-divider"></div>
 

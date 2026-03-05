@@ -1,11 +1,20 @@
 <script lang="ts">
   import ManageHeader from '$src/components/manage/ManageHeader.svelte'
   import ManageSpaces from '$src/components/manage/spaces/ManageSpaces.svelte'
+  import ManageMargin from '$src/components/manage/margin/ManageMargin.svelte'
+
+  let activeTab = $state('Margin')
+
 </script>
 
 <div class="manage-window">
-  <ManageHeader />
-  <ManageSpaces />
+  <ManageHeader {activeTab} onTabChange={(tab) => (activeTab = tab)} />
+
+  {#if activeTab === 'Spaces'}
+    <ManageSpaces />
+  {:else if activeTab === 'Margin'}
+    <ManageMargin />
+  {/if}
 </div>
 
 <style>

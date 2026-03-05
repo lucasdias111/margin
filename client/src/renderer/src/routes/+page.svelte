@@ -1,11 +1,11 @@
 <script lang="ts">
-  import LoginComponent from '$src/components/authentication/Login.svelte'
-  import marginLogo from '$src/assets/pics/margin-lo.png'
+  import Login from '$src/components/authentication/Login.svelte'
+  import marginLogo from '$src/assets/pics/margin.png'
 </script>
 
 <div class="container">
   <img class="marginlogo" src={marginLogo} alt="Margin logo" />
-  <LoginComponent />
+  <Login />
 </div>
 
 <style>

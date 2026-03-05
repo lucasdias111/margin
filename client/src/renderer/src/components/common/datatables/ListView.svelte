@@ -1,4 +1,6 @@
 <script lang="ts" generics="T">
+  import type { Snippet } from 'svelte'
+
   interface Column<T> {
     key: string
     label: string
@@ -14,6 +16,7 @@
     onAction?: (row: T) => void
     searchPlaceholder?: string
     searchFilter?: (row: T, query: string) => boolean
+    cellSnippets?: Partial<Record<string, Snippet<[T]>>>
   }
 
   let {
@@ -22,7 +25,8 @@
     getKey,
     onAction,
     searchPlaceholder = 'Search...',
-    searchFilter
+    searchFilter,
+    cellSnippets = {}
   }: Props<T> = $props()
 
   let searchQuery = $state('')
@@ -87,7 +91,13 @@
   {#each filteredRows() as row (getKey(row))}
     <div class="list-row" style={gridCols}>
       {#each columns as col (col.key)}
-        <span class="cell">{col.render ? col.render(row) : row[col.key]}</span>
+        <span class="cell">
+          {#if cellSnippets[col.key]}
+            {@render cellSnippets[col.key](row)}
+          {:else}
+            {col.render ? col.render(row) : row[col.key]}
+          {/if}
+        </span>
       {/each}
       {#if onAction}
         <button class="icon-btn" onclick={() => onAction(row)}>⋮</button>

@@ -24,6 +24,10 @@ class NotificationService {
   }
 
   private handleIncomingDirectMessage(message: Message): void {
+    if (chatState.selectedUser?.id === message.user.id) {
+      return
+    }
+
     const unreadCount: UnreadCount = {
       conversationId: message.conversationId,
       fromUserId: message.user.id,

@@ -1,6 +1,7 @@
 <script lang="ts">
   import { authenticatedGet } from '$src/services/api'
   import type { User } from '$src/interfaces/User'
+  import type { UserSearchResult } from '$src/interfaces/UserSearchResult'
 
   interface Props {
     onSelectUser: (user: User) => void
@@ -9,7 +10,7 @@
   let { onSelectUser }: Props = $props()
 
   let searchQuery = $state('')
-  let searchResults = $state<User[]>([])
+  let searchResults = $state<UserSearchResult[]>([])
   let isLoading = $state(false)
   let hasError = $state(false)
 
