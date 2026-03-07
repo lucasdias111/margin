@@ -5,6 +5,7 @@ import type {
   GroupCallData,
   P2PCallData
 } from '$src/interfaces/Calls'
+import type { User } from '$src/interfaces/User'
 
 type CallType = 'p2p' | 'group'
 
@@ -13,7 +14,8 @@ class CallState {
     callId: null,
     status: 'connecting',
     duration: 0,
-    durationInterval: null
+    durationInterval: null,
+    isMinimized: false
   })
 
   private activeCallType = $state<CallType | null>(null)
@@ -44,7 +46,7 @@ class CallState {
 
   startP2PCall(
     callId: number,
-    userId: number,
+    user: User,
     isIncoming: boolean = false,
     offer?: RTCSessionDescriptionInit
   ): void {
@@ -54,7 +56,7 @@ class CallState {
     this.baseState.duration = 0
 
     this.p2pData = {
-      userId,
+      user: user,
       isIncoming,
       offer,
       peerConnection: null,
@@ -62,10 +64,10 @@ class CallState {
       remoteStream: null,
       candidateQueue: [],
       isVideoEnabled: false,
+      isRemoteVideoEnabled: false,
       isScreenSharing: false,
       isRemoteScreenSharing: false,
-      screenShareTrack: null,
-      screenShareStream: null
+      screenShareTrack: null
     }
   }
 
@@ -125,20 +127,29 @@ class CallState {
     this.p2pData.isVideoEnabled = enabled
   }
 
-  setScreenSharing(
-    enabled: boolean,
-    track: MediaStreamTrack | null = null,
-    stream: MediaStream | null = null
-  ): void {
+  setRemoteVideoEnabled(enabled: boolean): void {
+    if (!this.isP2PCall || !this.p2pData) return
+    this.p2pData.isRemoteVideoEnabled = enabled
+  }
+
+  // screenShareStream removed — the transceiver sender owns the track lifecycle
+  setScreenSharing(enabled: boolean, track: MediaStreamTrack | null = null): void {
     if (!this.isP2PCall || !this.p2pData) return
     this.p2pData.isScreenSharing = enabled
     this.p2pData.screenShareTrack = track
-    this.p2pData.screenShareStream = stream
   }
 
   setRemoteScreenSharing(enabled: boolean): void {
     if (!this.isP2PCall || !this.p2pData) return
     this.p2pData.isRemoteScreenSharing = enabled
+  }
+
+  toggleMinimized(): void {
+    this.baseState.isMinimized = !this.baseState.isMinimized
+  }
+
+  get isMinimized(): boolean {
+    return this.baseState.isMinimized
   }
 
   endCall(): void {
@@ -153,6 +164,7 @@ class CallState {
     this.baseState.durationInterval = null
     this.p2pData = null
     this.groupData = null
+    this.baseState.isMinimized = false
   }
 }
 

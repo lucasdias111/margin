@@ -1,5 +1,6 @@
 import { Device } from 'mediasoup-client'
 import type { RtpCapabilities, Transport } from 'mediasoup-client/types'
+import type { User } from '$src/interfaces/User'
 
 export type CallStatus = 'connecting' | 'connected' | 'ended'
 
@@ -8,10 +9,11 @@ export interface BaseCallState {
   status: CallStatus
   duration: number
   durationInterval: number | null
+  isMinimized: boolean
 }
 
 export interface P2PCallData {
-  userId: number
+  user: User
   isIncoming: boolean
   offer?: RTCSessionDescriptionInit
   peerConnection: RTCPeerConnection | null
@@ -19,10 +21,10 @@ export interface P2PCallData {
   remoteStream: MediaStream | null
   candidateQueue: RTCIceCandidateInit[]
   isVideoEnabled: boolean
+  isRemoteVideoEnabled: boolean
   isScreenSharing: boolean
   isRemoteScreenSharing: boolean
   screenShareTrack: MediaStreamTrack | null
-  screenShareStream: MediaStream | null
 }
 
 export interface GroupCallData {

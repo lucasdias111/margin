@@ -2,7 +2,6 @@
   import { onMount } from 'svelte'
   import Sidebar from '$src/components/sidebar/Sidebar.svelte'
   import ContentWindow from '$src/components/content/Content.svelte'
-  import Header from '$src/components/common/header/MainHeader.svelte'
   import type { User } from '$src/interfaces/User'
   import { authenticatedGet } from '$src/services/api'
   import { userState } from '$src/states/UserState.svelte'
@@ -26,6 +25,9 @@
   import NoMarginEmptyState from '$src/components/content/NoMarginEmptyState.svelte'
   import { encryptionService } from '$src/services/EncryptionService'
   import { marginService } from '$src/services/MarginService'
+  import IncomingCallModal from '$src/components/call/modal/IncomingCallModal.svelte'
+
+  let incomingCallPayload = $state<CallOfferPayload | null>(null)
 
   onMount(() => {
     setup()
@@ -85,21 +87,21 @@
   }
 
   function handleIncomingCallOffer(message: WebSocketMessage<CallOfferPayload>): void {
-    const payload = message.payload
-    const accept = confirm(`Incoming call from ${payload.callerId}. Accept?`)
+    incomingCallPayload = message.payload
+  }
 
-    if (accept) {
-      const offer = {
-        type: 'offer' as const,
-        sdp: payload.sdp
-      }
+  function acceptCall(): void {
+    if (!incomingCallPayload) return
+    const p = incomingCallPayload
+    incomingCallPayload = null
+    callService.startCall(p.callId, p.caller, true, { type: 'offer' as const, sdp: p.sdp })
+  }
 
-      callService.startCall(payload.callId, payload.callerId, true, offer)
-    }
+  function declineCall(): void {
+    incomingCallPayload = null
   }
 
   function handleRemoteCallEnd(): void {
-    console.log('Remote user ended the call')
     callService.endCall(true)
   }
 
@@ -108,41 +110,44 @@
 
     const user: User = await response.json()
     userState.setUser(user)
-    console.log('Current user loaded:', user)
   }
 </script>
 
-<div class="app">
-  <Header />
-  <div class="window">
-    <Navigation />
-    {#if chatState.currentlySelectedContent === 'manage'}
-      <ManageWindow />
-    {:else if chatState.currentlySelectedContent === 'margin' && !chatState.hasMargin}
-      <NoMarginEmptyState />
-    {:else}
-      <Sidebar />
-      <ContentWindow />
-    {/if}
-  </div>
+<div class="window">
+  {#if callState.isP2PCall}
+    <div class="call-overlay" class:minimized={callState.isMinimized}>
+      <CallWindow />
+    </div>
+  {/if}
+  <Navigation />
+  {#if chatState.currentlySelectedContent === 'manage'}
+    <ManageWindow />
+  {:else if chatState.currentlySelectedContent === 'margin' && !chatState.hasMargin}
+    <NoMarginEmptyState />
+  {:else}
+    <Sidebar />
+    <ContentWindow />
+  {/if}
+  <IncomingCallModal
+    payload={incomingCallPayload}
+    onAccept={acceptCall}
+    onDecline={declineCall}
+  />
 </div>
 
-{#if callState.isP2PCall}
-  <div class="call-overlay">
-    <CallWindow />
-  </div>
-{/if}
-
 <style>
-  .app {
-    height: 95vh;
+  .window {
+    position: relative;
     display: flex;
-    flex-direction: column;
+    height: 95vh;
+    padding: 10px;
+    box-sizing: border-box;
+    gap: 10px;
     background-color: rgb(232, 234, 251);
   }
 
   .call-overlay {
-    position: fixed;
+    position: absolute;
     top: 0;
     left: 0;
     right: 0;
@@ -154,11 +159,11 @@
     justify-content: center;
   }
 
-  .window {
-    display: flex;
-    height: 100%;
-    padding: 10px;
-    box-sizing: border-box;
-    gap: 10px;
+  .call-overlay.minimized {
+    background: transparent;
+    position: static;
+    width: 0;
+    height: 0;
+    overflow: visible;
   }
 </style>

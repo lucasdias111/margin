@@ -19,7 +19,7 @@
   {#each spaces as space (space.spaceId)}
     <button
       class="space-item"
-      class:selected={selectedSpace === space}
+      class:selected={selectedSpace?.spaceId === space.spaceId}
       onclick={() => onSelectSpace(space)}
     >
       {space.spaceName}

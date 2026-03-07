@@ -77,7 +77,6 @@
     min-height: 0;
     background-color: #fff;
     border-radius: 20px;
-    overflow: hidden;
   }
 
   .panel-nav {

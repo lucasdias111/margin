@@ -3,8 +3,8 @@ import { authenticatedGet, authenticatedPost } from '$src/services/api'
 import type { Channel, CreateChannel } from '$src/interfaces/Channel'
 
 class SpacesService {
-  async getAllSpacesForServer(): Promise<Space[]> {
-    const response = await authenticatedGet('api/spaces/get_all_spaces')
+  async getAllSpacesForMargin(marginId: number): Promise<Space[]> {
+    const response = await authenticatedGet(`api/spaces/get_all_spaces_for_margin/${marginId}`)
     if (!response.ok) throw new Error(`Failed to get spaces: ${response.status}`)
     return response.json()
   }
@@ -28,7 +28,7 @@ class SpacesService {
   }
 
   async deleteSpace(space: Space): Promise<void> {
-    const response = await authenticatedPost(space.spaceId, 'api/spaces/delete_space')
+    const response = await authenticatedPost(space, 'api/spaces/delete_space')
     if (!response.ok) throw new Error(`Failed to delete space: ${response.status}`)
   }
 

@@ -6,7 +6,7 @@ export interface Margin {
   marginId: number
   marginName: string
   marginDescription: string
-  marginVisibility: string
+  visibility: string
   marginIconUrl: string
   members: MarginMember[]
   spaces: Space[]

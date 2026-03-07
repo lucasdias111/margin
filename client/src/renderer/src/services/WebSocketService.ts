@@ -30,7 +30,6 @@ class WebSocketService {
 
     this.ws.onmessage = (event): void => {
       const data = JSON.parse(event.data)
-      console.log('Received message:', data)
       const handlers = this.handlers.get(data.type) || []
 
       handlers.forEach((handler) => {

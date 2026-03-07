@@ -43,26 +43,26 @@
 
     <ListView
       columns={[
-      {
-        key: 'username',
-        label: 'Member',
-        flex: 1,
-        sortable: true,
-        render: (m) => m.user.username
-      },
-      {
-        key: 'role',
-        label: 'Role',
-        flex: 1
-      },
-      {
-        key: 'joinedAt',
-        label: 'Joined',
-        flex: 1.5,
-        sortable: true,
-        render: (m) => formatTimestamp(m.joinedAt)
-      }
-    ]}
+        {
+          key: 'username',
+          label: 'Member',
+          flex: 1,
+          sortable: true,
+          render: (m) => m.user.username
+        },
+        {
+          key: 'role',
+          label: 'Role',
+          flex: 1
+        },
+        {
+          key: 'joinedAt',
+          label: 'Joined',
+          flex: 1.5,
+          sortable: true,
+          render: (m) => formatTimestamp(m.joinedAt)
+        }
+      ]}
       rows={margin.members}
       getKey={(m) => m.user.id}
       onAction={(m) => onRemoveMember(m)}

@@ -71,7 +71,7 @@
 
           <span class="space-info">
             <span class="space-name">{space.spaceName}</span>
-            <span class="space-meta">{space.channels?.length ?? 0} channels</span>
+            <span class="space-meta">{space.spaceDescription}</span>
           </span>
 
           {#if !isOpen}
@@ -214,6 +214,7 @@
 
   .space-meta {
     font-size: 12px;
+    color: #c1c1c1;
     font-weight: 400;
     line-height: 1.2;
   }

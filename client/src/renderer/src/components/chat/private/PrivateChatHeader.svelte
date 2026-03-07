@@ -9,15 +9,9 @@
     handleStartCall(): void
     handleStartVideoCall(): void
     isLoading?: boolean
-    isInCall?: boolean
   }
 
-  let {
-    handleStartCall,
-    handleStartVideoCall,
-    isLoading = false,
-    isInCall = false
-  }: Props = $props()
+  let { handleStartCall, handleStartVideoCall, isLoading = false }: Props = $props()
 
   const isOnline = $derived(chatState.selectedUser?.isOnline ?? false)
 </script>
@@ -44,10 +38,9 @@
     <div class="call-group">
       <button
         class="call-btn"
-        class:danger={isInCall}
         onclick={handleStartCall}
-        title={isInCall ? 'Leave voice call' : 'Voice call'}
-        aria-label={isInCall ? 'Leave voice call' : 'Start voice call'}
+        title="Voice call"
+        aria-label="Start voice call"
       >
         <img src={voiceCallIcon} alt="" />
       </button>
@@ -142,14 +135,6 @@
   .call-btn:active {
     background: #3a3a3a;
     transform: scale(0.93);
-  }
-
-  .call-btn.danger {
-    background: #dc3545;
-  }
-
-  .call-btn.danger:hover {
-    background: #c82333;
   }
 
   .call-btn img {

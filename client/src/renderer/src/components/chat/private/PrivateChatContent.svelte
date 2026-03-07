@@ -7,7 +7,6 @@
   import { userState } from '$src/states/UserState.svelte.js'
   import ChatInput from '$src/components/common/chat/ChatInput.svelte'
   import MessagesContainer from '$src/components/common/chat/MessagesContainer.svelte'
-  import ChatHeaderShell from '$src/components/common/chat/ChatHeaderShell.svelte'
   import PrivateChatHeader from '$src/components/chat/private/PrivateChatHeader.svelte'
 
   let messageInput = $state('')
@@ -43,15 +42,15 @@
 
   function startCall(): void {
     if (chatState.selectedUser) {
+      callService.startCall(null, chatState.selectedUser, false, null)
       callState.setVideoEnabled(false)
-      callService.startCall(null, chatState.selectedUser.id, false, null)
     }
   }
 
   function handleVideoCall(): void {
     if (chatState.selectedUser) {
+      callService.startCall(null, chatState.selectedUser, false, null)
       callState.setVideoEnabled(true)
-      callService.startCall(null, chatState.selectedUser.id, false, null)
     }
   }
 </script>
@@ -62,7 +61,6 @@
       handleStartCall={startCall}
       handleStartVideoCall={handleVideoCall}
       isLoading={conversationState.isLoading}
-      isInCall={callState.isInCall}
     />
   {/if}
   <div class="chat-background">

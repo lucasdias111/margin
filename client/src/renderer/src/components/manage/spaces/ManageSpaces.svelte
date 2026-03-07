@@ -6,13 +6,15 @@
   import { onMount } from 'svelte'
   import { spacesService } from '$src/services/SpacesService'
   import type { Channel, CreateChannel } from '$src/interfaces/Channel'
+  import { chatService } from '$src/services/ChatService'
+  import { chatState } from '$src/states/ChatState.svelte'
 
   let spaces = $state<Space[]>([])
   let selectedSpace = $state<Space | null>(null)
 
   onMount(async () => {
     try {
-      spaces = await spacesService.getAllSpacesForServer()
+      spaces = await spacesService.getAllSpacesForMargin(chatState.selectedMargin.marginId)
     } catch (e) {
       console.error('Failed to load spaces:', e)
     }
