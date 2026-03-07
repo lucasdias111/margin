@@ -9,13 +9,10 @@
 
   async function handleLogin(event: SubmitEvent): Promise<void> {
     event.preventDefault()
-    try {
-      await authenticationService.login(email, password, rememberMe)
-      loginResponse = 'Login successful'
-      await push('/home')
-    } catch (error) {
-      loginResponse = error.message || String(error)
-    }
+
+    await authenticationService.login(email, password, rememberMe)
+    loginResponse = 'Login successful'
+    await push('/home')
   }
 
   function goToRegister(): void {
@@ -25,13 +22,7 @@
 
 <div class="loginpage">
   <form class="formWrap" onsubmit={handleLogin}>
-    <input
-      class="loginInput"
-      type="email"
-      name="email"
-      placeholder="Email"
-      bind:value={email}
-    />
+    <input class="loginInput" type="email" name="email" placeholder="Email" bind:value={email} />
 
     <input
       class="loginInput"
@@ -63,7 +54,7 @@
     align-items: center;
     flex-direction: column;
     background-color: whitesmoke;
-    padding: 0px;
+    padding: 0;
     margin-bottom: 15px;
   }
 
@@ -87,7 +78,6 @@
     height: 40px;
     width: 100%;
     border-radius: 10px;
-    border: 1px solid black;
     outline: none;
     padding: 0 12px;
     font-size: 14px;

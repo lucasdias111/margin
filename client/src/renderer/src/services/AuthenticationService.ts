@@ -4,14 +4,17 @@ import { userState } from '$src/states/UserState.svelte'
 import { chatState } from '$src/states/ChatState.svelte'
 import { callState } from '$src/states/CallState.svelte'
 import { API_CONFIG } from '$src/shared/config'
+import type { AuthResponse } from '$src/interfaces/AuthResponse'
+import { errorService } from '$src/services/ErrorService'
 
 class AuthenticationService {
   async login(email: string, password: string, rememberMe: boolean = false): Promise<void> {
     const response = await unauthenticatedPost({ email, password }, 'auth/login')
-    if (!response.ok) throw new Error('Login failed')
-
-    const authResponse = await response.json()
-    if (!authResponse.token) throw new Error('No token in response')
+    const authResponse: AuthResponse = await response.json()
+    if (!authResponse.success) {
+      errorService.reportError('Error login: ' + authResponse.message)
+      throw new Error(authResponse.message)
+    }
 
     sessionStorage.setItem('authToken', authResponse.token)
 
@@ -36,9 +39,7 @@ class AuthenticationService {
   }
 
   async tryRestoreSession(): Promise<boolean> {
-    console.log('trying to restore session...')
     const stored = await window.secureStorage.loadSession()
-    console.log('stored session:', stored)
 
     if (!stored) return false
 

@@ -60,10 +60,6 @@
 
     const response = await authenticatedGet(`api/conversations/unread`)
 
-    if (!response.ok) {
-      throw new Error('Failed to fetch unread messages')
-    }
-
     const unreadCounts: UnreadCount[] = await response.json()
 
     const dms = unreadCounts.filter((count) => count.unreadDmsCount > 0)
