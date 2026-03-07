@@ -1,5 +1,6 @@
 import { API_CONFIG } from '$src/shared/config'
 import type { WebSocketMessage, WebSocketMessageOut } from '$src/interfaces/WebSocketMessages'
+import { errorService } from '$src/services/ErrorService'
 
 type MessageHandler = (data: WebSocketMessage<unknown>) => void
 
@@ -17,11 +18,14 @@ class WebSocketService {
 
     const token = sessionStorage.getItem('authToken')
     if (!token) {
-      console.error('No auth token found')
+      errorService.reportError('No auth token found')
       return
     }
-
-    this.ws = new WebSocket(API_CONFIG.wsUrl + `ws?token=${token}`)
+    try {
+      this.ws = new WebSocket(API_CONFIG.wsUrl + `ws?token=${token}`)
+    } catch (error) {
+      errorService.reportError('Cannot connect to WebSocket server: ' + error)
+    }
 
     this.ws.onopen = () => {
       console.log('WebSocket connected')
@@ -46,7 +50,9 @@ class WebSocketService {
       if (this.reconnectAttempts < this.maxReconnectAttempts) {
         this.reconnectAttempts++
         console.log(`Reconnecting... (attempt ${this.reconnectAttempts})`)
-        setTimeout(() => this.connect(), 3000)
+        setTimeout(() => this.connect(), 5000)
+      } else if (this.reconnectAttempts >= this.maxReconnectAttempts) {
+        errorService.reportError('Could not connect to server')
       }
     }
   }

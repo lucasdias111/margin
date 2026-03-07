@@ -10,6 +10,7 @@
     open: boolean
     onClose: () => void
     onAddMember: (spaceMember: SpaceMember) => void
+    isMarginMember: boolean
   }
 
   let { space, open, onClose, onAddMember }: Props = $props()
@@ -30,6 +31,7 @@
       role: selectedRole,
       joinedAt: new Date().toISOString()
     }
+
     onAddMember(newSpaceMember)
     onClose()
     clear()

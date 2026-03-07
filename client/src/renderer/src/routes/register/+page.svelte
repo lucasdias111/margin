@@ -2,6 +2,9 @@
   import { authenticationService } from '$src/services/AuthenticationService'
   import { push } from 'svelte-spa-router'
   import marginLogo from '$src/assets/pics/margin.png'
+  import UploadImageButton from '$src/components/common/buttons/UploadImageButton.svelte'
+  import UserAvatar from '$src/components/common/user/UserAvatar.svelte'
+  import avatar from '$src/assets/pics/anonym-avatar.png'
 
   let username = $state('')
   let password = $state('')
@@ -9,7 +12,7 @@
   let email = $state('')
   let profilePicture = $state<File | null>(null)
   let loginResponse = $state('')
-  let previewUrl = $state<string | null>(null)
+  let previewUrl = $state<string | null>(avatar)
 
   async function handleRegistration(event: SubmitEvent): Promise<void> {
     event.preventDefault()
@@ -23,22 +26,12 @@
     await push('/')
   }
 
-  function handleFileChange(event: Event): void {
-    const input = event.target as HTMLInputElement
-    const file = input.files?.[0]
+  async function onFileChange(file: File): Promise<void> {
+    profilePicture = file
+  }
 
-    if (file) {
-      profilePicture = file
-
-      const reader = new FileReader()
-      reader.onload = (e) => {
-        previewUrl = e.target?.result as string
-      }
-      reader.readAsDataURL(file)
-    } else {
-      profilePicture = null
-      previewUrl = null
-    }
+  async function onPreviewUrlChange(url: string): Promise<void> {
+    previewUrl = url
   }
 
   function goBack(): void {
@@ -51,9 +44,7 @@
     <img class="marginlogo" src={marginLogo} alt="Margin logo" />
 
     {#if previewUrl}
-      <div class="preview">
-        <img src={previewUrl} alt="Profile Preview" />
-      </div>
+      <UserAvatar profilePictureUrl={previewUrl} width={100} height={100} />
     {/if}
     <input
       id="username"
@@ -80,19 +71,7 @@
       required
       placeholder="Repeat password"
     />
-    <input
-      id="profilePicture"
-      type="file"
-      name="profilePicture"
-      accept="image/*"
-      onchange={handleFileChange}
-      hidden
-      placeholder="Profile Picture (Optional)"
-    />
-    <label for="ProfilePicture" class="upload">Profile picture (Optional):</label>
-    <label for="profilePicture" class="fileUpload">
-      {profilePicture ? profilePicture.name : 'Upload'}
-    </label>
+    <UploadImageButton {onFileChange} {onPreviewUrlChange} />
 
     {#if loginResponse}
       <p class="error">{loginResponse}</p>
@@ -179,23 +158,5 @@
   .marginlogo {
     width: 220px;
     height: auto;
-  }
-
-  .upload {
-    color: #da610b;
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  }
-  .fileUpload {
-    height: 40px;
-    border-radius: 10px;
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    border: 1px solid #4e4d4d;
-    display: flex;
-    align-items: center;
-    padding: 0 12px;
-    font-size: 14px;
-    cursor: pointer;
-    background-color: rgb(255, 255, 255);
-    color: #da610b;
   }
 </style>

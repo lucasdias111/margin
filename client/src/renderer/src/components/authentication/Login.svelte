@@ -82,7 +82,7 @@
     padding: 0 12px;
     font-size: 14px;
     box-sizing: border-box;
-    border-color: #4e4d4d;
+    border: 1px solid #4e4d4d;
   }
 
   .logbut {

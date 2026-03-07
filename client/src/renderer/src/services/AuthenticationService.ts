@@ -6,6 +6,7 @@ import { callState } from '$src/states/CallState.svelte'
 import { API_CONFIG } from '$src/shared/config'
 import type { AuthResponse } from '$src/interfaces/AuthResponse'
 import { errorService } from '$src/services/ErrorService'
+import { webSocketService } from '$src/services/WebSocketService'
 
 class AuthenticationService {
   async login(email: string, password: string, rememberMe: boolean = false): Promise<void> {
@@ -107,9 +108,9 @@ class AuthenticationService {
     const response = await authenticatedPost({}, 'auth/logout')
 
     if (!response.ok) {
-      throw new Error('Logout failed')
+      errorService.reportError('Failed to log out.')
     }
-
+    webSocketService.disconnect()
     userState.reset()
     chatState.reset()
     callState.endCall()

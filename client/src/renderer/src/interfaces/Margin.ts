@@ -28,6 +28,7 @@ export interface UpdateMargin {
   marginId: number
   marginName: string
   description?: string
+  marginIcon?: File
 }
 
 export interface CreateMargin {

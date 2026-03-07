@@ -31,6 +31,8 @@
   }
 
   .marginlogo {
+    display: flex;
+    justify-content: center;
     width: 220px;
     height: auto;
   }

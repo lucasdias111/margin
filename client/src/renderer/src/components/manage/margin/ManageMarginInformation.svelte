@@ -2,6 +2,9 @@
   import type { Margin, UpdateMargin } from '$src/interfaces/Margin'
   import SaveButton from '$src/components/common/buttons/SaveButton.svelte'
   import DangerButton from '$src/components/common/buttons/DangerButton.svelte'
+  import UploadImageButton from '$src/components/common/buttons/UploadImageButton.svelte'
+  import avatar from '$src/assets/pics/anonym-avatar.png'
+  import UserAvatar from '$src/components/common/user/UserAvatar.svelte'
 
   interface Props {
     margin: Margin
@@ -10,7 +13,8 @@
   }
 
   let { margin, onSaveInfo, onDeleteMargin }: Props = $props()
-
+  let icon = $state<File | null>(null)
+  let previewUrl = $state<string | null>(avatar)
   let editedName = $state(margin.marginName ?? '')
   let editedDescription = $state(margin.marginDescription ?? '')
 
@@ -22,19 +26,29 @@
 
   let isDirty = $derived(
     editedName !== (margin.marginName ?? '') ||
-    editedDescription !== (margin.marginDescription ?? '')
+      editedDescription !== (margin.marginDescription ?? '') ||
+      icon !== null
   )
 
   async function handleSave(): Promise<void> {
     await onSaveInfo({
       marginId: margin.marginId,
       marginName: editedName,
-      description: editedDescription
+      description: editedDescription,
+      marginIcon: icon
     })
   }
 
   async function handleDelete(): Promise<void> {
     await onDeleteMargin()
+  }
+
+  async function onFileChange(file: File): Promise<void> {
+    icon = file
+  }
+
+  async function onPreviewUrlChange(url: string): Promise<void> {
+    previewUrl = url
   }
 </script>
 
@@ -65,8 +79,8 @@
 
     <div class="info-picture">
       <span class="picture-label">Margin picture</span>
-      <div class="picture-circle"></div>
-      <button class="upload-btn">Upload</button>
+      <UserAvatar profilePictureUrl={previewUrl} width={100} height={100} />
+      <UploadImageButton {onFileChange} {onPreviewUrlChange} />
     </div>
   </div>
 

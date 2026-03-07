@@ -128,11 +128,7 @@
     <Sidebar />
     <ContentWindow />
   {/if}
-  <IncomingCallModal
-    payload={incomingCallPayload}
-    onAccept={acceptCall}
-    onDecline={declineCall}
-  />
+  <IncomingCallModal payload={incomingCallPayload} onAccept={acceptCall} onDecline={declineCall} />
 </div>
 
 <style>

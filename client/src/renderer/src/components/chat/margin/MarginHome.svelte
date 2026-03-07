@@ -8,9 +8,7 @@
     chatState.selectedMargin?.members.find((m) => m.user.id === userState.currentUser?.id)?.role
   )
 
-  const canManage = $derived(
-    currentUserRole === MarginRole.ADMIN || currentUserRole === MarginRole.OWNER
-  )
+  const canManage = $derived(currentUserRole === MarginRole.MEMBER)
 </script>
 
 <div class="margin-home">
@@ -19,7 +17,7 @@
       <div class="logo-mark">
         <img src=".{marginLogo}" alt="Margin Logo" class="logo" />
       </div>
-      {#if canManage}
+      {#if !canManage}
         <button class="manage-btn" onclick={() => (chatState.currentlySelectedContent = 'manage')}>
           Manage Margin
         </button>

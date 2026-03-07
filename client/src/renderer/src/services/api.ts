@@ -52,7 +52,7 @@ async function fetchPost<T>(url: string, body: T, headers: HeadersInit): Promise
     response = await fetch(API_CONFIG.baseUrl + url, {
       method: 'POST',
       headers: headers,
-      body: JSON.stringify(body)
+      body: body instanceof FormData ? body : JSON.stringify(body)
     })
   } catch (error) {
     errorService.reportError('Failed to fetch: ' + error)

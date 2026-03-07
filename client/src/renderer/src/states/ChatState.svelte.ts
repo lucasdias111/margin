@@ -43,7 +43,7 @@ class ChatState {
     this.selectedUser = null
     this.selectedMargin = null
     this.selectedChannel = null
-    this.currentlySelectedContent = null
+    this.currentlySelectedContent = 'private'
     this.hasMargin = true
   }
 
