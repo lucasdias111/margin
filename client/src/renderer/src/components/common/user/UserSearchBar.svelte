@@ -115,66 +115,78 @@
 <style>
   .search-container {
     position: relative;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: 12px;
-    margin-top: 10px;
+    width: 100%;
+    margin-top: 0;
   }
 
   .search-user-input {
-    flex: 1;
-    padding: 10px 16px;
-    border-radius: 999px;
-    border: 2px solid rgb(207, 207, 207);
+    width: 100%;
+    padding: 8px 14px;
+    border-radius: 10px;
+    border: 1.5px solid #ebebeb;
+    background: #fafafa;
     outline: none;
     font-family: inherit;
-    font-size: 14px;
+    font-size: 13px;
+    color: #2a2a2a;
+    transition:
+      border-color 0.15s,
+      background 0.15s;
+    box-sizing: border-box;
+  }
+
+  .search-user-input::placeholder {
+    color: #c1c1c1;
   }
 
   .search-user-input:focus {
     border-color: #f47e3a;
+    background: white;
   }
 
   .search-results {
     position: absolute;
     top: calc(100% + 6px);
     left: 0;
-    right: 48px;
+    right: 0;
     background: white;
-    border: 2px solid rgb(207, 207, 207);
-    border-radius: 16px;
-    max-height: 300px;
+    border: 1.5px solid #ebebeb;
+    border-radius: 12px;
+    max-height: 260px;
     overflow-y: auto;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.07);
     z-index: 1000;
-    padding: 6px;
+    padding: 4px;
   }
 
   .user-result {
     display: block;
     width: 100%;
     text-align: left;
-    padding: 8px 14px;
-    border-radius: 999px;
+    padding: 8px 12px;
+    border-radius: 9px;
     border: none;
     background: none;
     cursor: pointer;
     font-family: inherit;
-    font-size: 14px;
-    color: black;
-    transition: background-color 0.15s;
+    font-size: 13px;
+    font-weight: 500;
+    color: #2a2a2a;
+    transition:
+      background 0.12s,
+      color 0.12s;
   }
 
   .user-result:hover {
-    background-color: #f5f5f5;
+    background: rgba(0, 0, 0, 0.04);
+    color: #1c1c1c;
   }
 
   .status-message {
     display: block;
-    padding: 8px 14px;
-    font-size: 13px;
-    color: #888;
+    padding: 8px 12px;
+    font-size: 12px;
+    color: #c1c1c1;
     font-family: inherit;
   }
 

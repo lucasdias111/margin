@@ -65,7 +65,7 @@
 <style>
   .chat-header {
     height: 80px;
-    background-color: #f8ebd2;
+    background: #fff;
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -117,7 +117,7 @@
   }
 
   .skeleton {
-    background: linear-gradient(90deg, #f0ece6 25%, #e8e4de 50%, #f0ece6 75%);
+    background: linear-gradient(90deg, #f5ede3 25%, #edddd0 50%, #f5ede3 75%);
     background-size: 200% 100%;
     animation: shimmer 1.2s ease-in-out infinite;
     border-radius: 6px;

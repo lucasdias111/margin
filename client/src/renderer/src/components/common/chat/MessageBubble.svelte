@@ -101,6 +101,11 @@
     justify-content: flex-end;
   }
 
+  .avatar {
+    flex-shrink: 0;
+    margin-bottom: 2px;
+  }
+
   .msgoptions-wrapper {
     position: relative;
     display: flex;
@@ -108,116 +113,107 @@
     align-self: center;
   }
 
-  .editinput {
-    border-radius: 5px;
-    border: none;
-  }
-
-  .editinput:focus {
-    outline: none;
-  }
-
-  .editactions {
-    display: flex;
-    gap: 4px;
-  }
-
-  .editbut {
+  .menudots {
     background: none;
     border: none;
-    color: #f8ebd2;
-    font-size: 11px;
-    font-style: italic;
     cursor: pointer;
-    padding: 2px 6px;
+    font-size: 16px;
+    color: #bbb;
+    padding: 4px 6px;
+    line-height: 1;
+    border-radius: 7px;
+    transition:
+      background 0.12s,
+      color 0.12s;
   }
 
-  .editbut:hover {
-    color: #ffffff;
+  .menudots:hover {
+    background: rgba(0, 0, 0, 0.05);
+    color: #888;
   }
 
   .msgoptions {
     position: absolute;
-    right: 110%;
+    right: calc(100% + 6px);
+    top: 50%;
+    transform: translateY(-50%);
     display: flex;
     flex-direction: column;
-    background: #f8ebd2;
-    border-radius: 8px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    background: white;
+    border: 1.5px solid #ebebeb;
+    border-radius: 12px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
     z-index: 10;
     overflow: hidden;
+    min-width: 110px;
+    padding: 4px;
   }
 
   .msgoptions button {
     background: none;
     border: none;
     cursor: pointer;
-    padding: 8px 16px;
-    color: #f47e3a;
-    font-size: 11px;
-    font-family: Hei, serif;
+    padding: 7px 12px;
+    border-radius: 9px;
+    font-size: 13px;
+    font-family: inherit;
+    font-weight: 500;
     text-align: left;
     display: flex;
     align-items: center;
-    gap: 6px;
+    gap: 8px;
+    transition:
+      background 0.12s,
+      color 0.12s;
   }
 
-  .msgoptions button:hover {
-    background: rgba(255, 255, 255, 0.15);
+  .msgoptions .edit {
+    color: #2a2a2a;
   }
 
-  .menudots {
-    background: none;
-    border: none;
-    cursor: pointer;
-    font-size: 18px;
-    color: #f47e3a;
-    padding: 4px;
-    line-height: 1;
-    border-radius: 4px;
+  .msgoptions .edit:hover {
+    background: rgba(0, 0, 0, 0.04);
   }
 
-  .menudots:hover {
-    color: #f47e3a;
-    background: rgba(0, 0, 0, 0.05);
+  .msgoptions .delete {
+    color: #c0392b;
   }
 
-  .avatar {
-    flex-shrink: 0;
-    margin-bottom: 2px;
+  .msgoptions .delete:hover {
+    background: rgba(192, 57, 43, 0.07);
   }
 
   .bubble {
     position: relative;
     padding: 10px 14px 8px;
-    border-radius: 20px;
+    border-radius: 18px;
     max-width: 60%;
     width: fit-content;
     display: flex;
     flex-direction: column;
     gap: 2px;
     word-break: break-word;
-    line-height: 1.45;
+    line-height: 1.5;
     font-size: 14px;
   }
 
   .bubble:not(.sent) {
-    background-color: #f5ecd5;
+    background: #f5ece0;
     color: #2d2d2d;
     border-bottom-left-radius: 4px;
   }
 
   .bubble.sent {
-    background-color: #f47e3a;
+    background: #f47e3a;
     color: #2d2d2d;
     border-bottom-right-radius: 4px;
   }
 
   .username {
-    font-size: 12px;
-    font-weight: 700;
+    font-size: 11px;
+    font-weight: 600;
     color: #f47e3a;
-    letter-spacing: 0.01em;
+    letter-spacing: 0.02em;
     margin-bottom: 2px;
   }
 
@@ -226,23 +222,72 @@
     white-space: pre-wrap;
   }
 
+  .editactions {
+    display: flex;
+    gap: 4px;
+    margin-bottom: 4px;
+  }
+
+  .editbut {
+    background: rgba(255, 255, 255, 0.2);
+    border: none;
+    border-radius: 6px;
+    color: white;
+    font-size: 11px;
+    font-family: inherit;
+    cursor: pointer;
+    padding: 2px 8px;
+    transition: background 0.12s;
+  }
+
+  .editbut:hover {
+    background: rgba(255, 255, 255, 0.35);
+  }
+
+  .editinput {
+    background: rgba(255, 255, 255, 0.2);
+    border: 1.5px solid rgba(255, 255, 255, 0.4);
+    border-radius: 8px;
+    color: white;
+    font-size: 14px;
+    font-family: inherit;
+    padding: 4px 8px;
+    outline: none;
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  .editinput:focus {
+    border-color: rgba(255, 255, 255, 0.7);
+  }
+
+  .editinput::placeholder {
+    color: rgba(255, 255, 255, 0.5);
+  }
+
   .meta {
     display: flex;
     align-items: center;
     gap: 4px;
-    margin-top: 3px;
-    font-size: 10px;
-    opacity: 0.55;
+    margin-top: 2px;
+    font-size: 9px;
     align-self: flex-end;
   }
 
-  .bubble.sent .checkmark {
-    opacity: 1;
-    font-size: 11px;
-    color: rgba(255, 255, 255, 0.9);
+  .bubble:not(.sent) .meta {
+    color: rgba(45, 45, 45, 0.5);
+  }
+
+  .bubble.sent .meta {
+    color: rgba(45, 45, 45, 0.5);
   }
 
   .edited {
     font-style: italic;
+  }
+
+  .bubble.sent .checkmark {
+    color: rgba(45, 45, 45, 0.5);
+    font-size: 11px;
   }
 </style>

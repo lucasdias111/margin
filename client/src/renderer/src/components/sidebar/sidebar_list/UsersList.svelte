@@ -35,8 +35,9 @@
   .chat_overview ul {
     display: flex;
     flex-direction: column;
-    padding: 0;
+    padding: 0 10px 20px;
     margin: 0;
     list-style: none;
+    gap: 2px;
   }
 </style>

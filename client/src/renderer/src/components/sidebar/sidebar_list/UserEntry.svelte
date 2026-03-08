@@ -55,43 +55,56 @@
     width: 100%;
     background: none;
     border: none;
-    border-bottom: 1px solid #e5e5e5;
-    border-radius: 0;
+    border-radius: 12px;
     appearance: none;
     -webkit-appearance: none;
     box-shadow: none;
     outline: none;
-    padding: 12px 16px;
+    padding: 9px 10px;
     text-align: left;
     display: flex;
     align-items: center;
-    gap: 12px;
+    gap: 10px;
     cursor: pointer;
     color: #0f0f0f;
     transition: background 0.15s ease;
   }
 
-  .user-button:hover {
-    background: #f5f0e8;
+  .user-button:hover:not(.selected) {
+    background: rgba(0, 0, 0, 0.04);
+  }
+
+  .user-button.selected {
+    background: rgba(228, 113, 42, 0.1);
+  }
+
+  .user-button.selected .username {
+    color: #d4621a;
+  }
+
+  .user-button.selected .timestamp,
+  .user-button.selected .last-message {
+    color: #c45a18;
+    opacity: 0.7;
   }
 
   .avatar {
     position: relative;
-    width: 46px;
-    height: 46px;
-    border-radius: 50%;
+    width: 38px;
+    height: 38px;
+    border-radius: 9px;
     overflow: hidden;
     flex-shrink: 0;
-    background: #e0d8cc;
+    background: #f2ede6;
     display: flex;
     align-items: center;
     justify-content: center;
   }
 
   .avatar-initials {
-    font-size: 0.85rem;
+    font-size: 0.8rem;
     font-weight: 600;
-    color: #6b5f4e;
+    color: #8a7560;
   }
 
   .user-info {
@@ -99,7 +112,7 @@
     min-width: 0;
     display: flex;
     flex-direction: column;
-    gap: 3px;
+    gap: 2px;
   }
 
   .top-row {
@@ -115,24 +128,24 @@
   }
 
   .username {
-    font-size: 0.95rem;
-    font-weight: 700;
-    color: #111;
+    font-size: 14px;
+    font-weight: 550;
+    color: #2a2a2a;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
   }
 
   .timestamp {
-    font-size: 0.75rem;
-    color: #999;
+    font-size: 11px;
+    color: #bbb;
     flex-shrink: 0;
     margin-left: 8px;
   }
 
   .last-message {
-    font-size: 0.82rem;
-    color: #888;
+    font-size: 12px;
+    color: #c1c1c1;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -141,12 +154,12 @@
 
   .presence-dot {
     position: absolute;
-    bottom: 2px;
-    right: 2px;
-    width: 10px;
-    height: 10px;
+    bottom: 1px;
+    right: 1px;
+    width: 9px;
+    height: 9px;
     border-radius: 50%;
-    background: #ccc;
+    background: #ddd;
     border: 2px solid white;
   }
 

@@ -23,7 +23,9 @@
   {#if selectedContent === 'private'}
     <div class="panel">
       <div class="panel-header">
-        <h3 class="sidebar-title">Private chat</h3>
+        <div class="section-heading">
+          <span class="header-label">Direct messages</span>
+        </div>
         <UserSearchBar {onSelectUser} />
       </div>
       <div class="panel-content">
@@ -79,8 +81,31 @@
     border-radius: 20px;
   }
 
+  .panel-header {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 16px 10px 8px;
+    flex-shrink: 0;
+  }
+
+  .section-heading {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 0 8px;
+  }
+
+  .header-label {
+    font-size: 14px;
+    font-weight: 600;
+    color: #aaa;
+    letter-spacing: 0.09em;
+    text-transform: uppercase;
+  }
+
   .panel-nav {
-    padding: 10px 12px;
+    padding: 12px 10px 4px;
     flex-shrink: 0;
   }
 
@@ -89,13 +114,13 @@
     display: flex;
     align-items: center;
     gap: 8px;
-    padding: 8px 10px;
+    padding: 8px 12px;
     background: none;
     border: none;
-    border-radius: 8px;
-    font-size: 16px;
-    font-weight: 700;
-    color: #555;
+    border-radius: 10px;
+    font-size: 14px;
+    font-weight: 550;
+    color: #888;
     cursor: pointer;
     text-align: left;
     transition:
@@ -103,23 +128,30 @@
       color 0.12s;
   }
 
-  .home-btn:hover {
-    background: rgba(0, 0, 0, 0.05);
-    color: #1c1c1c;
+  .home-btn:hover:not(.active) {
+    background: rgba(0, 0, 0, 0.04);
+    color: #2a2a2a;
   }
 
   .home-btn.active {
-    background: rgba(218, 107, 16, 0.1);
+    background: rgba(228, 113, 42, 0.1);
     color: #f47e3a;
   }
 
   .home-btn svg {
     flex-shrink: 0;
-    opacity: 0.7;
+    opacity: 0.6;
   }
 
   .home-btn.active svg {
     opacity: 1;
+  }
+
+  .panel-divider {
+    height: 1px;
+    background: rgba(0, 0, 0, 0.05);
+    margin: 0 12px;
+    flex-shrink: 0;
   }
 
   .panel-content {
@@ -131,23 +163,9 @@
   .panel-content::-webkit-scrollbar {
     width: 4px;
   }
+
   .panel-content::-webkit-scrollbar-thumb {
     background: rgba(0, 0, 0, 0.08);
     border-radius: 4px;
-  }
-
-  .panel-header {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 10px;
-    padding: 20px;
-    flex-shrink: 0;
-  }
-
-  .sidebar-title {
-    margin: 0;
-    font-size: 20px;
-    color: #2d2d2d;
   }
 </style>
