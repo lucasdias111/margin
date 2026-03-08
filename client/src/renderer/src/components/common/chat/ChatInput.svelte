@@ -1,4 +1,9 @@
 <script lang="ts">
+  import { Picker } from 'emoji-mart'
+  import data from '@emoji-mart/data'
+  import { clickOutside } from '$src/actions/clickOutside'
+  import { replaceEmoticons } from '$src/utils/EmoticonUtils'
+
   let {
     selectedContent,
     messageInput = $bindable(''),
@@ -8,12 +13,42 @@
     messageInput: string
     onSubmit: (event: SubmitEvent) => void
   } = $props()
+
+  function handleKeydown(event: KeyboardEvent): void {
+    if (event.key === ' ') {
+      messageInput = replaceEmoticons(messageInput)
+    }
+  }
+
+  let showPicker = $state(false)
+
+  function emojiPicker(node: HTMLElement): { destroy(): void } {
+    const picker = new Picker({
+      data,
+      onEmojiSelect: (emoji: any) => {
+        messageInput += emoji.native
+        showPicker = false
+      }
+    })
+    node.appendChild(picker as unknown as Node)
+
+    return {
+      destroy() {
+        node.innerHTML = ''
+      }
+    }
+  }
 </script>
 
 <div class="chat-page">
   <form class="input-area" onsubmit={onSubmit}>
-    <input bind:value={messageInput} placeholder="Type a message..." disabled={!selectedContent} />
-    <button class="attachbut" type="submit" aria-label="Attach file(s)">
+    <input
+      bind:value={messageInput}
+      placeholder="Type a message..."
+      disabled={!selectedContent}
+      onkeydown={handleKeydown}
+    />
+    <button class="secondary-button" type="submit" aria-label="Attach file(s)">
       <svg
         fill="#f47e3a"
         height="18px"
@@ -35,6 +70,12 @@
         /></svg
       >
     </button>
+    <div class="emoji-wrapper" use:clickOutside={() => (showPicker = false)}>
+      <div class="picker-container" class:visible={showPicker} use:emojiPicker></div>
+      <button class="secondary-button" type="button" onclick={() => (showPicker = !showPicker)}
+        >😊</button
+      >
+    </div>
     <button
       class="sendbut"
       type="submit"
@@ -78,38 +119,105 @@
     outline: none;
   }
 
-  .sendbut {
-    background-color: #f47e3a;
-    display: flex;
-    border-radius: 20px;
-    border: none;
-    cursor: pointer;
-  }
-
-  .attachbut {
-    display: flex;
-    border-radius: 20px;
-    background-color: #f8ebd2;
-    border: none;
-  }
-
   .input-area {
     display: flex;
-    padding: 20px;
-    gap: 10px;
+    align-items: center;
+    padding: 14px 18px;
+    gap: 8px;
   }
 
   .input-area input {
-    display: flex;
     flex: 1;
-    padding: 10px;
-    background-color: white;
-    border: 1px solid rgb(206, 206, 206);
-    border-radius: 15px;
+    padding: 11px 16px;
+    background-color: #ffffff;
+    border: 1px solid #e4cbb2;
+    border-radius: 999px;
     color: #1d2021;
+    font: inherit;
+    font-size: 14px;
+    outline: none;
+    transition: border-color 0.2s;
   }
 
-  .input-area button {
-    padding: 10px 20px;
+  .input-area input:focus {
+    border-color: #f47e3a;
+  }
+
+  .input-area input::placeholder {
+    color: #c4a98a;
+  }
+
+  .secondary-button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 42px;
+    height: 42px;
+    border-radius: 999px;
+    background-color: #ffffff;
+    border: 1px solid #e4cbb2;
+    cursor: pointer;
+    flex-shrink: 0;
+    padding: 0;
+    transition: background-color 0.2s;
+  }
+
+  .secondary-button:hover {
+    background-color: #fae0c8;
+  }
+
+  .secondary-button:active {
+    background-color: #f5caa8;
+  }
+
+  .emoji-wrapper .secondary-button {
+    font-size: 20px;
+    line-height: 1;
+  }
+
+  .sendbut {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 42px;
+    height: 42px;
+    border-radius: 999px;
+    background-color: #f47e3a;
+    border: none;
+    cursor: pointer;
+    flex-shrink: 0;
+    padding: 0;
+    transition:
+      background-color 0.2s,
+      transform 0.1s;
+  }
+
+  .sendbut:hover {
+    background-color: #e56e2a;
+  }
+
+  .sendbut:active {
+    transform: scale(0.93);
+  }
+
+  .sendbut:disabled {
+    background-color: #f5c4a0;
+    cursor: not-allowed;
+  }
+
+  .emoji-wrapper {
+    position: relative;
+  }
+
+  .picker-container {
+    display: none;
+    position: absolute;
+    bottom: 50px;
+    right: 0;
+    z-index: 100;
+  }
+
+  .picker-container.visible {
+    display: block;
   }
 </style>

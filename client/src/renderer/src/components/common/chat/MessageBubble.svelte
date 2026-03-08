@@ -15,7 +15,7 @@
   let { message, showReadStatus = false }: Props = $props()
 
   let isEditing = $state(false)
-  let editedContent = $state(message.content)
+  let editedContent = $derived(message.content)
   let showActions = $state(false)
   let showMenu = $state(false)
   let isSent = $derived(message.user.id === userState.currentUser?.id)
@@ -36,7 +36,7 @@
     showMenu = false
   }}
 >
-  {#if !isSent && showActions}
+  {#if !isSent}
     <div class="avatar">
       <UserAvatar profilePictureUrl={message.user.profilePictureUrl} width={32} height={32} />
     </div>
@@ -194,7 +194,7 @@
     gap: 2px;
     word-break: break-word;
     line-height: 1.5;
-    font-size: 14px;
+    font-size: 12px;
   }
 
   .bubble:not(.sent) {

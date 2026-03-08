@@ -2,6 +2,7 @@
   import { authenticatedGet } from '$src/services/api'
   import type { User } from '$src/interfaces/User'
   import type { UserSearchResult } from '$src/interfaces/UserSearchResult'
+  import { clickOutside } from '$src/actions/clickOutside'
 
   interface Props {
     onSelectUser: (user: User) => void
@@ -24,18 +25,6 @@
     const timeout = setTimeout(() => searchUsers(query), 300)
     return () => clearTimeout(timeout)
   })
-
-  function clickOutside(node: HTMLElement): { destroy(): void } {
-    function handleClick(event: MouseEvent): void {
-      if (!node.contains(event.target as Node)) clearSearch()
-    }
-    document.addEventListener('click', handleClick)
-    return {
-      destroy() {
-        document.removeEventListener('click', handleClick)
-      }
-    }
-  }
 
   async function searchUsers(query: string): Promise<void> {
     isLoading = true
@@ -72,7 +61,7 @@
   }
 </script>
 
-<div class="search-container" use:clickOutside>
+<div class="search-container" use:clickOutside={() => destroy}>
   <input
     type="text"
     placeholder="Search users..."
