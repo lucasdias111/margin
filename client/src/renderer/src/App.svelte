@@ -18,7 +18,7 @@
     height: 100vh;
   }
 
-  :global(p, span) {
+  :global(h1, h2, p, span, label, input, textarea) {
     font-family: 'Inter', sans-serif;
     font-weight: 300;
     font-size: 13px;

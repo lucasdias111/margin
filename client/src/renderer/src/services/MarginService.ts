@@ -67,7 +67,7 @@ class MarginService {
     return response.json()
   }
 
-  async createMargin(margin: CreateMargin): Promise<void> {
+  async createMargin(margin: CreateMargin): Promise<Margin> {
     const formData = new FormData()
     formData.append(
       'data',
@@ -85,6 +85,7 @@ class MarginService {
 
     const response = await authenticatedPostForm(formData, 'api/margins/create_new_margin')
     if (!response.ok) errorService.reportError('Failed to create margin: ' + response.status)
+    return response.json()
   }
 }
 

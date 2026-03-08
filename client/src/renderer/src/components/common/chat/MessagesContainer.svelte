@@ -1,8 +1,8 @@
 <script lang="ts">
   import type { Message } from '$src/interfaces/Messages'
   import { tick } from 'svelte'
-  import DirectMessageBubble from '../../chat/private/DirectMessageBubble.svelte'
-  import ChannelMessageBubble from '$src/components/chat/channel/ChannelMessageBubble.svelte'
+  import DirectMessageBubble from '$src/components/content/chat/private/DirectMessageBubble.svelte'
+  import ChannelMessageBubble from '$src/components/content/chat/channel/ChannelMessageBubble.svelte'
   import { userState } from '$src/states/UserState.svelte.js'
 
   let {
