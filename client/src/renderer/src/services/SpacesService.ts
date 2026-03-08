@@ -60,6 +60,15 @@ class SpacesService {
     if (!response.ok) throw new Error(`Failed to update space member role: ${response.status}`)
     return response.json()
   }
+
+  async fetchVoiceParticipantsForSpace(space: Space): Promise<void> {
+    await Promise.all(
+      space.channels.map(async (c) => {
+        const res = await authenticatedGet(`sfu/voice_participants/${c.id}`)
+        c.voiceParticipants = res.ok ? await res.json() : []
+      })
+    )
+  }
 }
 
 export const spacesService = new SpacesService()

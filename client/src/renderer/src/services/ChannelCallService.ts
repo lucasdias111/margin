@@ -1,8 +1,9 @@
 import { authenticatedGet } from '$src/services/api'
 import { userState } from '$src/states/UserState.svelte'
 import { Device } from 'mediasoup-client'
-import type { Transport, TransportOptions } from 'mediasoup-client/types'
+import type { RtpCapabilities, Transport, TransportOptions } from 'mediasoup-client/types'
 import { callState } from '$src/states/CallState.svelte'
+import { errorService } from '$src/services/ErrorService'
 
 class ChannelCallService {
   private async connectToWebSocket(wsUrl: string): Promise<WebSocket> {
@@ -26,7 +27,7 @@ class ChannelCallService {
     return new Promise((resolve, reject) => {
       const timeout = setTimeout(() => reject(new Error(`${messageType} timeout`)), 5000)
 
-      const handler = (event: MessageEvent) => {
+      const handler = (event: MessageEvent): void => {
         const msg = JSON.parse(event.data)
         if (msg.type === messageType && (!filter || filter(msg))) {
           clearTimeout(timeout)
@@ -39,7 +40,7 @@ class ChannelCallService {
     })
   }
 
-  private async getRtpCapabilities(ws: WebSocket, channelId: number): Promise<any> {
+  private async getRtpCapabilities(ws: WebSocket, channelId: number): Promise<RtpCapabilities> {
     this.sendMessage(ws, 'getRouterRtpCapabilities', {
       roomId: String(channelId),
       peerId: String(userState.currentUser.id)
@@ -124,12 +125,14 @@ class ChannelCallService {
   }
 
   async joinVoiceChannel(channelId: number): Promise<void> {
-    const permissionResponse = await authenticatedGet(`sfu/create_or_join?roomId=${channelId}`)
-    if (!permissionResponse.ok) {
-      throw new Error('Not authorized to join this voice channel')
+    if (callState.isGroupCall) return
+    const response = await authenticatedGet(`sfu/create_or_join?roomId=${channelId}`)
+
+    if (!response.ok) {
+      errorService.reportError('Failed to join voice channel')
     }
 
-    const wsUrl = await permissionResponse.text()
+    const wsUrl = await response.text()
     const sfuWs = await this.connectToWebSocket(wsUrl)
 
     callState.startGroupCall(channelId, channelId)

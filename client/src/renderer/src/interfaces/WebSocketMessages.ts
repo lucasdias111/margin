@@ -33,3 +33,9 @@ export interface CallCandidatePayload {
   sdpMLineIndex: number | null
   usernameFragment: string
 }
+
+export interface ChannelVoiceParticipantPayload {
+  channelId: number
+  user: User
+}
+

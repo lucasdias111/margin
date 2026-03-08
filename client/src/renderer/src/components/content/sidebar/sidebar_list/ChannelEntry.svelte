@@ -23,6 +23,12 @@
 <li class="channel-item">
   <button class="channel-button" class:active onclick={selectChannel}>
     <span class="channel-name">{channel.name}</span>
+    {#if channel.voiceParticipants && channel.voiceParticipants.length > 0}
+      <span class="voice-indicator">
+        <span class="voice-indicator-dot"></span>
+        {channel.voiceParticipants.length}
+      </span>
+    {/if}
     <UnreadNotificationBadge
       shouldShow={hasUnread}
       count={notificationState.getTotalUnreadMessagesForChannel(channel.conversationId).length}
@@ -50,8 +56,9 @@
     color: #888;
     cursor: pointer;
     text-align: left;
-    transition: background 0.12s,
-    color 0.12s;
+    transition:
+      background 0.12s,
+      color 0.12s;
   }
 
   .channel-button:hover {
@@ -67,5 +74,22 @@
 
   .channel-name {
     flex: 1;
+  }
+
+  .voice-indicator {
+    display: flex;
+    align-items: center;
+    gap: 3px;
+    font-size: 11px;
+    font-weight: 600;
+    color: #3dd68c;
+  }
+
+  .voice-indicator-dot {
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: #3dd68c;
+    animation: pulse 2s infinite;
   }
 </style>

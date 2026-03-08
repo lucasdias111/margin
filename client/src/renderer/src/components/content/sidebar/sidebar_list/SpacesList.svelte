@@ -6,6 +6,12 @@
   import ChannelEntry from '$src/components/content/sidebar/sidebar_list/ChannelEntry.svelte'
   import { notificationState } from '$src/states/NotificationState.svelte.js'
   import UnreadNotificationBadge from '$src/components/common/chat/UnreadNotificationBadge.svelte'
+  import { useWebsocketSvelte } from '$src/composables/useWebsocket.svelte'
+  import { WebSocketMessageType } from '$src/interfaces/WebSocketMessageType'
+  import type {
+    ChannelVoiceParticipantPayload,
+    WebSocketMessage
+  } from '$src/interfaces/WebSocketMessages'
 
   let spaces = $state<Space[]>([])
   let expandedSpaceId = $state<number | null>(null)
@@ -24,6 +30,10 @@
   async function toggleSpace(space: Space): Promise<void> {
     chatState.selectSpace(space)
     expandedSpaceId = expandedSpaceId === space.spaceId ? null : space.spaceId
+
+    if (expandedSpaceId === space.spaceId) {
+      await spacesService.fetchVoiceParticipantsForSpace(space)
+    }
   }
 
   const SPACE_COLORS = [
@@ -45,6 +55,36 @@
       .map((w) => w[0]?.toUpperCase() ?? '')
       .join('')
   }
+
+  useWebsocketSvelte({
+    [WebSocketMessageType.USER_JOINED_VOICE]: (
+      msg: WebSocketMessage<ChannelVoiceParticipantPayload>
+    ) => {
+      for (const space of spaces) {
+        const channel = space.channels.find((c) => c.id === msg.payload.channelId)
+        if (channel) {
+          channel.voiceParticipants = [
+            ...(channel.voiceParticipants ?? []).filter((p) => p.id !== msg.payload.user.id),
+            msg.payload.user
+          ]
+          break
+        }
+      }
+    },
+    [WebSocketMessageType.USER_LEFT_VOICE]: (
+      msg: WebSocketMessage<ChannelVoiceParticipantPayload>
+    ) => {
+      for (const space of spaces) {
+        const channel = space.channels.find((c) => c.id === msg.payload.channelId)
+        if (channel?.voiceParticipants) {
+          channel.voiceParticipants = channel.voiceParticipants.filter(
+            (p) => p.id !== msg.payload.user.id
+          )
+          break
+        }
+      }
+    }
+  })
 </script>
 
 <div class="spaces-list">

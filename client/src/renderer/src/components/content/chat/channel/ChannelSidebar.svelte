@@ -3,6 +3,7 @@
   import { chatState } from '$src/states/ChatState.svelte.js'
   import { channelCallService } from '$src/services/ChannelCallService'
   import { callState } from '$src/states/CallState.svelte.js'
+  import { userState } from '$src/states/UserState.svelte'
 
   let {
     channel,
@@ -15,6 +16,7 @@
   let isInChannelCall = $derived(
     callState.isGroupCall && callState.groupCallState?.channelId === channel.id
   )
+  let voiceParticipants = $derived(channel?.voiceParticipants ?? [])
 
   function onJoinChannel(): void {
     if (isInChannelCall) {
@@ -61,14 +63,28 @@
       <div class="section-header voice-header">
         <span class="live-dot"></span>
         <span class="section-title">Voice</span>
+        {#if voiceParticipants.length > 0}
+          <span class="voice-count">{voiceParticipants.length}</span>
+        {/if}
       </div>
-      <div class="voice-empty">
+
+      <div class="voice-participants">
+        {#each voiceParticipants as participant (participant.id)}
+          <div class="voice-participant" class:is-me={participant.id === userState.currentUser?.id}>
+            <span class="voice-dot"></span>
+            <p class="voice-participant-name">{participant.displayName}</p>
+          </div>
+        {/each}
+      </div>
+
+      <div class="voice-actions">
         {#if callState.isGroupCall}
-          <p class="voice-joined-text">In voice</p>
-          <button class="leave-voice-btn" onclick={onLeaveChannel}> Leave channel →</button>
+          <button class="leave-voice-btn" onclick={onLeaveChannel}>Leave channel →</button>
         {:else}
-          <p class="voice-empty-text">No one in voice</p>
-          <button class="join-voice-btn" onclick={onJoinChannel}> Join channel →</button>
+          {#if voiceParticipants.length === 0}
+            <p class="voice-empty-text">No one in voice</p>
+          {/if}
+          <button class="join-voice-btn" onclick={onJoinChannel}>Join channel →</button>
         {/if}
       </div>
     </section>
@@ -258,20 +274,10 @@
     color: #bbb;
   }
 
-  .voice-empty {
-    padding: 4px 0 6px;
-  }
-
   .voice-empty-text {
     font-size: 12px;
     color: #aaa;
   }
-
-  .voice-joined-text {
-    font-size: 12px;
-    color: #2d2d2d;
-  }
-
   .join-voice-btn {
     width: 100%;
     padding: 5px 0;
@@ -326,5 +332,62 @@
     margin: 0;
     padding: 2px 3px;
     font-size: 14px;
+  }
+
+  .voice-count {
+    margin-left: auto;
+    font-size: 11px;
+    font-weight: 600;
+    color: #3dd68c;
+    background: rgba(61, 214, 140, 0.12);
+    border-radius: 999px;
+    padding: 1px 7px;
+  }
+
+  .voice-participants {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 2px 0;
+  }
+
+  .voice-participant {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    padding-left: 4px;
+  }
+
+  .voice-participant.is-me .voice-participant-name {
+    color: #3dd68c;
+  }
+
+  .voice-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: #3dd68c;
+    flex-shrink: 0;
+    animation: pulse 2s infinite;
+  }
+
+  .voice-participant-name {
+    margin: 0;
+    font-size: 13px;
+    color: #444;
+  }
+
+  .voice-actions {
+    padding-top: 4px;
+  }
+
+  @keyframes pulse {
+    0%,
+    100% {
+      opacity: 1;
+    }
+    50% {
+      opacity: 0.4;
+    }
   }
 </style>

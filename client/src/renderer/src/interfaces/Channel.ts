@@ -1,3 +1,5 @@
+import type { User } from '$src/interfaces/User'
+
 export interface Channel {
   id: number
   conversationId: number
@@ -5,6 +7,7 @@ export interface Channel {
   description: string
   spaceId: number
   type: string
+  voiceParticipants?: User[]
 }
 
 export interface CreateChannel {
