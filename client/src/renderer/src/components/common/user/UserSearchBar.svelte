@@ -61,7 +61,7 @@
   }
 </script>
 
-<div class="search-container" use:clickOutside={() => destroy}>
+<div class="search-container" use:clickOutside={clearSearch}>
   <input
     type="text"
     placeholder="Search users..."

@@ -26,6 +26,8 @@
   import { encryptionService } from '$src/services/EncryptionService'
   import { marginService } from '$src/services/MarginService'
   import IncomingCallModal from '$src/components/content/call/modal/IncomingCallModal.svelte'
+  import type { Notification } from '$src/interfaces/Notification'
+  import Notifications from '$src/components/content/notification/Notifications.svelte'
 
   let incomingCallPayload = $state<CallOfferPayload | null>(null)
 
@@ -41,13 +43,16 @@
     [WebSocketMessageType.USER_LOGIN]: (data: WebSocketMessage<User>) =>
       presenceService.setOnline(data.payload.id),
     [WebSocketMessageType.USER_LOGOUT]: (data: WebSocketMessage<User>) =>
-      presenceService.setOffline(data.payload.id)
+      presenceService.setOffline(data.payload.id),
+    [WebSocketMessageType.NOTIFICATION]: (data: WebSocketMessage<Notification>) =>
+      notificationState.incrementUnseenAnnouncements(data.payload.marginId)
   })
 
   async function setup(): Promise<void> {
     await getCurrentUser()
     await loadUnreadMessages()
     await loadRecentUsers()
+    await notificationState.loadUnseenAnnouncementCounts()
     await marginService.getMargins().then((margins) => {
       if (margins.length === 0) {
         chatState.hasMargin = false
@@ -124,6 +129,8 @@
     <ManageWindow />
   {:else if chatState.currentlySelectedContent === 'margin' && !chatState.hasMargin}
     <NoMarginEmptyState />
+  {:else if chatState.currentlySelectedContent === 'notifications'}
+    <Notifications />
   {:else}
     <Sidebar />
     <ContentWindow />

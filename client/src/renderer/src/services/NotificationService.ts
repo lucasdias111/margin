@@ -3,6 +3,8 @@ import { chatState } from '$src/states/ChatState.svelte'
 import { userState } from '$src/states/UserState.svelte'
 import type { UnreadCount } from '$src/interfaces/UnreadCount'
 import type { Message } from '$src/interfaces/Messages'
+import type { Notification } from '$src/interfaces/Notification'
+import { authenticatedGet, authenticatedPost } from '$src/services/api'
 
 class NotificationService {
   handleIncomingMessage(message: Message): void {
@@ -78,6 +80,16 @@ class NotificationService {
 
   markConversationAsRead(conversationId: number): void {
     notificationState.clearUnreadMessagesForConversation(conversationId)
+  }
+
+  async getAll(): Promise<Notification[]> {
+    const res = await authenticatedGet('api/notifications/all')
+    return res.json()
+  }
+
+  async markSeen(marginId: number): Promise<void> {
+    await authenticatedPost({ marginId }, 'api/notifications/mark-seen')
+    notificationState.clearUnseenAnnouncementsForMargin(marginId)
   }
 }
 

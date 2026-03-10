@@ -8,12 +8,13 @@
   import SetIcon from '$src/components/svg/Settings.svelte'
   import MsgIgon from '$src/components/svg/MessagesIcon.svelte'
   import SpaceIcon from '$src/components/svg/SpacesIcon.svelte'
-  import ExpIcon from '$src/components/svg/ExploreIcon.svelte'
   import LogoutIcon from '$src/components/svg/LogoutIcon.svelte'
   import { chatService } from '$src/services/ChatService'
   import { authenticationService } from '$src/services/AuthenticationService'
   import { push } from 'svelte-spa-router'
   import { clickOutside } from '$src/actions/clickOutside'
+  import BellIcon from '$src/components/svg/BellIcon.svelte'
+
 
   function onContentSelected(selectedContent: ContentType): void {
     chatService.selectContent(selectedContent)
@@ -26,6 +27,8 @@
   }
 
   let showDropdown = $state(false)
+
+  const totalAnnouncements = $derived(notificationState.getTotalUnseenAnnouncements())
 </script>
 
 <div class="navigation">
@@ -55,6 +58,18 @@
 
   <div class="button-group">
     <button
+      onclick={() => onContentSelected('notifications')}
+      class:selected={chatState.currentlySelectedContent === 'notifications'}
+      aria-label="Notifications"
+      title="Notifications"
+    >
+      <BellIcon />
+      <UnreadNotificationBadge
+        shouldShow={totalAnnouncements > 0}
+        count={totalAnnouncements}
+      />
+    </button>
+    <button
       onclick={() => onContentSelected('private')}
       class:selected={chatState.currentlySelectedContent === 'private'}
       aria-label="Private conversations"
@@ -77,14 +92,6 @@
         shouldShow={notificationState.getTotalUnreadChannelMessages() > 0}
         count={notificationState.getTotalUnreadChannelMessages()}
       />
-    </button>
-    <button
-      onclick={() => onContentSelected('explore')}
-      class:selected={chatState.currentlySelectedContent === 'explore'}
-      aria-label="Explore"
-      title="Explore"
-    >
-      <ExpIcon />
     </button>
   </div>
 
