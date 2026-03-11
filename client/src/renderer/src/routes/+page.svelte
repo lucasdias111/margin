@@ -24,10 +24,9 @@
     display: flex;
     flex-direction: column;
     justify-content: flex-start;
-    padding-top: 15vh;
+    padding-top: 50px;
     align-items: center;
-    background-color: whitesmoke;
-    gap: 40px;
+    background-color: #e5e1db;
   }
 
   .marginlogo {

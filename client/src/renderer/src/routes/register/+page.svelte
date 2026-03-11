@@ -11,19 +11,32 @@
   let repeatPassword = $state('')
   let email = $state('')
   let profilePicture = $state<File | null>(null)
-  let loginResponse = $state('')
+  let registerResponse = $state('')
+  let hasError = $state(false)
+  let isLoading = $state(false)
   let previewUrl = $state<string | null>(avatar)
 
   async function handleRegistration(event: SubmitEvent): Promise<void> {
     event.preventDefault()
+    hasError = false
+    registerResponse = ''
 
     if (password !== repeatPassword) {
-      loginResponse = 'Passwords do not match'
+      hasError = true
+      registerResponse = 'Passwords do not match'
       return
     }
 
-    await authenticationService.register(username, password, email, profilePicture || undefined)
-    await push('/')
+    isLoading = true
+    try {
+      await authenticationService.register(username, password, email, profilePicture || undefined)
+      await push('/')
+    } catch (e) {
+      hasError = true
+      registerResponse = 'Registration failed. Please try again.'
+    } finally {
+      isLoading = false
+    }
   }
 
   async function onFileChange(file: File): Promise<void> {
@@ -40,123 +53,300 @@
 </script>
 
 <div class="page">
-  <form class="row" onsubmit={handleRegistration}>
-    <img class="marginlogo" src={marginLogo} alt="Margin logo" />
+  <div class="card">
+    <img src={marginLogo} alt="Margin" class="logo" />
 
-    {#if previewUrl}
-      <UserAvatar profilePictureUrl={previewUrl} width={100} height={100} />
-    {/if}
-    <input
-      id="username"
-      type="text"
-      name="username"
-      bind:value={username}
-      required
-      placeholder="Username"
-    />
-    <input id="email" type="email" name="email" bind:value={email} required placeholder="Email" />
-    <input
-      id="password"
-      type="password"
-      name="password"
-      bind:value={password}
-      required
-      placeholder="Password"
-    />
-    <input
-      id="repeatPassword"
-      type="password"
-      name="repeatPassword"
-      bind:value={repeatPassword}
-      required
-      placeholder="Repeat password"
-    />
-    <UploadImageButton {onFileChange} {onPreviewUrlChange} />
+    <div class="header">
+      <h1 class="title">Create account</h1>
+    </div>
 
-    {#if loginResponse}
-      <p class="error">{loginResponse}</p>
-    {/if}
-    <button class="register" type="submit">Register</button>
-  </form>
-  <button id="backbut" onclick={goBack} aria-label="Back" title="Back">
-    <svg width="12px" height="12px" viewBox="0 0 1024 1024" fill="#f47e3a">
-      <path
-        d="M669.6 849.6c8.8 8 22.4
-            7.2 30.4-1.6s7.2-22.4-1.6-30.4l-309.6-280c-8-7.2-8-17.6
-            0-24.8l309.6-270.4c8.8-8 9.6-21.6
-            2.4-30.4-8-8.8-21.6-9.6-30.4-2.4L360.8
-            480.8c-27.2 24-28 64-0.8 88.8l309.6 280z"
-        fill="#ffffff"
-      />
-    </svg>
-  </button>
+    <div class="avatar-row">
+      {#if previewUrl}
+        <UserAvatar profilePictureUrl={previewUrl} width={72} height={72} />
+      {/if}
+      <div class="avatar-meta">
+        <p class="avatar-label">Profile picture</p>
+        <UploadImageButton {onFileChange} {onPreviewUrlChange} />
+      </div>
+    </div>
+
+    <form class="form" onsubmit={handleRegistration}>
+      <div class="field">
+        <label class="label" for="username">Username</label>
+        <input
+          id="username"
+          class="input"
+          type="text"
+          name="username"
+          placeholder="yourhandle"
+          bind:value={username}
+          required
+          autocomplete="username"
+        />
+      </div>
+
+      <div class="field">
+        <label class="label" for="email">Email</label>
+        <input
+          id="email"
+          class="input"
+          type="email"
+          name="email"
+          placeholder="you@example.com"
+          bind:value={email}
+          required
+          autocomplete="email"
+        />
+      </div>
+
+      <div class="field">
+        <label class="label" for="password">Password</label>
+        <input
+          id="password"
+          class="input"
+          type="password"
+          name="password"
+          placeholder="••••••••"
+          bind:value={password}
+          required
+          autocomplete="new-password"
+        />
+      </div>
+
+      <div class="field">
+        <label class="label" for="repeatPassword">Confirm password</label>
+        <input
+          id="repeatPassword"
+          class="input"
+          type="password"
+          name="repeatPassword"
+          placeholder="••••••••"
+          bind:value={repeatPassword}
+          required
+          autocomplete="new-password"
+        />
+      </div>
+
+      {#if hasError}
+        <p class="error">{registerResponse}</p>
+      {/if}
+
+      <button class="btn-primary" type="submit" disabled={isLoading}>
+        {#if isLoading}
+          <span class="spinner"></span>
+        {:else}
+          Create account
+        {/if}
+      </button>
+    </form>
+
+    <div class="divider">
+      <span>or</span>
+    </div>
+
+    <button class="btn-secondary" onclick={goBack}> Back to sign in </button>
+  </div>
 </div>
 
 <style>
   .page {
-    background-color: whitesmoke;
     min-height: 100vh;
-    padding: 10px;
-  }
-
-  input {
-    height: 40px;
-    width: 20%;
-    border-radius: 10px;
-    outline: none;
-    padding: 0 12px;
-    font-size: 14px;
-    box-sizing: border-box;
-    border-color: #4e4d4d;
-  }
-  .row {
     display: flex;
-    flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: 18px;
-    margin-top: 120px;
-    min-height: 500px;
+    background-color: #e5e1db;
+    padding: 24px;
+    box-sizing: border-box;
+    overflow-y: auto;
   }
 
-  #backbut {
-    position: fixed;
-    border-radius: 999px;
-    top: 50px;
-    left: 10px;
-    padding: 5px;
-    background-color: #da610b;
-  }
-
-  .preview {
+  .card {
+    background: #ffffff;
+    border: 1px solid #ece8e0;
+    border-radius: 20px;
+    padding: 36px 32px;
+    width: 100%;
+    max-width: 360px;
     display: flex;
-    justify-content: center;
-    margin: 10px 0 5px 0;
+    flex-direction: column;
+    gap: 20px;
+    box-sizing: border-box;
   }
 
-  .preview img {
-    width: 70px;
-    height: 70px;
-    border-radius: 50%;
-    object-fit: cover;
-    border: 3px solid #ccc;
+  .logo {
+    width: 160px;
+    height: auto;
+    display: block;
+    align-self: center;
+  }
+
+  .header {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .title {
+    font-size: 22px;
+    font-weight: 600;
+    color: #1a1a1a;
+    margin: 0;
+    letter-spacing: -0.3px;
+  }
+
+  .avatar-row {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 14px;
+    background: #f7f4ef;
+    border-radius: 12px;
+    border: 1px solid #ece8e0;
+  }
+
+  .avatar-meta {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .avatar-label {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+    color: #888480;
+    margin: 0;
+  }
+
+  .form {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+
+  .field {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .label {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+    color: #888480;
+  }
+
+  .input {
+    height: 42px;
+    width: 100%;
+    border-radius: 10px;
+    border: 1px solid #ece8e0;
+    background: #f7f4ef;
+    outline: none;
+    padding: 0 14px;
+    font-size: 14px;
+    color: #1a1a1a;
+    box-sizing: border-box;
+    transition: border-color 0.15s ease;
+    font-family: inherit;
+  }
+
+  .input:focus {
+    border-color: #e8712a;
+    background: #ffffff;
+  }
+
+  .input::placeholder {
+    color: #c4bfb8;
   }
 
   .error {
-    color: red;
-    text-align: center;
+    font-size: 13px;
+    color: #d4621a;
+    margin: 0;
+    padding: 10px 14px;
+    background: #fdf0e8;
+    border-radius: 8px;
+    border: 1px solid #f5d5be;
   }
 
-  input[type='file'] {
-    padding: 5px;
+  .btn-primary {
+    height: 42px;
+    width: 100%;
+    background: #e8712a;
+    color: white;
+    border: none;
+    border-radius: 10px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: inherit;
+    transition: background 0.15s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    letter-spacing: 0.1px;
   }
 
-  .register {
-    background-color: #da610b;
+  .btn-primary:hover:not(:disabled) {
+    background: #d4621a;
   }
 
-  .marginlogo {
-    width: 220px;
-    height: auto;
+  .btn-primary:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+
+  .spinner {
+    width: 16px;
+    height: 16px;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    border-top-color: white;
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+  }
+
+  @keyframes spin {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+
+  .divider {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    color: #c4bfb8;
+    font-size: 12px;
+  }
+
+  .divider::before,
+  .divider::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: #ece8e0;
+  }
+
+  .btn-secondary {
+    height: 42px;
+    width: 100%;
+    background: transparent;
+    color: #555250;
+    border: 1px solid #ece8e0;
+    border-radius: 10px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    font-family: inherit;
+    transition: all 0.15s ease;
+  }
+
+  .btn-secondary:hover {
+    border-color: #e8712a;
+    color: #e8712a;
   }
 </style>

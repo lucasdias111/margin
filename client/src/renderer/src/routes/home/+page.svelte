@@ -146,7 +146,7 @@
     padding: 10px;
     box-sizing: border-box;
     gap: 10px;
-    background-color: rgb(232, 234, 251);
+    background-color: #e5e1db;
   }
 
   .call-overlay {

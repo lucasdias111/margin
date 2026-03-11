@@ -10,7 +10,7 @@ import { webSocketService } from '$src/services/WebSocketService'
 import { push } from 'svelte-spa-router'
 
 class AuthenticationService {
-  async login(email: string, password: string, rememberMe: boolean = false): Promise<void> {
+  async login(email: string, password: string, keepLoggedIn: boolean = false): Promise<void> {
     const response = await unauthenticatedPost({ email, password }, 'auth/login')
     const authResponse: AuthResponse = await response.json()
     if (!authResponse.success) {
@@ -35,7 +35,7 @@ class AuthenticationService {
       sessionStorage.setItem('publicKey', authResponse.publicKey)
     }
 
-    if (rememberMe && privateKey) {
+    if (keepLoggedIn && privateKey) {
       await window.secureStorage.saveSession(authResponse.token, privateKey)
     }
   }
