@@ -300,6 +300,14 @@
     cursor: not-allowed;
   }
 
+  #backbut {
+    position: fixed;
+    border-radius: 999px;
+    top: 50px;
+    left: 10px;
+    padding: 5px;
+    background-color: #f47e3a;
+  }
   .spinner {
     width: 16px;
     height: 16px;
@@ -331,6 +339,8 @@
     background: #ece8e0;
   }
 
+  .register {
+    background-color: #f47e3a;
   .btn-secondary {
     height: 42px;
     width: 100%;

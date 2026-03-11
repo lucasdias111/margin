@@ -12,6 +12,7 @@ class ChatState {
   selectedChannel = $state<Channel | null>(null)
   currentlySelectedContent = $state<ContentType | null>('private')
   hasMargin = $state<boolean>(true)
+  settingsPage = $state<boolean>(false)
 
   selectUser(user: User): void {
     this.selectedUser = user

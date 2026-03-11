@@ -2,6 +2,7 @@
   import PrivateChatContent from '$src/components/content/chat/private/PrivateChatContent.svelte'
   import MarginContent from '$src/components/content/margin/MarginContent.svelte'
   import { chatState } from '$src/states/ChatState.svelte'
+  import SettingsContent from '$src/components/content/settings/SettingsContent.svelte'
 
   let selectedContent = $derived(chatState.currentlySelectedContent)
 </script>
@@ -11,6 +12,8 @@
     <PrivateChatContent />
   {:else if selectedContent === 'margin'}
     <MarginContent />
+  {:else if selectedContent === 'settings'}
+    <SettingsContent />
   {/if}
 </div>
 

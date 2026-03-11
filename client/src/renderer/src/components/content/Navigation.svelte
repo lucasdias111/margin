@@ -5,7 +5,7 @@
   import { notificationState } from '$src/states/NotificationState.svelte.js'
   import { userState } from '$src/states/UserState.svelte.js'
   import UserAvatar from '$src/components/common/user/UserAvatar.svelte'
-  import SetIcon from '$src/components/svg/Settings.svelte'
+  import SettingsIcon from '$src/components/svg/SettingsIcon.svelte'
   import MsgIgon from '$src/components/svg/MessagesIcon.svelte'
   import SpaceIcon from '$src/components/svg/SpacesIcon.svelte'
   import LogoutIcon from '$src/components/svg/LogoutIcon.svelte'
@@ -97,11 +97,12 @@
 
   <button
     onclick={() => onContentSelected('settings')}
+    class:selected={chatState.currentlySelectedContent === 'settings'}
     aria-label="Settings"
     title="Settings"
     class="setbut"
   >
-    <SetIcon />
+    <SettingsIcon width={32} height={32} />
   </button>
 </div>
 

@@ -5,6 +5,7 @@
   import { chatState } from '$src/states/ChatState.svelte.js'
   import type { User } from '$src/interfaces/User'
   import type { ContentType } from '$src/interfaces/Content'
+  import Settings from '$src/components/content/settings/Settings.svelte'
 
   let selectedContent = $derived<ContentType>(chatState.currentlySelectedContent)
   let isHome = $derived(!chatState.selectedChannel)
@@ -60,6 +61,10 @@
         <SpacesList />
       </div>
     </div>
+  {:else if selectedContent === 'settings'}
+    <div class="panel">
+      <Settings />
+    </div>
   {/if}
 </div>
 
@@ -79,6 +84,7 @@
     min-height: 0;
     background-color: #fff;
     border-radius: 20px;
+    overflow: hidden;
   }
 
   .panel-header {

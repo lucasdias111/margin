@@ -2,8 +2,9 @@
   interface Props {
     onFileChange: (file: File) => Promise<void>
     onPreviewUrlChange: (url: string) => Promise<void>
+    label?: string
   }
-  let { onFileChange, onPreviewUrlChange }: Props = $props()
+  let { onFileChange, onPreviewUrlChange, label }: Props = $props()
   let file: File = $state<File>(null)
 
   function handleFileChange(event: Event): void {
@@ -32,7 +33,7 @@
   placeholder="Profile Picture (Optional)"
 />
 
-<label for="profilePicture" class="fileUpload"> Upload </label>
+<label for="profilePicture" class="fileUpload"> {label ?? 'Upload'} </label>
 
 <style>
   .fileUpload {
@@ -46,6 +47,6 @@
     font-size: 14px;
     cursor: pointer;
     background-color: rgb(255, 255, 255);
-    color: #da610b;
+    color: #f47e3a;
   }
 </style>
