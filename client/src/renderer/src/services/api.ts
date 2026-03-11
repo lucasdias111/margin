@@ -58,6 +58,7 @@ async function fetchPost<T>(url: string, body: T, headers: HeadersInit): Promise
     errorService.reportError('Failed to fetch: ' + error)
   }
   if (!response) errorService.reportError('Error fetching')
-  if (!response.ok) errorService.reportError('Error fetching: ' + response.status)
+  if (!response.ok)
+    errorService.reportError('Error fetching: ' + response.status + response.statusText)
   return response
 }

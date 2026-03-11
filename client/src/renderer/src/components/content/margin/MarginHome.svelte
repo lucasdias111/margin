@@ -1,12 +1,12 @@
 <script lang="ts">
   import { chatState } from '$src/states/ChatState.svelte.js'
-  import marginLogo from '$src/assets/pics/margin.png'
   import { MarginRole } from '$src/interfaces/Margin'
   import { userState } from '$src/states/UserState.svelte.js'
   import { announcementService } from '$src/services/AnnouncementService.js'
   import type { Announcement } from '$src/interfaces/Announcement'
   import CreateOrEditAnnouncementModal from '$src/components/content/margin/announcement/modals/CreateOrEditAnnouncementModal.svelte'
   import AnnouncementCard from '$src/components/content/margin/announcement/AnnouncementCard.svelte'
+  import MarginIcon from '$src/components/content/margin/MarginIcon.svelte'
 
   const currentUserRole = $derived(
     chatState.selectedMargin?.members.find((m) => m.user.id === userState.currentUser?.id)?.role
@@ -58,7 +58,7 @@
   <div class="welcome-card">
     <div class="welcome-top">
       <div class="logo-mark">
-        <img src=".{marginLogo}" alt="Margin Logo" class="logo" />
+        <MarginIcon marginIcon={chatState.selectedMargin.marginIconUrl} width={200} height={125} />
       </div>
       {#if canManage}
         <button class="manage-btn" onclick={() => (chatState.currentlySelectedContent = 'manage')}>
@@ -159,9 +159,6 @@
 
   .logo-mark {
     line-height: 1;
-  }
-  .logo {
-    width: 50%;
   }
 
   .manage-btn {

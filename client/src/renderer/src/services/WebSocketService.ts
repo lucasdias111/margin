@@ -9,22 +9,24 @@ class WebSocketService {
   private handlers: Map<string, MessageHandler[]> = new Map()
   private reconnectAttempts = 0
   private maxReconnectAttempts = 5
+  private intentionalDisconnect = false
 
   connect(): void {
-    if (this.ws?.readyState === WebSocket.OPEN) {
-      console.log('WebSocket already connected')
-      return
-    }
+    if (this.ws?.readyState === WebSocket.OPEN) return
 
     const token = sessionStorage.getItem('authToken')
     if (!token) {
       errorService.reportError('No auth token found')
       return
     }
+
+    this.intentionalDisconnect = false
+
     try {
       this.ws = new WebSocket(API_CONFIG.wsUrl + `ws?token=${token}`)
     } catch (error) {
       errorService.reportError('Cannot connect to WebSocket server: ' + error)
+      return
     }
 
     this.ws.onopen = () => {
@@ -35,29 +37,30 @@ class WebSocketService {
     this.ws.onmessage = (event): void => {
       const data = JSON.parse(event.data)
       const handlers = this.handlers.get(data.type) || []
-
-      handlers.forEach((handler) => {
-        handler(data)
-      })
+      handlers.forEach((handler) => handler(data))
     }
+
     this.ws.onerror = (error) => {
       console.error('WebSocket error:', error)
     }
 
     this.ws.onclose = () => {
       console.log('WebSocket disconnected')
+      if (this.intentionalDisconnect) return
 
       if (this.reconnectAttempts < this.maxReconnectAttempts) {
         this.reconnectAttempts++
         console.log(`Reconnecting... (attempt ${this.reconnectAttempts})`)
         setTimeout(() => this.connect(), 5000)
-      } else if (this.reconnectAttempts >= this.maxReconnectAttempts) {
+      } else {
         errorService.reportError('Could not connect to server')
       }
     }
   }
 
   disconnect(): void {
+    this.intentionalDisconnect = true
+    this.reconnectAttempts = 0
     if (this.ws) {
       this.ws.close()
       this.ws = null

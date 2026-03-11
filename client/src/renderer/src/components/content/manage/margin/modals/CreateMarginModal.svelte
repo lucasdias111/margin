@@ -1,5 +1,8 @@
 <script lang="ts">
   import AppModal from '$src/components/common/modals/AppModal.svelte'
+  import UploadImageButton from '$src/components/common/buttons/UploadImageButton.svelte'
+  import UserAvatar from '$src/components/common/user/UserAvatar.svelte'
+  import avatar from '$src/assets/pics/anonym-avatar.png'
   import { marginService } from '$src/services/MarginService'
   import { chatState } from '$src/states/ChatState.svelte.js'
   import { Visibility } from '$src/interfaces/Visibility'
@@ -14,21 +17,41 @@
   let marginName = $state('')
   let marginDescription = $state('')
   let visibility = $state<Visibility>(Visibility.PUBLIC)
+  let icon = $state<File | null>(null)
+  let previewUrl = $state<string | null>(avatar)
 
   async function handleSubmit(): Promise<void> {
-    const newMargin = await marginService.createMargin({
-      marginName,
-      marginDescription,
-      visibility
-    })
+    const newMargin = await marginService.createMargin(
+      {
+        marginName,
+        marginDescription,
+        visibility
+      },
+      icon
+    )
+
     chatState.selectMargin(newMargin)
     marginName = ''
     marginDescription = ''
+    icon = null
+    previewUrl = avatar
     onClose()
   }
 </script>
 
 <AppModal {open} title="Create Margin" {onClose}>
+  <div class="avatar-row">
+    <UserAvatar profilePictureUrl={previewUrl} width={72} height={72} />
+    <UploadImageButton
+      onFileChange={async (file) => {
+        icon = file
+      }}
+      onPreviewUrlChange={async (url) => {
+        previewUrl = url
+      }}
+    />
+  </div>
+
   <input
     type="text"
     placeholder="Margin name"
@@ -43,6 +66,14 @@
 </AppModal>
 
 <style>
+  .avatar-row {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 16px;
+  }
+
   input,
   textarea {
     width: 100%;

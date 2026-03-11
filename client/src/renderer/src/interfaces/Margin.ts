@@ -35,4 +35,5 @@ export interface CreateMargin {
   marginName: string
   marginDescription?: string
   visibility: Visibility
+  marginIcon?: File
 }

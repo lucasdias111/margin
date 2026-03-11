@@ -3,8 +3,7 @@
   import SaveButton from '$src/components/common/buttons/SaveButton.svelte'
   import DangerButton from '$src/components/common/buttons/DangerButton.svelte'
   import UploadImageButton from '$src/components/common/buttons/UploadImageButton.svelte'
-  import avatar from '$src/assets/pics/anonym-avatar.png'
-  import UserAvatar from '$src/components/common/user/UserAvatar.svelte'
+  import MarginIcon from '$src/components/content/margin/MarginIcon.svelte'
 
   interface Props {
     margin: Margin
@@ -14,11 +13,11 @@
 
   let { margin, onSaveInfo, onDeleteMargin }: Props = $props()
   let icon = $state<File | null>(null)
-  let previewUrl = $state<string | null>(avatar)
-  let editedName = $state(margin.marginName ?? '')
-  let editedDescription = $state(margin.marginDescription ?? '')
+  let previewUrl = $state<string | null>()
+  let marginIcon = $state<string | null>(null)
+  let editedName = $derived(margin.marginName ?? '')
+  let editedDescription = $derived(margin.marginDescription ?? '')
 
-  // Reset fields when margin changes (e.g. external update)
   $effect(() => {
     editedName = margin.marginName ?? ''
     editedDescription = margin.marginDescription ?? ''
@@ -37,6 +36,8 @@
       description: editedDescription,
       marginIcon: icon
     })
+    icon = null
+    previewUrl = null
   }
 
   async function handleDelete(): Promise<void> {
@@ -50,6 +51,14 @@
   async function onPreviewUrlChange(url: string): Promise<void> {
     previewUrl = url
   }
+
+  $effect(() => {
+    if (previewUrl) {
+      marginIcon = previewUrl
+    } else {
+      marginIcon = margin.marginIconUrl
+    }
+  })
 </script>
 
 <div class="margin-information">
@@ -79,7 +88,7 @@
 
     <div class="info-picture">
       <span class="picture-label">Margin picture</span>
-      <UserAvatar profilePictureUrl={previewUrl} width={100} height={100} />
+      <MarginIcon {marginIcon} width={100} height={100} />
       <UploadImageButton {onFileChange} {onPreviewUrlChange} />
     </div>
   </div>
@@ -166,23 +175,6 @@
   .picture-label {
     font-size: 0.78rem;
     color: #888;
-  }
-
-  .picture-circle {
-    width: 80px;
-    height: 80px;
-    border-radius: 50%;
-    background: #d9d9d9;
-  }
-
-  .upload-btn {
-    background: #2d2d2d;
-    color: #fff;
-    border: none;
-    border-radius: 6px;
-    padding: 7px 16px;
-    font-size: 0.85rem;
-    cursor: pointer;
   }
 
   .danger-zone {
