@@ -49,6 +49,7 @@
       callService.answerCall(user.id, offer)
     } else {
       callService.initiateCall(user.id)
+      callService.noAnswer()
     }
   })
 

@@ -62,6 +62,19 @@ class CallService {
     callState.endCall()
   }
 
+  noAnswer(): void {
+    setTimeout(() => {
+      if (callState.status === 'connecting') {
+        webSocketService.send({
+          type: WebSocketMessageType.CALL_NO_ANSWER,
+          recipientId: callState.p2pCallState!.user.id,
+          payload: { callId: callState.callId! }
+        })
+        this.endCall(true)
+      }
+    }, 20000)
+  }
+
   private async getUserMedia(): Promise<MediaStream> {
     console.log('[CallService] getUserMedia — requesting audio + video')
     try {
