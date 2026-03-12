@@ -13,6 +13,7 @@ import { chatState } from '$src/states/ChatState.svelte'
 import { conversationState } from '$src/states/ConversationState.svelte'
 import { userListState } from '$src/states/UserListState.svelte'
 import type { ContentType } from '$src/interfaces/Content'
+import { errorService } from '$src/services/ErrorService'
 
 class ChatService {
   handleIncomingMessage = async (data: WebSocketMessage<Message>): Promise<void> => {
@@ -52,7 +53,7 @@ class ChatService {
 
       if (messageResponse.conversation == null) return
 
-      conversationState.currentConversation = messageResponse.conversation
+      conversationState.selectConversation(messageResponse.conversation)
       conversationState.messages = await Promise.all(
         messageResponse.messages.map(async (message) => {
           try {
@@ -92,6 +93,7 @@ class ChatService {
 
       const messageResponse: ConversationMessagesResponse = await response.json()
       conversationState.messages = messageResponse.messages
+      conversationState.selectConversation(messageResponse.conversation)
 
       await this.markConversationAsRead(channel.conversationId)
     } catch (error) {
@@ -185,22 +187,52 @@ class ChatService {
     }
   }
 
-  async deleteMessage(messageId: number): Promise<void> {
+  async deleteMessage(message: Message): Promise<void> {
+    webSocketService.send({
+      type: WebSocketMessageType.SEND_DELETE_MESSAGE,
+      recipientId: message.conversationId,
+      payload: message.id.toString()
+    })
+
+    conversationState.deleteMessage(message.id)
+  }
+
+  async editMessagePrivateMessage(
+    message: Message,
+    newContent: string,
+    toUserId: number
+  ): Promise<void> {
     try {
-      await authenticatedPost(null, `api/messages/${messageId}/delete`)
-      conversationState.deleteMessage(messageId)
+      const recipientPublicKey = await encryptionService.getPublicKey(toUserId)
+      const myPublicKey = await encryptionService.getPublicKey(userState.currentUser.id)
+      const encrypted: string = await encryptionService.encryptMessage(
+        newContent,
+        recipientPublicKey,
+        myPublicKey
+      )
+
+      webSocketService.send({
+        type: WebSocketMessageType.SEND_EDIT_MESSAGE,
+        recipientId: message.conversationId,
+        payload: {
+          messageId: message.id,
+          content: encrypted
+        }
+      })
     } catch (error) {
-      console.error('Failed to delete message:', error)
+      errorService.reportError(error)
     }
   }
 
-  async editMessage(messageId: number, newContent: string): Promise<void> {
-    try {
-      await authenticatedPost({ content: newContent }, `api/messages/${messageId}/edit`)
-      conversationState.editMessage(messageId, newContent)
-    } catch (error) {
-      console.error('Failed to edit message:', error)
-    }
+  async editChannelMessage(message: Message, newContent: string): Promise<void> {
+    webSocketService.send({
+      type: WebSocketMessageType.SEND_EDIT_MESSAGE,
+      recipientId: message.conversationId,
+      payload: {
+        messageId: message.id,
+        content: newContent
+      }
+    })
   }
 
   async markConversationAsRead(conversationId: number): Promise<void> {

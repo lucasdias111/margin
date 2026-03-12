@@ -1,9 +1,14 @@
 <script lang="ts">
   import type { Message } from '$src/interfaces/Messages'
   import { tick } from 'svelte'
-  import DirectMessageBubble from '$src/components/content/chat/private/DirectMessageBubble.svelte'
-  import ChannelMessageBubble from '$src/components/content/chat/channel/ChannelMessageBubble.svelte'
   import { userState } from '$src/states/UserState.svelte.js'
+  import { useWebsocketSvelte } from '$src/composables/useWebsocket.svelte'
+  import { WebSocketMessageType } from '$src/interfaces/WebSocketMessageType'
+  import type { WebSocketMessage } from '$src/interfaces/WebSocketMessages'
+  import { encryptionService } from '$src/services/EncryptionService'
+  import MessageBubble from '$src/components/common/chat/MessageBubble.svelte'
+  import { chatService } from '$src/services/ChatService'
+  import { conversationState } from '$src/states/ConversationState.svelte'
 
   let {
     messages,
@@ -16,9 +21,50 @@
     isDirectMessage?: boolean
   } = $props()
 
+  async function handleIncomingEditedMessage(data: WebSocketMessage<Message>): Promise<void> {
+    const edited = data.payload
+    const existing = messages.find((m) => m?.id === edited.id)
+    if (!existing) return
+
+    if (conversationState.currentConversation.type === 'DIRECT') {
+      existing.content = await encryptionService.decryptMessage(
+        edited.content,
+        edited.user.id !== userState.currentUser.id
+      )
+    } else {
+      existing.content = edited.content
+    }
+    existing.isEdited = true
+  }
+
+  async function handleIncomingDeletedMessage(data: WebSocketMessage<Message>): Promise<void> {
+    messages = messages.filter((m) => m?.id !== data.payload.id)
+  }
+
+  useWebsocketSvelte({
+    [WebSocketMessageType.RECEIVE_EDIT_MESSAGE]: async (data: WebSocketMessage<Message>) => {
+      await handleIncomingEditedMessage(data)
+    },
+    [WebSocketMessageType.RECEIVE_DELETE_MESSAGE]: async (data: WebSocketMessage<Message>) => {
+      await handleIncomingDeletedMessage(data)
+    }
+  })
+
   function scrollToBottom(): void {
     if (messagesContainer) {
       messagesContainer.scrollTop = messagesContainer.scrollHeight
+    }
+  }
+
+  function onEditMessage(message: Message, editedContent: string): void {
+    if (conversationState.currentConversation.type === 'DIRECT') {
+      chatService.editMessagePrivateMessage(
+        message,
+        editedContent,
+        conversationState.currentConversation.otherUserId
+      )
+    } else {
+      chatService.editChannelMessage(message, editedContent)
     }
   }
 
@@ -39,9 +85,9 @@
       {#each messages as message (message.id)}
         <div class="messages-container" class:sent={message.user.id === userState.currentUser?.id}>
           {#if message.conversationType === 'DIRECT'}
-            <DirectMessageBubble {message} />
+            <MessageBubble {message} showReadStatus={true} {onEditMessage} />
           {:else}
-            <ChannelMessageBubble {message} />
+            <MessageBubble {message} {onEditMessage} />
           {/if}
         </div>
       {/each}

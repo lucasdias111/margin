@@ -10,9 +10,10 @@
   interface Props {
     message: Message
     showReadStatus?: boolean
+    onEditMessage: (e: Message, editedContent: string) => void
   }
 
-  let { message, showReadStatus = false }: Props = $props()
+  let { message, showReadStatus = false, onEditMessage }: Props = $props()
 
   let isEditing = $state(false)
   let editedContent = $derived(message.content)
@@ -21,7 +22,7 @@
   let isSent = $derived(message.user.id === userState.currentUser?.id)
 
   function handleSaveEdit(): void {
-    chatService.editMessage(message.id, editedContent)
+    onEditMessage(message, editedContent)
     isEditing = false
   }
 </script>
@@ -54,7 +55,7 @@
               showMenu = false
             }}><EditIcon />Edit</button
           >
-          <button class="delete" onclick={() => chatService.deleteMessage(message.id)}
+          <button class="delete" onclick={() => chatService.deleteMessage(message)}
             ><TrashIcon />Delete</button
           >
         </div>
@@ -140,7 +141,7 @@
     display: flex;
     flex-direction: column;
     background: white;
-    border: 1.5px solid #ebebeb;
+    border: 2px solid #ebebeb;
     border-radius: 12px;
     box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
     z-index: 10;
@@ -284,6 +285,7 @@
 
   .edited {
     font-style: italic;
+    font-weight: bold;
   }
 
   .bubble.sent .checkmark {

@@ -63,7 +63,6 @@ class NotificationStateManager {
   async loadUnseenAnnouncementCounts(): Promise<void> {
     const res = await authenticatedGet('api/notifications/unseen-counts')
     const data: Record<string, number> = await res.json()
-    console.log(data)
     this.state.unseenAnnouncementCounts = new SvelteMap(
       Object.entries(data).map(([k, v]) => [Number(k), v])
     )
