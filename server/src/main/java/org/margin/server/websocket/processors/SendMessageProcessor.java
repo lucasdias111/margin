@@ -35,7 +35,7 @@ public class SendMessageProcessor implements WebSocketMessageProcessor<String> {
     @Override
     public void process(User user, WebSocketMessageIn<String> message) {
         Conversation conversation = conversationService.getById(message.getRecipientId());
-        MessageResult result = messageService.sendMessage(user, conversation, message.getPayload());
+        MessageResult result = messageService.createMessage(user, conversation, message.getPayload());
         webSocketDeliveryService.notifyMessage(result.message(), result.recipients(), conversation.getType());
     }
 }
