@@ -339,8 +339,6 @@
     background: #ece8e0;
   }
 
-  .register {
-    background-color: #f47e3a;
   .btn-secondary {
     height: 42px;
     width: 100%;
