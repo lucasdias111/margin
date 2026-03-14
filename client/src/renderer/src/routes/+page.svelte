@@ -26,7 +26,7 @@
     justify-content: flex-start;
     padding-top: 50px;
     align-items: center;
-    background-color: #e5e1db;
+    background-color: #f2eee8;
   }
 
   .marginlogo {

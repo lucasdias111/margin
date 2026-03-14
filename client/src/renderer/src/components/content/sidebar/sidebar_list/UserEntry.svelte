@@ -75,11 +75,11 @@
   }
 
   .user-button.selected {
-    background: rgba(228, 113, 42, 0.1);
+    background: rgba(168, 80, 26, 0.1);
   }
 
   .user-button.selected .username {
-    color: #d4621a;
+    color: #e8712aff;
   }
 
   .user-button.selected .timestamp,

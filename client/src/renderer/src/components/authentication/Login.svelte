@@ -120,7 +120,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    background-color: #e5e1db;
+    background-color: #f2eee8;
     padding: 50px;
   }
 

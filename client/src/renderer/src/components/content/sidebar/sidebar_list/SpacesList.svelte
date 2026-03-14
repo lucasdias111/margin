@@ -60,6 +60,8 @@
     [WebSocketMessageType.USER_JOINED_VOICE]: (
       msg: WebSocketMessage<ChannelVoiceParticipantPayload>
     ) => {
+      console.log('USER_JOINED_VOICE received', msg)
+
       for (const space of spaces) {
         const channel = space.channels.find((c) => c.id === msg.payload.channelId)
         if (channel) {

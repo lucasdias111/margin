@@ -105,7 +105,7 @@
   .header-label {
     font-size: 14px;
     font-weight: 600;
-    color: #aaa;
+    color: #e8712a;
     letter-spacing: 0.09em;
     text-transform: uppercase;
   }

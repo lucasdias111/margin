@@ -78,7 +78,7 @@
       </div>
 
       <div class="voice-actions">
-        {#if callState.isGroupCall}
+        {#if isInChannelCall}
           <button class="leave-voice-btn" onclick={onLeaveChannel}>Leave channel →</button>
         {:else}
           {#if voiceParticipants.length === 0}
@@ -115,26 +115,6 @@
             </p>
           </div>
         {/each}
-      </div>
-    </section>
-
-    <section class="sidebar-section">
-      <div class="section-header">
-        <svg
-          width="12"
-          height="12"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          stroke-width="2.5"
-        >
-          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-          <polyline points="14 2 14 8 20 8" />
-        </svg>
-        <span class="section-title">Files</span>
-      </div>
-      <div class="files-empty">
-        <span class="empty-text">No files shared yet</span>
       </div>
     </section>
   </div>

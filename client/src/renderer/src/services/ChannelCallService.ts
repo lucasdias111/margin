@@ -40,10 +40,15 @@ class ChannelCallService {
     })
   }
 
-  private async getRtpCapabilities(ws: WebSocket, channelId: number): Promise<RtpCapabilities> {
+  private async getRtpCapabilities(
+    ws: WebSocket,
+    channelId: number,
+    roomToken: string
+  ): Promise<RtpCapabilities> {
     this.sendMessage(ws, 'getRouterRtpCapabilities', {
       roomId: String(channelId),
-      peerId: String(userState.currentUser.id)
+      peerId: String(userState.currentUser.id),
+      token: roomToken
     })
 
     const msg = await this.waitForMessage(ws, 'routerRtpCapabilities')
@@ -126,54 +131,55 @@ class ChannelCallService {
 
   async joinVoiceChannel(channelId: number): Promise<void> {
     if (callState.isGroupCall) return
-    const response = await authenticatedGet(`sfu/create_or_join?roomId=${channelId}`)
 
-    if (!response.ok) {
+    try {
+      const response = await authenticatedGet(`sfu/create_or_join?roomId=${channelId}`)
+      if (!response.ok) {
+        errorService.reportError('Failed to join voice channel')
+        return
+      }
+
+      const { sfuUrl, roomToken } = await response.json()
+      const sfuWs = await this.connectToWebSocket(sfuUrl.replace('http', 'ws'))
+
+      const rtpCapabilities = await this.getRtpCapabilities(sfuWs, channelId, roomToken)
+      const device = new Device()
+      await device.load({ routerRtpCapabilities: rtpCapabilities })
+
+      const sendParams = await this.createTransport(sfuWs, 'send', channelId)
+      const sendTransport = device.createSendTransport(sendParams)
+      this.setupTransportConnection(sendTransport, sfuWs)
+      this.setupProducer(sendTransport, sfuWs)
+
+      const receiveParameters = await this.createTransport(sfuWs, 'recv', channelId)
+      const receiveTransport = device.createRecvTransport(receiveParameters)
+      this.setupTransportConnection(receiveTransport, sfuWs)
+      this.setupConsumer(receiveTransport, device, sfuWs)
+
+      const localStream = await navigator.mediaDevices.getUserMedia({
+        audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true },
+        video: false
+      })
+
+      const audioTrack = localStream.getAudioTracks()[0]
+      await sendTransport.produce({ track: audioTrack })
+
+      this.sendMessage(sfuWs, 'getProducers', { roomId: String(channelId) })
+
+      callState.startGroupCall(channelId, channelId)
+      callState.setGroupSession({
+        sfuWebsocket: sfuWs,
+        rtpCapabilities,
+        device,
+        sendTransport,
+        receiveTransport,
+        localStream
+      })
+    } catch (err) {
+      callState.endCall()
+      console.error(err)
       errorService.reportError('Failed to join voice channel')
     }
-
-    const wsUrl = await response.text()
-    const sfuWs = await this.connectToWebSocket(wsUrl)
-
-    callState.startGroupCall(channelId, channelId)
-
-    const rtpCapabilities = await this.getRtpCapabilities(sfuWs, channelId)
-
-    const device = new Device()
-    await device.load({ routerRtpCapabilities: rtpCapabilities })
-
-    const sendParams = await this.createTransport(sfuWs, 'send', channelId)
-    const sendTransport = device.createSendTransport(sendParams)
-    this.setupTransportConnection(sendTransport, sfuWs)
-    this.setupProducer(sendTransport, sfuWs)
-
-    const receiveParameters = await this.createTransport(sfuWs, 'recv', channelId)
-    const receiveTransport = device.createRecvTransport(receiveParameters)
-    this.setupTransportConnection(receiveTransport, sfuWs)
-    this.setupConsumer(receiveTransport, device, sfuWs)
-
-    const localStream = await navigator.mediaDevices.getUserMedia({
-      audio: {
-        echoCancellation: true,
-        noiseSuppression: true,
-        autoGainControl: true
-      },
-      video: false
-    })
-
-    const audioTrack = localStream.getAudioTracks()[0]
-    await sendTransport.produce({ track: audioTrack })
-
-    this.sendMessage(sfuWs, 'getProducers', { roomId: String(channelId) })
-
-    callState.setGroupSession({
-      sfuWebsocket: sfuWs,
-      rtpCapabilities,
-      device,
-      sendTransport,
-      receiveTransport,
-      localStream
-    })
   }
 
   endChannelCall(): void {

@@ -37,7 +37,7 @@
     showMenu = false
   }}
 >
-  {#if !isSent}
+  {#if !isSent && message.conversationType === 'CHANNEL'}
     <div class="avatar">
       <UserAvatar profilePictureUrl={message.user.profilePictureUrl} width={32} height={32} />
     </div>
@@ -205,7 +205,7 @@
   }
 
   .bubble.sent {
-    background: #f47e3a;
+    background: #e8712a;
     color: #2d2d2d;
     border-bottom-right-radius: 4px;
   }
