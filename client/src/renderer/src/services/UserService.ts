@@ -1,6 +1,5 @@
 import { authenticatedGet, authenticatedPatchForm } from '$src/services/api'
 import type { RecentChatUser } from '$src/interfaces/RecentChatUser'
-import { errorService } from '$src/services/ErrorService'
 import { userState } from '$src/states/UserState.svelte'
 
 class UserService {
@@ -15,16 +14,13 @@ class UserService {
   }
 
   async updateUserInfo(formData: FormData): Promise<void> {
-    const response = await authenticatedPatchForm(formData, 'api/users/me')
+    const response = await authenticatedPatchForm(formData, 'api/users/update_user_info')
+    if (!response.ok) throw new Error('Update failed')
 
-    if (!response.ok) {
-      errorService.reportError('Failed to edit.')
-    } else {
-      const data = await response.json()
-      userState.currentUser.profilePictureUrl = data.profilePictureUrl
-      userState.currentUser.displayName = data.displayName
-      userState.currentUser.email = data.email
-    }
+    const data = await response.json()
+    userState.currentUser.profilePictureUrl = data.profilePictureUrl
+    userState.currentUser.displayName = data.displayName
+    userState.currentUser.email = data.email
   }
 }
 

@@ -24,10 +24,13 @@
       if (newEmail) formData.append('email', newEmail)
       await userService.updateUserInfo(formData)
 
+      newNameDisplay = userState.currentUser.displayName
+      newEmail = userState.currentUser.email
+      previewUrl = userState.currentUser.profilePictureUrl
       isEditingEmail = false
       isEditingDisplayName = false
-    } catch (error) {
-      console.error(error)
+    } catch {
+      // do nothing
     }
   }
 

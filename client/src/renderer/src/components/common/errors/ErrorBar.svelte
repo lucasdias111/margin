@@ -3,38 +3,144 @@
 </script>
 
 {#if errorState.hasError}
-  <div class="error">
-    <span>{errorState.errorMessage}</span>
+  <div class="toast" role="alert">
+    <div class="toast-icon">
+      <svg
+        width="14"
+        height="14"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2.5"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+      >
+        <circle cx="12" cy="12" r="10" />
+        <line x1="12" y1="8" x2="12" y2="12" />
+        <line x1="12" y1="16" x2="12.01" y2="16" />
+      </svg>
+    </div>
+    <div class="toast-body">
+      <span class="toast-title">Something went wrong</span>
+      <span class="toast-msg">{errorState.errorMessage}</span>
+    </div>
+    <button class="toast-close" aria-label="Dismiss" onclick={() => (errorState.hasError = false)}>
+      <svg
+        width="12"
+        height="12"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2.5"
+        stroke-linecap="round"
+      >
+        <line x1="18" y1="6" x2="6" y2="18" />
+        <line x1="6" y1="6" x2="18" y2="18" />
+      </svg>
+    </button>
+    <div class="toast-progress"></div>
   </div>
 {/if}
 
 <style>
-  .error {
-    position: absolute;
-    left: 0;
-    width: 100%;
-    background-color: #ef2121;
-    color: white;
-    font-size: 0.85rem;
-    font-weight: 500;
-    padding: 8px 16px;
+  .toast {
+    position: fixed;
+    top: 45px;
+    right: 25px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: white;
+    border: 1px solid #ece8e0;
+    border-radius: 10px;
+    padding: 12px 14px 16px 12px;
+    width: 320px;
+    overflow: hidden;
     z-index: 9999;
+    animation: slideIn 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+  }
+
+  .toast-icon {
+    flex-shrink: 0;
+    width: 28px;
+    height: 28px;
+    border-radius: 6px;
+    background: #fde8e8;
+    color: #c0392b;
     display: flex;
     align-items: center;
     justify-content: center;
-    animation: slideDown 0.3s ease;
   }
 
-  @keyframes slideDown {
+  .toast-body {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    min-width: 0;
+  }
+
+  .toast-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: #2c2c2a;
+  }
+
+  .toast-msg {
+    font-size: 12px;
+    color: #888780;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .toast-close {
+    flex-shrink: 0;
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: #b4b2a9;
+    padding: 2px;
+    display: flex;
+    align-items: center;
+    border-radius: 4px;
+    transition: color 0.15s;
+  }
+
+  .toast-close:hover {
+    color: #2c2c2a;
+  }
+
+  .toast-progress {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    height: 3px;
+    width: 100%;
+    background: #e74c3c;
+    border-radius: 0 0 10px 10px;
+    animation: shrink 3s linear forwards;
+    transform-origin: left;
+  }
+
+  @keyframes slideIn {
     from {
-      transform: translateY(-100%);
-      background-color: #ef2121;
+      transform: translateY(-12px);
       opacity: 0;
     }
     to {
       transform: translateY(0);
-      background-color: #ef2121;
       opacity: 1;
+    }
+  }
+
+  @keyframes shrink {
+    from {
+      transform: scaleX(1);
+    }
+    to {
+      transform: scaleX(0);
     }
   }
 </style>

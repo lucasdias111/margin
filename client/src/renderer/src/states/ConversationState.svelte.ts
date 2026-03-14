@@ -5,6 +5,8 @@ class ConversationState {
   messages = $state<Message[]>([])
   currentConversation = $state<Conversation | null>(null)
   isLoading: boolean = $state<boolean>(false)
+  hasMore = $state<boolean>(true)
+  isLoadingMore = $state<boolean>(false)
 
   selectConversation = (conversation: Conversation): void => {
     conversationState.currentConversation = conversation

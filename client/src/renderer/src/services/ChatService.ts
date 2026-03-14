@@ -1,6 +1,10 @@
 import type { ConversationMessagesResponse, Message } from '$src/interfaces/Messages'
 import type { User } from '$src/interfaces/User'
-import { isDirectConversation, type Conversation } from '$src/interfaces/Conversation'
+import {
+  isDirectConversation,
+  isChannelConversation,
+  type Conversation
+} from '$src/interfaces/Conversation'
 import { encryptionService } from './EncryptionService'
 import { webSocketService } from './WebSocketService'
 import { WebSocketMessageType } from '$src/interfaces/WebSocketMessageType'
@@ -16,243 +20,16 @@ import type { ContentType } from '$src/interfaces/Content'
 import { errorService } from '$src/services/ErrorService'
 
 class ChatService {
+  private static readonly PAGE_SIZE = 50
+
   handleIncomingMessage = async (data: WebSocketMessage<Message>): Promise<void> => {
     const msg = data.payload
     notificationService.handleIncomingMessage(msg)
-
     if (msg.conversationType === 'CHANNEL') {
       await this.handleIncomingChannelMessage(msg)
-      return
+    } else {
+      await this.handleIncomingDirectMessage(msg)
     }
-
-    await this.handleIncomingDirectMessage(msg)
-  }
-
-  async loadConversationForUser(user: User): Promise<void> {
-    if (
-      conversationState.currentConversation &&
-      isDirectConversation(conversationState.currentConversation) &&
-      conversationState.currentConversation.otherUserId === user.id
-    )
-      return
-    conversationState.currentConversation = null
-    conversationState.messages = []
-    conversationState.isLoading = true
-
-    try {
-      const response = await authenticatedGet(
-        `api/conversations/${user.id}/direct_messages?limit=100`
-      )
-
-      if (!response.ok) {
-        console.error('Failed to load messages')
-        return
-      }
-
-      const messageResponse: ConversationMessagesResponse = await response.json()
-
-      if (messageResponse.conversation == null) return
-
-      conversationState.selectConversation(messageResponse.conversation)
-      conversationState.messages = await Promise.all(
-        messageResponse.messages.map(async (message) => {
-          try {
-            const isRecipient = message.user.id !== userState.currentUser.id
-            message.content = await encryptionService.decryptMessage(message.content, isRecipient)
-            return message
-          } catch (decryptError) {
-            console.error('Failed to decrypt message:', decryptError)
-            message.content = '[Decryption failed]'
-            return message
-          }
-        })
-      )
-
-      await this.markConversationAsRead(conversationState.currentConversation.id)
-    } catch (error) {
-      console.error('Error loading messages:', error)
-      conversationState.messages = []
-    } finally {
-      conversationState.isLoading = false
-    }
-  }
-
-  async loadMessagesForChannel(channel: Channel): Promise<void> {
-    if (conversationState.currentConversation?.id === channel.conversationId) return
-
-    conversationState.messages = []
-    conversationState.isLoading = true
-
-    try {
-      const response = await authenticatedGet(`api/conversations/${channel.id}/channel_messages`)
-
-      if (!response.ok) {
-        console.error(`Request failed with status: ${response.status}`)
-        return
-      }
-
-      const messageResponse: ConversationMessagesResponse = await response.json()
-      conversationState.messages = messageResponse.messages
-      conversationState.selectConversation(messageResponse.conversation)
-
-      await this.markConversationAsRead(channel.conversationId)
-    } catch (error) {
-      console.error('Error loading channel messages:', error)
-      conversationState.messages = []
-    } finally {
-      conversationState.isLoading = false
-    }
-  }
-
-  async sendMessageAndStartConversation(
-    currentUser: User,
-    toUserId: number,
-    messageText: string
-  ): Promise<Message> {
-    const recipientPublicKey = await encryptionService.getPublicKey(toUserId)
-    const myPublicKey = await encryptionService.getPublicKey(currentUser.id)
-
-    const encryptedMessage = await encryptionService.encryptMessage(
-      messageText,
-      recipientPublicKey,
-      myPublicKey
-    )
-
-    webSocketService.send<string>({
-      type: WebSocketMessageType.SEND_DIRECT_MESSAGE,
-      recipientId: toUserId,
-      payload: encryptedMessage
-    })
-
-    return {
-      id: null,
-      conversationId: null,
-      user: currentUser,
-      content: encryptedMessage,
-      conversationType: 'DIRECT',
-      isEdited: false,
-      createdAt: new Date().toISOString()
-    }
-  }
-
-  async sendMessage(
-    currentUser: User,
-    conversation: Conversation,
-    messageText: string
-  ): Promise<Message> {
-    let content = messageText
-
-    if (isDirectConversation(conversation)) {
-      const recipientPublicKey = await encryptionService.getPublicKey(conversation.otherUserId)
-      const myPublicKey = await encryptionService.getPublicKey(currentUser.id)
-      content = await encryptionService.encryptMessage(messageText, recipientPublicKey, myPublicKey)
-    }
-
-    webSocketService.send<string>({
-      type: WebSocketMessageType.SEND_MESSAGE,
-      recipientId: conversation.id,
-      payload: content
-    })
-
-    return {
-      id: null,
-      conversationId: conversation.id,
-      user: currentUser,
-      content: content,
-      conversationType: 'DIRECT',
-      isEdited: false,
-      createdAt: new Date().toISOString()
-    }
-  }
-
-  async sendChannelMessage(
-    currentUser: User,
-    channel: Channel,
-    messageText: string
-  ): Promise<Message> {
-    webSocketService.send<string>({
-      type: WebSocketMessageType.SEND_MESSAGE,
-      recipientId: channel.conversationId,
-      payload: messageText
-    })
-
-    return {
-      id: null,
-      conversationId: channel.conversationId,
-      user: currentUser,
-      content: messageText,
-      conversationType: 'CHANNEL',
-      isEdited: false,
-      createdAt: new Date().toISOString()
-    }
-  }
-
-  async deleteMessage(message: Message): Promise<void> {
-    webSocketService.send({
-      type: WebSocketMessageType.SEND_DELETE_MESSAGE,
-      recipientId: message.conversationId,
-      payload: message.id.toString()
-    })
-
-    conversationState.deleteMessage(message.id)
-  }
-
-  async editMessagePrivateMessage(
-    message: Message,
-    newContent: string,
-    toUserId: number
-  ): Promise<void> {
-    try {
-      const recipientPublicKey = await encryptionService.getPublicKey(toUserId)
-      const myPublicKey = await encryptionService.getPublicKey(userState.currentUser.id)
-      const encrypted: string = await encryptionService.encryptMessage(
-        newContent,
-        recipientPublicKey,
-        myPublicKey
-      )
-
-      webSocketService.send({
-        type: WebSocketMessageType.SEND_EDIT_MESSAGE,
-        recipientId: message.conversationId,
-        payload: {
-          messageId: message.id,
-          content: encrypted
-        }
-      })
-    } catch (error) {
-      errorService.reportError(error)
-    }
-  }
-
-  async editChannelMessage(message: Message, newContent: string): Promise<void> {
-    webSocketService.send({
-      type: WebSocketMessageType.SEND_EDIT_MESSAGE,
-      recipientId: message.conversationId,
-      payload: {
-        messageId: message.id,
-        content: newContent
-      }
-    })
-  }
-
-  async markConversationAsRead(conversationId: number): Promise<void> {
-    if (!conversationId) return
-
-    try {
-      await authenticatedPost(null, `api/conversations/${conversationId}/read`)
-      notificationService.markConversationAsRead(conversationId)
-    } catch (error) {
-      console.error('Failed to mark conversationId as read:', error)
-    }
-  }
-
-  selectContent(content: ContentType): void {
-    if (chatState.currentlySelectedContent !== content) {
-      chatState.selectedUser = null
-      conversationState.clear()
-    }
-    chatState.currentlySelectedContent = content
-    chatState.selectedChannel = null
   }
 
   private handleIncomingChannelMessage = async (msg: Message): Promise<void> => {
@@ -265,17 +42,12 @@ class ChatService {
     const isFromMe = msg.user.id === userState.currentUser?.id
     const otherUser = isFromMe ? chatState.selectedUser : msg.user
     const otherUserId = otherUser?.id
-
-    if (!otherUser || !otherUserId) {
-      return
-    }
+    if (!otherUser || !otherUserId) return
 
     const preview = await encryptionService.decryptMessage(msg.content, !isFromMe)
-
     await this.ensureUserInRecentList(otherUser, preview, msg, isFromMe)
 
     const isActiveConversation = conversationState.currentConversation?.id === msg.conversationId
-
     if (!isActiveConversation) {
       userListState.updateLastMessage(otherUserId, preview, !isFromMe, msg.createdAt)
       return
@@ -300,13 +72,263 @@ class ChatService {
   ): Promise<void> => {
     const alreadyInList = userListState.recentUsers.find((u) => u.user.id === user.id)
     if (alreadyInList) return
-
     userListState.addUser({
       user,
       lastMessage: preview,
       lastMessageTime: msg.createdAt,
       lastMessageIncoming: !isFromMe
     })
+  }
+
+  async loadConversationForUser(user: User): Promise<void> {
+    if (
+      conversationState.currentConversation &&
+      isDirectConversation(conversationState.currentConversation) &&
+      conversationState.currentConversation.otherUserId === user.id
+    )
+      return
+
+    await this.loadMessages(
+      `api/conversations/${user.id}/direct_messages?limit=${ChatService.PAGE_SIZE}`,
+      (conv) => this.markConversationAsRead(conv.id)
+    )
+  }
+
+  async loadMessagesForChannel(channel: Channel): Promise<void> {
+    if (conversationState.currentConversation?.id === channel.conversationId) return
+
+    await this.loadMessages(
+      `api/conversations/${channel.id}/channel_messages?limit=${ChatService.PAGE_SIZE}`,
+      () => this.markConversationAsRead(channel.conversationId)
+    )
+  }
+
+  private async loadMessages(
+    url: string,
+    onLoaded: (conv: Conversation) => Promise<void>
+  ): Promise<void> {
+    conversationState.currentConversation = null
+    conversationState.messages = []
+    conversationState.hasMore = true
+    conversationState.isLoading = true
+
+    try {
+      const response = await authenticatedGet(url)
+      if (!response.ok) {
+        console.error(`Failed to load messages: ${response.status}`)
+        return
+      }
+
+      const messageResponse: ConversationMessagesResponse = await response.json()
+      if (messageResponse.conversation == null) return
+
+      conversationState.selectConversation(messageResponse.conversation)
+      conversationState.messages = await this.decryptIfDirect(
+        messageResponse.messages,
+        messageResponse.conversation
+      )
+
+      await onLoaded(messageResponse.conversation)
+    } catch (error) {
+      console.error('Error loading messages:', error)
+      conversationState.messages = []
+    } finally {
+      conversationState.isLoading = false
+    }
+  }
+
+  async loadMoreMessages(): Promise<void> {
+    if (
+      conversationState.isLoadingMore ||
+      !conversationState.hasMore ||
+      !conversationState.currentConversation
+    )
+      return
+
+    const oldestId = conversationState.messages[0]?.id
+    if (!oldestId) return
+
+    conversationState.isLoadingMore = true
+
+    try {
+      const url = this.buildPaginationUrl(conversationState.currentConversation, oldestId)
+      if (!url) return
+
+      const response = await authenticatedGet(url)
+      if (!response.ok) return
+
+      const messageResponse: ConversationMessagesResponse = await response.json()
+      if (messageResponse.messages.length === 0) {
+        conversationState.hasMore = false
+        return
+      }
+
+      if (messageResponse.messages.length < ChatService.PAGE_SIZE) {
+        conversationState.hasMore = false
+      }
+
+      const messages = await this.decryptIfDirect(
+        messageResponse.messages,
+        conversationState.currentConversation
+      )
+      conversationState.messages = [...messages, ...conversationState.messages]
+    } finally {
+      conversationState.isLoadingMore = false
+    }
+  }
+
+  private buildPaginationUrl(conversation: Conversation, before: number): string | null {
+    if (isDirectConversation(conversation)) {
+      return `api/conversations/${conversation.otherUserId}/direct_messages?limit=${ChatService.PAGE_SIZE}&before=${before}`
+    }
+    if (isChannelConversation(conversation)) {
+      return `api/conversations/${conversation.channelId}/channel_messages?limit=${ChatService.PAGE_SIZE}&before=${before}`
+    }
+    return null
+  }
+
+  private async decryptIfDirect(
+    messages: Message[],
+    conversation: Conversation
+  ): Promise<Message[]> {
+    if (!isDirectConversation(conversation)) return messages
+
+    return Promise.all(
+      messages.map(async (message) => {
+        try {
+          const isRecipient = message.user.id !== userState.currentUser.id
+          message.content = await encryptionService.decryptMessage(message.content, isRecipient)
+          return message
+        } catch {
+          message.content = '[Decryption failed]'
+          return message
+        }
+      })
+    )
+  }
+
+  async sendMessageAndStartConversation(
+    currentUser: User,
+    toUserId: number,
+    messageText: string
+  ): Promise<Message> {
+    const content = await this.encryptForUser(messageText, toUserId, currentUser.id)
+    webSocketService.send<string>({
+      type: WebSocketMessageType.SEND_DIRECT_MESSAGE,
+      recipientId: toUserId,
+      payload: content
+    })
+    return this.buildOptimisticMessage(currentUser, null, content, 'DIRECT')
+  }
+
+  async sendMessage(
+    currentUser: User,
+    conversation: Conversation,
+    messageText: string
+  ): Promise<Message> {
+    let content = messageText
+    if (isDirectConversation(conversation)) {
+      content = await this.encryptForUser(messageText, conversation.otherUserId, currentUser.id)
+    }
+    webSocketService.send<string>({
+      type: WebSocketMessageType.SEND_MESSAGE,
+      recipientId: conversation.id,
+      payload: content
+    })
+    return this.buildOptimisticMessage(currentUser, conversation.id, content, 'DIRECT')
+  }
+
+  async sendChannelMessage(
+    currentUser: User,
+    channel: Channel,
+    messageText: string
+  ): Promise<Message> {
+    webSocketService.send<string>({
+      type: WebSocketMessageType.SEND_MESSAGE,
+      recipientId: channel.conversationId,
+      payload: messageText
+    })
+    return this.buildOptimisticMessage(currentUser, channel.conversationId, messageText, 'CHANNEL')
+  }
+
+  private async encryptForUser(
+    text: string,
+    recipientId: number,
+    senderId: number
+  ): Promise<string> {
+    const recipientPublicKey = await encryptionService.getPublicKey(recipientId)
+    const myPublicKey = await encryptionService.getPublicKey(senderId)
+    return encryptionService.encryptMessage(text, recipientPublicKey, myPublicKey)
+  }
+
+  private buildOptimisticMessage(
+    user: User,
+    conversationId: number | null,
+    content: string,
+    conversationType: 'DIRECT' | 'CHANNEL'
+  ): Message {
+    return {
+      id: null,
+      conversationId,
+      user,
+      content,
+      conversationType,
+      isEdited: false,
+      createdAt: new Date().toISOString()
+    }
+  }
+
+  async deleteMessage(message: Message): Promise<void> {
+    webSocketService.send({
+      type: WebSocketMessageType.SEND_DELETE_MESSAGE,
+      recipientId: message.conversationId,
+      payload: message.id.toString()
+    })
+    conversationState.deleteMessage(message.id)
+  }
+
+  async editMessagePrivateMessage(
+    message: Message,
+    newContent: string,
+    toUserId: number
+  ): Promise<void> {
+    try {
+      const encrypted = await this.encryptForUser(newContent, toUserId, userState.currentUser.id)
+      webSocketService.send({
+        type: WebSocketMessageType.SEND_EDIT_MESSAGE,
+        recipientId: message.conversationId,
+        payload: { messageId: message.id, content: encrypted }
+      })
+    } catch (error) {
+      errorService.reportError(error)
+    }
+  }
+
+  async editChannelMessage(message: Message, newContent: string): Promise<void> {
+    webSocketService.send({
+      type: WebSocketMessageType.SEND_EDIT_MESSAGE,
+      recipientId: message.conversationId,
+      payload: { messageId: message.id, content: newContent }
+    })
+  }
+
+  async markConversationAsRead(conversationId: number): Promise<void> {
+    if (!conversationId) return
+    try {
+      await authenticatedPost(null, `api/conversations/${conversationId}/read`)
+      notificationService.markConversationAsRead(conversationId)
+    } catch (error) {
+      console.error('Failed to mark conversation as read:', error)
+    }
+  }
+
+  selectContent(content: ContentType): void {
+    if (chatState.currentlySelectedContent !== content) {
+      chatState.selectedUser = null
+      conversationState.clear()
+    }
+    chatState.currentlySelectedContent = content
+    chatState.selectedChannel = null
   }
 }
 

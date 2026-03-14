@@ -75,17 +75,31 @@ async function fetchPost<T>(url: string, body: T, headers: HeadersInit): Promise
 }
 
 async function fetchPatch<T>(url: string, body: T, headers: HeadersInit): Promise<Response> {
-  let response = null
+  let response: Response | null = null
   try {
     response = await fetch(API_CONFIG.baseUrl + url, {
       method: 'PATCH',
-      headers: headers,
+      headers,
       body: body instanceof FormData ? body : JSON.stringify(body)
     })
   } catch (error) {
-    errorService.reportError('Failed to fetch: ' + error)
+    errorService.reportError('Network error — could not reach server')
+    throw error
   }
-  if (!response) errorService.reportError('Error fetching')
-  if (!response.ok) errorService.reportError('Error fetching: ' + response.status)
+
+  if (!response.ok) {
+    const message = await extractErrorMessage(response)
+    errorService.reportError(message)
+  }
+
   return response
+}
+
+async function extractErrorMessage(response: Response): Promise<string> {
+  try {
+    const body = await response.json()
+    return body.detail ?? body.message ?? `Error ${response.status}`
+  } catch {
+    return `Error ${response.status}`
+  }
 }
