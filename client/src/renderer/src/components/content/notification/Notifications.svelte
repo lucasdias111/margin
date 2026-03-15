@@ -1,5 +1,4 @@
 <script lang="ts">
-  import { notificationState } from '$src/states/NotificationState.svelte.js'
   import { chatState } from '$src/states/ChatState.svelte.js'
   import { chatService } from '$src/services/ChatService'
   import type { Notification } from '$src/interfaces/Notification'
@@ -20,8 +19,7 @@
 
   async function handleClick(notification: Notification): Promise<void> {
     if (!notification.seen) {
-      await notificationService.markSeen(notification.marginId)
-      notificationState.clearUnseenAnnouncementsForMargin(notification.marginId)
+      await notificationService.markNotificationAsSeen(notification)
       notifications = notifications.map((n) =>
         n.notificationId === notification.notificationId ? { ...n, seen: true } : n
       )
@@ -32,15 +30,19 @@
       chatState.currentlySelectedContent = 'margin'
     } else if (notification.type === NotificationType.MISSED_CALL) {
       await chatService.loadConversationForUser(notification.sender)
+      chatState.selectUser(notification.sender)
       chatState.currentlySelectedContent = 'private'
     }
   }
 
   function getNotificationIcon(type: NotificationType): string {
     switch (type) {
-      case NotificationType.ANNOUNCEMENT: return '📢'
-      case NotificationType.MISSED_CALL: return '📞'
-      default: return '🔔'
+      case NotificationType.ANNOUNCEMENT:
+        return '📢'
+      case NotificationType.MISSED_CALL:
+        return '📞'
+      default:
+        return '🔔'
     }
   }
 
@@ -71,7 +73,9 @@
   {:else if notifications.length === 0}
     <div class="empty-state">
       <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#ddd" stroke-width="1.5">
-        <path d="M22 17H2a3 3 0 0 0 3-3V9a7 7 0 0 1 14 0v5a3 3 0 0 0 3 3zm-8.27 4a2 2 0 0 1-3.46 0" />
+        <path
+          d="M22 17H2a3 3 0 0 0 3-3V9a7 7 0 0 1 14 0v5a3 3 0 0 0 3 3zm-8.27 4a2 2 0 0 1-3.46 0"
+        />
       </svg>
       <span>No notifications yet</span>
     </div>

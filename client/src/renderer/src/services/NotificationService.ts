@@ -87,9 +87,16 @@ class NotificationService {
     return res.json()
   }
 
-  async markSeen(marginId: number): Promise<void> {
-    await authenticatedPost({ marginId }, 'api/notifications/mark-seen')
-    notificationState.clearUnseenAnnouncementsForMargin(marginId)
+  async markNotificationAsSeen(notification: Notification): Promise<void> {
+    if (notification.marginId != null) {
+      await authenticatedPost({ marginId: notification.marginId }, 'api/notifications/mark_seen')
+      notificationState.clearUnseenAnnouncementsForMargin(notification.marginId)
+    } else {
+      await authenticatedPost(
+        { referenceId: notification.referenceId },
+        'api/notifications/mark_seen_by_reference'
+      )
+    }
   }
 }
 

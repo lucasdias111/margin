@@ -68,7 +68,7 @@ class CallService {
         webSocketService.send({
           type: WebSocketMessageType.CALL_NO_ANSWER,
           recipientId: callState.p2pCallState!.user.id,
-          payload: { callId: callState.callId! }
+          payload: String(callState.callId!)
         })
         this.endCall(true)
       }
@@ -308,9 +308,9 @@ class CallService {
 
     const audioTrack = localStream.getAudioTracks()[0]
     const videoTrack = localStream.getVideoTracks()[0]
-    if (audioTrack) this.audioTransceiver.sender.replaceTrack(audioTrack)
+    if (audioTrack) await this.audioTransceiver.sender.replaceTrack(audioTrack)
     if (videoTrack) {
-      this.cameraTransceiver.sender.replaceTrack(videoTrack)
+      await this.cameraTransceiver.sender.replaceTrack(videoTrack)
       videoTrack.enabled = callState.p2pCallState?.isVideoEnabled ?? false
       console.log('[CallService] local video track enabled:', videoTrack.enabled)
     }
