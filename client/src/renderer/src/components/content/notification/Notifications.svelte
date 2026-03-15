@@ -32,6 +32,9 @@
       await chatService.loadConversationForUser(notification.sender)
       chatState.selectUser(notification.sender)
       chatState.currentlySelectedContent = 'private'
+    } else if (notification.type === NotificationType.ADDED_TO_MARGIN) {
+      chatState.selectMargin(await marginService.getMargin(notification.marginId))
+      chatState.currentlySelectedContent = 'margin'
     }
   }
 
@@ -41,6 +44,8 @@
         return '📢'
       case NotificationType.MISSED_CALL:
         return '📞'
+      case NotificationType.ADDED_TO_MARGIN:
+        return '👥'
       default:
         return '🔔'
     }
@@ -52,6 +57,8 @@
         return `New announcement from ${notification.sender?.displayName ?? 'Admin'}`
       case NotificationType.MISSED_CALL:
         return `Missed call from ${notification.sender?.displayName ?? 'Unknown'}`
+      case NotificationType.ADDED_TO_MARGIN:
+        return `${notification.sender?.displayName ?? 'Someone'} added you to a margin`
       default:
         return 'New notification'
     }
@@ -118,6 +125,7 @@
   .notifications-page::-webkit-scrollbar {
     width: 4px;
   }
+
   .notifications-page::-webkit-scrollbar-thumb {
     background: rgba(0, 0, 0, 0.08);
     border-radius: 4px;

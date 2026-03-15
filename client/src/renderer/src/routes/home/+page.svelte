@@ -28,6 +28,7 @@
   import IncomingCallModal from '$src/components/content/call/modal/IncomingCallModal.svelte'
   import type { Notification } from '$src/interfaces/Notification'
   import Notifications from '$src/components/content/notification/Notifications.svelte'
+  import type { Margin } from '$src/interfaces/Margin'
 
   let incomingCallPayload = $state<CallOfferPayload | null>(null)
 
@@ -45,7 +46,11 @@
     [WebSocketMessageType.USER_LOGOUT]: (data: WebSocketMessage<User>) =>
       presenceService.setOffline(data.payload.id),
     [WebSocketMessageType.NOTIFICATION]: (data: WebSocketMessage<Notification>) =>
+      notificationState.incrementUnseenAnnouncements(data.payload.marginId),
+    [WebSocketMessageType.USER_ADDED_TO_MARGIN]: (data: WebSocketMessage<Margin>) => {
+      chatState.selectMargin(data.payload)
       notificationState.incrementUnseenAnnouncements(data.payload.marginId)
+    }
   })
 
   async function setup(): Promise<void> {
