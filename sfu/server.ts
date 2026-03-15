@@ -6,6 +6,7 @@ import {
 import { Room } from './types'
 import { getOrCreateRoom } from './roomHelpers'
 import { initMediaSoupServer } from './mediaSoupHelper'
+import {requireInternalApiKey} from "./authorizationHelper";
 
 
 const rooms = new Map<string, Room>()
@@ -31,7 +32,7 @@ async function initMediasoup() {
 const app = express()
 app.use(express.json())
 
-app.post('/rooms/:roomId', async (req, res) => {
+app.post('/rooms/:roomId', requireInternalApiKey, async (req, res) => {
   const room = await getOrCreateRoom(rooms, req.params.roomId, worker)
 
   res.json({
@@ -40,15 +41,10 @@ app.post('/rooms/:roomId', async (req, res) => {
   })
 })
 
-app.get('/rooms/:roomId', (req, res) => {
+app.get('/rooms/:roomId/peers', requireInternalApiKey, (req, res) => {
   const room = rooms.get(req.params.roomId)
-  if (!room) return res.status(404).json({ error: 'Not found' })
-
-  res.json({
-    roomId: room.id,
-    peerCount: room.peers.size,
-    rtpCapabilities: room.router.rtpCapabilities
-  })
+  if (!room) return res.status(200).json({ peers: [] })
+  res.json({ peers: [...room.peers.keys()] })
 })
 
 const server = initMediaSoupServer(app, rooms)
