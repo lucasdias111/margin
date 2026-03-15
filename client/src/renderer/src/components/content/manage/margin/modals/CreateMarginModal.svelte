@@ -35,6 +35,7 @@
     marginDescription = ''
     icon = null
     previewUrl = avatar
+    chatState.margins = [...chatState.margins, newMargin]
     onClose()
   }
 </script>

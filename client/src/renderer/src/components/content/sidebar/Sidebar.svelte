@@ -5,6 +5,8 @@
   import { chatState } from '$src/states/ChatState.svelte.js'
   import type { User } from '$src/interfaces/User'
   import type { ContentType } from '$src/interfaces/Content'
+  import MarginNavigationItem from '$src/components/content/sidebar/sidebar_list/MarginNavigationItem.svelte'
+  import MarginSwitcher from '$src/components/content/sidebar/sidebar_list/MarginSwitcher.svelte'
   import Settings from '$src/components/content/settings/Settings.svelte'
 
   let selectedContent = $derived<ContentType>(chatState.currentlySelectedContent)
@@ -38,7 +40,8 @@
       <div class="panel-divider"></div>
 
       <div class="panel-nav">
-        <button class="home-btn" class:active={isHome} onclick={goHome}>
+        <MarginNavigationItem label="Home" active={isHome} onclick={goHome} icon={homeIcon} />
+        {#snippet homeIcon()}
           <svg
             width="14"
             height="14"
@@ -51,8 +54,8 @@
             <path d="M3 9.5L12 3l9 6.5V20a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9.5z" />
             <polyline points="9 21 9 12 15 12 15 21" />
           </svg>
-          Home
-        </button>
+        {/snippet}
+        <MarginSwitcher />
       </div>
 
       <div class="panel-divider"></div>
@@ -84,7 +87,6 @@
     min-height: 0;
     background-color: #fff;
     border-radius: 20px;
-    overflow: hidden;
   }
 
   .panel-header {
@@ -113,44 +115,6 @@
   .panel-nav {
     padding: 12px 10px 4px;
     flex-shrink: 0;
-  }
-
-  .home-btn {
-    width: 100%;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 8px 12px;
-    background: none;
-    border: none;
-    border-radius: 10px;
-    font-size: 14px;
-    font-weight: 550;
-    color: #888;
-    cursor: pointer;
-    text-align: left;
-    transition:
-      background 0.12s,
-      color 0.12s;
-  }
-
-  .home-btn:hover:not(.active) {
-    background: rgba(0, 0, 0, 0.04);
-    color: #2a2a2a;
-  }
-
-  .home-btn.active {
-    background: rgba(228, 113, 42, 0.1);
-    color: #f47e3a;
-  }
-
-  .home-btn svg {
-    flex-shrink: 0;
-    opacity: 0.6;
-  }
-
-  .home-btn.active svg {
-    opacity: 1;
   }
 
   .panel-divider {

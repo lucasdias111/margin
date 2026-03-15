@@ -33,6 +33,7 @@
     try {
       await marginService.deleteMargin(margin.marginId)
       chatState.currentlySelectedContent = 'margin'
+      chatState.margins = chatState.margins.filter((m) => m.marginId !== margin.marginId)
     } catch (e) {
       console.error('Failed to delete margin:', e)
     }

@@ -308,6 +308,7 @@
     padding: 5px;
     background-color: #f47e3a;
   }
+
   .spinner {
     width: 16px;
     height: 16px;

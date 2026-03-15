@@ -13,6 +13,7 @@ class ChatState {
   currentlySelectedContent = $state<ContentType | null>('private')
   hasMargin = $state<boolean>(true)
   settingsPage = $state<boolean>(false)
+  margins = $state<Margin[]>([])
 
   selectUser(user: User): void {
     this.selectedUser = user
@@ -21,6 +22,8 @@ class ChatState {
   selectMargin(margin: Margin): void {
     this.selectedMargin = margin
     this.hasMargin = true
+    this.selectedSpace = null
+    this.selectedChannel = null
   }
 
   selectContent(content: ContentType): void {

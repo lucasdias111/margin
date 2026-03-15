@@ -59,6 +59,7 @@
     await loadRecentUsers()
     await notificationState.loadUnseenAnnouncementCounts()
     await marginService.getMargins().then((margins) => {
+      chatState.margins = margins
       if (margins.length === 0) {
         chatState.hasMargin = false
       } else {

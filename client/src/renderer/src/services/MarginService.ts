@@ -58,12 +58,12 @@ class MarginService {
 
   async removeMarginMember(marginId: number): Promise<void> {
     const response = await authenticatedPost(marginId, 'api/margins/remove_margin_member')
-    if (!response.ok) errorService.reportError('Failed to update member role: ' + response.status)
+    if (!response.ok) errorService.reportError('Failed to remove margin member: ' + response.status)
   }
 
   async getMargins(): Promise<Margin[]> {
     const response = await authenticatedGet(`api/margins/get_margins`)
-    if (!response.ok) errorService.reportError('Failed to update member role: ' + response.status)
+    if (!response.ok) errorService.reportError('Failed to get margins: ' + response.status)
     return response.json()
   }
 
