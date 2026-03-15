@@ -59,6 +59,16 @@ class ChatService {
       msg.content = '[Decryption failed]'
     }
 
+    if (isFromMe) {
+      const optimisticIndex = conversationState.messages.findIndex((m) => m.id < 0)
+      if (optimisticIndex !== -1) {
+        conversationState.messages[optimisticIndex] = msg
+        userListState.updateLastMessage(otherUserId, preview, !isFromMe, msg.createdAt)
+        await this.markConversationAsRead(conversationState.currentConversation!.id)
+        return
+      }
+    }
+
     conversationState.messages = [...conversationState.messages, msg]
     userListState.updateLastMessage(otherUserId, preview, !isFromMe, msg.createdAt)
     await this.markConversationAsRead(conversationState.currentConversation!.id)
@@ -211,14 +221,21 @@ class ChatService {
     currentUser: User,
     toUserId: number,
     messageText: string
-  ): Promise<Message> {
+  ): Promise<{ conversation: Conversation; message: Message }> {
     const content = await this.encryptForUser(messageText, toUserId, currentUser.id)
-    webSocketService.send<string>({
-      type: WebSocketMessageType.SEND_DIRECT_MESSAGE,
-      recipientId: toUserId,
-      payload: content
-    })
-    return this.buildOptimisticMessage(currentUser, null, content, 'DIRECT')
+
+    const response = await authenticatedPost(
+      {
+        recipientUserId: toUserId,
+        encryptedContent: content
+      },
+      `api/conversations/create_private`
+    )
+    const conversation: Conversation = await response.json()
+
+    const message = this.buildOptimisticMessage(currentUser, conversation.id, messageText, 'DIRECT')
+
+    return { conversation, message }
   }
 
   async sendMessage(
@@ -235,7 +252,7 @@ class ChatService {
       recipientId: conversation.id,
       payload: content
     })
-    return this.buildOptimisticMessage(currentUser, conversation.id, content, 'DIRECT')
+    return this.buildOptimisticMessage(currentUser, conversation.id, messageText, 'DIRECT')
   }
 
   async sendChannelMessage(
@@ -268,7 +285,7 @@ class ChatService {
     conversationType: 'DIRECT' | 'CHANNEL'
   ): Message {
     return {
-      id: null,
+      id: -Date.now(),
       conversationId,
       user,
       content,

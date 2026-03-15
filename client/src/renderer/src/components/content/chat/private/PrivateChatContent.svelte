@@ -26,17 +26,20 @@
     messageInput = ''
 
     if (conversationState.currentConversation) {
-      await chatService.sendMessage(
+      const message = await chatService.sendMessage(
         userState.currentUser,
         conversationState.currentConversation,
         messageContent
       )
+      conversationState.messages = [...conversationState.messages, message]
     } else {
-      await chatService.sendMessageAndStartConversation(
+      const { conversation, message } = await chatService.sendMessageAndStartConversation(
         userState.currentUser,
         chatState.selectedUser.id,
         messageContent
       )
+      conversationState.selectConversation(conversation)
+      conversationState.messages = [message]
     }
   }
 
