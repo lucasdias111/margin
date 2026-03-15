@@ -1,7 +1,7 @@
 <script lang="ts">
   import { onMount } from 'svelte'
   import { chatState } from '$src/states/ChatState.svelte.js'
-  import type { Margin, MarginMember, UpdateMargin } from '$src/interfaces/Margin'
+  import { type Margin, type MarginMember, type UpdateMargin } from '$src/interfaces/Margin'
   import ManageMarginInformation from '$src/components/content/manage/margin/ManageMarginInformation.svelte'
   import ManageMarginMembers from '$src/components/content/manage/margin/ManageMarginMembers.svelte'
   import { marginService } from '$src/services/MarginService'

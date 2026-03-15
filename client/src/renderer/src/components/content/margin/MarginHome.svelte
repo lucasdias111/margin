@@ -58,7 +58,7 @@
   <div class="welcome-card">
     <div class="welcome-top">
       <div class="logo-mark">
-        <MarginIcon marginIcon={chatState.selectedMargin.marginIconUrl} width={200} height={125} />
+        <MarginIcon marginIcon={chatState.selectedMargin?.marginIconUrl} width={200} height={125} />
       </div>
       {#if canManage}
         <button class="manage-btn" onclick={() => (chatState.currentlySelectedContent = 'manage')}>

@@ -4,6 +4,9 @@
   import ListView from '$src/components/common/datatables/ListView.svelte'
   import { formatTimestamp } from '$src/utils/DateUtils'
   import type { User } from '$src/interfaces/User'
+  import { userState } from '$src/states/UserState.svelte'
+  import { roleRank } from '$src/interfaces/Margin'
+  import { errorService } from '$src/services/ErrorService'
 
   interface Props {
     margin: Margin
@@ -18,6 +21,12 @@
 
   function handleRoleSelectChange(member: MarginMember, e: Event): void {
     const value = (e.currentTarget as HTMLSelectElement).value as MarginRole
+    if (
+      roleRank[value] > roleRank[member.role] &&
+      member.user?.id === userState.currentUser?.id &&
+      margin.members.filter((m) => m.role === 'ADMIN').length === 1
+    )
+      return errorService.reportError(`At least one admin is required.`)
     onUpdateMemberRole({ ...member, role: value })
   }
 </script>
@@ -32,7 +41,7 @@
     {#snippet roleCell(member)}
       <select
         class="role-select"
-        value={member.role}
+        bind:value={member.role}
         onchange={(e) => handleRoleSelectChange(member, e)}
       >
         {#each marginRoles as role (role)}

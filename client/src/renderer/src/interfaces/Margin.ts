@@ -37,3 +37,9 @@ export interface CreateMargin {
   visibility: Visibility
   marginIcon?: File
 }
+
+export const roleRank = {
+  OWNER: 1,
+  ADMIN: 2,
+  MEMBER: 3
+}
