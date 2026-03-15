@@ -5,7 +5,7 @@ export function clickOutside(node: HTMLElement, callback: () => void): { destroy
     }
   }
 
-  document.addEventListener('click', handleClick)
+  setTimeout(() => document.addEventListener('click', handleClick), 0)
 
   return {
     destroy() {

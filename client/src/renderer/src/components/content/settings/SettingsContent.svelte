@@ -4,6 +4,7 @@
   import UploadImageButton from '$src/components/common/buttons/UploadImageButton.svelte'
   import EditIcon from '$src/components/svg/EditIcon.svelte'
   import { userService } from '$src/services/UserService'
+  import { clickOutside } from '$src/actions/clickOutside'
 
   let newProfilePicture = $state<File | null>(null)
   let previewUrl = $state<string | null>(userState.currentUser.profilePictureUrl)
@@ -48,7 +49,11 @@
   <div class="info-change">
     <div class="field-row">
       {#if isEditingDisplayName}
-        <input class="field-input" bind:value={newNameDisplay} />
+        <input
+          class="field-input"
+          bind:value={newNameDisplay}
+          use:clickOutside={() => (isEditingDisplayName = false)}
+        />
       {:else}
         <div class="field-label">
           <span class="field-title">Display name</span>
@@ -62,7 +67,11 @@
 
     <div class="field-row">
       {#if isEditingEmail}
-        <input class="field-input" bind:value={newEmail} />
+        <input
+          class="field-input"
+          bind:value={newEmail}
+          use:clickOutside={() => (isEditingEmail = false)}
+        />
       {:else}
         <div class="field-label">
           <span class="field-title">Email</span>

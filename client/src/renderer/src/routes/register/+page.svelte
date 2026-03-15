@@ -5,25 +5,21 @@
   import UploadImageButton from '$src/components/common/buttons/UploadImageButton.svelte'
   import UserAvatar from '$src/components/common/user/UserAvatar.svelte'
   import avatar from '$src/assets/pics/anonym-avatar.png'
+  import { errorService } from '$src/services/ErrorService'
 
   let username = $state('')
   let password = $state('')
   let repeatPassword = $state('')
   let email = $state('')
   let profilePicture = $state<File | null>(null)
-  let registerResponse = $state('')
-  let hasError = $state(false)
   let isLoading = $state(false)
   let previewUrl = $state<string | null>(avatar)
 
   async function handleRegistration(event: SubmitEvent): Promise<void> {
     event.preventDefault()
-    hasError = false
-    registerResponse = ''
 
     if (password !== repeatPassword) {
-      hasError = true
-      registerResponse = 'Passwords do not match'
+      errorService.reportError(`Passwords don't match.`)
       return
     }
 
@@ -31,9 +27,11 @@
     try {
       await authenticationService.register(username, password, email, profilePicture || undefined)
       await push('/')
-    } catch (e) {
-      hasError = true
-      registerResponse = 'Registration failed. Please try again.'
+
+      {
+        errorService.reportError('Failed to register.')
+        return
+      }
     } finally {
       isLoading = false
     }
@@ -78,7 +76,7 @@
           class="input"
           type="text"
           name="username"
-          placeholder="yourhandle"
+          placeholder="Your name"
           bind:value={username}
           required
           autocomplete="username"
@@ -126,10 +124,6 @@
           autocomplete="new-password"
         />
       </div>
-
-      {#if hasError}
-        <p class="error">{registerResponse}</p>
-      {/if}
 
       <button class="btn-primary" type="submit" disabled={isLoading}>
         {#if isLoading}
@@ -261,16 +255,6 @@
 
   .input::placeholder {
     color: #c4bfb8;
-  }
-
-  .error {
-    font-size: 13px;
-    color: #d4621a;
-    margin: 0;
-    padding: 10px 14px;
-    background: #fdf0e8;
-    border-radius: 8px;
-    border: 1px solid #f5d5be;
   }
 
   .btn-primary {

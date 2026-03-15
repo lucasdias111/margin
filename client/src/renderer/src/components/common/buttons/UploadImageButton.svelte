@@ -3,6 +3,8 @@
     onFileChange: (file: File) => Promise<void>
     onPreviewUrlChange: (url: string) => Promise<void>
     label?: string
+    width?: number
+    height?: number
   }
   let { onFileChange, onPreviewUrlChange, label }: Props = $props()
   let file: File = $state<File>(null)
@@ -42,6 +44,7 @@
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     border: 1px solid #4e4d4d;
     display: flex;
+    justify-content: center;
     align-items: center;
     padding: 0 12px;
     font-size: 14px;
