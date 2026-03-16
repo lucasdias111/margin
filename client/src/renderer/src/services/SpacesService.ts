@@ -9,8 +9,8 @@ class SpacesService {
     return response.json()
   }
 
-  async getAllSpacesForUser(): Promise<Space[]> {
-    const response = await authenticatedGet('api/spaces/get_all_spaces_for_user')
+  async getAllSpacesForUserInMargin(marginId: number): Promise<Space[]> {
+    const response = await authenticatedGet(`api/spaces/get_all_spaces_for_user/${marginId}`)
     if (!response.ok) throw new Error(`Failed to get spaces for user: ${response.status}`)
     return response.json()
   }

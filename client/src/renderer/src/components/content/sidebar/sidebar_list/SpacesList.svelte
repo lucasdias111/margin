@@ -19,9 +19,20 @@
   let selectedChannelId = $derived(chatState.selectedChannel?.id)
 
   onMount(async () => {
-    spaces = await spacesService.getAllSpacesForUser()
+    spaces = await spacesService.getAllSpacesForUserInMargin(chatState.selectedMargin.marginId)
   })
 
+  $effect(() => {
+    if (chatState.selectedMargin) {
+      spaces = []
+      expandedSpaceId = null
+      spacesService
+        .getAllSpacesForUserInMargin(chatState.selectedMargin.marginId)
+        .then((result) => {
+          spaces = result
+        })
+    }
+  })
   onDestroy(() => {
     chatState.selectSpace(null)
     chatState.selectChannel(null)
@@ -195,9 +206,8 @@
     border-radius: 12px;
     border: 1px solid transparent;
     background: #fafafa;
-    transition:
-      border-color 0.15s,
-      box-shadow 0.15s;
+    transition: border-color 0.15s,
+    box-shadow 0.15s;
     overflow: hidden;
   }
 
@@ -266,9 +276,8 @@
     color: #ccc;
     display: flex;
     align-items: center;
-    transition:
-      transform 0.2s ease,
-      color 0.15s;
+    transition: transform 0.2s ease,
+    color 0.15s;
   }
 
   .chevron.rotated {

@@ -1,4 +1,3 @@
-<!-- MarginSwitcher.svelte -->
 <script lang="ts">
   import { chatState } from '$src/states/ChatState.svelte.js'
   import type { Margin } from '$src/interfaces/Margin'
