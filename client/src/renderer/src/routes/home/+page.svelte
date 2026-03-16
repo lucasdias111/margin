@@ -50,7 +50,8 @@
     [WebSocketMessageType.USER_ADDED_TO_MARGIN]: (data: WebSocketMessage<Margin>) => {
       chatState.selectMargin(data.payload)
       notificationState.incrementUnseenAnnouncements(data.payload.marginId)
-    }
+    },
+    [WebSocketMessageType.CALL_NO_ANSWER]: () => (incomingCallPayload = null)
   })
 
   async function setup(): Promise<void> {
@@ -109,6 +110,7 @@
   }
 
   function declineCall(): void {
+    callService.rejectCall(incomingCallPayload.callId, incomingCallPayload.caller.id)
     incomingCallPayload = null
   }
 

@@ -75,6 +75,14 @@ class CallService {
     }, 20000)
   }
 
+  rejectCall(callId: number, recipientId: number): void {
+    webSocketService.send({
+      type: WebSocketMessageType.CALL_REJECTED,
+      recipientId: recipientId,
+      payload: String(callId)
+    })
+  }
+
   private async getUserMedia(): Promise<MediaStream> {
     console.log('[CallService] getUserMedia — requesting audio + video')
     try {
@@ -86,13 +94,6 @@ class CallService {
       return stream
     } catch (err) {
       console.warn('[CallService] getUserMedia ✗', err)
-      if (err instanceof Error && err.name === 'NotFoundError') {
-        alert(
-          "Audio/video device not found. You can still receive the call, but the other person won't hear/see you."
-        )
-      } else {
-        alert('Could not access media devices. You can still receive the call.')
-      }
 
       const audioContext = new AudioContext()
       const oscillator = audioContext.createOscillator()
