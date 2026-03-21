@@ -18,17 +18,6 @@
     }
   })
 
-  $effect(() => {
-    if (chatState.selectedMargin) {
-      spaces = []
-      expandedSpaceId = null
-      spacesService
-        .getAllSpacesForUserInMargin(chatState.selectedMargin.marginId)
-        .then((result) => {
-          spaces = result
-        })
-    }
-  })
   onDestroy(() => {
     chatState.selectSpace(null)
     chatState.selectChannel(null)
