@@ -5,7 +5,7 @@ services:
   # -----------------------------------------
   postgres:
     image: postgres:15-alpine
-    container_name: margin-postgres
+    container_name: margindb
     restart: unless-stopped
     environment:
       POSTGRES_DB: ${POSTGRES_DB}
@@ -62,7 +62,7 @@ services:
   # margin SFU (Node.js)
   # -----------------------------------------
   margin-sfu:
-    image: codeberg.org/yourusername/margin-sfu:${SFU_VERSION:-latest}
+    image: codeberg.org/margin/margin-sfu:${SFU_VERSION:-latest}
     # Build locally: docker build -t margin/margin-sfu:<version> .
     # Transfer:      docker save margin/margin-sfu:<version> | gzip > margin-sfu.tar.gz && scp ...
     # Deploy:        SFU_VERSION=<version> docker compose up -d margin-sfu
