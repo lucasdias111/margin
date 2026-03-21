@@ -57,8 +57,7 @@
       marginService.addNewMargin(data.payload)
       notificationState.incrementUnseenAnnouncements(data.payload.marginId)
     },
-    [WebSocketMessageType.CALL_NO_ANSWER]: () => (incomingCallPayload = null)
-    },
+    [WebSocketMessageType.CALL_NO_ANSWER]: () => (incomingCallPayload = null),
     [WebSocketMessageType.USER_JOINED_VOICE]: (
       msg: WebSocketMessage<ChannelVoiceParticipantPayload>
     ) => {
