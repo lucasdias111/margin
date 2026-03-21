@@ -1,25 +1,21 @@
 <script lang="ts">
   import { chatState } from '$src/states/ChatState.svelte.js'
+  import { spaceState } from '$src/states/SpaceState.svelte.js'
   import type { Space } from '$src/interfaces/Space'
   import { onDestroy, onMount } from 'svelte'
   import { spacesService } from '$src/services/SpacesService'
   import ChannelEntry from '$src/components/content/sidebar/sidebar_list/ChannelEntry.svelte'
   import { notificationState } from '$src/states/NotificationState.svelte.js'
   import UnreadNotificationBadge from '$src/components/common/chat/UnreadNotificationBadge.svelte'
-  import { useWebsocketSvelte } from '$src/composables/useWebsocket.svelte'
-  import { WebSocketMessageType } from '$src/interfaces/WebSocketMessageType'
-  import type {
-    ChannelVoiceParticipantPayload,
-    WebSocketMessage
-  } from '$src/interfaces/WebSocketMessages'
 
-  let spaces = $state<Space[]>([])
+  const spaces = $derived(spaceState.spaces)
   let expandedSpaceId = $state<number | null>(null)
-
   let selectedChannelId = $derived(chatState.selectedChannel?.id)
 
   onMount(async () => {
-    spaces = await spacesService.getAllSpacesForUserInMargin(chatState.selectedMargin.marginId)
+    if (spaceState.spaces.length === 0) {
+      await spacesService.getAllSpacesForUser(chatState.selectedMargin.marginId)
+    }
   })
 
   $effect(() => {
@@ -66,38 +62,6 @@
       .map((w) => w[0]?.toUpperCase() ?? '')
       .join('')
   }
-
-  useWebsocketSvelte({
-    [WebSocketMessageType.USER_JOINED_VOICE]: (
-      msg: WebSocketMessage<ChannelVoiceParticipantPayload>
-    ) => {
-      console.log('USER_JOINED_VOICE received', msg)
-
-      for (const space of spaces) {
-        const channel = space.channels.find((c) => c.id === msg.payload.channelId)
-        if (channel) {
-          channel.voiceParticipants = [
-            ...(channel.voiceParticipants ?? []).filter((p) => p.id !== msg.payload.user.id),
-            msg.payload.user
-          ]
-          break
-        }
-      }
-    },
-    [WebSocketMessageType.USER_LEFT_VOICE]: (
-      msg: WebSocketMessage<ChannelVoiceParticipantPayload>
-    ) => {
-      for (const space of spaces) {
-        const channel = space.channels.find((c) => c.id === msg.payload.channelId)
-        if (channel?.voiceParticipants) {
-          channel.voiceParticipants = channel.voiceParticipants.filter(
-            (p) => p.id !== msg.payload.user.id
-          )
-          break
-        }
-      }
-    }
-  })
 </script>
 
 <div class="spaces-list">

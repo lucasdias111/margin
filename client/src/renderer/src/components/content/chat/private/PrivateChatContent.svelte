@@ -2,7 +2,7 @@
   import { chatState } from '$src/states/ChatState.svelte.js'
   import { conversationState } from '$src/states/ConversationState.svelte.js'
   import { chatService } from '$src/services/ChatService'
-  import { callService } from '$src/services/CallService'
+  import { callService } from '$src/services/call/CallService'
   import { callState } from '$src/states/CallState.svelte.js'
   import { userState } from '$src/states/UserState.svelte.js'
   import ChatInput from '$src/components/common/chat/ChatInput.svelte'
@@ -45,15 +45,13 @@
 
   function startCall(): void {
     if (chatState.selectedUser) {
-      callService.startCall(null, chatState.selectedUser, false, null)
-      callState.setVideoEnabled(false)
+      callService.startCall(null, chatState.selectedUser, false, false)
     }
   }
 
   function handleVideoCall(): void {
     if (chatState.selectedUser) {
-      callService.startCall(null, chatState.selectedUser, false, null)
-      callState.setVideoEnabled(true)
+      callService.startCall(null, chatState.selectedUser, false, true)
     }
   }
 </script>

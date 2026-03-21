@@ -2,6 +2,7 @@ import type { UnreadCount } from '$src/interfaces/UnreadCount'
 import type { Space } from '$src/interfaces/Space'
 import { authenticatedGet } from '$src/services/api'
 import { SvelteMap } from 'svelte/reactivity'
+import type { Notification } from '$src/interfaces/Notification'
 
 interface NotificationState {
   unreadDirectMessages: UnreadCount[]
@@ -72,11 +73,6 @@ class NotificationStateManager {
     const current = this.state.unseenAnnouncementCounts.get(marginId) ?? 0
     this.state.unseenAnnouncementCounts.set(marginId, current + 1)
   }
-
-  clearUnseenAnnouncementsForMargin(marginId: number): void {
-    this.state.unseenAnnouncementCounts.delete(marginId)
-  }
-
   getTotalUnseenAnnouncements(): number {
     return Array.from(this.state.unseenAnnouncementCounts.values()).reduce(
       (sum, count) => sum + count,
@@ -84,8 +80,10 @@ class NotificationStateManager {
     )
   }
 
-  getUnseenAnnouncementsForMargin(marginId: number): number {
-    return this.state.unseenAnnouncementCounts.get(marginId) ?? 0
+  clearUnseenNotification(notification: Notification): void {
+    const current = this.state.unseenAnnouncementCounts.get(notification.marginId) ?? 0
+    this.state.unseenAnnouncementCounts.set(notification.marginId, Math.max(0, current - 1))
+    notification.seen = true
   }
 }
 

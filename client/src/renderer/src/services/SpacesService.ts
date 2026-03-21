@@ -1,6 +1,7 @@
 import type { CreateSpace, Space, SpaceMember } from '$src/interfaces/Space'
 import { authenticatedGet, authenticatedPost } from '$src/services/api'
 import type { Channel, CreateChannel } from '$src/interfaces/Channel'
+import { spaceState } from '$src/states/SpaceState.svelte'
 
 class SpacesService {
   async getAllSpacesForMargin(marginId: number): Promise<Space[]> {
@@ -9,10 +10,11 @@ class SpacesService {
     return response.json()
   }
 
-  async getAllSpacesForUserInMargin(marginId: number): Promise<Space[]> {
+  async getAllSpacesForUser(marginId: number): Promise<void> {
     const response = await authenticatedGet(`api/spaces/get_all_spaces_for_user/${marginId}`)
     if (!response.ok) throw new Error(`Failed to get spaces for user: ${response.status}`)
-    return response.json()
+    const spaces: Promise<Space[]> = response.json()
+    spaceState.setSpaces(await spaces)
   }
 
   async addSpace(space: CreateSpace): Promise<Space> {

@@ -20,16 +20,20 @@ export interface P2PCallData {
   localStream: MediaStream | null
   remoteStream: MediaStream | null
   candidateQueue: RTCIceCandidateInit[]
+  isAudioEnabled: boolean
+  isRemoteAudioEnabled: boolean
   isVideoEnabled: boolean
   isRemoteVideoEnabled: boolean
   isScreenSharing: boolean
   isRemoteScreenSharing: boolean
   screenShareTrack: MediaStreamTrack | null
+  remoteScreenStream: MediaStream | null
 }
 
 export interface GroupCallData {
   channelId: number
   session: ChannelCallSession | null
+  participants: SFUParticipant[]
 }
 
 export interface ChannelCallSession {
@@ -39,4 +43,23 @@ export interface ChannelCallSession {
   sendTransport: Transport
   receiveTransport: Transport
   localStream: MediaStream
+}
+
+export interface CallParticipant {
+  id: number
+  displayName: string
+  profilePictureUrl: string | null
+  stream: MediaStream | null
+  isVideoEnabled: boolean
+  isScreenSharing: boolean
+  isLocal: boolean
+}
+
+export interface SFUParticipant {
+  peerId: string
+  displayName: string
+  profilePictureUrl: string | null
+  audioStream: MediaStream | null
+  videoStream: MediaStream | null
+  isVideoEnabled: boolean
 }

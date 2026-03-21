@@ -1,8 +1,8 @@
 import { authenticatedGet } from '$src/services/api'
-import { userState } from '$src/states/UserState.svelte'
+import { userState } from '$src/states/UserState.svelte.js'
 import { Device } from 'mediasoup-client'
 import type { RtpCapabilities, Transport, TransportOptions } from 'mediasoup-client/types'
-import { callState } from '$src/states/CallState.svelte'
+import { callState } from '$src/states/CallState.svelte.js'
 import { errorService } from '$src/services/ErrorService'
 
 class ChannelCallService {
@@ -99,34 +99,49 @@ class ChannelCallService {
   }
 
   private setupConsumer(recvTransport: Transport, device: Device, ws: WebSocket): void {
-    ws.onmessage = async (event) => {
+    ws.addEventListener('message', async (event) => {
       const msg = JSON.parse(event.data)
 
-      if (msg.type === 'newProducer' && String(msg.peerId) !== String(userState.currentUser.id)) {
-        this.sendMessage(ws, 'consume', {
-          transportId: recvTransport.id,
-          producerId: msg.producerId,
-          rtpCapabilities: device.rtpCapabilities
-        })
-
-        const response = await this.waitForMessage(
-          ws,
-          'consumed',
-          (m) => m.producerId === msg.producerId
-        )
-
-        const consumer = await recvTransport.consume({
-          id: response.id,
-          producerId: response.producerId,
-          kind: response.kind,
-          rtpParameters: response.rtpParameters
-        })
-
-        const audio = new Audio()
-        audio.srcObject = new MediaStream([consumer.track])
-        audio.autoplay = true
+      if (msg.type === 'peer_left') {
+        callState.removeGroupParticipant(String(msg.peerId))
+        return
       }
-    }
+
+      if (msg.type !== 'newProducer') return
+      if (String(msg.peerId) === String(userState.currentUser.id)) return
+
+      this.sendMessage(ws, 'consume', {
+        transportId: recvTransport.id,
+        producerId: msg.producerId,
+        rtpCapabilities: device.rtpCapabilities
+      })
+
+      const response = await this.waitForMessage(
+        ws,
+        'consumed',
+        (m) => m.producerId === msg.producerId
+      )
+
+      const consumer = await recvTransport.consume({
+        id: response.id,
+        producerId: response.producerId,
+        kind: response.kind,
+        rtpParameters: response.rtpParameters
+      })
+
+      const stream = new MediaStream([consumer.track])
+      const peerId = String(msg.peerId)
+      const existing = callState.groupCallState?.participants.find((p) => p.peerId === peerId)
+
+      callState.addGroupParticipant({
+        peerId,
+        displayName: msg.displayName ?? peerId,
+        profilePictureUrl: msg.profilePictureUrl ?? null,
+        audioStream: consumer.kind === 'audio' ? stream : (existing?.audioStream ?? null),
+        videoStream: consumer.kind === 'video' ? stream : (existing?.videoStream ?? null),
+        isVideoEnabled: consumer.kind === 'video'
+      })
+    })
   }
 
   async joinVoiceChannel(channelId: number): Promise<void> {
@@ -175,6 +190,7 @@ class ChannelCallService {
         receiveTransport,
         localStream
       })
+      callState.setStatus('connected')
     } catch (err) {
       callState.endCall()
       console.error(err)

@@ -1,6 +1,7 @@
 import type { CreateMargin, Margin, MarginMember, UpdateMargin } from '$src/interfaces/Margin'
 import { authenticatedGet, authenticatedPost, authenticatedPostForm } from '$src/services/api'
 import { errorService } from '$src/services/ErrorService'
+import { chatState } from '$src/states/ChatState.svelte'
 
 class MarginService {
   async getMargin(marginId: number): Promise<Margin> {
@@ -90,6 +91,10 @@ class MarginService {
     const response = await authenticatedPostForm(formData, 'api/margins/create_new_margin')
     if (!response.ok) errorService.reportError('Failed to create margin: ' + response.status)
     return response.json()
+  }
+
+  addNewMargin(newMargin: Margin): void {
+    chatState.margins = [...chatState.margins, newMargin]
   }
 }
 

@@ -1,18 +1,34 @@
 <script lang="ts">
   import { chatState } from '$src/states/ChatState.svelte.js'
-  import type { Margin } from '$src/interfaces/Margin'
+  import type { CreateMargin, Margin } from '$src/interfaces/Margin'
   import CreateMarginModal from '$src/components/content/manage/margin/modals/CreateMarginModal.svelte'
+  import { spacesService } from '$src/services/SpacesService'
+  import { marginService } from '$src/services/MarginService'
+  import { clickOutside } from '$src/actions/clickOutside'
 
   let open = $state(false)
   let createMarginOpen = $state(false)
 
   function selectMargin(margin: Margin): void {
     chatState.selectMargin(margin)
+    spacesService.getAllSpacesForUser(chatState.selectedMargin.marginId)
     open = false
+  }
+
+  function close(): void {
+    createMarginOpen = false
+    open = false
+  }
+
+  async function createMargin(createRequest: CreateMargin): Promise<void> {
+    const newMargin = await marginService.createMargin(createRequest)
+    chatState.selectMargin(newMargin)
+    marginService.addNewMargin(newMargin)
+    close()
   }
 </script>
 
-<div class="switcher-wrapper">
+<div class="switcher-wrapper" use:clickOutside={() => (open = false)}>
   <button class="switcher-btn" onclick={() => (open = !open)}>
     <svg
       width="14"
@@ -51,7 +67,7 @@
           class:active={chatState.selectedMargin?.marginId === margin.marginId}
           onclick={() => selectMargin(margin)}
         >
-          <span class="margin-avatar">{margin.marginName[0].toUpperCase()}</span>
+          <span class="margin-avatar">{margin.marginName?.[0]?.toUpperCase() ?? '?'}</span>
           <span class="margin-name">{margin.marginName}</span>
           {#if chatState.selectedMargin?.marginId === margin.marginId}
             <svg
@@ -72,7 +88,7 @@
       >
     </div>
   {/if}
-  <CreateMarginModal open={createMarginOpen} onClose={() => (createMarginOpen = false)} />
+  <CreateMarginModal open={createMarginOpen} onCreate={createMargin} onClose={close} />
 </div>
 
 <style>

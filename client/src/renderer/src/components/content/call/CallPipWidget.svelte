@@ -1,22 +1,28 @@
 <script lang="ts">
-  import { callState } from '$src/states/CallState.svelte.js'
-  import { callService } from '$src/services/CallService'
+  import { callState } from '$src/states/CallState.svelte'
+  import { callService } from '$src/services/call/CallService'
   import { formatDuration } from '$src/utils/DateUtils'
+  import { srcObject } from '$src/actions/srcObject'
   import UserAvatar from '$src/components/common/user/UserAvatar.svelte'
 
   interface Props {
     remoteVideoStream: MediaStream | null
-    screenShareStream: MediaStream | null
+    screenShareStream?: MediaStream | null
     onRestore: () => void
+    showDuration?: boolean
   }
 
-  let { remoteVideoStream, screenShareStream, onRestore }: Props = $props()
+  let { remoteVideoStream, screenShareStream, onRestore, showDuration = true }: Props = $props()
 
   let pipX = $state(window.innerWidth - 320)
   let pipY = $state(window.innerHeight - 220)
   let dragging = $state(false)
   let dragOffsetX = 0
   let dragOffsetY = 0
+
+  const isScreenSharing = $derived(
+    !!screenShareStream && !!callState.p2pCallState?.isRemoteScreenSharing
+  )
 
   function onPointerDown(e: PointerEvent): void {
     if ((e.target as HTMLElement).closest('button')) return
@@ -37,90 +43,85 @@
   }
 </script>
 
-{#if callState.p2pCallState}
-  <div
-    class="pip-widget"
-    style:left="{pipX}px"
-    style:top="{pipY}px"
-    onpointerdown={onPointerDown}
-    onpointermove={onPointerMove}
-    onpointerup={onPointerUp}
-    onlostpointercapture={() => {
-      dragging = false
-    }}
-    role="region"
-    aria-label="Active call"
-  >
-    <div class="pip-video-area">
-      {#if callState.p2pCallState.isRemoteScreenSharing && screenShareStream}
-        <video srcobject={screenShareStream} autoplay playsinline class="pip-video"></video>
-      {:else if callState.p2pCallState.isRemoteVideoEnabled && remoteVideoStream}
-        <video srcobject={remoteVideoStream} autoplay playsinline class="pip-video"></video>
-      {:else}
-        <div class="pip-avatar">
-          <UserAvatar
-            profilePictureUrl={callState.p2pCallState.user.profilePictureUrl}
-            width={64}
-            height={64}
-          />
-          <p class="pip-username">{callState.p2pCallState.user.displayName}</p>
-        </div>
-      {/if}
-    </div>
-
-    <div class="pip-overlay">
-      <span class="pip-duration">
-        {#if callState.status === 'connected'}
-          {formatDuration(callState.duration)}
-        {:else}
-          {callState.status}...
-        {/if}
-      </span>
-      <div class="pip-actions">
-        <button class="pip-btn restore-btn" onclick={onRestore} title="Restore call">
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            width="16"
-            height="16"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2.5"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-          >
-            <polyline points="15 3 21 3 21 9" />
-            <polyline points="9 21 3 21 3 15" />
-            <line x1="21" y1="3" x2="14" y2="10" />
-            <line x1="3" y1="21" x2="10" y2="14" />
-          </svg>
-        </button>
-        <button class="pip-btn end-btn" onclick={() => callService.endCall(false)} title="End call">
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            width="16"
-            height="16"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2.5"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-          >
-            <path
-              d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07
-              19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11
-              2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45
-              2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45
-              12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"
-            />
-            <line x1="18" y1="6" x2="6" y2="18" />
-          </svg>
-        </button>
+<div
+  class="pip-widget"
+  style:left="{pipX}px"
+  style:top="{pipY}px"
+  onpointerdown={onPointerDown}
+  onpointermove={onPointerMove}
+  onpointerup={onPointerUp}
+  onlostpointercapture={() => {
+    dragging = false
+  }}
+  role="region"
+  aria-label="Active call"
+>
+  <div class="pip-video-area">
+    {#if isScreenSharing}
+      <video use:srcObject={screenShareStream} autoplay playsinline class="pip-video screen-share"
+      ></video>
+    {:else if callState.p2pCallState?.isRemoteVideoEnabled && remoteVideoStream}
+      <video use:srcObject={remoteVideoStream} autoplay playsinline class="pip-video"></video>
+    {:else}
+      <div class="pip-avatar">
+        <UserAvatar
+          profilePictureUrl={callState.p2pCallState?.user.profilePictureUrl ?? null}
+          width={64}
+          height={64}
+        />
+        <p class="pip-username">{callState.p2pCallState?.user.displayName}</p>
       </div>
+    {/if}
+  </div>
+
+  <div class="pip-overlay">
+    <span class="pip-duration">
+      {#if callState.status === 'connected' && showDuration}
+        {formatDuration(callState.duration)}
+      {:else if callState.status !== 'connected'}
+        {callState.status}...
+      {/if}
+    </span>
+    <div class="pip-actions">
+      <button class="pip-btn restore-btn" onclick={onRestore} title="Restore call">
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          width="16"
+          height="16"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2.5"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        >
+          <polyline points="15 3 21 3 21 9" />
+          <polyline points="9 21 3 21 3 15" />
+          <line x1="21" y1="3" x2="14" y2="10" />
+          <line x1="3" y1="21" x2="10" y2="14" />
+        </svg>
+      </button>
+      <button class="pip-btn end-btn" onclick={() => callService.endCall(false)} title="End call">
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          width="16"
+          height="16"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2.5"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        >
+          <path
+            d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"
+          />
+          <line x1="18" y1="6" x2="6" y2="18" />
+        </svg>
+      </button>
     </div>
   </div>
-{/if}
+</div>
 
 <style>
   .pip-widget {
@@ -130,7 +131,7 @@
     border-radius: 16px;
     overflow: hidden;
     background: #1a1a1a;
-    border: 1.5px solid rgba(180, 112, 36, 0.6);
+    border: 2px solid rgba(180, 112, 36, 0.6);
     box-shadow: 0 16px 48px rgba(0, 0, 0, 0.6);
     z-index: 1000;
     cursor: grab;
@@ -154,13 +155,18 @@
   .pip-video-area {
     width: 100%;
     height: 100%;
-    background: #c1c1c1;
+    background: #1a1a1a;
   }
 
   .pip-video {
     width: 100%;
     height: 100%;
     object-fit: cover;
+  }
+
+  .pip-video.screen-share {
+    object-fit: contain;
+    background: #0d0d0d;
   }
 
   .pip-avatar {
@@ -224,14 +230,17 @@
     background: rgba(255, 255, 255, 0.15);
     backdrop-filter: blur(8px);
   }
+
   .restore-btn:hover {
     background: rgba(255, 255, 255, 0.28);
     transform: scale(1.1);
   }
+
   .end-btn {
     background: rgba(220, 53, 69, 0.85);
     backdrop-filter: blur(8px);
   }
+
   .end-btn:hover {
     background: #dc3545;
     transform: scale(1.1);

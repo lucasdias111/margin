@@ -3,16 +3,16 @@
   import UploadImageButton from '$src/components/common/buttons/UploadImageButton.svelte'
   import UserAvatar from '$src/components/common/user/UserAvatar.svelte'
   import avatar from '$src/assets/pics/anonym-avatar.png'
-  import { marginService } from '$src/services/MarginService'
-  import { chatState } from '$src/states/ChatState.svelte.js'
   import { Visibility } from '$src/interfaces/Visibility'
+  import type { CreateMargin } from '$src/interfaces/Margin'
 
   interface Props {
     open: boolean
     onClose: () => void
+    onCreate: (createRequest: CreateMargin) => void
   }
 
-  let { open, onClose }: Props = $props()
+  let { open, onClose, onCreate }: Props = $props()
 
   let marginName = $state('')
   let marginDescription = $state('')
@@ -20,23 +20,22 @@
   let icon = $state<File | null>(null)
   let previewUrl = $state<string | null>(avatar)
 
-  async function handleSubmit(): Promise<void> {
-    const newMargin = await marginService.createMargin(
-      {
-        marginName,
-        marginDescription,
-        visibility
-      },
-      icon
-    )
-
-    chatState.selectMargin(newMargin)
+  function clear(): void {
     marginName = ''
     marginDescription = ''
     icon = null
     previewUrl = avatar
-    chatState.margins = [...chatState.margins, newMargin]
-    onClose()
+  }
+
+  async function handleSubmit(): Promise<void> {
+    const createMargin: CreateMargin = {
+      marginName,
+      marginDescription,
+      visibility,
+      marginIcon: icon
+    }
+    onCreate(createMargin)
+    clear()
   }
 </script>
 

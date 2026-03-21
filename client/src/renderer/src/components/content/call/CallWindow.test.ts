@@ -4,7 +4,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import CallWindow from './CallWindow.svelte'
 import { callState } from '$src/states/CallState.svelte.js'
 import { webSocketService } from '$src/services/WebSocketService'
-import { callService } from '$src/services/CallService'
+import { callService } from '$src/services/call/CallService'
 import { WebSocketMessageType } from '$src/interfaces/WebSocketMessageType'
 
 vi.mock('$src/services/WebSocketService', () => ({

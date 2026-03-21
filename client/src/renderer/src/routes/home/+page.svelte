@@ -8,8 +8,12 @@
   import { WebSocketMessageType } from '$src/interfaces/WebSocketMessageType'
   import { callState } from '$src/states/CallState.svelte'
   import CallWindow from '$src/components/content/call/CallWindow.svelte'
-  import { callService } from '$src/services/CallService'
-  import type { CallOfferPayload, WebSocketMessage } from '$src/interfaces/WebSocketMessages'
+  import { callService } from '$src/services/call/CallService'
+  import type {
+    CallOfferPayload,
+    ChannelVoiceParticipantPayload,
+    WebSocketMessage
+  } from '$src/interfaces/WebSocketMessages'
   import { notificationService } from '$src/services/NotificationService'
   import type { UnreadCount } from '$src/interfaces/UnreadCount'
   import { notificationState } from '$src/states/NotificationState.svelte'
@@ -29,6 +33,8 @@
   import type { Notification } from '$src/interfaces/Notification'
   import Notifications from '$src/components/content/notification/Notifications.svelte'
   import type { Margin } from '$src/interfaces/Margin'
+  import SFUCallWindow from '$src/components/content/call/SFUCallWindow.svelte'
+  import { spaceState } from '$src/states/SpaceState.svelte'
 
   let incomingCallPayload = $state<CallOfferPayload | null>(null)
 
@@ -48,10 +54,21 @@
     [WebSocketMessageType.NOTIFICATION]: (data: WebSocketMessage<Notification>) =>
       notificationState.incrementUnseenAnnouncements(data.payload.marginId),
     [WebSocketMessageType.USER_ADDED_TO_MARGIN]: (data: WebSocketMessage<Margin>) => {
-      chatState.selectMargin(data.payload)
+      marginService.addNewMargin(data.payload)
       notificationState.incrementUnseenAnnouncements(data.payload.marginId)
     },
     [WebSocketMessageType.CALL_NO_ANSWER]: () => (incomingCallPayload = null)
+    },
+    [WebSocketMessageType.USER_JOINED_VOICE]: (
+      msg: WebSocketMessage<ChannelVoiceParticipantPayload>
+    ) => {
+      spaceState.updateVoiceParticipant(msg.payload.channelId, msg.payload.user, true)
+    },
+    [WebSocketMessageType.USER_LEFT_VOICE]: (
+      msg: WebSocketMessage<ChannelVoiceParticipantPayload>
+    ) => {
+      spaceState.updateVoiceParticipant(msg.payload.channelId, msg.payload.user, false)
+    },
   })
 
   async function setup(): Promise<void> {
@@ -106,7 +123,7 @@
     if (!incomingCallPayload) return
     const p = incomingCallPayload
     incomingCallPayload = null
-    callService.startCall(p.callId, p.caller, true, { type: 'offer' as const, sdp: p.sdp })
+    callService.startCall(p.callId, p.caller, true, false, { type: 'offer' as const, sdp: p.sdp })
   }
 
   function declineCall(): void {
@@ -130,6 +147,10 @@
   {#if callState.isP2PCall}
     <div class="call-overlay" class:minimized={callState.isMinimized}>
       <CallWindow />
+    </div>
+  {:else if callState.isGroupCall}
+    <div class="call-overlay" class:minimized={callState.isMinimized}>
+      <SFUCallWindow />
     </div>
   {/if}
   <Navigation />
@@ -170,11 +191,21 @@
     justify-content: center;
   }
 
+  .call-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: #2d2d2d;
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
   .call-overlay.minimized {
     background: transparent;
-    position: static;
-    width: 0;
-    height: 0;
-    overflow: visible;
+    pointer-events: none;
   }
 </style>

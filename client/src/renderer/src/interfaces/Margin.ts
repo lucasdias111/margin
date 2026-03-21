@@ -1,4 +1,3 @@
-import type { Space } from '$src/interfaces/Space'
 import type { User } from '$src/interfaces/User'
 import type { Visibility } from '$src/interfaces/Visibility'
 
@@ -9,7 +8,6 @@ export interface Margin {
   visibility: string
   marginIconUrl: string
   members: MarginMember[]
-  spaces: Space[]
 }
 
 export interface MarginMember {
