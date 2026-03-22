@@ -24,6 +24,7 @@ export async function handleGetRouterRtpCapabilities(
 
     const peer: Peer = {
         id: msg.peerId,
+        displayName: msg.displayName,
         ws,
         transports: new Map(),
         producers: new Map(),
@@ -105,7 +106,8 @@ export async function handleProduce(
             p.ws.send(JSON.stringify({
                 type: 'newProducer',
                 producerId: producer.id,
-                peerId: peer.id
+                peerId: peer.id,
+                displayName: peer.displayName,
             }))
         }
     }
@@ -149,7 +151,8 @@ export function handleGetProducers(ws: WebSocket, peer: Peer, room: Room): void 
             ws.send(JSON.stringify({
                 type: 'newProducer',
                 producerId: producer.id,
-                peerId: p.id
+                peerId: p.id,
+                displayName: p.displayName
             }))
         }
     }

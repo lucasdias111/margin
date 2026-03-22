@@ -3,6 +3,7 @@ import {types as MediasoupTypes} from 'mediasoup'
 
 export interface Peer {
     id: string
+    displayName: string
     ws: WebSocket
     transports: Map<string, MediasoupTypes.WebRtcTransport>
     producers: Map<string, MediasoupTypes.Producer>
