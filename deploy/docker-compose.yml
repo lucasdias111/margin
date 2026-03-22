@@ -39,6 +39,7 @@ services:
       S3_ACCESS_KEY: ${S3_ACCESS_KEY}
       S3_SECRET_KEY: ${S3_SECRET_KEY}
       APP_BASE_URL: https://${DOMAIN}
+      JAVA_TOOL_OPTIONS: -Djava.net.preferIPv4Stack=true
     networks:
       - margin-net
     healthcheck:
