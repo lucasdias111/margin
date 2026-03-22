@@ -10,7 +10,7 @@ function internalHeaders(): Record<string, string> {
 }
 
 export async function notifyPeerJoined(roomId: string, peerId: string): Promise<void> {
-    const res = await fetch(`${springUrl}/sfu/peer_joined`, {
+    const res = await fetch(`${springUrl}/api/sfu/peer_joined`, {
         method: 'POST',
         headers: internalHeaders(),
         body: JSON.stringify({roomId, peerId})
@@ -19,7 +19,7 @@ export async function notifyPeerJoined(roomId: string, peerId: string): Promise<
 }
 
 export async function notifyPeerLeft(roomId: string, peerId: string): Promise<void> {
-    const res = await fetch(`${springUrl}/sfu/peer_left`, {
+    const res = await fetch(`${springUrl}/api/sfu/peer_left`, {
         method: 'POST',
         headers: internalHeaders(),
         body: JSON.stringify({roomId, peerId})
