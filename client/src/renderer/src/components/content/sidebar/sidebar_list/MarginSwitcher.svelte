@@ -5,6 +5,8 @@
   import { spacesService } from '$src/services/SpacesService'
   import { marginService } from '$src/services/MarginService'
   import { clickOutside } from '$src/actions/clickOutside'
+  import UnreadNotificationBadge from '$src/components/common/chat/UnreadNotificationBadge.svelte'
+  import { notificationState } from '$src/states/NotificationState.svelte'
 
   let open = $state(false)
   let createMarginOpen = $state(false)
@@ -26,6 +28,16 @@
     marginService.addNewMargin(newMargin)
     close()
   }
+
+  const unreadPerMargin = $derived(
+    new Map(
+      chatState.margins.map((m) => [
+        m.marginId,
+        notificationState.unreadChannelMessages.filter((msg) => msg.marginId === m.marginId)
+          .length + (notificationState.unseenAnnouncementCounts.get(m.marginId) ?? 0)
+      ])
+    )
+  )
 </script>
 
 <div class="switcher-wrapper" use:clickOutside={() => (open = false)}>
@@ -62,6 +74,7 @@
   {#if open}
     <div class="dropdown">
       {#each chatState.margins as margin (margin.marginId)}
+        {@const unread = unreadPerMargin.get(margin.marginId) ?? 0}
         <button
           class="margin-item"
           class:active={chatState.selectedMargin?.marginId === margin.marginId}
@@ -69,23 +82,14 @@
         >
           <span class="margin-avatar">{margin.marginName?.[0]?.toUpperCase() ?? '?'}</span>
           <span class="margin-name">{margin.marginName}</span>
-          {#if chatState.selectedMargin?.marginId === margin.marginId}
-            <svg
-              width="12"
-              height="12"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2.5"
-            >
-              <polyline points="20 6 9 17 4 12" />
-            </svg>
-          {/if}
+          <span class="margin-actions">
+            <UnreadNotificationBadge shouldShow={unread > 0} count={unread} variant="inline" />
+          </span>
         </button>
       {/each}
       <button class="margin-item" onclick={() => (createMarginOpen = true)}
-        >Create new margin</button
-      >
+        >Create new margin
+      </button>
     </div>
   {/if}
   <CreateMarginModal open={createMarginOpen} onCreate={createMargin} onClose={close} />
@@ -131,10 +135,11 @@
 
   .dropdown {
     position: absolute;
-    left: 100%;
-    top: 0;
-    margin-left: 8px;
-    min-width: 200px;
+    left: 0;
+    right: 0;
+    top: calc(100% + 4px);
+    margin-left: 0;
+    min-width: unset;
     background: #fff;
     border: 1px solid #ece8e0;
     border-radius: 14px;
@@ -165,6 +170,7 @@
   }
 
   .margin-item.active {
+    background: rgba(228, 113, 42, 0.08);
     color: #f47e3a;
   }
 
@@ -187,5 +193,13 @@
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+  }
+
+  .margin-actions {
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-shrink: 0;
   }
 </style>

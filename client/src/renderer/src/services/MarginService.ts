@@ -96,6 +96,17 @@ class MarginService {
   addNewMargin(newMargin: Margin): void {
     chatState.margins = [...chatState.margins, newMargin]
   }
+
+  async loadMarginsForUser(): Promise<void> {
+    marginService.getMargins().then((margins) => {
+      chatState.margins = margins
+      if (margins.length === 0) {
+        chatState.hasMargin = false
+      } else {
+        chatState.selectMargin(margins[0])
+      }
+    })
+  }
 }
 
 export const marginService = new MarginService()

@@ -15,9 +15,9 @@
 
   const { user, isIncoming, offer } = callState.p2pCallState!
 
-  let remoteStream = $state<MediaStream | null>(null)
-  let localStream = $state<MediaStream | null>(null)
-  let remoteScreenStream = $state<MediaStream | null>(null)
+  const remoteStream = $derived(callState.p2pCallState?.remoteStream ?? null)
+  const localStream = $derived(callState.p2pCallState?.localStream ?? null)
+  const remoteScreenStream = $derived(callState.p2pCallState?.remoteScreenStream ?? null)
 
   onCallCreated((data) => callState.setCallId(data.payload!.callId))
   onCallResponse(async (data) => await callService.handleCallResponse(data))
@@ -32,13 +32,6 @@
     } else {
       await callService.initiateCall(user.id)
     }
-  })
-
-  $effect(() => {
-    const p2p = callState.p2pCallState
-    if (p2p?.remoteStream) remoteStream = p2p.remoteStream
-    if (p2p?.localStream) localStream = p2p.localStream
-    if (p2p?.remoteScreenStream) remoteScreenStream = p2p.remoteScreenStream
   })
 
   onDestroy(() => callService.endCall(true))

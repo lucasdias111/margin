@@ -54,6 +54,10 @@ class CallService {
     const transceivers = pc.getTransceivers()
     this.screenTransceiver = transceivers[2] ?? null
 
+    if (this.screenTransceiver) {
+      this.screenTransceiver.direction = 'sendrecv'
+    }
+
     const audioTrack = localStream.getAudioTracks()[0]
     const videoTrack = localStream.getVideoTracks()[0]
     if (audioTrack) await transceivers[0].sender.replaceTrack(audioTrack)
@@ -212,7 +216,16 @@ class CallService {
         this.screenTransceiver = transceivers[2] ?? null
       }
 
-      if (event.transceiver === this.screenTransceiver) {
+      const isScreenShare = transceivers.indexOf(event.transceiver) === 2
+      console.log(
+        'ontrack',
+        event.track.kind,
+        'isScreenShare',
+        isScreenShare,
+        'muted',
+        event.track.muted
+      )
+      if (isScreenShare) {
         const screenStream = new MediaStream([track])
         callState.setRemoteScreenSharing(true, screenStream)
       } else {
@@ -261,9 +274,12 @@ class CallService {
   handleMediaState(video: boolean, screenShare: boolean): void {
     callState.setRemoteVideoEnabled(video)
     if (screenShare) {
-      const track = callState.p2pCallState?.peerConnection?.getTransceivers()?.[2]?.receiver?.track
-      const stream = track ? new MediaStream([track]) : null
-      callState.setRemoteScreenSharing(true, stream)
+      const transceiver = callState.p2pCallState?.peerConnection?.getTransceivers()?.[2]
+      const track = transceiver?.receiver?.track
+      if (track) {
+        const stream = new MediaStream([track])
+        callState.setRemoteScreenSharing(true, stream)
+      }
     } else {
       callState.setRemoteScreenSharing(false, null)
     }

@@ -3,4 +3,5 @@ export interface UnreadCount {
   fromUserId: number
   unreadDmsCount: number
   unreadChannelsCount: number
+  marginId: number
 }

@@ -17,6 +17,14 @@ class NotificationStateManager {
     unseenAnnouncementCounts: new SvelteMap()
   })
 
+  get unreadChannelMessages(): UnreadCount[] {
+    return this.state.unreadChannelMessages
+  }
+
+  get unseenAnnouncementCounts(): SvelteMap<number, number> {
+    return this.state.unseenAnnouncementCounts
+  }
+
   addUnreadDirectMessages(directMessages: UnreadCount[]): void {
     this.state.unreadDirectMessages = this.state.unreadDirectMessages.concat(directMessages)
   }
@@ -84,6 +92,16 @@ class NotificationStateManager {
     const current = this.state.unseenAnnouncementCounts.get(notification.marginId) ?? 0
     this.state.unseenAnnouncementCounts.set(notification.marginId, Math.max(0, current - 1))
     notification.seen = true
+  }
+
+  getTotalUnreadChannelsForMargin(marginId: number): number {
+    return this.state.unreadChannelMessages.filter((msg) => msg.marginId === marginId).length
+  }
+
+  getTotalUnreadForMargin(marginId: number): number {
+    const channelUnread = this.getTotalUnreadChannelsForMargin(marginId)
+    const announcements = this.state.unseenAnnouncementCounts.get(marginId) ?? 0
+    return channelUnread + announcements
   }
 }
 

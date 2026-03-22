@@ -34,7 +34,8 @@ class NotificationService {
       conversationId: message.conversationId,
       fromUserId: message.user.id,
       unreadDmsCount: 1,
-      unreadChannelsCount: 0
+      unreadChannelsCount: 0,
+      marginId: -1
     }
 
     notificationState.addUnreadDirectMessages([unreadCount])
@@ -49,7 +50,8 @@ class NotificationService {
       conversationId: message.conversationId,
       fromUserId: message.user.id,
       unreadDmsCount: 0,
-      unreadChannelsCount: 1
+      unreadChannelsCount: 1,
+      marginId: message.marginId ?? -1
     }
 
     notificationState.addUnreadChannelMessages([unreadCount])
@@ -64,7 +66,8 @@ class NotificationService {
       conversationId: message.conversationId,
       fromUserId: message.user.id,
       unreadDmsCount: 0,
-      unreadChannelsCount: 1
+      unreadChannelsCount: 1,
+      marginId: message.marginId ?? -1
     }
 
     notificationState.addUnreadChannelMessages([unreadCount])

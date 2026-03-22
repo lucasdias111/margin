@@ -9,6 +9,7 @@ export interface Message {
   content: string
   isEdited: boolean
   createdAt: string
+  marginId?: number
 }
 
 export interface ConversationMessagesResponse {
