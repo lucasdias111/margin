@@ -1,8 +1,4 @@
 services:
-
-  # -----------------------------------------
-  # PostgreSQL
-  # -----------------------------------------
   postgres:
     image: postgres:15-alpine
     container_name: margindb
@@ -20,16 +16,8 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
-
-  # -----------------------------------------
-  # Spring Boot Backend
-  # -----------------------------------------
   margin-server:
     image: codeberg.org/margin/margin-server:${SERVER_VERSION:-latest}
-    # Build locally: mvn package -DskipTests && docker build -t margin/server:<version> .
-    # Transfer:      docker save margin/server:<version> | gzip > margin-server.tar.gz && scp ...
-    # Deploy:        SERVER_VERSION=<version> docker compose up -d margin-server
-    # Rollback:      SERVER_VERSION=<previous> docker compose up -d margin-server
     container_name: margin-server
     restart: unless-stopped
     depends_on:
@@ -53,20 +41,13 @@ services:
     networks:
       - margin-net
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:8080/actuator/health || exit 1"]
+      test: ["CMD-SHELL", "curl -f http://localhost:9090/actuator/health || exit 1"]
       interval: 15s
       timeout: 5s
       retries: 5
 
-  # -----------------------------------------
-  # margin SFU (Node.js)
-  # -----------------------------------------
   margin-sfu:
     image: codeberg.org/margin/margin-sfu:${SFU_VERSION:-latest}
-    # Build locally: docker build -t margin/margin-sfu:<version> .
-    # Transfer:      docker save margin/margin-sfu:<version> | gzip > margin-sfu.tar.gz && scp ...
-    # Deploy:        SFU_VERSION=<version> docker compose up -d margin-sfu
-    # Rollback:      SFU_VERSION=<previous> docker compose up -d margin-sfu
     container_name: margin-sfu
     restart: unless-stopped
     environment:
@@ -83,9 +64,6 @@ services:
     depends_on:
       - margin-server
 
-  # -----------------------------------------
-  # Coturn TURN/STUN server
-  # -----------------------------------------
   coturn:
     image: coturn/coturn:latest
     container_name: margin-coturn
@@ -96,9 +74,6 @@ services:
       - /etc/letsencrypt:/etc/letsencrypt:ro
     command: ["-c", "/etc/coturn/turnserver.conf"]
 
-  # -----------------------------------------
-  # Nginx -- TLS termination + reverse proxy
-  # -----------------------------------------
   nginx:
     image: nginx:alpine
     container_name: margin-nginx
@@ -116,9 +91,6 @@ services:
     networks:
       - margin-net
 
-  # -----------------------------------------
-  # Certbot -- Let's Encrypt cert renewal
-  # -----------------------------------------
   certbot:
     image: certbot/certbot:latest
     container_name: margin-certbot
@@ -133,9 +105,6 @@ services:
     profiles:
       - certbot
 
-# -----------------------------------------
-# Networks & Volumes
-# -----------------------------------------
 networks:
   margin-net:
     driver: bridge
