@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { srcObject } from '$src/actions/srcObject'
   import { onDestroy } from 'svelte'
   import { fade, scale } from 'svelte/transition'
   import { cubicInOut } from 'svelte/easing'
@@ -17,7 +18,7 @@
     displayName: 'You',
     profilePictureUrl: userState.currentUser?.profilePictureUrl ?? null,
     stream: localStream,
-    isVideoEnabled: false,
+    isVideoEnabled: callState.groupCallState?.isVideoEnabled ?? false,
     isScreenSharing: false,
     isLocal: true
   })
@@ -36,8 +37,8 @@
 
   const pipStream = $derived(
     remoteParticipants.find((p) => p.isVideoEnabled)?.stream ??
-    remoteParticipants[0]?.stream ??
-    null
+      remoteParticipants[0]?.stream ??
+      null
   )
 
   const channelName = $derived(chatState.selectedChannel?.name ?? 'Voice channel')
@@ -46,6 +47,11 @@
 </script>
 
 {#if callState.groupCallState}
+  {#each callState.groupCallState.participants as participant (participant.peerId)}
+    {#if participant.audioStream}
+      <audio use:srcObject={participant.audioStream} autoplay style="display:none"></audio>
+    {/if}
+  {/each}
   {#if callState.isMinimized}
     <div
       in:scale={{ duration: 250, start: 0.85, easing: cubicInOut, opacity: 0 }}
@@ -68,7 +74,7 @@
         {remoteParticipants}
         remoteScreenStream={null}
         isAudioEnabled={true}
-        isVideoEnabled={false}
+        isVideoEnabled={callState.groupCallState?.isVideoEnabled ?? false}
         isScreenSharing={false}
         isRemoteScreenSharing={false}
         status={callState.status}
@@ -78,7 +84,7 @@
         forceGrid={true}
         onMinimize={() => callState.toggleMinimized()}
         onToggleAudio={() => {}}
-        onToggleVideo={() => {}}
+        onToggleVideo={() => channelCallService.toggleVideo()}
         onToggleScreenShare={() => {}}
         onEndCall={() => channelCallService.endChannelCall()}
       />

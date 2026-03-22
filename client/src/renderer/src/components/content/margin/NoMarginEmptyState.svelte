@@ -1,7 +1,17 @@
 <script lang="ts">
   import CreateMarginModal from '$src/components/content/manage/margin/modals/CreateMarginModal.svelte'
+  import type { CreateMargin } from '$src/interfaces/Margin'
+  import { marginService } from '$src/services/MarginService'
+  import { chatState } from '$src/states/ChatState.svelte'
 
   let modalOpen = $state(false)
+
+  async function onCreate(createRequest: CreateMargin): Promise<void> {
+    const newMargin = await marginService.createMargin(createRequest)
+    chatState.selectMargin(newMargin)
+    marginService.addNewMargin(newMargin)
+    modalOpen = false
+  }
 </script>
 
 <div class="empty-state">
@@ -17,7 +27,7 @@
   <button class="create-btn" onclick={() => (modalOpen = true)}>Create margin</button>
 </div>
 
-<CreateMarginModal open={modalOpen} onClose={() => (modalOpen = false)} />
+<CreateMarginModal open={modalOpen} onClose={() => (modalOpen = false)} {onCreate} />
 
 <style>
   .empty-state {

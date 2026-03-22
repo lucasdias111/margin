@@ -23,7 +23,7 @@ class WebSocketService {
     this.intentionalDisconnect = false
 
     try {
-      this.ws = new WebSocket(API_CONFIG.wsUrl + `ws?token=${token}`)
+      this.ws = new WebSocket(API_CONFIG.wsUrl + `?token=${token}`)
     } catch (error) {
       errorService.reportError('Cannot connect to WebSocket server: ' + error)
       return

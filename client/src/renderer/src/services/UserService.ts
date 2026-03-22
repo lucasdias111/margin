@@ -4,7 +4,7 @@ import { userState } from '$src/states/UserState.svelte'
 
 class UserService {
   async getRecentChatUsers(userId: number): Promise<RecentChatUser[]> {
-    const response = await authenticatedGet(`api/users/${userId}/recent_chat_users`)
+    const response = await authenticatedGet(`users/${userId}/recent_chat_users`)
 
     if (!response.ok) {
       return []
@@ -14,7 +14,7 @@ class UserService {
   }
 
   async updateUserInfo(formData: FormData): Promise<void> {
-    const response = await authenticatedPatchForm(formData, 'api/users/update_user_info')
+    const response = await authenticatedPatchForm(formData, 'users/update_user_info')
     if (!response.ok) throw new Error('Update failed')
 
     const data = await response.json()

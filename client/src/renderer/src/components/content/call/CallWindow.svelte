@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { srcObject } from '$src/actions/srcObject'
   import { onMount, onDestroy } from 'svelte'
   import { fade, scale } from 'svelte/transition'
   import { cubicInOut } from 'svelte/easing'
@@ -49,21 +50,22 @@
   const remoteParticipants = $derived(
     callState.p2pCallState
       ? [
-        {
-          id: user.id,
-          displayName: user.displayName,
-          profilePictureUrl: user.profilePictureUrl ?? null,
-          stream: remoteStream,
-          isVideoEnabled: callState.p2pCallState.isRemoteVideoEnabled,
-          isScreenSharing: callState.p2pCallState.isRemoteScreenSharing,
-          isLocal: false
-        }
-      ]
+          {
+            id: user.id,
+            displayName: user.displayName,
+            profilePictureUrl: user.profilePictureUrl ?? null,
+            stream: remoteStream,
+            isVideoEnabled: callState.p2pCallState.isRemoteVideoEnabled,
+            isScreenSharing: callState.p2pCallState.isRemoteScreenSharing,
+            isLocal: false
+          }
+        ]
       : []
   )
 </script>
 
 {#if callState.p2pCallState}
+  <audio use:srcObject={remoteStream} autoplay style="display:none"></audio>
   {#if callState.isMinimized}
     <div
       in:scale={{ duration: 250, start: 0.85, easing: cubicInOut, opacity: 0 }}

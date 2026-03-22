@@ -99,7 +99,7 @@ class ChatService {
       return
 
     await this.loadMessages(
-      `api/conversations/${user.id}/direct_messages?limit=${ChatService.PAGE_SIZE}`,
+      `conversations/${user.id}/direct_messages?limit=${ChatService.PAGE_SIZE}`,
       (conv) => this.markConversationAsRead(conv.id)
     )
   }
@@ -108,7 +108,7 @@ class ChatService {
     if (conversationState.currentConversation?.id === channel.conversationId) return
 
     await this.loadMessages(
-      `api/conversations/${channel.id}/channel_messages?limit=${ChatService.PAGE_SIZE}`,
+      `conversations/${channel.id}/channel_messages?limit=${ChatService.PAGE_SIZE}`,
       () => this.markConversationAsRead(channel.conversationId)
     )
   }
@@ -189,10 +189,10 @@ class ChatService {
 
   private buildPaginationUrl(conversation: Conversation, before: number): string | null {
     if (isDirectConversation(conversation)) {
-      return `api/conversations/${conversation.otherUserId}/direct_messages?limit=${ChatService.PAGE_SIZE}&before=${before}`
+      return `conversations/${conversation.otherUserId}/direct_messages?limit=${ChatService.PAGE_SIZE}&before=${before}`
     }
     if (isChannelConversation(conversation)) {
-      return `api/conversations/${conversation.channelId}/channel_messages?limit=${ChatService.PAGE_SIZE}&before=${before}`
+      return `conversations/${conversation.channelId}/channel_messages?limit=${ChatService.PAGE_SIZE}&before=${before}`
     }
     return null
   }
@@ -229,7 +229,7 @@ class ChatService {
         recipientUserId: toUserId,
         encryptedContent: content
       },
-      `api/conversations/create_private`
+      `conversations/create_private`
     )
     const conversation: Conversation = await response.json()
 
@@ -332,7 +332,7 @@ class ChatService {
   async markConversationAsRead(conversationId: number): Promise<void> {
     if (!conversationId) return
     try {
-      await authenticatedPost(null, `api/conversations/${conversationId}/read`)
+      await authenticatedPost(null, `conversations/${conversationId}/read`)
       notificationService.markConversationAsRead(conversationId)
     } catch (error) {
       console.error('Failed to mark conversation as read:', error)

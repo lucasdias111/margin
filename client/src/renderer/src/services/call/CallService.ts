@@ -3,6 +3,8 @@ import { callSignalingService } from '$src/services/call/CallSignalingService'
 import type { User } from '$src/interfaces/User'
 import type { CallResponsePayload, WebSocketMessage } from '$src/interfaces/WebSocketMessages'
 import { errorService } from '$src/services/ErrorService'
+import { webSocketService } from '$src/services/WebSocketService'
+import { WebSocketMessageType } from '$src/interfaces/WebSocketMessageType'
 
 const ICE_SERVERS = [{ urls: 'stun:stun.l.google.com:19302' }]
 
@@ -164,10 +166,13 @@ class CallService {
   }
 
   async getUserMedia(): Promise<MediaStream> {
+    const stream = new MediaStream()
+
     try {
-      return await navigator.mediaDevices.getUserMedia({ video: true, audio: true })
+      const audioStream = await navigator.mediaDevices.getUserMedia({ audio: true })
+      audioStream.getAudioTracks().forEach((t) => stream.addTrack(t))
     } catch (e) {
-      errorService.reportError('Error getting media for call: ' + e.message)
+      errorService.reportError('Microphone not available: ' + e.message)
       const audioContext = new AudioContext()
       const oscillator = audioContext.createOscillator()
       const gainNode = audioContext.createGain()
@@ -176,8 +181,17 @@ class CallService {
       oscillator.connect(gainNode)
       gainNode.connect(dst)
       oscillator.start()
-      return dst.stream
+      dst.stream.getAudioTracks().forEach((t) => stream.addTrack(t))
     }
+
+    try {
+      const videoStream = await navigator.mediaDevices.getUserMedia({ video: true })
+      videoStream.getVideoTracks().forEach((t) => stream.addTrack(t))
+    } catch (e) {
+      errorService.reportError('Camera not available: ' + e.message)
+    }
+
+    return stream
   }
 
   private async setup(userId: number, isInitiator: boolean): Promise<void> {
@@ -283,6 +297,14 @@ class CallService {
     } else {
       callState.setRemoteScreenSharing(false, null)
     }
+  }
+
+  rejectCall(callId: number, recipientId: number): void {
+    webSocketService.send({
+      type: WebSocketMessageType.CALL_REJECTED,
+      recipientId: recipientId,
+      payload: String(callId)
+    })
   }
 }
 

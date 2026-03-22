@@ -14,6 +14,7 @@ export enum WebSocketMessageType {
   CALL_CREATED = 'CALL_CREATED',
   CALL_END = 'CALL_END',
   CALL_NO_ANSWER = 'CALL_NO_ANSWER',
+  CALL_REJECTED = 'CALL_REJECTED',
 
   // P2P Call — media state
   CALL_MEDIA_STATE = 'CALL_MEDIA_STATE',

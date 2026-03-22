@@ -1,6 +1,5 @@
 <script lang="ts">
   import type { Channel } from '$src/interfaces/Channel'
-  import { chatState } from '$src/states/ChatState.svelte.js'
   import { channelCallService } from '$src/services/call/ChannelCallService'
   import { callState } from '$src/states/CallState.svelte.js'
   import { userState } from '$src/states/UserState.svelte'

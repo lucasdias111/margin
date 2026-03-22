@@ -32,7 +32,7 @@
 
     try {
       const response = await authenticatedGet(
-        `api/users/search?query=${encodeURIComponent(query.slice(0, 100))}`
+        `users/search?query=${encodeURIComponent(query.slice(0, 100))}`
       )
       const data = await response.json()
       searchResults = data || []

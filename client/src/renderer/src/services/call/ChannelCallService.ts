@@ -1,7 +1,13 @@
 import { authenticatedGet } from '$src/services/api'
 import { userState } from '$src/states/UserState.svelte.js'
 import { Device } from 'mediasoup-client'
-import type { RtpCapabilities, Transport, TransportOptions } from 'mediasoup-client/types'
+import type {
+  Producer,
+  RtpCapabilities,
+  RtpParameters,
+  Transport,
+  TransportOptions
+} from 'mediasoup-client/types'
 import { callState } from '$src/states/CallState.svelte.js'
 import { errorService } from '$src/services/ErrorService'
 
@@ -15,15 +21,15 @@ class ChannelCallService {
     return ws
   }
 
-  private sendMessage(ws: WebSocket, type: string, data: Record<string, any> = {}): void {
+  private sendMessage(ws: WebSocket, type: string, data: Record<string, unknown> = {}): void {
     ws.send(JSON.stringify({ type, ...data }))
   }
 
   private waitForMessage(
     ws: WebSocket,
     messageType: string,
-    filter?: (msg: any) => boolean
-  ): Promise<any> {
+    filter?: (msg: Record<string, unknown>) => boolean
+  ): Promise<Record<string, unknown>> {
     return new Promise((resolve, reject) => {
       const timeout = setTimeout(() => reject(new Error(`${messageType} timeout`)), 5000)
 
@@ -47,12 +53,13 @@ class ChannelCallService {
   ): Promise<RtpCapabilities> {
     this.sendMessage(ws, 'getRouterRtpCapabilities', {
       roomId: String(channelId),
-      peerId: String(userState.currentUser.id),
+      peerId: userState.currentUser.id,
+      displayName: userState.currentUser.displayName,
       token: roomToken
     })
 
     const msg = await this.waitForMessage(ws, 'routerRtpCapabilities')
-    return msg.rtpCapabilities
+    return msg.rtpCapabilities as RtpCapabilities
   }
 
   private async createTransport(
@@ -66,7 +73,7 @@ class ChannelCallService {
     })
 
     const msg = await this.waitForMessage(ws, 'transportCreated', (m) => m.direction === direction)
-    return msg.params
+    return msg.params as TransportOptions
   }
 
   private setupTransportConnection(transport: Transport, ws: WebSocket): void {
@@ -76,7 +83,6 @@ class ChannelCallService {
           transportId: transport.id,
           dtlsParameters
         })
-
         await this.waitForMessage(ws, 'transportConnected', (m) => m.transportId === transport.id)
         callback()
       } catch (error) {
@@ -92,9 +98,8 @@ class ChannelCallService {
         kind,
         rtpParameters
       })
-
       const msg = await this.waitForMessage(ws, 'produced')
-      callback({ id: msg.producerId })
+      callback({ id: msg.producerId as string })
     })
   }
 
@@ -123,10 +128,10 @@ class ChannelCallService {
       )
 
       const consumer = await recvTransport.consume({
-        id: response.id,
-        producerId: response.producerId,
-        kind: response.kind,
-        rtpParameters: response.rtpParameters
+        id: response.id as string,
+        producerId: response.producerId as string,
+        kind: response.kind as 'audio' | 'video',
+        rtpParameters: response.rtpParameters as RtpParameters
       })
 
       const stream = new MediaStream([consumer.track])
@@ -135,7 +140,7 @@ class ChannelCallService {
 
       callState.addGroupParticipant({
         peerId,
-        displayName: msg.displayName ?? peerId,
+        displayName: msg.displayName ?? 'Unknown',
         profilePictureUrl: msg.profilePictureUrl ?? null,
         audioStream: consumer.kind === 'audio' ? stream : (existing?.audioStream ?? null),
         videoStream: consumer.kind === 'video' ? stream : (existing?.videoStream ?? null),
@@ -188,7 +193,8 @@ class ChannelCallService {
         device,
         sendTransport,
         receiveTransport,
-        localStream
+        localStream,
+        videoProducer: null
       })
       callState.setStatus('connected')
     } catch (err) {
@@ -198,17 +204,42 @@ class ChannelCallService {
     }
   }
 
+  async toggleVideo(): Promise<void> {
+    const session = callState.groupCallState?.session
+    if (!session) return
+
+    if (session.videoProducer) {
+      session.videoProducer.track?.stop()
+      session.videoProducer.close()
+      callState.setGroupVideoProducer(null)
+      callState.setGroupVideoEnabled(false)
+    } else {
+      try {
+        const videoStream = await navigator.mediaDevices.getUserMedia({ video: true })
+        const videoTrack = videoStream.getVideoTracks()[0]
+        const producer: Producer = await session.sendTransport.produce({ track: videoTrack })
+        callState.setGroupVideoProducer(producer)
+        callState.setGroupVideoEnabled(true)
+
+        producer.on('trackended', () => {
+          this.toggleVideo()
+        })
+      } catch (err) {
+        errorService.reportError('Camera not available: ' + err)
+      }
+    }
+  }
+
   endChannelCall(): void {
     const group = callState.groupCallState
     const session = group?.session
     if (!session) return
 
-    const { localStream, sendTransport, receiveTransport, sfuWebsocket } = session
-
-    localStream.getTracks().forEach((t) => t.stop())
-    sendTransport.close()
-    receiveTransport.close()
-    sfuWebsocket?.close()
+    session.videoProducer?.close()
+    session.localStream.getTracks().forEach((t) => t.stop())
+    session.sendTransport.close()
+    session.receiveTransport.close()
+    session.sfuWebsocket?.close()
 
     callState.endCall()
   }

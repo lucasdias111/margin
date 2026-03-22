@@ -86,12 +86,12 @@ class NotificationService {
   }
 
   async getAll(): Promise<Notification[]> {
-    const res = await authenticatedGet('api/notifications/all')
+    const res = await authenticatedGet('notifications/all')
     return res.json()
   }
 
   async markNotificationAsSeen(notification: Notification): Promise<void> {
-    await authenticatedPost(notification.notificationId, 'api/notifications/mark_seen')
+    await authenticatedPost(notification.notificationId, 'notifications/mark_seen')
     notificationState.clearUnseenNotification(notification)
   }
 }

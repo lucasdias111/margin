@@ -67,7 +67,7 @@
       msg: WebSocketMessage<ChannelVoiceParticipantPayload>
     ) => {
       spaceState.updateVoiceParticipant(msg.payload.channelId, msg.payload.user, false)
-    },
+    }
   })
 
   async function setup(): Promise<void> {
@@ -81,7 +81,7 @@
   async function loadUnreadMessages(): Promise<void> {
     notificationState.clearUnreadMessages()
 
-    const response = await authenticatedGet(`api/conversations/unread`)
+    const response = await authenticatedGet(`conversations/unread`)
 
     const unreadCounts: UnreadCount[] = await response.json()
 
@@ -128,7 +128,7 @@
   }
 
   async function getCurrentUser(): Promise<void> {
-    const response = await authenticatedGet(`api/users/me`)
+    const response = await authenticatedGet(`users/me`)
 
     const user: User = await response.json()
     userState.setUser(user)

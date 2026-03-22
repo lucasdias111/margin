@@ -1,5 +1,5 @@
 import { Device } from 'mediasoup-client'
-import type { RtpCapabilities, Transport } from 'mediasoup-client/types'
+import type { RtpCapabilities, Transport, Producer } from 'mediasoup-client/types'
 import type { User } from '$src/interfaces/User'
 
 export type CallStatus = 'connecting' | 'connected' | 'ended'
@@ -34,6 +34,7 @@ export interface GroupCallData {
   channelId: number
   session: ChannelCallSession | null
   participants: SFUParticipant[]
+  isVideoEnabled: boolean
 }
 
 export interface ChannelCallSession {
@@ -43,6 +44,7 @@ export interface ChannelCallSession {
   sendTransport: Transport
   receiveTransport: Transport
   localStream: MediaStream
+  videoProducer: Producer | null
 }
 
 export interface CallParticipant {

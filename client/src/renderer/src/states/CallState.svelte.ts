@@ -7,6 +7,7 @@ import type {
   SFUParticipant
 } from '$src/interfaces/Calls'
 import type { User } from '$src/interfaces/User'
+import type { Producer } from 'mediasoup-client/types'
 
 type CallType = 'p2p' | 'group'
 
@@ -85,13 +86,24 @@ class CallState {
     this.groupData = {
       channelId,
       session: null,
-      participants: []
+      participants: [],
+      isVideoEnabled: false
     }
   }
 
   setGroupSession(session: ChannelCallSession): void {
     if (!this.isGroupCall || !this.groupData) return
     this.groupData.session = session
+  }
+
+  setGroupVideoEnabled(enabled: boolean): void {
+    if (!this.isGroupCall || !this.groupData) return
+    this.groupData.isVideoEnabled = enabled
+  }
+
+  setGroupVideoProducer(producer: Producer | null): void {
+    if (!this.isGroupCall || !this.groupData?.session) return
+    this.groupData.session.videoProducer = producer
   }
 
   setStatus(status: CallStatus): void {
