@@ -2,9 +2,9 @@
   "name": "simple-mediasoup-server",
   "version": "1.0.0",
   "type": "module",
-  "main": "server.ts",
+  "main": "src/server.ts",
   "scripts": {
-    "dev": "tsx watch server.ts",
+    "dev": "tsx watch src/server.ts",
     "build": "tsc",
     "start": "node dist/server.js"
   },

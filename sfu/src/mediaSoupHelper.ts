@@ -1,7 +1,7 @@
 import http from 'http'
 import {WebSocketServer} from 'ws'
-import {Peer, Room} from './types'
-import {notifyPeerLeft} from './springNotifier'
+import {Peer, Room} from './types.js'
+import {notifyPeerLeft} from './springNotifier.js'
 import {
     handleConnectTransport,
     handleConsume,
@@ -9,7 +9,7 @@ import {
     handleGetProducers,
     handleGetRouterRtpCapabilities,
     handleProduce
-} from './messageHandlers'
+} from './messageHandlers.js'
 
 export function initMediaSoupServer(app: any, rooms: Map<string, Room>) {
     const server = http.createServer(app)

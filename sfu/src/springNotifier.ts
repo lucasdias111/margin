@@ -1,4 +1,4 @@
-import { internalApiKey } from './authorizationHelper'
+import {internalApiKey} from './authorizationHelper.js'
 
 const springUrl = process.env.SPRING_URL ?? 'http://localhost:8080'
 
@@ -13,7 +13,7 @@ export async function notifyPeerJoined(roomId: string, peerId: string): Promise<
     const res = await fetch(`${springUrl}/sfu/peer_joined`, {
         method: 'POST',
         headers: internalHeaders(),
-        body: JSON.stringify({ roomId, peerId })
+        body: JSON.stringify({roomId, peerId})
     })
     if (!res.ok) console.error(`Spring rejected peer_joined: ${res.status}`)
 }
@@ -22,7 +22,7 @@ export async function notifyPeerLeft(roomId: string, peerId: string): Promise<vo
     const res = await fetch(`${springUrl}/sfu/peer_left`, {
         method: 'POST',
         headers: internalHeaders(),
-        body: JSON.stringify({ roomId, peerId })
+        body: JSON.stringify({roomId, peerId})
     })
     if (!res.ok) console.error(`Spring rejected peer_left: ${res.status}`)
 }

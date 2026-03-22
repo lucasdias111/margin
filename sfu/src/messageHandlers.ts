@@ -1,8 +1,8 @@
 import {WebSocket} from 'ws'
-import {Peer, Room} from './types'
-import {createWebRtcTransport} from './transportFactory'
-import {verifyRoomToken} from './authorizationHelper'
-import {notifyPeerJoined} from './springNotifier'
+import {Peer, Room} from './types.js'
+import {createWebRtcTransport} from './transportFactory.js'
+import {verifyRoomToken} from './authorizationHelper.js'
+import {notifyPeerJoined} from './springNotifier.js'
 
 export async function handleGetRouterRtpCapabilities(
     msg: any,
