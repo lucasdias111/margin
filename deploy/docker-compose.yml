@@ -32,6 +32,7 @@ services:
       JWT_SECRET: ${JWT_SECRET}
       WEBSOCKET_PORT: 8081
       SFU_URL: http://margin-sfu:3000
+      SFU_PUBLIC_URL: ${SFU_PUBLIC_URL}
       SFU_SECRET: ${SFU_SECRET}
       INTERNAL_API_KEY: ${INTERNAL_API_KEY}
       STORAGE_TYPE: ${STORAGE_TYPE:-s3}
