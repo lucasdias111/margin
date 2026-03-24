@@ -4,8 +4,7 @@
   import UserAvatar from '$src/components/common/user/UserAvatar.svelte'
   import type { Message } from '$src/interfaces/Messages'
   import { chatService } from '$src/services/ChatService'
-  import EditIcon from '$src/components/svg/EditIcon.svelte'
-  import TrashIcon from '$src/components/svg/TrashIcon.svelte'
+  import Icon from '$src/components/common/icons/Icon.svelte'
 
   interface Props {
     message: Message
@@ -53,11 +52,14 @@
             onclick={() => {
               isEditing = true
               showMenu = false
-            }}><EditIcon />Edit</button
+            }}
           >
-          <button class="delete" onclick={() => chatService.deleteMessage(message)}
-            ><TrashIcon />Delete</button
-          >
+            <Icon name="edit" size={14} /> Edit
+          </button>
+          <button class="delete" onclick={() => chatService.deleteMessage(message)}>
+            <Icon name="trash" size={14} />
+            Delete
+          </button>
         </div>
       {/if}
     </div>

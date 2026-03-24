@@ -1,5 +1,6 @@
 <script lang="ts">
   import { formatDuration } from '$src/utils/DateUtils'
+  import Icon from '$src/components/common/icons/Icon.svelte'
 
   interface Props {
     isAudioEnabled: boolean
@@ -48,97 +49,25 @@
 
   <div class="call-buttons">
     <button class="control-btn minimize-btn" onclick={onMinimize} title="Minimize">
-      <svg
-        xmlns="http://www.w3.org/2000/svg"
-        width="20"
-        height="20"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        stroke-width="2.5"
-        stroke-linecap="round"
-        stroke-linejoin="round"
-      >
-        <polyline points="4 14 10 14 10 20" />
-        <polyline points="20 10 14 10 14 4" />
-        <line x1="10" y1="14" x2="3" y2="21" />
-        <line x1="21" y1="3" x2="14" y2="10" />
-      </svg>
+      <Icon name="minimize" size={20} strokeWidth={2.5} />
     </button>
 
-    <button class="control-btn toggle-audio-btn" onclick={onToggleAudio} title="Toggle Microphone">
-      {#if isAudioEnabled}
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          width="24"
-          height="24"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          stroke-width="2"
-          stroke-linecap="round"
-          stroke-linejoin="round"
-        >
-          <line x1="1" y1="1" x2="23" y2="23" />
-          <path d="M9 9v3a3 3 0 0 0 5.12 2.12M15 9.34V4a3 3 0 0 0-5.94-.6" />
-          <path d="M17 16.95A7 7 0 0 1 5 12v-2m14 0v2a7 7 0 0 1-.11 1.23" />
-          <line x1="12" y1="19" x2="12" y2="23" />
-          <line x1="8" y1="23" x2="16" y2="23" />
-        </svg>
-      {:else}
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          width="24"
-          height="24"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          stroke-width="2"
-          stroke-linecap="round"
-          stroke-linejoin="round"
-        >
-          <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z" />
-          <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
-          <line x1="12" y1="19" x2="12" y2="23" />
-          <line x1="8" y1="23" x2="16" y2="23" />
-        </svg>
-      {/if}
+    <button
+      class="control-btn toggle-audio-btn"
+      class:muted={!isAudioEnabled}
+      onclick={onToggleAudio}
+      title="Toggle Microphone"
+    >
+      <Icon name={isAudioEnabled ? 'mic_off' : 'mic'} />
     </button>
 
-    <button class="control-btn toggle-video-btn" onclick={onToggleVideo} title="Toggle Video">
-      {#if isVideoEnabled}
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          width="24"
-          height="24"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          stroke-width="2"
-          stroke-linecap="round"
-          stroke-linejoin="round"
-        >
-          <line x1="2" y1="2" x2="22" y2="22" />
-          <path d="M10.66 6H14a2 2 0 0 1 2 2v2.34" />
-          <path d="M16 16a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h2" />
-          <path d="M22 8l-6 4 6 4V8z" />
-        </svg>
-      {:else}
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          width="24"
-          height="24"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          stroke-width="2"
-          stroke-linecap="round"
-          stroke-linejoin="round"
-        >
-          <polygon points="23 7 16 12 23 17 23 7" />
-          <rect x="1" y="5" width="15" height="14" rx="2" ry="2" />
-        </svg>
-      {/if}
+    <button
+      class="control-btn toggle-video-btn"
+      class:muted={!isVideoEnabled}
+      onclick={onToggleVideo}
+      title="Toggle Video"
+    >
+      <Icon name={isVideoEnabled ? 'video_off' : 'video'} />
     </button>
 
     <button
@@ -148,40 +77,11 @@
       disabled={isRemoteScreenSharing}
       title="Share Screen"
     >
-      <svg
-        xmlns="http://www.w3.org/2000/svg"
-        width="24"
-        height="24"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        stroke-width="2"
-        stroke-linecap="round"
-        stroke-linejoin="round"
-      >
-        <rect x="2" y="3" width="20" height="14" rx="2" ry="2" />
-        <line x1="8" y1="21" x2="16" y2="21" />
-        <line x1="12" y1="17" x2="12" y2="21" />
-      </svg>
+      <Icon name="monitor" />
     </button>
 
     <button class="control-btn end-call-btn" onclick={onEndCall} title="End Call">
-      <svg
-        xmlns="http://www.w3.org/2000/svg"
-        width="24"
-        height="24"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        stroke-width="2"
-        stroke-linecap="round"
-        stroke-linejoin="round"
-      >
-        <path
-          d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"
-        />
-        <line x1="18" y1="6" x2="6" y2="18" />
-      </svg>
+      <Icon name="phone_off" />
     </button>
   </div>
 </div>
@@ -249,14 +149,30 @@
     transition: all 0.2s;
   }
 
-  .minimize-btn,
+  .minimize-btn {
+    background: rgba(255, 255, 255, 0.1);
+  }
+
+  .minimize-btn:hover {
+    background: rgba(255, 255, 255, 0.2);
+  }
+
+  .toggle-audio-btn,
   .toggle-video-btn {
     background: rgba(255, 255, 255, 0.1);
   }
 
-  .minimize-btn:hover,
+  .toggle-audio-btn:hover,
   .toggle-video-btn:hover {
     background: rgba(255, 255, 255, 0.2);
+  }
+
+  .control-btn.muted {
+    background: rgba(220, 53, 69, 0.6);
+  }
+
+  .control-btn.muted:hover {
+    background: rgba(220, 53, 69, 0.75);
   }
 
   .end-call-btn {
@@ -272,12 +188,10 @@
     transform: scale(0.95);
   }
 
-  .toggle-audio-btn,
   .toggle-screenshare-btn {
     background: rgba(255, 255, 255, 0.1);
   }
 
-  .toggle-audio-btn:hover,
   .toggle-screenshare-btn:hover:not(:disabled) {
     background: rgba(255, 255, 255, 0.2);
   }

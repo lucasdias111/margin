@@ -8,6 +8,7 @@
   import MarginNavigationItem from '$src/components/content/sidebar/sidebar_list/MarginNavigationItem.svelte'
   import MarginSwitcher from '$src/components/content/sidebar/sidebar_list/MarginSwitcher.svelte'
   import Settings from '$src/components/content/settings/Settings.svelte'
+  import Icon from '$src/components/common/icons/Icon.svelte'
 
   let selectedContent = $derived<ContentType>(chatState.currentlySelectedContent)
   let isHome = $derived(!chatState.selectedChannel)
@@ -29,7 +30,7 @@
         <div class="section-heading">
           <span class="header-label">Direct messages</span>
         </div>
-        <UserSearchBar {onSelectUser} />
+        <UserSearchBar {onSelectUser} showSharedMargins={true} />
       </div>
       <div class="panel-content">
         <UsersList />
@@ -42,18 +43,7 @@
       <div class="panel-nav">
         <MarginNavigationItem label="Home" active={isHome} onclick={goHome} icon={homeIcon} />
         {#snippet homeIcon()}
-          <svg
-            width="14"
-            height="14"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-            stroke-linecap="round"
-          >
-            <path d="M3 9.5L12 3l9 6.5V20a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9.5z" />
-            <polyline points="9 21 9 12 15 12 15 21" />
-          </svg>
+          <Icon name="home" size={14} />
         {/snippet}
         <MarginSwitcher />
       </div>

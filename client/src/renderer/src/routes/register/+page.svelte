@@ -27,11 +27,8 @@
     try {
       await authenticationService.register(username, password, email, profilePicture || undefined)
       await push('/')
-
-      {
-        errorService.reportError('Failed to register.')
-        return
-      }
+    } catch (e) {
+      errorService.reportError('Failed to register.')
     } finally {
       isLoading = false
     }
@@ -282,15 +279,6 @@
   .btn-primary:disabled {
     opacity: 0.6;
     cursor: not-allowed;
-  }
-
-  #backbut {
-    position: fixed;
-    border-radius: 999px;
-    top: 50px;
-    left: 10px;
-    padding: 5px;
-    background-color: #f47e3a;
   }
 
   .spinner {

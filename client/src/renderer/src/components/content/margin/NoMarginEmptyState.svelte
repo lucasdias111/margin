@@ -3,6 +3,7 @@
   import type { CreateMargin } from '$src/interfaces/Margin'
   import { marginService } from '$src/services/MarginService'
   import { chatState } from '$src/states/ChatState.svelte'
+  import Icon from '$src/components/common/icons/Icon.svelte'
 
   let modalOpen = $state(false)
 
@@ -16,11 +17,7 @@
 
 <div class="empty-state">
   <div class="icon">
-    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#d9d9d9" stroke-width="1.5">
-      <rect x="3" y="3" width="18" height="18" rx="3" />
-      <path d="M3 9h18" />
-      <path d="M9 21V9" />
-    </svg>
+    <Icon name="layout" size={48} strokeWidth={1.5} color="#d9d9d9" />
   </div>
   <h2>No margin yet</h2>
   <p>Create a margin to get started with spaces, channels, and team communication.</p>

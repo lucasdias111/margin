@@ -23,7 +23,12 @@
   async function onSaveInfo(updated: UpdateMargin): Promise<void> {
     try {
       margin = await marginService.updateMargin(updated)
-      chatState.selectedMargin.marginIconUrl = margin.marginIconUrl
+      chatState.updateMarginDetails(
+        margin.marginId,
+        margin.marginName,
+        margin.marginDescription,
+        margin.marginIconUrl
+      )
     } catch (e) {
       console.error('Failed to update margin:', e)
     }

@@ -6,9 +6,10 @@
 
   interface Props {
     onSelectUser: (user: User) => void
+    showSharedMargins?: boolean
   }
 
-  let { onSelectUser }: Props = $props()
+  let { onSelectUser, showSharedMargins = false }: Props = $props()
 
   let searchQuery = $state('')
   let searchResults = $state<UserSearchResult[]>([])
@@ -45,7 +46,7 @@
     }
   }
 
-  function handleSelectUser(user: User): void {
+  function handleSelectUser(user: UserSearchResult['user']): void {
     clearSearch()
     onSelectUser(user)
   }
@@ -87,14 +88,23 @@
     </div>
   {:else if searchResults.length > 0}
     <div class="search-results" role="listbox">
-      {#each searchResults as user (user.id)}
+      {#each searchResults as result (result.user.id)}
         <button
           class="user-result"
           role="option"
           aria-selected="false"
-          onclick={() => handleSelectUser(user)}
+          onclick={() => handleSelectUser(result.user)}
         >
-          <span>{user.username}</span>
+          <div class="user-result-content">
+            <span class="username">{result.user.username}</span>
+            {#if showSharedMargins && result.sharedMargins.length > 0}
+              <div class="shared-margins">
+                {#each result.sharedMargins as margin (margin)}
+                  <span class="margin-tag">{margin}</span>
+                {/each}
+              </div>
+            {/if}
+          </div>
         </button>
       {/each}
     </div>
@@ -158,9 +168,6 @@
     background: none;
     cursor: pointer;
     font-family: inherit;
-    font-size: 13px;
-    font-weight: 500;
-    color: #2a2a2a;
     transition:
       background 0.12s,
       color 0.12s;
@@ -168,7 +175,35 @@
 
   .user-result:hover {
     background: rgba(0, 0, 0, 0.04);
-    color: #1c1c1c;
+  }
+
+  .user-result-content {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .username {
+    font-size: 13px;
+    font-weight: 500;
+    color: #2a2a2a;
+  }
+
+  .shared-margins {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    margin-top: 2px;
+  }
+
+  .margin-tag {
+    font-size: 10px;
+    font-weight: 500;
+    color: #e8712a;
+    background: rgba(232, 113, 42, 0.08);
+    padding: 2px 7px;
+    border-radius: 999px;
+    letter-spacing: 0.02em;
   }
 
   .status-message {

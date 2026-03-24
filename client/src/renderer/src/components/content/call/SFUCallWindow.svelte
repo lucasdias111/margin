@@ -13,13 +13,19 @@
 
   const localStream = $derived(callState.groupCallState?.session?.localStream ?? null)
 
+  const localVideoStream = $derived.by(() => {
+    const videoProducer = callState.groupCallState?.session?.videoProducer
+    if (!videoProducer?.track) return null
+    return new MediaStream([videoProducer.track])
+  })
+
   const localParticipant = $derived<CallParticipant>({
     id: userState.currentUser?.id ?? -1,
     displayName: 'You',
     profilePictureUrl: userState.currentUser?.profilePictureUrl ?? null,
-    stream: localStream,
+    stream: localVideoStream ?? localStream,
     isVideoEnabled: callState.groupCallState?.isVideoEnabled ?? false,
-    isScreenSharing: false,
+    isScreenSharing: callState.groupCallState?.isScreenSharing ?? false,
     isLocal: true
   })
 
@@ -30,10 +36,16 @@
       profilePictureUrl: p.profilePictureUrl,
       stream: p.videoStream ?? p.audioStream,
       isVideoEnabled: p.isVideoEnabled,
-      isScreenSharing: false,
+      isScreenSharing: p.isScreenSharing,
       isLocal: false
     }))
   )
+
+  const remoteScreenStream = $derived(
+    callState.groupCallState?.participants.find((p) => p.isScreenSharing)?.screenStream ?? null
+  )
+
+  const isRemoteScreenSharing = $derived(remoteParticipants.some((p) => p.isScreenSharing))
 
   const pipStream = $derived(
     remoteParticipants.find((p) => p.isVideoEnabled)?.stream ??
@@ -59,6 +71,7 @@
     >
       <CallPipWidget
         remoteVideoStream={pipStream}
+        screenShareStream={remoteScreenStream}
         onRestore={() => callState.toggleMinimized()}
         showDuration={false}
       />
@@ -72,20 +85,20 @@
       <CallLayout
         {localParticipant}
         {remoteParticipants}
-        remoteScreenStream={null}
+        {remoteScreenStream}
         isAudioEnabled={true}
         isVideoEnabled={callState.groupCallState?.isVideoEnabled ?? false}
-        isScreenSharing={false}
-        isRemoteScreenSharing={false}
+        isScreenSharing={callState.groupCallState?.isScreenSharing ?? false}
+        {isRemoteScreenSharing}
         status={callState.status}
         duration={callState.duration}
         showDuration={false}
         callTitle={channelName}
-        forceGrid={true}
+        forceGrid={remoteParticipants.length > 1}
         onMinimize={() => callState.toggleMinimized()}
         onToggleAudio={() => {}}
         onToggleVideo={() => channelCallService.toggleVideo()}
-        onToggleScreenShare={() => {}}
+        onToggleScreenShare={() => channelCallService.toggleScreenShare()}
         onEndCall={() => channelCallService.endChannelCall()}
       />
     </div>

@@ -35,12 +35,25 @@
   import type { Margin } from '$src/interfaces/Margin'
   import SFUCallWindow from '$src/components/content/call/SFUCallWindow.svelte'
   import { spaceState } from '$src/states/SpaceState.svelte'
+  import { NotificationSounds } from '$src/utils/NotificationSounds'
 
   let incomingCallPayload = $state<CallOfferPayload | null>(null)
+  const ringtone = new Audio(NotificationSounds.INCOMING_CALL)
+  ringtone.loop = true
 
   onMount(() => {
     setup()
     webSocketService.connect()
+  })
+
+  $effect(() => {
+    if (incomingCallPayload) {
+      ringtone.currentTime = 0
+      ringtone.play().catch(() => {})
+    } else {
+      ringtone.pause()
+      ringtone.currentTime = 0
+    }
   })
 
   useWebsocketSvelte({
@@ -168,19 +181,6 @@
     box-sizing: border-box;
     gap: 10px;
     background-color: #f2eee8;
-  }
-
-  .call-overlay {
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: #2d2d2d;
-    z-index: 1000;
-    display: flex;
-    align-items: center;
-    justify-content: center;
   }
 
   .call-overlay {

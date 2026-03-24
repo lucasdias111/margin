@@ -65,7 +65,7 @@ class CallState {
       localStream: null,
       remoteStream: null,
       candidateQueue: [],
-      isAudioEnabled: false,
+      isAudioEnabled: true,
       isRemoteAudioEnabled: false,
       isVideoEnabled: false,
       isRemoteVideoEnabled: false,
@@ -87,7 +87,9 @@ class CallState {
       channelId,
       session: null,
       participants: [],
-      isVideoEnabled: false
+      isVideoEnabled: false,
+      screenShareProducer: null,
+      isScreenSharing: false
     }
   }
 
@@ -104,6 +106,16 @@ class CallState {
   setGroupVideoProducer(producer: Producer | null): void {
     if (!this.isGroupCall || !this.groupData?.session) return
     this.groupData.session.videoProducer = producer
+  }
+
+  setGroupScreenShareProducer(producer: Producer | null): void {
+    if (!this.isGroupCall || !this.groupData) return
+    this.groupData.screenShareProducer = producer
+  }
+
+  setGroupScreenSharing(enabled: boolean): void {
+    if (!this.isGroupCall || !this.groupData) return
+    this.groupData.isScreenSharing = enabled
   }
 
   setStatus(status: CallStatus): void {

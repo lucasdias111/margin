@@ -7,6 +7,7 @@
   import { clickOutside } from '$src/actions/clickOutside'
   import UnreadNotificationBadge from '$src/components/common/chat/UnreadNotificationBadge.svelte'
   import { notificationState } from '$src/states/NotificationState.svelte'
+  import Icon from '$src/components/common/icons/Icon.svelte'
 
   let open = $state(false)
   let createMarginOpen = $state(false)
@@ -42,33 +43,11 @@
 
 <div class="switcher-wrapper" use:clickOutside={() => (open = false)}>
   <button class="switcher-btn" onclick={() => (open = !open)}>
-    <svg
-      width="14"
-      height="14"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      stroke-width="2"
-      stroke-linecap="round"
-    >
-      <rect x="3" y="3" width="7" height="7" rx="1.5" />
-      <rect x="14" y="3" width="7" height="7" rx="1.5" />
-      <rect x="3" y="14" width="7" height="7" rx="1.5" />
-      <rect x="14" y="14" width="7" height="7" rx="1.5" />
-    </svg>
+    <Icon name="grid" size={14} />
     Switch margin
-    <svg
-      class="chevron"
-      class:rotated={open}
-      width="12"
-      height="12"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      stroke-width="2.5"
-    >
-      <polyline points="9 18 15 12 9 6" />
-    </svg>
+    <span class="chevron" class:rotated={open}>
+      <Icon name="chevronRight" size={12} strokeWidth={2.5} />
+    </span>
   </button>
 
   {#if open}
@@ -127,6 +106,7 @@
   .chevron {
     margin-left: auto;
     transition: transform 0.15s;
+    display: flex;
   }
 
   .chevron.rotated {

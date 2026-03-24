@@ -109,8 +109,10 @@
     }
     if (!initialScrollDone && messages.length > 0) {
       tick().then(() => {
-        scrollToBottom('smooth')
-        initialScrollDone = true
+        requestAnimationFrame(() => {
+          scrollToBottom('instant')
+          initialScrollDone = true
+        })
       })
     }
   })

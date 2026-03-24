@@ -35,6 +35,8 @@ export interface GroupCallData {
   session: ChannelCallSession | null
   participants: SFUParticipant[]
   isVideoEnabled: boolean
+  screenShareProducer: Producer | null
+  isScreenSharing: boolean
 }
 
 export interface ChannelCallSession {
@@ -63,5 +65,7 @@ export interface SFUParticipant {
   profilePictureUrl: string | null
   audioStream: MediaStream | null
   videoStream: MediaStream | null
+  screenStream: MediaStream | null
   isVideoEnabled: boolean
+  isScreenSharing: boolean
 }

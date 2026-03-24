@@ -20,7 +20,7 @@ import type { ContentType } from '$src/interfaces/Content'
 import { errorService } from '$src/services/ErrorService'
 
 class ChatService {
-  private static readonly PAGE_SIZE = 50
+  private static readonly PAGE_SIZE = 30
 
   handleIncomingMessage = async (data: WebSocketMessage<Message>): Promise<void> => {
     const msg = data.payload
@@ -137,6 +137,8 @@ class ChatService {
         messageResponse.messages,
         messageResponse.conversation
       )
+
+      conversationState.hasMore = messageResponse.messages.length >= ChatService.PAGE_SIZE
 
       await onLoaded(messageResponse.conversation)
     } catch (error) {

@@ -7,6 +7,7 @@
   import ChannelEntry from '$src/components/content/sidebar/sidebar_list/ChannelEntry.svelte'
   import { notificationState } from '$src/states/NotificationState.svelte.js'
   import UnreadNotificationBadge from '$src/components/common/chat/UnreadNotificationBadge.svelte'
+  import Icon from '$src/components/common/icons/Icon.svelte'
 
   const spaces = $derived(spaceState.spaces)
   let expandedSpaceId = $state<number | null>(null)
@@ -89,18 +90,7 @@
           {/if}
 
           <span class="chevron" class:rotated={isOpen}>
-            <svg
-              width="10"
-              height="10"
-              viewBox="0 0 10 10"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="1.8"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-            >
-              <polyline points="2,3.5 5,6.5 8,3.5" />
-            </svg>
+            <Icon name="chevronDown" size={10} strokeWidth={1.8} />
           </span>
         </button>
 
@@ -159,8 +149,9 @@
     border-radius: 12px;
     border: 1px solid transparent;
     background: #fafafa;
-    transition: border-color 0.15s,
-    box-shadow 0.15s;
+    transition:
+      border-color 0.15s,
+      box-shadow 0.15s;
     overflow: hidden;
   }
 
@@ -229,8 +220,9 @@
     color: #ccc;
     display: flex;
     align-items: center;
-    transition: transform 0.2s ease,
-    color 0.15s;
+    transition:
+      transform 0.2s ease,
+      color 0.15s;
   }
 
   .chevron.rotated {

@@ -92,11 +92,12 @@ class ChannelCallService {
   }
 
   private setupProducer(transport: Transport, ws: WebSocket): void {
-    transport.on('produce', async ({ kind, rtpParameters }, callback) => {
+    transport.on('produce', async ({ kind, rtpParameters, appData }, callback) => {
       this.sendMessage(ws, 'produce', {
         transportId: transport.id,
         kind,
-        rtpParameters
+        rtpParameters,
+        appData
       })
       const msg = await this.waitForMessage(ws, 'produced')
       callback({ id: msg.producerId as string })
@@ -109,6 +110,27 @@ class ChannelCallService {
 
       if (msg.type === 'peer_left') {
         callState.removeGroupParticipant(String(msg.peerId))
+        return
+      }
+
+      if (msg.type === 'producerClosed') {
+        const peerId = String(msg.peerId)
+        const existing = callState.groupCallState?.participants.find((p) => p.peerId === peerId)
+        if (!existing) return
+
+        if (msg.appData?.source === 'screen') {
+          callState.addGroupParticipant({
+            ...existing,
+            screenStream: null,
+            isScreenSharing: false
+          })
+        } else if (msg.appData?.source === 'camera') {
+          callState.addGroupParticipant({
+            ...existing,
+            videoStream: null,
+            isVideoEnabled: false
+          })
+        }
         return
       }
 
@@ -134,6 +156,7 @@ class ChannelCallService {
         rtpParameters: response.rtpParameters as RtpParameters
       })
 
+      const isScreenShare = msg.appData?.source === 'screen'
       const stream = new MediaStream([consumer.track])
       const peerId = String(msg.peerId)
       const existing = callState.groupCallState?.participants.find((p) => p.peerId === peerId)
@@ -143,8 +166,13 @@ class ChannelCallService {
         displayName: msg.displayName ?? 'Unknown',
         profilePictureUrl: msg.profilePictureUrl ?? null,
         audioStream: consumer.kind === 'audio' ? stream : (existing?.audioStream ?? null),
-        videoStream: consumer.kind === 'video' ? stream : (existing?.videoStream ?? null),
-        isVideoEnabled: consumer.kind === 'video'
+        videoStream:
+          consumer.kind === 'video' && !isScreenShare ? stream : (existing?.videoStream ?? null),
+        screenStream:
+          consumer.kind === 'video' && isScreenShare ? stream : (existing?.screenStream ?? null),
+        isVideoEnabled:
+          consumer.kind === 'video' && !isScreenShare ? true : (existing?.isVideoEnabled ?? false),
+        isScreenSharing: isScreenShare ? true : (existing?.isScreenSharing ?? false)
       })
     })
   }
@@ -182,7 +210,7 @@ class ChannelCallService {
       })
 
       const audioTrack = localStream.getAudioTracks()[0]
-      await sendTransport.produce({ track: audioTrack })
+      await sendTransport.produce({ track: audioTrack, appData: { source: 'mic' } })
 
       this.sendMessage(sfuWs, 'getProducers', { roomId: String(channelId) })
 
@@ -205,10 +233,17 @@ class ChannelCallService {
   }
 
   async toggleVideo(): Promise<void> {
-    const session = callState.groupCallState?.session
+    const group = callState.groupCallState
+    const session = group?.session
     if (!session) return
 
     if (session.videoProducer) {
+      if (session.sfuWebsocket) {
+        this.sendMessage(session.sfuWebsocket, 'producerClosed', {
+          producerId: session.videoProducer.id,
+          appData: { source: 'camera' }
+        })
+      }
       session.videoProducer.track?.stop()
       session.videoProducer.close()
       callState.setGroupVideoProducer(null)
@@ -217,7 +252,10 @@ class ChannelCallService {
       try {
         const videoStream = await navigator.mediaDevices.getUserMedia({ video: true })
         const videoTrack = videoStream.getVideoTracks()[0]
-        const producer: Producer = await session.sendTransport.produce({ track: videoTrack })
+        const producer: Producer = await session.sendTransport.produce({
+          track: videoTrack,
+          appData: { source: 'camera' }
+        })
         callState.setGroupVideoProducer(producer)
         callState.setGroupVideoEnabled(true)
 
@@ -230,12 +268,67 @@ class ChannelCallService {
     }
   }
 
+  async toggleScreenShare(): Promise<void> {
+    const group = callState.groupCallState
+    if (!group?.session) return
+
+    if (group.screenShareProducer) {
+      this.stopScreenShare()
+    } else {
+      await this.startScreenShare()
+    }
+  }
+
+  private async startScreenShare(): Promise<void> {
+    const session = callState.groupCallState?.session
+    if (!session) return
+
+    try {
+      const screenStream = await navigator.mediaDevices.getDisplayMedia({
+        video: true,
+        audio: false
+      })
+      const screenTrack = screenStream.getVideoTracks()[0]
+      const producer: Producer = await session.sendTransport.produce({
+        track: screenTrack,
+        appData: { source: 'screen' }
+      })
+
+      callState.setGroupScreenShareProducer(producer)
+      callState.setGroupScreenSharing(true)
+
+      screenTrack.onended = () => this.stopScreenShare()
+      producer.on('trackended', () => this.stopScreenShare())
+    } catch (err) {
+      errorService.reportError('Screen share failed: ' + err)
+    }
+  }
+
+  private stopScreenShare(): void {
+    const group = callState.groupCallState
+    if (!group?.screenShareProducer) return
+
+    const session = group.session
+    if (session?.sfuWebsocket) {
+      this.sendMessage(session.sfuWebsocket, 'producerClosed', {
+        producerId: group.screenShareProducer.id,
+        appData: { source: 'screen' }
+      })
+    }
+
+    group.screenShareProducer.track?.stop()
+    group.screenShareProducer.close()
+    callState.setGroupScreenShareProducer(null)
+    callState.setGroupScreenSharing(false)
+  }
+
   endChannelCall(): void {
     const group = callState.groupCallState
     const session = group?.session
     if (!session) return
 
     session.videoProducer?.close()
+    group.screenShareProducer?.close()
     session.localStream.getTracks().forEach((t) => t.stop())
     session.sendTransport.close()
     session.receiveTransport.close()

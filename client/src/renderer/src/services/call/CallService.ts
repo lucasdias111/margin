@@ -231,14 +231,6 @@ class CallService {
       }
 
       const isScreenShare = transceivers.indexOf(event.transceiver) === 2
-      console.log(
-        'ontrack',
-        event.track.kind,
-        'isScreenShare',
-        isScreenShare,
-        'muted',
-        event.track.muted
-      )
       if (isScreenShare) {
         const screenStream = new MediaStream([track])
         callState.setRemoteScreenSharing(true, screenStream)

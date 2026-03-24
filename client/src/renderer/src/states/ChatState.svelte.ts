@@ -47,6 +47,24 @@ class ChatState {
       chatState.currentlySelectedContent = 'private'
     }
   }
+
+  updateMarginDetails(
+    marginId: number,
+    name: string,
+    description: string,
+    iconUrl: string | null
+  ): void {
+    if (this.selectedMargin?.marginId === marginId) {
+      this.selectedMargin.marginName = name
+      this.selectedMargin.marginDescription = description
+      this.selectedMargin.marginIconUrl = iconUrl
+    }
+    this.margins = this.margins.map((m) =>
+      m.marginId === marginId
+        ? { ...m, marginName: name, marginDescription: description, marginIconUrl: iconUrl }
+        : m
+    )
+  }
 }
 
 export const chatState = new ChatState()

@@ -4,6 +4,7 @@
   import { callState } from '$src/states/CallState.svelte.js'
   import { userState } from '$src/states/UserState.svelte'
   import { spaceState } from '$src/states/SpaceState.svelte'
+  import Icon from '$src/components/common/icons/Icon.svelte'
 
   let {
     channel,
@@ -35,26 +36,7 @@
   <div class="sidebar-header">
     <span class="sidebar-title">Channel info</span>
     <button class="close-btn" onclick={() => (isOpen = false)} aria-label="Close sidebar">
-      <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
-        <line
-          x1="1"
-          y1="1"
-          x2="11"
-          y2="11"
-          stroke="currentColor"
-          stroke-width="1.8"
-          stroke-linecap="round"
-        />
-        <line
-          x1="11"
-          y1="1"
-          x2="1"
-          y2="11"
-          stroke="currentColor"
-          stroke-width="1.8"
-          stroke-linecap="round"
-        />
-      </svg>
+      <Icon name="x" size={12} strokeWidth={1.8} />
     </button>
   </div>
 
@@ -91,19 +73,7 @@
 
     <section class="sidebar-section">
       <div class="section-header">
-        <svg
-          width="12"
-          height="12"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          stroke-width="2.5"
-        >
-          <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
-          <circle cx="9" cy="7" r="4" />
-          <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
-          <path d="M16 3.13a4 4 0 0 1 0 7.75" />
-        </svg>
+        <Icon name="users" size={12} strokeWidth={2.5} />
         <span class="section-title">Members</span>
       </div>
       <div class="members-empty">
