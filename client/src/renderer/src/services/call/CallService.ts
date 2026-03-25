@@ -6,8 +6,19 @@ import { errorService } from '$src/services/ErrorService'
 import { webSocketService } from '$src/services/WebSocketService'
 import { WebSocketMessageType } from '$src/interfaces/WebSocketMessageType'
 
-const ICE_SERVERS = [{ urls: 'stun:stun.l.google.com:19302' }]
-
+const ICE_SERVERS = [
+  { urls: 'stun:stun.l.google.com:19302' },
+  {
+    urls: 'turn:getmargin.online:3478',
+    username: 'margin',
+    credential: 'margincoturn'
+  },
+  {
+    urls: 'turns:getmargin.online:5349',
+    username: 'margin',
+    credential: 'margincoturn'
+  }
+]
 class CallService {
   private noAnswerTimeout: ReturnType<typeof setTimeout> | null = null
   private screenTransceiver: RTCRtpTransceiver | null = null
