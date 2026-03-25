@@ -57,6 +57,20 @@ export function initMediaSoupServer(app: any, rooms: Map<string, Room>) {
                         handleGetProducers(ws, peer, room)
                         break
                     }
+                    case 'producerClosed': {
+                        if (!room || !peer) throw new Error('Room or peer not initialized')
+                        for (const p of room.peers.values()) {
+                            if (p.id !== peer.id) {
+                                p.ws.send(JSON.stringify({
+                                    type: 'producerClosed',
+                                    peerId: peer.id,
+                                    producerId: msg.producerId,
+                                    appData: msg.appData
+                                }))
+                            }
+                        }
+                        break
+                    }
                     default:
                         console.log(`Unknown message type: ${msg.type}`)
                 }

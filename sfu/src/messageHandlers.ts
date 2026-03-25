@@ -93,11 +93,12 @@ export async function handleProduce(
 
     const producer = await transport.produce({
         kind: msg.kind,
-        rtpParameters: msg.rtpParameters
+        rtpParameters: msg.rtpParameters,
+        appData: msg.appData ?? {}
     })
 
     peer.producers.set(producer.id, producer)
-    console.log(`Producer ${producer.id} created by peer ${peer.id} (${msg.kind})`)
+    console.log(`Producer ${producer.id} created by peer ${peer.id} (${msg.kind}, source: ${producer.appData?.source ?? 'unknown'})`)
 
     ws.send(JSON.stringify({type: 'produced', producerId: producer.id}))
 
@@ -108,6 +109,7 @@ export async function handleProduce(
                 producerId: producer.id,
                 peerId: peer.id,
                 displayName: peer.displayName,
+                appData: producer.appData
             }))
         }
     }
@@ -152,7 +154,8 @@ export function handleGetProducers(ws: WebSocket, peer: Peer, room: Room): void 
                 type: 'newProducer',
                 producerId: producer.id,
                 peerId: p.id,
-                displayName: p.displayName
+                displayName: p.displayName,
+                appData: producer.appData
             }))
         }
     }
