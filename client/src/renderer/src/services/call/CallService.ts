@@ -9,12 +9,12 @@ import { WebSocketMessageType } from '$src/interfaces/WebSocketMessageType'
 const ICE_SERVERS = [
   { urls: 'stun:stun.l.google.com:19302' },
   {
-    urls: 'turn:getmargin.online:3478',
+    urls: 'turn:135.181.100.126:3478',
     username: 'margin',
     credential: 'margincoturn'
   },
   {
-    urls: 'turns:getmargin.online:5349',
+    urls: 'turns:135.181.100.126:5349',
     username: 'margin',
     credential: 'margincoturn'
   }

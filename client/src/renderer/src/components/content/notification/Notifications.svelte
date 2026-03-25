@@ -20,7 +20,6 @@
   $effect(() => {
     let notificationVersion = notificationState.notificationVersion
     notificationService.getAll().then((result) => {
-      console.log(result)
       notifications = [...result]
       isLoading = false
     })
