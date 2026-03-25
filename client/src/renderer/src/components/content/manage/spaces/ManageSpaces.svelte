@@ -6,7 +6,6 @@
   import { onMount } from 'svelte'
   import { spacesService } from '$src/services/SpacesService'
   import type { Channel, CreateChannel } from '$src/interfaces/Channel'
-  import { chatService } from '$src/services/ChatService'
   import { chatState } from '$src/states/ChatState.svelte.js'
 
   let spaces = $state<Space[]>([])

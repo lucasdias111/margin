@@ -8,9 +8,30 @@
   import UnreadNotificationBadge from '$src/components/common/chat/UnreadNotificationBadge.svelte'
   import { notificationState } from '$src/states/NotificationState.svelte'
   import Icon from '$src/components/common/icons/Icon.svelte'
+  import { marginInviteService } from '$src/services/MarginInviteService'
 
   let open = $state(false)
   let createMarginOpen = $state(false)
+  let joinCode = $state('')
+  let joinLoading = $state(false)
+  let joinError = $state<string | null>(null)
+
+  async function handleJoinWithCode(): Promise<void> {
+    if (!joinCode.trim()) return
+    joinLoading = true
+    joinError = null
+    try {
+      const margin = await marginInviteService.acceptLinkInvite(joinCode.trim())
+      chatState.selectMargin(margin)
+      marginService.addNewMargin(margin)
+      joinCode = ''
+      open = false
+    } catch (e) {
+      joinError = 'Invalid or expired code'
+    } finally {
+      joinLoading = false
+    }
+  }
 
   function selectMargin(margin: Margin): void {
     chatState.selectMargin(margin)
@@ -66,9 +87,38 @@
           </span>
         </button>
       {/each}
+
+      <div class="join-divider"></div>
+
       <button class="margin-item" onclick={() => (createMarginOpen = true)}
         >Create new margin
       </button>
+
+      <div class="join-section">
+        <span class="join-label">Join with invite code</span>
+        <div class="join-row">
+          <input
+            class="join-input"
+            type="text"
+            placeholder="Paste code"
+            bind:value={joinCode}
+            maxlength="36"
+            onkeydown={(e) => {
+              if (e.key === 'Enter') handleJoinWithCode()
+            }}
+          />
+          <button
+            class="join-btn"
+            onclick={handleJoinWithCode}
+            disabled={joinLoading || !joinCode.trim()}
+          >
+            {joinLoading ? '...' : 'Join'}
+          </button>
+        </div>
+        {#if joinError}
+          <span class="join-error">{joinError}</span>
+        {/if}
+      </div>
     </div>
   {/if}
   <CreateMarginModal open={createMarginOpen} onCreate={createMargin} onClose={close} />
@@ -181,5 +231,71 @@
     align-items: center;
     gap: 6px;
     flex-shrink: 0;
+  }
+
+  .join-divider {
+    height: 1px;
+    background: #ece8e0;
+    margin: 4px 6px;
+  }
+
+  .join-section {
+    padding: 8px 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .join-label {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #888;
+  }
+
+  .join-row {
+    display: flex;
+    gap: 6px;
+  }
+
+  .join-input {
+    flex: 1;
+    padding: 6px 10px;
+    border-radius: 8px;
+    border: 1px solid #ece8e0;
+    background: #fafafa;
+    font-family: monospace;
+    font-size: 12px;
+    color: #2a2a2a;
+    outline: none;
+    min-width: 0;
+  }
+
+  .join-input:focus {
+    border-color: #f47e3a;
+    background: white;
+  }
+
+  .join-btn {
+    padding: 6px 12px;
+    background: #e8712a;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 12px;
+    font-weight: 600;
+    font-family: inherit;
+    cursor: pointer;
+  }
+
+  .join-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+
+  .join-error {
+    font-size: 11px;
+    color: #c0392b;
   }
 </style>

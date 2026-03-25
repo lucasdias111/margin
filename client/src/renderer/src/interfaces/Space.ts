@@ -7,6 +7,7 @@ export interface Space {
   spaceDescription: string
   visibility: string
   marginId: number
+  isDefault: boolean
   channels: Channel[]
   members: SpaceMember[]
 }

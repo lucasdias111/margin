@@ -6,6 +6,7 @@
   import ManageMarginMembers from '$src/components/content/manage/margin/ManageMarginMembers.svelte'
   import { marginService } from '$src/services/MarginService'
   import type { User } from '$src/interfaces/User'
+  import { marginInviteService } from '$src/services/MarginInviteService'
 
   let margin = $state<Margin | null>(null)
   let isLoading = $state(true)
@@ -44,12 +45,12 @@
     }
   }
 
-  async function onAddMember(user: User, role: string): Promise<void> {
+  async function onInviteUser(user: User): Promise<void> {
     try {
-      const newMember = await marginService.addMarginMember(margin.marginId, user.id, role)
-      margin = { ...margin, members: [...margin.members, newMember] }
+      await marginInviteService.sendDirectInvite(margin.marginId, user.username)
     } catch (e) {
-      console.error('Failed to add member:', e)
+      console.error('Failed to send invite:', e)
+      throw e
     }
   }
 
@@ -83,7 +84,7 @@
     <div class="loading">Loading margin...</div>
   {:else if margin}
     <ManageMarginInformation {margin} {onSaveInfo} {onDeleteMargin} />
-    <ManageMarginMembers {margin} {onAddMember} {onUpdateMemberRole} {onRemoveMember} />
+    <ManageMarginMembers {margin} {onInviteUser} {onUpdateMemberRole} {onRemoveMember} />
   {/if}
 </div>
 

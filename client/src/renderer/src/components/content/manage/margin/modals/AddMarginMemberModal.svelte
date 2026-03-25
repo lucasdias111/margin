@@ -1,86 +1,57 @@
 <script lang="ts">
   import AppModal from '$src/components/common/modals/AppModal.svelte'
-  import UserSearchBar from '$src/components/common/user/UserSearchBar.svelte'
   import UserAvatar from '$src/components/common/user/UserAvatar.svelte'
-  import { spaceState } from '$src/states/SpaceState.svelte.js'
-  import { spacesService } from '$src/services/SpacesService'
+  import { authenticatedGet } from '$src/services/api'
   import type { User } from '$src/interfaces/User'
 
   interface Props {
     open: boolean
     onClose: () => void
-    onAddMember: (user: User, role: string) => Promise<void>
+    onInviteUser: (user: User) => Promise<void>
   }
 
-  let { open, onClose, onAddMember }: Props = $props()
+  let { open, onClose, onInviteUser }: Props = $props()
 
-  let memberToAdd = $state<User | undefined>(undefined)
-  let initialTitle = 'Add Member To Margin'
+  let userToInvite = $state<User | undefined>(undefined)
+  let exactUsername = $state('')
+  let exactLookupLoading = $state(false)
+  let exactLookupError = $state<string | null>(null)
+  let inviteSent = $state(false)
+
+  const initialTitle = 'Invite User To Margin'
   let title = $state<string>(initialTitle)
 
-  const marginRoles = [
-    { label: 'Member', value: 'MEMBER' },
-    { label: 'Admin', value: 'ADMIN' },
-    { label: 'Owner', value: 'OWNER' }
-  ]
+  async function handleExactLookup(): Promise<void> {
+    if (!exactUsername.trim()) return
+    exactLookupLoading = true
+    exactLookupError = null
 
-  const spaceRoles = [
-    { label: 'Member', value: 'MEMBER' },
-    { label: 'Admin', value: 'ADMIN' }
-  ]
-
-  let selectedRole = $state(marginRoles[0].value)
-  let addToSpaces = $state(false)
-
-  interface SpaceSelection {
-    spaceId: number
-    spaceName: string
-    selected: boolean
-    role: string
+    try {
+      const response = await authenticatedGet(
+        `users/lookup?username=${encodeURIComponent(exactUsername.trim())}`
+      )
+      if (!response.ok) {
+        exactLookupError = 'User not found.'
+        return
+      }
+      const user: User = await response.json()
+      userToInvite = user
+      title = `Invite ${user.displayName ?? user.username} to margin?`
+    } catch (e) {
+      exactLookupError = 'Lookup failed. Try again.'
+    } finally {
+      exactLookupLoading = false
+    }
   }
 
-  const spaceSelections = $derived<SpaceSelection[]>(
-    spaceState.spaces.map((s) => ({
-      spaceId: s.spaceId,
-      spaceName: s.spaceName,
-      selected: false,
-      role: spaceRoles[0].value
-    }))
-  )
-
-  let spaceSelectionState = $state<SpaceSelection[]>([])
-
-  $effect(() => {
-    if (addToSpaces && spaceSelectionState.length === 0) {
-      spaceSelectionState = spaceState.spaces.map((s) => ({
-        spaceId: s.spaceId,
-        spaceName: s.spaceName,
-        selected: false,
-        role: spaceRoles[0].value
-      }))
-    }
-  })
-
   async function handleSubmit(): Promise<void> {
-    if (!memberToAdd) return
-    await onAddMember(memberToAdd, selectedRole)
-
-    if (addToSpaces) {
-      const selectedSpaces = spaceSelectionState.filter((s) => s.selected)
-      await Promise.all(
-        selectedSpaces.map((s) =>
-          spacesService.addSpaceMemberToSpace({
-            user: memberToAdd!,
-            spaceId: s.spaceId,
-            role: s.role,
-            joinedAt: new Date().toISOString()
-          })
-        )
-      )
+    if (!userToInvite) return
+    try {
+      await onInviteUser(userToInvite)
+      inviteSent = true
+    } catch (e) {
+      exactLookupError = 'Failed to send invite.'
     }
-
-    onClose()
-    clear()
   }
 
   function handleCancel(): void {
@@ -89,123 +60,164 @@
   }
 
   function clear(): void {
-    memberToAdd = undefined
+    userToInvite = undefined
     title = initialTitle
-    selectedRole = marginRoles[0].value
-    addToSpaces = false
-    spaceSelectionState = []
-  }
-
-  function onSelectUser(user: User): void {
-    memberToAdd = user
-    title = `Add ${user.displayName} to margin?`
-  }
-
-  function toggleSpace(spaceId: number): void {
-    spaceSelectionState = spaceSelectionState.map((s) =>
-      s.spaceId === spaceId ? { ...s, selected: !s.selected } : s
-    )
-  }
-
-  function updateSpaceRole(spaceId: number, role: string): void {
-    spaceSelectionState = spaceSelectionState.map((s) =>
-      s.spaceId === spaceId ? { ...s, role } : s
-    )
+    exactUsername = ''
+    exactLookupError = null
+    exactLookupLoading = false
+    inviteSent = false
   }
 </script>
 
 <AppModal {open} {title} onClose={handleCancel}>
-  {#if memberToAdd}
+  {#if inviteSent}
+    <div class="success-message">
+      <span>Invite sent to {userToInvite?.displayName ?? userToInvite?.username}.</span>
+    </div>
+    <div class="actions">
+      <button class="confirm" onclick={handleCancel}>Done</button>
+    </div>
+  {:else if userToInvite}
     <div class="selected-user">
-      <UserAvatar profilePictureUrl={memberToAdd.profilePictureUrl} />
-      <span class="username">{memberToAdd.displayName}</span>
+      <UserAvatar profilePictureUrl={userToInvite.profilePictureUrl} />
+      <span class="username">{userToInvite.displayName ?? userToInvite.username}</span>
     </div>
 
-    <div class="role-field">
-      <label for="margin-member-role">Margin Role</label>
-      <select id="margin-member-role" bind:value={selectedRole}>
-        {#each marginRoles as role (role.value)}
-          <option value={role.value}>{role.label}</option>
-        {/each}
-      </select>
-    </div>
-
-    {#if spaceState.spaces.length > 0}
-      <div class="space-toggle">
-        <label class="checkbox-label">
-          <input type="checkbox" bind:checked={addToSpaces} />
-          <span>Also add to spaces</span>
-        </label>
-      </div>
-
-      {#if addToSpaces}
-        <div class="spaces-list">
-          {#each spaceSelectionState as space (space.spaceId)}
-            <div class="space-row" class:selected={space.selected}>
-              <label class="checkbox-label">
-                <input
-                  type="checkbox"
-                  checked={space.selected}
-                  onchange={() => toggleSpace(space.spaceId)}
-                />
-                <span class="space-name">{space.spaceName}</span>
-              </label>
-
-              {#if space.selected}
-                <select
-                  value={space.role}
-                  onchange={(e) => updateSpaceRole(space.spaceId, (e.currentTarget as HTMLSelectElement).value)}
-                >
-                  {#each spaceRoles as role (role.value)}
-                    <option value={role.value}>{role.label}</option>
-                  {/each}
-                </select>
-              {/if}
-            </div>
-          {/each}
-        </div>
-      {/if}
+    {#if exactLookupError}
+      <span class="lookup-error">{exactLookupError}</span>
     {/if}
-  {:else}
-    <UserSearchBar {onSelectUser} />
-  {/if}
 
-  <div class="actions">
-    <button class="cancel" onclick={handleCancel}>Cancel</button>
-    <button class="confirm" onclick={handleSubmit} disabled={!memberToAdd}>Add</button>
-  </div>
+    <div class="actions">
+      <button class="cancel" onclick={() => { userToInvite = undefined; title = initialTitle }}>Back</button>
+      <button class="confirm" onclick={handleSubmit}>Send Invite</button>
+    </div>
+  {:else}
+    <div class="exact-lookup">
+      <label class="field-label" for="exact-username">Enter exact username</label>
+      <div class="lookup-row">
+        <input
+          id="exact-username"
+          class="lookup-input"
+          type="text"
+          placeholder="username"
+          bind:value={exactUsername}
+          maxlength="100"
+          onkeydown={(e) => {
+            if (e.key === 'Enter') handleExactLookup()
+          }}
+        />
+        <button
+          class="lookup-btn"
+          onclick={handleExactLookup}
+          disabled={exactLookupLoading || !exactUsername.trim()}
+        >
+          {#if exactLookupLoading}
+            <span class="spinner"></span>
+          {:else}
+            Find
+          {/if}
+        </button>
+      </div>
+      {#if exactLookupError}
+        <span class="lookup-error">{exactLookupError}</span>
+      {/if}
+    </div>
+
+    <div class="actions">
+      <button class="cancel" onclick={handleCancel}>Cancel</button>
+    </div>
+  {/if}
 </AppModal>
 
 <style>
-  .actions {
+  .exact-lookup {
     display: flex;
-    justify-content: flex-end;
+    flex-direction: column;
     gap: 8px;
-    padding: 5% 0 1% 0;
   }
 
-  .cancel {
-    background: none;
-    border: 1px solid #d9d9d9;
-    border-radius: 8px;
-    padding: 8px 16px;
-    cursor: pointer;
-    color: #2d2d2d;
-  }
-
-  .confirm {
-    background: #ff6203;
-    color: #fff;
-    border: none;
-    border-radius: 8px;
-    padding: 8px 16px;
+  .field-label {
+    font-size: 11px;
     font-weight: 600;
-    cursor: pointer;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #888;
   }
 
-  .confirm:disabled {
+  .lookup-row {
+    display: flex;
+    gap: 8px;
+  }
+
+  .lookup-input {
+    flex: 1;
+    padding: 8px 14px;
+    border-radius: 10px;
+    border: 1.5px solid #ebebeb;
+    background: #fafafa;
+    outline: none;
+    font-family: inherit;
+    font-size: 13px;
+    color: #2a2a2a;
+    box-sizing: border-box;
+    transition:
+      border-color 0.15s,
+      background 0.15s;
+  }
+
+  .lookup-input:focus {
+    border-color: #f47e3a;
+    background: white;
+  }
+
+  .lookup-input::placeholder {
+    color: #c1c1c1;
+  }
+
+  .lookup-btn {
+    padding: 8px 16px;
+    background: #f47e3a;
+    color: white;
+    border: none;
+    border-radius: 10px;
+    font-size: 13px;
+    font-weight: 600;
+    font-family: inherit;
+    cursor: pointer;
+    transition: background 0.15s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 60px;
+  }
+
+  .lookup-btn:hover:not(:disabled) {
+    background: #e06b28;
+  }
+
+  .lookup-btn:disabled {
     opacity: 0.4;
     cursor: not-allowed;
+  }
+
+  .lookup-error {
+    font-size: 12px;
+    color: #c0392b;
+  }
+
+  .spinner {
+    width: 14px;
+    height: 14px;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    border-top-color: white;
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+  }
+
+  @keyframes spin {
+    to {
+      transform: rotate(360deg);
+    }
   }
 
   .selected-user {
@@ -224,102 +236,46 @@
     font-size: 14px;
   }
 
-  .role-field {
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-    margin-bottom: 12px;
-  }
-
-  .role-field label {
-    font-size: 13px;
-    font-weight: 600;
-    color: #888;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-  }
-
-  .role-field select {
-    padding: 9px 14px;
+  .success-message {
+    padding: 14px 16px;
+    background: #eef6ee;
     border-radius: 10px;
-    border: 2px solid #e8e8e8;
-    font-size: 14px;
-    font-family: inherit;
-    color: #2d2d2d;
-    background: white;
-    cursor: pointer;
-    outline: none;
-    appearance: none;
-  }
-
-  .role-field select:focus {
-    border-color: #ff6203;
-  }
-
-  .space-toggle {
-    margin-bottom: 12px;
-  }
-
-  .checkbox-label {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    cursor: pointer;
-    font-size: 14px;
-    color: #2d2d2d;
-  }
-
-  .checkbox-label input[type='checkbox'] {
-    width: 16px;
-    height: 16px;
-    accent-color: #ff6203;
-    cursor: pointer;
-  }
-
-  .spaces-list {
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
+    font-size: 13px;
+    font-weight: 500;
+    color: #3d8a52;
     margin-bottom: 8px;
-    max-height: 240px;
-    overflow-y: auto;
-    border: 1px solid #ece8e0;
-    border-radius: 10px;
-    padding: 8px;
   }
 
-  .space-row {
+  .actions {
     display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 8px 10px;
+    justify-content: flex-end;
+    gap: 8px;
+    padding: 5% 0 1% 0;
+  }
+
+  .cancel {
+    background: none;
+    border: 1px solid #d9d9d9;
     border-radius: 8px;
-    transition: background 0.12s;
-  }
-
-  .space-row.selected {
-    background: #ffebe5;
-  }
-
-  .space-name {
-    font-size: 14px;
-    color: #2d2d2d;
-  }
-
-  .space-row select {
-    padding: 5px 10px;
-    border-radius: 8px;
-    border: 1px solid #e8e8e8;
-    font-size: 13px;
-    font-family: inherit;
-    color: #2d2d2d;
-    background: white;
+    padding: 8px 16px;
     cursor: pointer;
-    outline: none;
-    appearance: none;
+    color: #2d2d2d;
+    font-family: inherit;
   }
 
-  .space-row select:focus {
-    border-color: #ff6203;
+  .confirm {
+    background: #ff6203;
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    padding: 8px 16px;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: inherit;
+  }
+
+  .confirm:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
   }
 </style>

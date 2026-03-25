@@ -17,6 +17,12 @@ class NotificationStateManager {
     unseenAnnouncementCounts: new SvelteMap()
   })
 
+  notificationVersion = $state(0)
+
+  incrementVersion(): void {
+    this.notificationVersion++
+  }
+
   get unreadChannelMessages(): UnreadCount[] {
     return this.state.unreadChannelMessages
   }
@@ -69,7 +75,7 @@ class NotificationStateManager {
     )
   }
 
-  async loadUnseenAnnouncementCounts(): Promise<void> {
+  async loadUnseenNotificationsCounts(): Promise<void> {
     const res = await authenticatedGet('notifications/unseen_counts')
     const data: Record<string, number> = await res.json()
     this.state.unseenAnnouncementCounts = new SvelteMap(
@@ -77,11 +83,11 @@ class NotificationStateManager {
     )
   }
 
-  incrementUnseenAnnouncements(marginId: number): void {
+  incrementUnseenNotifications(marginId: number): void {
     const current = this.state.unseenAnnouncementCounts.get(marginId) ?? 0
     this.state.unseenAnnouncementCounts.set(marginId, current + 1)
   }
-  getTotalUnseenAnnouncements(): number {
+  getTotalUnseenNotifications(): number {
     return Array.from(this.state.unseenAnnouncementCounts.values()).reduce(
       (sum, count) => sum + count,
       0

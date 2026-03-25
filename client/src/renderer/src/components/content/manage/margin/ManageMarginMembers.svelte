@@ -7,17 +7,39 @@
   import { userState } from '$src/states/UserState.svelte'
   import { roleRank } from '$src/interfaces/Margin'
   import { errorService } from '$src/services/ErrorService'
+  import { marginInviteService } from '$src/services/MarginInviteService'
+  import { chatState } from '$src/states/ChatState.svelte'
+  import { marginService } from '$src/services/MarginService'
 
   interface Props {
     margin: Margin
-    onAddMember: (user: User, role: string) => Promise<void>
+    onInviteUser: (user: User) => Promise<void>
     onUpdateMemberRole: (member: MarginMember) => Promise<void>
     onRemoveMember: (member: MarginMember) => Promise<void>
   }
 
-  let { margin, onAddMember, onUpdateMemberRole, onRemoveMember }: Props = $props()
+  let { margin, onInviteUser, onUpdateMemberRole, onRemoveMember }: Props = $props()
   let addMemberOpen = $state(false)
+  let inviteLink = $state<string | null>(null)
+  let inviteLoading = $state(false)
   const marginRoles = Object.values(MarginRole)
+
+  async function handleCreateInviteLink(): Promise<void> {
+    inviteLoading = true
+    try {
+      const result = await marginInviteService.createLinkInvite(margin.marginId)
+      inviteLink = result.inviteCode
+    } catch (e) {
+      console.error('Failed to create invite link:', e)
+    } finally {
+      inviteLoading = false
+    }
+  }
+
+  function copyInviteLink(): void {
+    if (!inviteLink) return
+    navigator.clipboard.writeText(inviteLink)
+  }
 
   function handleRoleSelectChange(member: MarginMember, e: Event): void {
     const value = (e.currentTarget as HTMLSelectElement).value as MarginRole
@@ -35,8 +57,27 @@
   <div class="margin-members">
     <div class="members-header">
       <h2>Members</h2>
-      <button class="add-member-btn" onclick={() => (addMemberOpen = true)}>Add member</button>
+      <div class="header-actions">
+        <button class="invite-btn" onclick={handleCreateInviteLink} disabled={inviteLoading}>
+          {inviteLoading ? 'Generating...' : 'Create invite link'}
+        </button>
+        <button class="add-member-btn" onclick={() => (addMemberOpen = true)}>
+          Invite by username
+        </button>
+      </div>
     </div>
+
+    {#if inviteLink}
+      <div class="invite-link-bar">
+        <span class="invite-label">Invite code</span>
+        <div class="invite-link-row">
+          <input class="invite-code-input" type="text" value={inviteLink} readonly />
+          <button class="copy-btn" onclick={copyInviteLink}>Copy</button>
+          <button class="dismiss-btn" onclick={() => (inviteLink = null)}>✕</button>
+        </div>
+        <span class="invite-expiry">Expires in 7 days</span>
+      </div>
+    {/if}
 
     {#snippet roleCell(member)}
       <select
@@ -82,7 +123,7 @@
   </div>
 {/if}
 
-<AddMarginMemberModal open={addMemberOpen} onClose={() => (addMemberOpen = false)} {onAddMember} />
+<AddMarginMemberModal open={addMemberOpen} onClose={() => (addMemberOpen = false)} {onInviteUser} />
 
 <style>
   .margin-members {
@@ -97,6 +138,33 @@
   h2 {
     color: #2d2d2d;
     margin: 0;
+  }
+
+  .header-actions {
+    display: flex;
+    gap: 8px;
+  }
+
+  .invite-btn {
+    background: none;
+    color: #e8712a;
+    border: 1px solid #e8712a;
+    border-radius: 8px;
+    padding: 9px 18px;
+    font-size: 0.88rem;
+    font-weight: 600;
+    font-family: inherit;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+
+  .invite-btn:hover:not(:disabled) {
+    background: rgba(232, 113, 42, 0.06);
+  }
+
+  .invite-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
   }
 
   .members-header {
@@ -114,6 +182,7 @@
     font-size: 0.88rem;
     font-weight: 600;
     cursor: pointer;
+    font-family: inherit;
   }
 
   .role-select {
@@ -130,5 +199,71 @@
 
   .role-select:focus {
     border-color: #f5a623;
+  }
+
+  .invite-link-bar {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 12px 14px;
+    background: #fff8f4;
+    border: 1px solid rgba(232, 113, 42, 0.15);
+    border-radius: 10px;
+  }
+
+  .invite-label {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #888;
+  }
+
+  .invite-link-row {
+    display: flex;
+    gap: 6px;
+  }
+
+  .invite-code-input {
+    flex: 1;
+    padding: 7px 12px;
+    border-radius: 8px;
+    border: 1px solid #ece8e0;
+    background: white;
+    font-family: monospace;
+    font-size: 13px;
+    color: #2a2a2a;
+    outline: none;
+  }
+
+  .copy-btn {
+    padding: 7px 14px;
+    background: #e8712a;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 12px;
+    font-weight: 600;
+    font-family: inherit;
+    cursor: pointer;
+  }
+
+  .copy-btn:hover {
+    background: #d4621a;
+  }
+
+  .dismiss-btn {
+    padding: 7px 10px;
+    background: none;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    color: #888;
+    cursor: pointer;
+    font-size: 12px;
+  }
+
+  .invite-expiry {
+    font-size: 11px;
+    color: #aaa;
   }
 </style>

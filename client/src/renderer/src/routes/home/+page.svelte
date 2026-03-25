@@ -64,11 +64,14 @@
       presenceService.setOnline(data.payload.id),
     [WebSocketMessageType.USER_LOGOUT]: (data: WebSocketMessage<User>) =>
       presenceService.setOffline(data.payload.id),
-    [WebSocketMessageType.NOTIFICATION]: (data: WebSocketMessage<Notification>) =>
-      notificationState.incrementUnseenAnnouncements(data.payload.marginId),
+    [WebSocketMessageType.NOTIFICATION]: (data: WebSocketMessage<Notification>) => {
+      notificationState.incrementUnseenNotifications(data.payload.marginId)
+      notificationState.incrementVersion()
+    },
     [WebSocketMessageType.USER_ADDED_TO_MARGIN]: (data: WebSocketMessage<Margin>) => {
       marginService.addNewMargin(data.payload)
-      notificationState.incrementUnseenAnnouncements(data.payload.marginId)
+      notificationState.incrementUnseenNotifications(data.payload.marginId)
+      notificationState.incrementVersion()
     },
     [WebSocketMessageType.CALL_NO_ANSWER]: () => (incomingCallPayload = null),
     [WebSocketMessageType.USER_JOINED_VOICE]: (
@@ -87,7 +90,7 @@
     await getCurrentUser()
     await loadUnreadMessages()
     await loadRecentUsers()
-    await notificationState.loadUnseenAnnouncementCounts()
+    await notificationState.loadUnseenNotificationsCounts()
     await marginService.loadMarginsForUser()
   }
 

@@ -14,5 +14,6 @@ export interface Notification {
 export enum NotificationType {
   ANNOUNCEMENT = 'ANNOUNCEMENT',
   MISSED_CALL = 'MISSED_CALL',
-  ADDED_TO_MARGIN = 'ADDED_TO_MARGIN'
+  ADDED_TO_MARGIN = 'ADDED_TO_MARGIN',
+  INVITED_TO_MARGIN = 'INVITED_TO_MARGIN'
 }

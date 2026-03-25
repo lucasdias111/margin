@@ -23,7 +23,7 @@
 
   let showDropdown = $state(false)
 
-  const totalAnnouncements = $derived(notificationState.getTotalUnseenAnnouncements())
+  const totalAnnouncements = $derived(notificationState.getTotalUnseenNotifications())
 </script>
 
 <div class="navigation">

@@ -4,14 +4,34 @@
   import { marginService } from '$src/services/MarginService'
   import { chatState } from '$src/states/ChatState.svelte'
   import Icon from '$src/components/common/icons/Icon.svelte'
+  import { marginInviteService } from '$src/services/MarginInviteService'
 
   let modalOpen = $state(false)
+  let joinCode = $state('')
+  let joinLoading = $state(false)
+  let joinError = $state<string | null>(null)
 
   async function onCreate(createRequest: CreateMargin): Promise<void> {
     const newMargin = await marginService.createMargin(createRequest)
     chatState.selectMargin(newMargin)
     marginService.addNewMargin(newMargin)
     modalOpen = false
+  }
+
+  async function handleJoinWithCode(): Promise<void> {
+    if (!joinCode.trim()) return
+    joinLoading = true
+    joinError = null
+    try {
+      const margin = await marginInviteService.acceptLinkInvite(joinCode.trim())
+      chatState.selectMargin(margin)
+      marginService.addNewMargin(margin)
+      joinCode = ''
+    } catch (e) {
+      joinError = 'Invalid or expired code'
+    } finally {
+      joinLoading = false
+    }
   }
 </script>
 
@@ -22,6 +42,34 @@
   <h2>No margin yet</h2>
   <p>Create a margin to get started with spaces, channels, and team communication.</p>
   <button class="create-btn" onclick={() => (modalOpen = true)}>Create margin</button>
+
+  <div class="divider">
+    <span>or</span>
+  </div>
+
+  <div class="join-section">
+    <span class="join-label">Join with invite code</span>
+    <div class="join-row">
+      <input
+        class="join-input"
+        type="text"
+        placeholder="Paste code"
+        bind:value={joinCode}
+        maxlength="36"
+        onkeydown={(e) => { if (e.key === 'Enter') handleJoinWithCode() }}
+      />
+      <button
+        class="join-btn"
+        onclick={handleJoinWithCode}
+        disabled={joinLoading || !joinCode.trim()}
+      >
+        {joinLoading ? '...' : 'Join'}
+      </button>
+    </div>
+    {#if joinError}
+      <span class="join-error">{joinError}</span>
+    {/if}
+  </div>
 </div>
 
 <CreateMarginModal open={modalOpen} onClose={() => (modalOpen = false)} {onCreate} />
@@ -72,5 +120,82 @@
 
   .create-btn:hover {
     background: #e55700;
+  }
+
+  .divider {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    color: #c4bfb8;
+    font-size: 12px;
+    width: 240px;
+    margin-top: 4px;
+  }
+
+  .divider::before,
+  .divider::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: #ece8e0;
+  }
+
+  .join-section {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .join-label {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #888;
+  }
+
+  .join-row {
+    display: flex;
+    gap: 6px;
+  }
+
+  .join-input {
+    padding: 8px 12px;
+    border-radius: 8px;
+    border: 1px solid #ece8e0;
+    background: #fafafa;
+    font-family: monospace;
+    font-size: 13px;
+    color: #2a2a2a;
+    outline: none;
+    width: 180px;
+  }
+
+  .join-input:focus {
+    border-color: #f47e3a;
+    background: white;
+  }
+
+  .join-btn {
+    padding: 8px 14px;
+    background: #e8712a;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    font-family: inherit;
+    cursor: pointer;
+  }
+
+  .join-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+
+  .join-error {
+    font-size: 11px;
+    color: #c0392b;
   }
 </style>
