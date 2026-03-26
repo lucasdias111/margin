@@ -283,8 +283,7 @@ class CallService {
 
       const isScreenShare = transceivers.indexOf(event.transceiver) === 2
       if (isScreenShare) {
-        const screenStream = new MediaStream([track])
-        callState.setRemoteScreenSharing(true, screenStream)
+        return
       } else {
         callState.p2pCallState?.remoteStream?.addTrack(track)
       }
