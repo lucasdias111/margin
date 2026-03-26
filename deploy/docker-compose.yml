@@ -59,8 +59,9 @@ services:
       SFU_SECRET: ${SFU_SECRET}
       INTERNAL_API_KEY: ${INTERNAL_API_KEY}
       SPRING_URL: http://margin-server:8080
+      ANNOUNCED_IP: ${PUBLIC_IP}
       MEDIASOUP_RTC_MIN_PORT: 40000
-      MEDIASOUP_RTC_MAX_PORT: 49999
+      MEDIASOUP_RTC_MAX_PORT: 40100
     ports:
       - "40000-40100:40000-40100/udp"
     networks:
