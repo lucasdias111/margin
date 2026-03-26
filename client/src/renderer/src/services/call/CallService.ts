@@ -23,6 +23,7 @@ const ICE_SERVERS = [
 class CallService {
   private noAnswerTimeout: ReturnType<typeof setTimeout> | null = null
   private screenTransceiver: RTCRtpTransceiver | null = null
+  private pendingCandidates: RTCIceCandidate[] = []
 
   startCall(
     callId: number,
@@ -96,6 +97,7 @@ class CallService {
     console.log('[CallService] handleCallResponse')
     const p2p = callState.p2pCallState
     if (!p2p?.peerConnection || p2p.peerConnection.currentRemoteDescription) return
+    this.clearNoAnswer()
     await p2p.peerConnection.setRemoteDescription(data.payload.response)
     console.log(
       '[CallService] remote description set (answer), draining',
@@ -106,6 +108,12 @@ class CallService {
       await p2p.peerConnection.addIceCandidate(new RTCIceCandidate(candidate))
     }
     callState.clearCandidateQueue()
+
+    const userId = p2p.user.id
+    for (const candidate of this.pendingCandidates) {
+      callSignalingService.sendCandidate(userId, candidate)
+    }
+    this.pendingCandidates = []
   }
 
   async handleCallCandidate(data: WebSocketMessage<RTCIceCandidateInit>): Promise<void> {
@@ -290,7 +298,11 @@ class CallService {
           e.candidate.protocol,
           e.candidate.address
         )
-        callSignalingService.sendCandidate(userId, e.candidate)
+        if (isInitiator) {
+          this.pendingCandidates.push(e.candidate)
+        } else {
+          callSignalingService.sendCandidate(userId, e.candidate)
+        }
       } else {
         console.log('[CallService] ICE gathering complete')
       }
@@ -339,6 +351,7 @@ class CallService {
 
   private cleanupConnection(): void {
     console.log('[CallService] cleanupConnection')
+    this.pendingCandidates = []
     this.screenTransceiver = null
     callState.p2pCallState?.peerConnection?.close()
     callState.p2pCallState?.localStream?.getTracks().forEach((t) => t.stop())

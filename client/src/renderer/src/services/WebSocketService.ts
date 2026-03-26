@@ -1,6 +1,7 @@
 import { API_CONFIG } from '$src/shared/config'
 import type { WebSocketMessage, WebSocketMessageOut } from '$src/interfaces/WebSocketMessages'
 import { errorService } from '$src/services/ErrorService'
+import { WebSocketMessageType } from '$src/interfaces/WebSocketMessageType'
 
 type MessageHandler = (data: WebSocketMessage<unknown>) => void
 
@@ -36,6 +37,8 @@ class WebSocketService {
 
     this.ws.onmessage = (event): void => {
       const data = JSON.parse(event.data)
+      if (data.type === WebSocketMessageType.CALL_CANDIDATE)
+        console.log('[WS] CALL_CANDIDATE received (raw)', data)
       const handlers = this.handlers.get(data.type) || []
       handlers.forEach((handler) => handler(data))
     }

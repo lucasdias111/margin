@@ -1,10 +1,10 @@
 {
   "name": "margin-desktop",
   "version": "1.0.0",
-  "description": "Desktop app for margin",
+  "description": "Desktop app for Margin",
   "main": "./out/main/index.js",
-  "author": "example.com",
-  "homepage": "https://electron-vite.org",
+  "author": "Margin",
+  "homepage": "https://margin.chat",
   "type": "module",
   "scripts": {
     "format": "prettier --plugin prettier-plugin-svelte --write .",
