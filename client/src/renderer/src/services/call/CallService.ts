@@ -75,8 +75,8 @@ class CallService {
     const transceivers = pc.getTransceivers()
     this.screenTransceiver = transceivers[2] ?? null
 
-    if (this.screenTransceiver) {
-      this.screenTransceiver.direction = 'sendrecv'
+    for (const transceiver of transceivers) {
+      transceiver.direction = 'sendrecv'
     }
 
     const audioTrack = localStream.getAudioTracks()[0]
