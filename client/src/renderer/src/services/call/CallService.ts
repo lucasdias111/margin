@@ -32,13 +32,11 @@ class CallService {
     videoEnabled: boolean,
     offer?: RTCSessionDescriptionInit
   ): void {
-    console.log('[CallService] startCall', { callId, incomingCall, videoEnabled })
     callState.startP2PCall(callId, caller, incomingCall, offer)
     callState.setVideoEnabled(videoEnabled)
   }
 
   endCall(remoteConnectionEnded: boolean): void {
-    console.log('[CallService] endCall', { remoteConnectionEnded })
     this.cleanupConnection()
     if (!remoteConnectionEnded && callState.isP2PCall) {
       callSignalingService.sendCallEnd(
@@ -51,26 +49,22 @@ class CallService {
   }
 
   async initiateCall(userId: number): Promise<void> {
-    console.log('[CallService] initiateCall to user', userId)
     await this.setup(userId, true)
     if (!callState.p2pCallState) return
     const pc = callState.p2pCallState.peerConnection!
     const offer = await pc.createOffer()
     await pc.setLocalDescription(offer)
-    console.log('[CallService] offer created and set as local description')
     callSignalingService.sendOffer(userId, offer)
     this.noAnswer()
   }
 
   async answerCall(userId: number, offer: RTCSessionDescriptionInit): Promise<void> {
-    console.log('[CallService] answerCall from user', userId)
     await this.setup(userId, false)
     if (!callState.p2pCallState) return
     const pc = callState.p2pCallState.peerConnection!
     const localStream = callState.p2pCallState.localStream!
 
     await pc.setRemoteDescription(offer)
-    console.log('[CallService] remote description set (offer)')
 
     const transceivers = pc.getTransceivers()
     this.screenTransceiver = transceivers[2] ?? null
@@ -86,21 +80,15 @@ class CallService {
 
     const answer = await pc.createAnswer()
     await pc.setLocalDescription(answer)
-    console.log('[CallService] answer created and set as local description')
     callSignalingService.sendAnswer(userId, answer)
   }
 
   async handleCallResponse(data: WebSocketMessage<CallResponsePayload>): Promise<void> {
-    console.log('[CallService] handleCallResponse')
     const p2p = callState.p2pCallState
     if (!p2p?.peerConnection || p2p.peerConnection.currentRemoteDescription) return
     this.clearNoAnswer()
     await p2p.peerConnection.setRemoteDescription(data.payload.response)
-    console.log(
-      '[CallService] remote description set (answer), draining',
-      p2p.candidateQueue.length,
-      'queued candidates'
-    )
+
     for (const candidate of p2p.candidateQueue) {
       await p2p.peerConnection.addIceCandidate(new RTCIceCandidate(candidate))
     }
@@ -116,13 +104,8 @@ class CallService {
   async handleCallCandidate(data: WebSocketMessage<RTCIceCandidateInit>): Promise<void> {
     const p2p = callState.p2pCallState
     if (!p2p?.peerConnection?.remoteDescription) {
-      console.log(
-        '[CallService] queuing ICE candidate (no remote description yet)',
-        data.payload?.candidate
-      )
       callState.queueCandidate(data.payload)
     } else {
-      console.log('[CallService] adding ICE candidate directly', data.payload?.candidate)
       await p2p.peerConnection.addIceCandidate(new RTCIceCandidate(data.payload))
     }
   }
@@ -196,7 +179,6 @@ class CallService {
   noAnswer(): void {
     this.noAnswerTimeout = setTimeout(() => {
       if (callState.status === 'connecting') {
-        console.log('[CallService] no answer timeout reached')
         callSignalingService.sendNoAnswer()
         this.endCall(true)
       }
@@ -211,13 +193,11 @@ class CallService {
   }
 
   async getUserMedia(): Promise<MediaStream> {
-    console.log('[CallService] getUserMedia')
     const stream = new MediaStream()
 
     try {
       const audioStream = await navigator.mediaDevices.getUserMedia({ audio: true })
       audioStream.getAudioTracks().forEach((t) => stream.addTrack(t))
-      console.log('[CallService] audio track acquired')
     } catch (e) {
       errorService.reportError('Microphone not available: ' + e.message)
       const audioContext = new AudioContext()
@@ -229,23 +209,19 @@ class CallService {
       gainNode.connect(dst)
       oscillator.start()
       dst.stream.getAudioTracks().forEach((t) => stream.addTrack(t))
-      console.log('[CallService] using silent audio fallback')
     }
 
     try {
       const videoStream = await navigator.mediaDevices.getUserMedia({ video: true })
       videoStream.getVideoTracks().forEach((t) => stream.addTrack(t))
-      console.log('[CallService] video track acquired')
     } catch (e) {
       errorService.reportError('Camera not available: ' + e.message)
-      console.log('[CallService] no video track available')
     }
 
     return stream
   }
 
   private async setup(userId: number, isInitiator: boolean): Promise<void> {
-    console.log('[CallService] setup', { userId, isInitiator })
     const localStream = await this.getUserMedia()
     const remoteStream = new MediaStream()
     const peerConnection = this.createPeerConnection(userId, isInitiator, remoteStream)
@@ -266,11 +242,6 @@ class CallService {
     isInitiator: boolean,
     remoteStream: MediaStream
   ): RTCPeerConnection {
-    console.log('[CallService] createPeerConnection', {
-      userId,
-      isInitiator,
-      iceServers: ICE_SERVERS
-    })
     const pc = new RTCPeerConnection({ iceServers: ICE_SERVERS })
 
     if (isInitiator) {
@@ -280,16 +251,6 @@ class CallService {
     }
 
     pc.ontrack = (event) => {
-      console.log('[CallService] ontrack', {
-        kind: event.track.kind,
-        readyState: event.track.readyState,
-        muted: event.track.muted,
-        enabled: event.track.enabled,
-        transceiverIndex: pc.getTransceivers().indexOf(event.transceiver),
-        transceiverDirection: event.transceiver.direction,
-        transceiverCurrentDirection: event.transceiver.currentDirection
-      })
-      console.log('[CallService] ontrack', event.track.kind)
       const track = event.track
       const transceivers = pc.getTransceivers()
 
@@ -308,41 +269,15 @@ class CallService {
     }
 
     pc.onicecandidate = (e) => {
-      if (e.candidate) {
-        console.log(
-          '[CallService] local ICE candidate:',
-          e.candidate.type,
-          e.candidate.protocol,
-          e.candidate.address
-        )
-        if (isInitiator) {
-          this.pendingCandidates.push(e.candidate)
-        } else {
-          callSignalingService.sendCandidate(userId, e.candidate)
-        }
+      if (!e.candidate) return
+      if (isInitiator) {
+        this.pendingCandidates.push(e.candidate)
       } else {
-        console.log('[CallService] ICE gathering complete')
+        callSignalingService.sendCandidate(userId, e.candidate)
       }
     }
 
-    pc.onicecandidateerror = (e) => {
-      console.error('[CallService] ICE candidate error:', e.errorCode, e.errorText, e.url)
-    }
-
-    pc.oniceconnectionstatechange = () => {
-      console.log('[CallService] ICE connection state:', pc.iceConnectionState)
-    }
-
-    pc.onicegatheringstatechange = () => {
-      console.log('[CallService] ICE gathering state:', pc.iceGatheringState)
-    }
-
-    pc.onsignalingstatechange = () => {
-      console.log('[CallService] signaling state:', pc.signalingState)
-    }
-
     pc.onconnectionstatechange = () => {
-      console.log('[CallService] connection state:', pc.connectionState)
       if (pc.connectionState === 'connected') {
         this.clearNoAnswer()
         callState.setStatus('connected')
@@ -356,10 +291,6 @@ class CallService {
             p2p.isScreenSharing
           )
         }
-      } else if (pc.connectionState === 'failed') {
-        console.error('[CallService] connection failed — ICE negotiation unsuccessful')
-      } else if (pc.connectionState === 'disconnected') {
-        console.warn('[CallService] connection disconnected')
       }
     }
 
@@ -367,7 +298,6 @@ class CallService {
   }
 
   private cleanupConnection(): void {
-    console.log('[CallService] cleanupConnection')
     this.pendingCandidates = []
     this.screenTransceiver = null
     callState.p2pCallState?.peerConnection?.close()
@@ -383,25 +313,10 @@ class CallService {
   }
 
   handleMediaState(video: boolean, screenShare: boolean): void {
-    console.log('[CallService] handleMediaState', { video, screenShare })
-    const stream = callState.p2pCallState?.remoteStream
-    console.log('[CallService] remoteStream tracks', {
-      audioTracks: stream
-        ?.getAudioTracks()
-        .map((t) => ({ readyState: t.readyState, muted: t.muted, enabled: t.enabled })),
-      videoTracks: stream
-        ?.getVideoTracks()
-        .map((t) => ({ readyState: t.readyState, muted: t.muted, enabled: t.enabled }))
-    })
     callState.setRemoteVideoEnabled(video)
     if (screenShare) {
       const transceiver = callState.p2pCallState?.peerConnection?.getTransceivers()?.[2]
       const track = transceiver?.receiver?.track
-      console.log('[CallService] handleMediaState screenShare', {
-        track,
-        readyState: track?.readyState,
-        muted: track?.muted
-      })
       if (track) {
         const stream = new MediaStream([track])
         callState.setRemoteScreenSharing(true, stream)
@@ -412,7 +327,6 @@ class CallService {
   }
 
   rejectCall(callId: number, recipientId: number): void {
-    console.log('[CallService] rejectCall', { callId, recipientId })
     webSocketService.send({
       type: WebSocketMessageType.CALL_REJECTED,
       recipientId: recipientId,
