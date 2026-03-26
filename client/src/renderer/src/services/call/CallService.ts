@@ -283,9 +283,9 @@ class CallService {
 
       const isScreenShare = transceivers.indexOf(event.transceiver) === 2
       if (isScreenShare) {
+        const screenStream = new MediaStream([track])
+        callState.setRemoteScreenSharing(false, screenStream)
         return
-      } else {
-        callState.p2pCallState?.remoteStream?.addTrack(track)
       }
     }
 
@@ -369,6 +369,11 @@ class CallService {
     if (screenShare) {
       const transceiver = callState.p2pCallState?.peerConnection?.getTransceivers()?.[2]
       const track = transceiver?.receiver?.track
+      console.log('[CallService] handleMediaState screenShare', {
+        track,
+        readyState: track?.readyState,
+        muted: track?.muted
+      })
       if (track) {
         const stream = new MediaStream([track])
         callState.setRemoteScreenSharing(true, stream)
