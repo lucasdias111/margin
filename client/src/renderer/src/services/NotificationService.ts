@@ -32,7 +32,7 @@ class NotificationService {
     sound.currentTime = 0
   }
 
-  handleIncomingMessage(message: Message): void {
+  handleIncomingMessage = (message: Message): void => {
     if (message.user.id === userState.currentUser.id) return
 
     const isActive = this.isActiveConversation(message)
@@ -107,7 +107,12 @@ class NotificationService {
 
   async markNotificationAsSeen(notification: Notification): Promise<void> {
     await authenticatedPost(notification.notificationId, 'notifications/mark_seen')
-    notificationState.clearUnseenNotification(notification)
+    notificationState.markNotificationSeen(notification.notificationId)
+  }
+
+  async loadAll(): Promise<void> {
+    const result = await this.getAll()
+    notificationState.setNotifications(result)
   }
 }
 

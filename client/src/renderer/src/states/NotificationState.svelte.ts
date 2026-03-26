@@ -1,35 +1,63 @@
 import type { UnreadCount } from '$src/interfaces/UnreadCount'
 import type { Space } from '$src/interfaces/Space'
-import { authenticatedGet } from '$src/services/api'
-import { SvelteMap } from 'svelte/reactivity'
 import type { Notification } from '$src/interfaces/Notification'
 
 interface NotificationState {
   unreadDirectMessages: UnreadCount[]
   unreadChannelMessages: UnreadCount[]
-  unseenAnnouncementCounts: SvelteMap<number, number>
+  notifications: Notification[]
+  notificationsLoaded: boolean
 }
 
 class NotificationStateManager {
   private state = $state<NotificationState>({
     unreadDirectMessages: [],
     unreadChannelMessages: [],
-    unseenAnnouncementCounts: new SvelteMap()
+    notifications: [],
+    notificationsLoaded: false
   })
 
-  notificationVersion = $state(0)
+  get notifications(): Notification[] {
+    return this.state.notifications
+  }
 
-  incrementVersion(): void {
-    this.notificationVersion++
+  get notificationsLoaded(): boolean {
+    return this.state.notificationsLoaded
   }
 
   get unreadChannelMessages(): UnreadCount[] {
     return this.state.unreadChannelMessages
   }
 
-  get unseenAnnouncementCounts(): SvelteMap<number, number> {
-    return this.state.unseenAnnouncementCounts
+  setNotifications(notifications: Notification[]): void {
+    this.state.notifications = notifications
+    this.state.notificationsLoaded = true
   }
+
+  markNotificationSeen(notificationId: number): void {
+    const notification = this.state.notifications.find((n) => n.notificationId === notificationId)
+    if (notification) {
+      notification.seen = true
+    }
+  }
+
+  removeNotificationByReferenceId(referenceId: number): void {
+    this.state.notifications = this.state.notifications.filter((n) => n.referenceId !== referenceId)
+  }
+
+  addNotification(notification: Notification): void {
+    this.state.notifications = [notification, ...this.state.notifications]
+  }
+
+  getTotalUnseenNotifications(): number {
+    return this.state.notifications.filter((n) => !n.seen).length
+  }
+
+  getUnseenCountForMargin(marginId: number): number {
+    return this.state.notifications.filter((n) => n.marginId === marginId && !n.seen).length
+  }
+
+  // --- Unread message counts (unchanged) ---
 
   addUnreadDirectMessages(directMessages: UnreadCount[]): void {
     this.state.unreadDirectMessages = this.state.unreadDirectMessages.concat(directMessages)
@@ -75,39 +103,14 @@ class NotificationStateManager {
     )
   }
 
-  async loadUnseenNotificationsCounts(): Promise<void> {
-    const res = await authenticatedGet('notifications/unseen_counts')
-    const data: Record<string, number> = await res.json()
-    this.state.unseenAnnouncementCounts = new SvelteMap(
-      Object.entries(data).map(([k, v]) => [Number(k), v])
-    )
-  }
-
-  incrementUnseenNotifications(marginId: number): void {
-    const current = this.state.unseenAnnouncementCounts.get(marginId) ?? 0
-    this.state.unseenAnnouncementCounts.set(marginId, current + 1)
-  }
-  getTotalUnseenNotifications(): number {
-    return Array.from(this.state.unseenAnnouncementCounts.values()).reduce(
-      (sum, count) => sum + count,
-      0
-    )
-  }
-
-  clearUnseenNotification(notification: Notification): void {
-    const current = this.state.unseenAnnouncementCounts.get(notification.marginId) ?? 0
-    this.state.unseenAnnouncementCounts.set(notification.marginId, Math.max(0, current - 1))
-    notification.seen = true
-  }
-
   getTotalUnreadChannelsForMargin(marginId: number): number {
     return this.state.unreadChannelMessages.filter((msg) => msg.marginId === marginId).length
   }
 
   getTotalUnreadForMargin(marginId: number): number {
     const channelUnread = this.getTotalUnreadChannelsForMargin(marginId)
-    const announcements = this.state.unseenAnnouncementCounts.get(marginId) ?? 0
-    return channelUnread + announcements
+    const unseenNotifications = this.getUnseenCountForMargin(marginId)
+    return channelUnread + unseenNotifications
   }
 }
 

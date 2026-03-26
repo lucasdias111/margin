@@ -55,8 +55,7 @@
     new Map(
       chatState.margins.map((m) => [
         m.marginId,
-        notificationState.unreadChannelMessages.filter((msg) => msg.marginId === m.marginId)
-          .length + (notificationState.unseenAnnouncementCounts.get(m.marginId) ?? 0)
+        notificationState.getTotalUnreadForMargin(m.marginId)
       ])
     )
   )
@@ -73,20 +72,22 @@
 
   {#if open}
     <div class="dropdown">
-      {#each chatState.margins as margin (margin.marginId)}
-        {@const unread = unreadPerMargin.get(margin.marginId) ?? 0}
-        <button
-          class="margin-item"
-          class:active={chatState.selectedMargin?.marginId === margin.marginId}
-          onclick={() => selectMargin(margin)}
-        >
-          <span class="margin-avatar">{margin.marginName?.[0]?.toUpperCase() ?? '?'}</span>
-          <span class="margin-name">{margin.marginName}</span>
-          <span class="margin-actions">
-            <UnreadNotificationBadge shouldShow={unread > 0} count={unread} variant="inline" />
-          </span>
-        </button>
-      {/each}
+      <div class="margin-list">
+        {#each chatState.margins as margin (margin.marginId)}
+          {@const unread = unreadPerMargin.get(margin.marginId) ?? 0}
+          <button
+            class="margin-item"
+            class:active={chatState.selectedMargin?.marginId === margin.marginId}
+            onclick={() => selectMargin(margin)}
+          >
+            <span class="margin-avatar">{margin.marginName?.[0]?.toUpperCase() ?? '?'}</span>
+            <span class="margin-name">{margin.marginName}</span>
+            <span class="margin-actions">
+              <UnreadNotificationBadge shouldShow={unread > 0} count={unread} variant="inline" />
+            </span>
+          </button>
+        {/each}
+      </div>
 
       <div class="join-divider"></div>
 
@@ -297,5 +298,19 @@
   .join-error {
     font-size: 11px;
     color: #c0392b;
+  }
+
+  .margin-list {
+    max-height: 400px;
+    overflow-y: auto;
+  }
+
+  .margin-list::-webkit-scrollbar {
+    width: 3px;
+  }
+
+  .margin-list::-webkit-scrollbar-thumb {
+    background: rgba(0, 0, 0, 0.1);
+    border-radius: 3px;
   }
 </style>

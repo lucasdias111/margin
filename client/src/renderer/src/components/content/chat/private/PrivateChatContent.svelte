@@ -3,13 +3,20 @@
   import { conversationState } from '$src/states/ConversationState.svelte.js'
   import { chatService } from '$src/services/ChatService'
   import { callService } from '$src/services/call/CallService'
-  import { callState } from '$src/states/CallState.svelte.js'
   import { userState } from '$src/states/UserState.svelte.js'
   import ChatInput from '$src/components/common/chat/ChatInput.svelte'
   import MessagesContainer from '$src/components/common/chat/MessagesContainer.svelte'
   import PrivateChatHeader from '$src/components/content/chat/private/PrivateChatHeader.svelte'
 
   let messageInput = $state('')
+  let chatInputRef = $state<ChatInput | null>(null)
+
+  $effect(() => {
+    if (chatState.selectedUser) {
+      chatService.loadConversationForUser(chatState.selectedUser)
+      chatInputRef?.focus()
+    }
+  })
 
   $effect(() => {
     if (chatState.selectedUser) {
@@ -72,6 +79,7 @@
     />
   </div>
   <ChatInput
+    bind:this={chatInputRef}
     selectedContent={!!chatState.selectedUser}
     bind:messageInput
     onSubmit={handleSubmitMessage}

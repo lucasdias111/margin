@@ -29,6 +29,7 @@ export enum WebSocketMessageType {
 
   // Margin
   USER_ADDED_TO_MARGIN = 'USER_ADDED_TO_MARGIN',
+  USER_JOINED_SPACE = 'USER_JOINED_SPACE',
 
   // Notifications
   NOTIFICATION = 'NOTIFICATION'

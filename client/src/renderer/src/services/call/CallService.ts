@@ -37,6 +37,7 @@ class CallService {
   }
 
   endCall(remoteConnectionEnded: boolean): void {
+    this.clearNoAnswer()
     this.cleanupConnection()
     if (!remoteConnectionEnded && callState.isP2PCall) {
       callSignalingService.sendCallEnd(
@@ -177,8 +178,10 @@ class CallService {
   }
 
   noAnswer(): void {
+    this.clearNoAnswer()
+    const callId = callState.callId
     this.noAnswerTimeout = setTimeout(() => {
-      if (callState.status === 'connecting') {
+      if (callState.status === 'connecting' && callState.callId === callId) {
         callSignalingService.sendNoAnswer()
         this.endCall(true)
       }

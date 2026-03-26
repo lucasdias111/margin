@@ -1,5 +1,5 @@
 import { chatState } from '$src/states/ChatState.svelte'
-import type { Space } from '$src/interfaces/Space'
+import type { Space, SpaceMember } from '$src/interfaces/Space'
 import type { User } from '$src/interfaces/User'
 
 class SpaceState {
@@ -30,6 +30,24 @@ class SpaceState {
 
   setSelectedSpace(space: Space | null): void {
     this.selectedSpace = space
+  }
+
+  addMemberToSpace(spaceId: number, user: User): void {
+    const space = this.spaces.find((s) => s.spaceId === spaceId)
+    if (!space) return
+    const alreadyExists = space.members.some((m) => m.user.id === user.id)
+    if (alreadyExists) return
+    const newMember: SpaceMember = {
+      user,
+      spaceId,
+      role: 'MEMBER',
+      joinedAt: new Date().toISOString()
+    }
+    space.members = [...space.members, newMember]
+    this.spaces = [...this.spaces]
+    if (this.selectedSpace?.spaceId === spaceId) {
+      this.selectedSpace = { ...space, members: space.members }
+    }
   }
 }
 

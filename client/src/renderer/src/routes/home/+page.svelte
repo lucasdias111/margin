@@ -32,7 +32,6 @@
   import IncomingCallModal from '$src/components/content/call/modal/IncomingCallModal.svelte'
   import type { Notification } from '$src/interfaces/Notification'
   import Notifications from '$src/components/content/notification/Notifications.svelte'
-  import type { Margin } from '$src/interfaces/Margin'
   import SFUCallWindow from '$src/components/content/call/SFUCallWindow.svelte'
   import { spaceState } from '$src/states/SpaceState.svelte'
   import { NotificationSounds } from '$src/utils/NotificationSounds'
@@ -65,13 +64,7 @@
     [WebSocketMessageType.USER_LOGOUT]: (data: WebSocketMessage<User>) =>
       presenceService.setOffline(data.payload.id),
     [WebSocketMessageType.NOTIFICATION]: (data: WebSocketMessage<Notification>) => {
-      notificationState.incrementUnseenNotifications(data.payload.marginId)
-      notificationState.incrementVersion()
-    },
-    [WebSocketMessageType.USER_ADDED_TO_MARGIN]: (data: WebSocketMessage<Margin>) => {
-      marginService.addNewMargin(data.payload)
-      notificationState.incrementUnseenNotifications(data.payload.marginId)
-      notificationState.incrementVersion()
+      notificationState.addNotification(data.payload)
     },
     [WebSocketMessageType.CALL_NO_ANSWER]: () => (incomingCallPayload = null),
     [WebSocketMessageType.USER_JOINED_VOICE]: (
@@ -83,14 +76,20 @@
       msg: WebSocketMessage<ChannelVoiceParticipantPayload>
     ) => {
       spaceState.updateVoiceParticipant(msg.payload.channelId, msg.payload.user, false)
-    }
+    },
+    [WebSocketMessageType.USER_JOINED_SPACE]: (
+      msg: WebSocketMessage<{ spaceId: number; user: User }>
+    ) => {
+      console.log('USER_JOINED_SPACE payload:', JSON.stringify(msg.payload))
+      spaceState.addMemberToSpace(msg.payload.spaceId, msg.payload.user)
+    },
   })
 
   async function setup(): Promise<void> {
     await getCurrentUser()
     await loadUnreadMessages()
     await loadRecentUsers()
-    await notificationState.loadUnseenNotificationsCounts()
+    await notificationService.loadAll()
     await marginService.loadMarginsForUser()
   }
 
@@ -179,7 +178,7 @@
   .window {
     position: relative;
     display: flex;
-    height: 95vh;
+    flex: 1;
     padding: 10px;
     box-sizing: border-box;
     gap: 10px;

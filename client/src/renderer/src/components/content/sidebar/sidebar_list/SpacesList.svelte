@@ -13,19 +13,20 @@
   let expandedSpaceId = $state<number | null>(null)
   let selectedChannelId = $derived(chatState.selectedChannel?.id)
 
-  onMount(async () => {
-    if (spaceState.spaces.length === 0) {
-      await spacesService.getAllSpacesForUser(chatState.selectedMargin.marginId)
+  $effect(() => {
+    const marginId = chatState.selectedMargin?.marginId
+    if (marginId) {
+      spacesService.getAllSpacesForUser(marginId)
     }
   })
 
   onDestroy(() => {
-    chatState.selectSpace(null)
+    spaceState.setSelectedSpace(null)
     chatState.selectChannel(null)
   })
 
   async function toggleSpace(space: Space): Promise<void> {
-    chatState.selectSpace(space)
+    spaceState.setSelectedSpace(space)
     expandedSpaceId = expandedSpaceId === space.spaceId ? null : space.spaceId
 
     if (expandedSpaceId === space.spaceId) {

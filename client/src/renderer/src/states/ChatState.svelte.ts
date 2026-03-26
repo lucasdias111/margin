@@ -2,8 +2,8 @@ import type { User } from '$src/interfaces/User'
 import type { ContentType } from '$src/interfaces/Content'
 import type { Channel } from '$src/interfaces/Channel'
 import type { Margin } from '$src/interfaces/Margin'
-import type { Space } from '$src/interfaces/Space'
 import { spaceState } from '$src/states/SpaceState.svelte'
+import type { Space } from '$src/interfaces/Space'
 
 class ChatState {
   selectedUser = $state<User | null>(null)
@@ -13,6 +13,14 @@ class ChatState {
   hasMargin = $state<boolean>(true)
   settingsPage = $state<boolean>(false)
   margins = $state<Margin[]>([])
+
+  get selectedSpace(): Space | null {
+    return spaceState.selectedSpace
+  }
+
+  selectSpace(space: Space | null): void {
+    spaceState.setSelectedSpace(space)
+  }
 
   selectUser(user: User): void {
     this.selectedUser = user
@@ -28,10 +36,6 @@ class ChatState {
 
   selectChannel(channel: Channel | null): void {
     this.selectedChannel = channel
-  }
-
-  selectSpace(space: Space | null): void {
-    spaceState.setSelectedSpace(space)
   }
 
   reset(): void {

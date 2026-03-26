@@ -15,13 +15,18 @@
     onSubmit: (event: SubmitEvent) => void
   } = $props()
 
+  let showPicker = $state(false)
+  let inputRef = $state<HTMLInputElement | null>(null)
+
   function handleKeydown(event: KeyboardEvent): void {
     if (event.key === ' ') {
       messageInput = replaceEmoticons(messageInput)
     }
   }
 
-  let showPicker = $state(false)
+  export function focus(): void {
+    inputRef?.focus()
+  }
 
   function emojiPicker(node: HTMLElement): { destroy(): void } {
     const picker = new Picker({
@@ -44,6 +49,7 @@
 <div class="chat-page">
   <form class="input-area" onsubmit={onSubmit}>
     <input
+      bind:this={inputRef}
       bind:value={messageInput}
       placeholder="Type a message..."
       disabled={!selectedContent}

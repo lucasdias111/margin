@@ -10,20 +10,14 @@
   import { marginInviteService, type PendingInvite } from '$src/services/MarginInviteService'
   import { notificationState } from '$src/states/NotificationState.svelte'
 
-  let notifications = $state<Notification[]>([])
-  let isLoading = $state(true)
   type NotificationTab = 'all' | 'invites'
   let activeTab = $state<NotificationTab>('all')
   let pendingInvites = $state<PendingInvite[]>([])
   let invitesLoading = $state(true)
 
-  $effect(() => {
-    let notificationVersion = notificationState.notificationVersion
-    notificationService.getAll().then((result) => {
-      notifications = [...result]
-      isLoading = false
-    })
-  })
+  const notifications = $derived(notificationState.notifications)
+  const isLoading = $derived(!notificationState.notificationsLoaded)
+  const unread = $derived(notifications.filter((n) => !n.seen).length)
 
   $effect(() => {
     if (activeTab === 'invites') {
@@ -56,9 +50,7 @@
   async function handleClick(notification: Notification): Promise<void> {
     if (!notification.seen) {
       await notificationService.markNotificationAsSeen(notification)
-      notifications = notifications.map((n) =>
-        n.notificationId === notification.notificationId ? { ...n, seen: true } : n
-      )
+      notificationState.markNotificationSeen(notification.notificationId)
     }
 
     if (notification.type === NotificationType.ANNOUNCEMENT) {
@@ -110,9 +102,7 @@
       marginService.addNewMargin(margin)
 
       await notificationService.markNotificationAsSeen(notification)
-      notifications = notifications.map((n) =>
-        n.notificationId === notification.notificationId ? { ...n, seen: true } : n
-      )
+      notificationState.markNotificationSeen(notification.notificationId)
       pendingInvites = pendingInvites.filter((i) => i.id !== notification.referenceId)
     } catch (e) {
       console.error('Failed to accept invite:', e)
@@ -124,16 +114,12 @@
       await marginInviteService.declineDirectInvite(notification.referenceId)
 
       await notificationService.markNotificationAsSeen(notification)
-      notifications = notifications.map((n) =>
-        n.notificationId === notification.notificationId ? { ...n, seen: true } : n
-      )
+      notificationState.markNotificationSeen(notification.notificationId)
       pendingInvites = pendingInvites.filter((i) => i.id !== notification.referenceId)
     } catch (e) {
       console.error('Failed to decline invite:', e)
     }
   }
-
-  const unread = $derived(notifications.filter((n) => !n.seen).length)
 </script>
 
 <div class="notifications-page">

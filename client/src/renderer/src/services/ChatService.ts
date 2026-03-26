@@ -62,6 +62,7 @@ class ChatService {
     if (isFromMe) {
       const optimisticIndex = conversationState.messages.findIndex((m) => m.id < 0)
       if (optimisticIndex !== -1) {
+        console.log('Replacing optimistic with server message:', msg.createdAt)
         conversationState.messages[optimisticIndex] = msg
         userListState.updateLastMessage(otherUserId, preview, !isFromMe, msg.createdAt)
         await this.markConversationAsRead(conversationState.currentConversation!.id)
