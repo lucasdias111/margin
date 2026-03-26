@@ -280,6 +280,15 @@ class CallService {
     }
 
     pc.ontrack = (event) => {
+      console.log('[CallService] ontrack', {
+        kind: event.track.kind,
+        readyState: event.track.readyState,
+        muted: event.track.muted,
+        enabled: event.track.enabled,
+        transceiverIndex: pc.getTransceivers().indexOf(event.transceiver),
+        transceiverDirection: event.transceiver.direction,
+        transceiverCurrentDirection: event.transceiver.currentDirection
+      })
       console.log('[CallService] ontrack', event.track.kind)
       const track = event.track
       const transceivers = pc.getTransceivers()
@@ -374,6 +383,16 @@ class CallService {
   }
 
   handleMediaState(video: boolean, screenShare: boolean): void {
+    console.log('[CallService] handleMediaState', { video, screenShare })
+    const stream = callState.p2pCallState?.remoteStream
+    console.log('[CallService] remoteStream tracks', {
+      audioTracks: stream
+        ?.getAudioTracks()
+        .map((t) => ({ readyState: t.readyState, muted: t.muted, enabled: t.enabled })),
+      videoTracks: stream
+        ?.getVideoTracks()
+        .map((t) => ({ readyState: t.readyState, muted: t.muted, enabled: t.enabled }))
+    })
     callState.setRemoteVideoEnabled(video)
     if (screenShare) {
       const transceiver = callState.p2pCallState?.peerConnection?.getTransceivers()?.[2]
