@@ -19,6 +19,14 @@
   const remoteStream = $derived(callState.p2pCallState?.remoteStream ?? null)
   const localStream = $derived(callState.p2pCallState?.localStream ?? null)
   const remoteScreenStream = $derived(callState.p2pCallState?.remoteScreenStream ?? null)
+  const remoteVideoStream = $derived.by(() => {
+    if (!callState.p2pCallState?.isRemoteVideoEnabled) return null
+    const stream = callState.p2pCallState?.remoteStream
+    if (!stream) return null
+    const videoTrack = stream.getVideoTracks()[0]
+    if (!videoTrack) return null
+    return new MediaStream([videoTrack])
+  })
 
   onCallCreated((data) => callState.setCallId(data.payload!.callId))
   onCallResponse(async (data) => await callService.handleCallResponse(data))
@@ -54,7 +62,7 @@
             id: user.id,
             displayName: user.displayName,
             profilePictureUrl: user.profilePictureUrl ?? null,
-            stream: remoteStream,
+            stream: remoteVideoStream ?? remoteStream,
             isVideoEnabled: callState.p2pCallState.isRemoteVideoEnabled,
             isScreenSharing: callState.p2pCallState.isRemoteScreenSharing,
             isLocal: false
