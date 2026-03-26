@@ -82,10 +82,7 @@ class CallService {
     const audioTrack = localStream.getAudioTracks()[0]
     const videoTrack = localStream.getVideoTracks()[0]
     if (audioTrack) await transceivers[0].sender.replaceTrack(audioTrack)
-    if (videoTrack) {
-      videoTrack.enabled = callState.p2pCallState.isVideoEnabled ?? false
-      await transceivers[1].sender.replaceTrack(videoTrack)
-    }
+    if (videoTrack) await transceivers[1].sender.replaceTrack(videoTrack)
 
     const answer = await pc.createAnswer()
     await pc.setLocalDescription(answer)
@@ -132,14 +129,23 @@ class CallService {
 
   async toggleVideo(): Promise<void> {
     const p2p = callState.p2pCallState
-    if (!p2p?.localStream) return
+    if (!p2p?.peerConnection || !p2p.localStream) return
     const videoTrack = p2p.localStream.getVideoTracks()[0]
     if (!videoTrack) return
-    videoTrack.enabled = !videoTrack.enabled
-    callState.setVideoEnabled(videoTrack.enabled)
+
+    const newEnabled = !p2p.isVideoEnabled
+    const transceiver = p2p.peerConnection.getTransceivers()[1]
+
+    if (newEnabled) {
+      await transceiver.sender.replaceTrack(videoTrack)
+    } else {
+      await transceiver.sender.replaceTrack(null)
+    }
+
+    callState.setVideoEnabled(newEnabled)
     callSignalingService.sendMediaState(
       p2p.user.id,
-      videoTrack.enabled,
+      newEnabled,
       p2p.isAudioEnabled,
       p2p.isScreenSharing
     )
@@ -242,23 +248,24 @@ class CallService {
     console.log('[CallService] setup', { userId, isInitiator })
     const localStream = await this.getUserMedia()
     const remoteStream = new MediaStream()
-    const peerConnection = this.createPeerConnection(userId, isInitiator)
+    const peerConnection = this.createPeerConnection(userId, isInitiator, remoteStream)
 
     if (isInitiator) {
       const transceivers = peerConnection.getTransceivers()
       const audioTrack = localStream.getAudioTracks()[0]
       const videoTrack = localStream.getVideoTracks()[0]
       if (audioTrack) await transceivers[0].sender.replaceTrack(audioTrack)
-      if (videoTrack) {
-        videoTrack.enabled = callState.p2pCallState?.isVideoEnabled ?? false
-        await transceivers[1].sender.replaceTrack(videoTrack)
-      }
+      if (videoTrack) await transceivers[1].sender.replaceTrack(videoTrack)
     }
 
     callState.setConnection(peerConnection, localStream, remoteStream)
   }
 
-  private createPeerConnection(userId: number, isInitiator: boolean): RTCPeerConnection {
+  private createPeerConnection(
+    userId: number,
+    isInitiator: boolean,
+    remoteStream: MediaStream
+  ): RTCPeerConnection {
     console.log('[CallService] createPeerConnection', {
       userId,
       isInitiator,
@@ -287,6 +294,8 @@ class CallService {
         callState.setRemoteScreenSharing(false, screenStream)
         return
       }
+
+      remoteStream.addTrack(track)
     }
 
     pc.onicecandidate = (e) => {
