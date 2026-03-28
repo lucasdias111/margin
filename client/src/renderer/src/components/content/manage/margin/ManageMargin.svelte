@@ -38,8 +38,14 @@
   async function onDeleteMargin(): Promise<void> {
     try {
       await marginService.deleteMargin(margin.marginId)
-      chatState.currentlySelectedContent = 'margin'
       chatState.margins = chatState.margins.filter((m) => m.marginId !== margin.marginId)
+
+      if (chatState.margins.length > 0) {
+        chatState.selectMargin(chatState.margins[0])
+      } else {
+        chatState.hasMargin = false
+      }
+      chatState.currentlySelectedContent = 'margin'
     } catch (e) {
       console.error('Failed to delete margin:', e)
     }

@@ -32,5 +32,8 @@ export enum WebSocketMessageType {
   USER_JOINED_SPACE = 'USER_JOINED_SPACE',
 
   // Notifications
-  NOTIFICATION = 'NOTIFICATION'
+  NOTIFICATION = 'NOTIFICATION',
+
+  PING = 'PING',
+  PONG = 'PONG'
 }

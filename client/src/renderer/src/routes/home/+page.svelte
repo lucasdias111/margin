@@ -35,6 +35,7 @@
   import SFUCallWindow from '$src/components/content/call/SFUCallWindow.svelte'
   import { spaceState } from '$src/states/SpaceState.svelte'
   import { NotificationSounds } from '$src/utils/NotificationSounds'
+  import ConnectionBar from '$src/components/common/messages/ConnectionBar.svelte'
 
   let incomingCallPayload = $state<CallOfferPayload | null>(null)
   const ringtone = new Audio(NotificationSounds.INCOMING_CALL)
@@ -151,6 +152,7 @@
 </script>
 
 <div class="window">
+  <ConnectionBar />
   {#if callState.isP2PCall}
     <div class="call-overlay" class:minimized={callState.isMinimized}>
       <CallWindow />

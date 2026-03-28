@@ -1,4 +1,4 @@
-import { authenticatedGet, authenticatedPost } from '$src/services/api'
+import { authenticatedGet, authenticatedPost, authenticatedDelete } from '$src/services/api'
 import type { Announcement } from '$src/interfaces/Announcement'
 
 class AnnouncementService {
@@ -17,7 +17,7 @@ class AnnouncementService {
   }
 
   async deleteAnnouncement(announcementId: number, marginId: number): Promise<void> {
-    await authenticatedPost({ marginId, announcementId }, 'announcements/delete')
+    await authenticatedDelete({ marginId, announcementId }, 'announcements/delete')
   }
 
   async updateAnnouncement(announcement: Announcement): Promise<Announcement> {

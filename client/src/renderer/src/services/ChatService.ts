@@ -17,7 +17,6 @@ import { chatState } from '$src/states/ChatState.svelte'
 import { conversationState } from '$src/states/ConversationState.svelte'
 import { userListState } from '$src/states/UserListState.svelte'
 import type { ContentType } from '$src/interfaces/Content'
-import { errorService } from '$src/services/ErrorService'
 
 class ChatService {
   private static readonly PAGE_SIZE = 30
@@ -62,7 +61,6 @@ class ChatService {
     if (isFromMe) {
       const optimisticIndex = conversationState.messages.findIndex((m) => m.id < 0)
       if (optimisticIndex !== -1) {
-        console.log('Replacing optimistic with server message:', msg.createdAt)
         conversationState.messages[optimisticIndex] = msg
         userListState.updateLastMessage(otherUserId, preview, !isFromMe, msg.createdAt)
         await this.markConversationAsRead(conversationState.currentConversation!.id)
@@ -125,10 +123,7 @@ class ChatService {
 
     try {
       const response = await authenticatedGet(url)
-      if (!response.ok) {
-        console.error(`Failed to load messages: ${response.status}`)
-        return
-      }
+      if (!response.ok) return
 
       const messageResponse: ConversationMessagesResponse = await response.json()
       if (messageResponse.conversation == null) return
@@ -228,14 +223,10 @@ class ChatService {
     const content = await this.encryptForUser(messageText, toUserId, currentUser.id)
 
     const response = await authenticatedPost(
-      {
-        recipientUserId: toUserId,
-        encryptedContent: content
-      },
-      `conversations/create_private`
+      { recipientUserId: toUserId, encryptedContent: content },
+      'conversations/create_private'
     )
     const conversation: Conversation = await response.json()
-
     const message = this.buildOptimisticMessage(currentUser, conversation.id, messageText, 'DIRECT')
 
     return { conversation, message }
@@ -312,16 +303,12 @@ class ChatService {
     newContent: string,
     toUserId: number
   ): Promise<void> {
-    try {
-      const encrypted = await this.encryptForUser(newContent, toUserId, userState.currentUser.id)
-      webSocketService.send({
-        type: WebSocketMessageType.SEND_EDIT_MESSAGE,
-        recipientId: message.conversationId,
-        payload: { messageId: message.id, content: encrypted }
-      })
-    } catch (error) {
-      errorService.reportError(error)
-    }
+    const encrypted = await this.encryptForUser(newContent, toUserId, userState.currentUser.id)
+    webSocketService.send({
+      type: WebSocketMessageType.SEND_EDIT_MESSAGE,
+      recipientId: message.conversationId,
+      payload: { messageId: message.id, content: encrypted }
+    })
   }
 
   async editChannelMessage(message: Message, newContent: string): Promise<void> {

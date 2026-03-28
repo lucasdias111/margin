@@ -95,6 +95,40 @@ async function fetchPatch<T>(url: string, body: T, headers: HeadersInit): Promis
   return response
 }
 
+export async function authenticatedDelete<T>(body: T, url: string): Promise<Response> {
+  const token = sessionStorage.getItem('authToken')
+
+  if (!token) {
+    errorService.reportError('Token is required')
+  }
+
+  return fetchDelete(url, body, {
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${token}`
+  })
+}
+
+async function fetchDelete<T>(url: string, body: T, headers: HeadersInit): Promise<Response> {
+  let response: Response | null = null
+  try {
+    response = await fetch(API_CONFIG.baseUrl + url, {
+      method: 'DELETE',
+      headers,
+      body: JSON.stringify(body)
+    })
+  } catch (error) {
+    errorService.reportError('Network error — could not reach server')
+    throw error
+  }
+
+  if (!response.ok) {
+    const message = await extractErrorMessage(response)
+    errorService.reportError(message)
+  }
+
+  return response
+}
+
 async function extractErrorMessage(response: Response): Promise<string> {
   try {
     const body = await response.json()
