@@ -1,6 +1,7 @@
 <script lang="ts">
   import { formatDuration } from '$src/utils/DateUtils'
   import Icon from '$src/components/common/icons/Icon.svelte'
+  import CallSettingsPopUp from '$src/components/content/call/CallSettingsPopUp.svelte'
 
   interface Props {
     isAudioEnabled: boolean
@@ -33,6 +34,8 @@
     onEndCall,
     showDuration = true
   }: Props = $props()
+
+  let settingsOpen = $state(false)
 </script>
 
 <div class="floating-bar">
@@ -79,6 +82,21 @@
     >
       <Icon name="monitor" />
     </button>
+
+    <div class="settings-anchor">
+      <button
+        class="control-btn settings-btn"
+        class:active={settingsOpen}
+        onclick={() => (settingsOpen = !settingsOpen)}
+        title="Settings"
+      >
+        <Icon name="settings" size={20} strokeWidth={2.5} />
+      </button>
+
+      {#if settingsOpen}
+        <CallSettingsPopUp onClose={() => (settingsOpen = false)} />
+      {/if}
+    </div>
 
     <button class="control-btn end-call-btn" onclick={onEndCall} title="End Call">
       <Icon name="phone_off" />
@@ -136,6 +154,10 @@
     gap: 16px;
   }
 
+  .settings-anchor {
+    position: relative;
+  }
+
   .control-btn {
     width: 52px;
     height: 52px;
@@ -155,6 +177,18 @@
 
   .minimize-btn:hover {
     background: rgba(255, 255, 255, 0.2);
+  }
+
+  .settings-btn {
+    background: rgba(255, 255, 255, 0.1);
+  }
+
+  .settings-btn:hover {
+    background: rgba(255, 255, 255, 0.2);
+  }
+
+  .settings-btn.active {
+    background: #b47024;
   }
 
   .toggle-audio-btn,

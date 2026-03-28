@@ -5,6 +5,7 @@ import type { CallResponsePayload, WebSocketMessage } from '$src/interfaces/WebS
 import { errorService } from '$src/services/ErrorService'
 import { webSocketService } from '$src/services/WebSocketService'
 import { WebSocketMessageType } from '$src/interfaces/WebSocketMessageType'
+import { deviceService } from '$src/services/DeviceService'
 
 const ICE_SERVERS = [
   { urls: 'stun:stun.l.google.com:19302' },
@@ -39,6 +40,7 @@ class CallService {
   endCall(remoteConnectionEnded: boolean): void {
     this.clearNoAnswer()
     this.cleanupConnection()
+    deviceService.cleanup()
     if (!remoteConnectionEnded && callState.isP2PCall) {
       callSignalingService.sendCallEnd(
         callState.p2pCallState!.user.id,
@@ -238,6 +240,9 @@ class CallService {
     }
 
     callState.setConnection(peerConnection, localStream, remoteStream)
+
+    await deviceService.enumerateDevices()
+    deviceService.startListening()
   }
 
   private createPeerConnection(
