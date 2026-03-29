@@ -24,6 +24,8 @@ class WebSocketService {
   private pongTimeout: ReturnType<typeof setTimeout> | null = null
   private reconnectTimeout: ReturnType<typeof setTimeout> | null = null
 
+  private onReconnectCallback: (() => void) | null = null
+
   connect(): void {
     if (this.ws?.readyState === WebSocket.OPEN) return
 
@@ -48,9 +50,14 @@ class WebSocketService {
 
     this.ws.onopen = () => {
       console.log('WebSocket connected')
+      const wasReconnect = this.reconnectAttempts > 0
       this.reconnectAttempts = 0
       connectionState.connectionStatus = 'connected'
       this.startPing()
+
+      if (wasReconnect && this.onReconnectCallback) {
+        this.onReconnectCallback()
+      }
     }
 
     this.ws.onmessage = (event): void => {
@@ -59,10 +66,6 @@ class WebSocketService {
       if (data.type === WebSocketMessageType.PONG) {
         this.clearPongTimeout()
         return
-      }
-
-      if (data.type === WebSocketMessageType.CALL_CANDIDATE) {
-        console.log('[WS] CALL_CANDIDATE received (raw)', data)
       }
 
       const handlers = this.handlers.get(data.type) || []
@@ -214,6 +217,10 @@ class WebSocketService {
       clearTimeout(this.reconnectTimeout)
       this.reconnectTimeout = null
     }
+  }
+
+  onReconnect(callback: () => void): void {
+    this.onReconnectCallback = callback
   }
 }
 

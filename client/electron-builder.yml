@@ -1,5 +1,5 @@
-appId: com.electron.app
-productName: margin-desktop
+appId: com.margin.app
+productName: Margin
 directories:
   buildResources: build
 files:
@@ -38,7 +38,7 @@ linux:
     - deb
   maintainer: margin.chat
   category: Communication
-  icon: build/icons
+  icon: build/icons/png
 appImage:
   artifactName: ${name}-${version}.${ext}
 npmRebuild: false

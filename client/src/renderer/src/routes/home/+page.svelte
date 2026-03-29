@@ -44,6 +44,7 @@
   onMount(() => {
     setup()
     webSocketService.connect()
+    webSocketService.onReconnect(resync)
   })
 
   $effect(() => {
@@ -148,6 +149,19 @@
 
     const user: User = await response.json()
     userState.setUser(user)
+  }
+
+  async function resync(): Promise<void> {
+    console.log('Reconnected — resyncing state')
+
+    await loadUnreadMessages()
+    await loadRecentUsers()
+
+    if (chatState.currentlySelectedContent === 'private' && chatState.selectedUser) {
+      await chatService.loadConversationForUser(chatState.selectedUser)
+    } else if (chatState.selectedChannel) {
+      await chatService.loadMessagesForChannel(chatState.selectedChannel)
+    }
   }
 </script>
 

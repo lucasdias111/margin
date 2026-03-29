@@ -18,12 +18,6 @@
     }
   })
 
-  $effect(() => {
-    if (chatState.selectedUser) {
-      chatService.loadConversationForUser(chatState.selectedUser)
-    }
-  })
-
   async function handleSubmitMessage(event: SubmitEvent): Promise<void> {
     event.preventDefault()
 

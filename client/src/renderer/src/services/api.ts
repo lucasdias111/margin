@@ -8,12 +8,9 @@ export async function authenticatedGet(url: string): Promise<Response> {
     errorService.reportError('Token is required')
   }
 
-  return fetch(API_CONFIG.baseUrl + url, {
-    headers: {
-      'Content-Type': 'application/json',
-      method: 'GET',
-      Authorization: `Bearer ${token}`
-    }
+  return fetchGet(url, {
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${token}`
   })
 }
 
@@ -115,6 +112,26 @@ async function fetchDelete<T>(url: string, body: T, headers: HeadersInit): Promi
       method: 'DELETE',
       headers,
       body: JSON.stringify(body)
+    })
+  } catch (error) {
+    errorService.reportError('Network error — could not reach server')
+    throw error
+  }
+
+  if (!response.ok) {
+    const message = await extractErrorMessage(response)
+    errorService.reportError(message)
+  }
+
+  return response
+}
+
+async function fetchGet(url: string, headers: HeadersInit): Promise<Response> {
+  let response: Response | null = null
+  try {
+    response = await fetch(API_CONFIG.baseUrl + url, {
+      method: 'GET',
+      headers
     })
   } catch (error) {
     errorService.reportError('Network error — could not reach server')

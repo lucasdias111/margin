@@ -52,8 +52,10 @@ class AuthenticationService {
 
   async register(
     username: string,
+    displayName: string,
     password: string,
     email: string,
+    betaKey: string,
     profilePicture?: File
   ): Promise<Response> {
     const { publicKey, privateKey } = await encryptionService.generateKeyPairFromPassword(password)
@@ -67,8 +69,10 @@ class AuthenticationService {
 
     const registrationData = {
       username,
+      displayName,
       password,
       email,
+      betaKey,
       publicKey,
       encryptedPrivateKey: encryptedKey,
       salt,

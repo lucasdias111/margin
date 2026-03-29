@@ -1,7 +1,7 @@
 function parseDate(date: Date | string): Date {
   if (!date) return new Date()
   if (date instanceof Date) return date
-  return new Date(date.substring(0, 23))
+  return new Date(date)
 }
 
 export function formatTimestamp(date: Date | string): string {
