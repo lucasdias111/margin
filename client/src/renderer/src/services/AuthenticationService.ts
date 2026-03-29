@@ -8,6 +8,7 @@ import type { AuthResponse } from '$src/interfaces/AuthResponse'
 import { errorService } from '$src/services/ErrorService'
 import { webSocketService } from '$src/services/WebSocketService'
 import { push } from 'svelte-spa-router'
+import { conversationState } from '$src/states/ConversationState.svelte'
 
 class AuthenticationService {
   async login(email: string, password: string, keepLoggedIn: boolean = false): Promise<void> {
@@ -119,6 +120,7 @@ class AuthenticationService {
 
     userState.reset()
     chatState.reset()
+    conversationState.reset()
     callState.endCall()
 
     await window.secureStorage.clearSession()

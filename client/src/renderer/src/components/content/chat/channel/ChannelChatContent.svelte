@@ -13,7 +13,7 @@
 
   $effect(() => {
     if (chatState.selectedChannel) {
-      chatService.loadMessagesForChannel(chatState.selectedChannel)
+      chatService.loadConversationForChannel(chatState.selectedChannel)
     }
   })
 

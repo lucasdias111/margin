@@ -27,7 +27,8 @@ class WebSocketService {
   private onReconnectCallback: (() => void) | null = null
 
   connect(): void {
-    if (this.ws?.readyState === WebSocket.OPEN) return
+    if (this.ws?.readyState === WebSocket.OPEN || this.ws?.readyState === WebSocket.CONNECTING)
+      return
 
     const token = sessionStorage.getItem('authToken')
     if (!token) {

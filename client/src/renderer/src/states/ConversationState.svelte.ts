@@ -20,6 +20,14 @@ class ConversationState {
   deleteMessage(id: number): void {
     this.messages = this.messages.filter((message) => message.id !== id)
   }
+
+  reset(): void {
+    this.messages = []
+    this.currentConversation = null
+    this.isLoading = false
+    this.hasMore = false
+    this.isLoadingMore = false
+  }
 }
 
 export const conversationState = new ConversationState()

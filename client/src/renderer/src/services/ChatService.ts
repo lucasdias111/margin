@@ -103,7 +103,7 @@ class ChatService {
     )
   }
 
-  async loadMessagesForChannel(channel: Channel): Promise<void> {
+  async loadConversationForChannel(channel: Channel): Promise<void> {
     if (conversationState.currentConversation?.id === channel.conversationId) return
 
     await this.loadMessages(

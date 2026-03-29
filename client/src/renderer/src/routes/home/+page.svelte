@@ -82,7 +82,6 @@
     [WebSocketMessageType.USER_JOINED_SPACE]: (
       msg: WebSocketMessage<{ spaceId: number; user: User }>
     ) => {
-      console.log('USER_JOINED_SPACE payload:', JSON.stringify(msg.payload))
       spaceState.addMemberToSpace(msg.payload.spaceId, msg.payload.user)
     },
   })
@@ -152,15 +151,13 @@
   }
 
   async function resync(): Promise<void> {
-    console.log('Reconnected — resyncing state')
-
     await loadUnreadMessages()
     await loadRecentUsers()
 
     if (chatState.currentlySelectedContent === 'private' && chatState.selectedUser) {
       await chatService.loadConversationForUser(chatState.selectedUser)
     } else if (chatState.selectedChannel) {
-      await chatService.loadMessagesForChannel(chatState.selectedChannel)
+      await chatService.loadConversationForChannel(chatState.selectedChannel)
     }
   }
 </script>
