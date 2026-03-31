@@ -15,7 +15,9 @@
   let { recentUser, isSelected = false, isOnline }: Props = $props()
   const { user: chatUser, lastMessage, lastMessageTime } = $derived(recentUser)
 
-  const unreadCount = $derived(notificationState.getTotalUnreadDirectMessagesForUser(chatUser.id))
+  const unreadCount = $derived(
+    notificationState.isDirectConversationUnread(recentUser.conversationId) ? 1 : 0
+  )
 </script>
 
 <button
@@ -44,7 +46,7 @@
     <div class="bottom-row">
       <span class="last-message">{lastMessage}</span>
       {#if unreadCount > 0}
-        <UnreadNotificationBadge shouldShow={true} count={unreadCount} variant="inline" />
+        <UnreadNotificationBadge shouldShow={true} count={1} variant="inline" />
       {/if}
     </div>
   </div>

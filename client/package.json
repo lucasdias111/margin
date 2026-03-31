@@ -1,9 +1,9 @@
 {
-  "name": "Margin",
-  "version": "0.0.2",
-  "description": "Desktop app for Margin",
+  "name": "margin",
+  "version": "0.0.3",
+  "description": "Desktop application for margin",
   "main": "./out/main/index.js",
-  "author": "Margin",
+  "author": "margin",
   "homepage": "https://margin.chat",
   "type": "module",
   "scripts": {

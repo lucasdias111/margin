@@ -65,7 +65,7 @@
     {#each spaces as space (space.spaceId)}
       {@const color = spaceColor(space.spaceId)}
       {@const isOpen = expandedSpaceId === space.spaceId}
-      {@const unreadCount = notificationState.getTotalUnreadMessagesForSpace(space).length}
+      {@const unreadCount = notificationState.getTotalUnreadMessagesForSpace(space)}
 
       <div
         class="space-card"
@@ -85,7 +85,7 @@
           {#if !isOpen}
             <UnreadNotificationBadge
               shouldShow={unreadCount > 0}
-              count={unreadCount}
+              count={1}
               variant="inline"
             />
           {/if}

@@ -59,7 +59,7 @@
       title="Notifications"
     >
       <Icon name="notifications" size={28} />
-      <UnreadNotificationBadge shouldShow={totalAnnouncements > 0} count={totalAnnouncements} />
+      <UnreadNotificationBadge shouldShow={totalAnnouncements > 0} count={1} />
     </button>
     <button
       onclick={() => onContentSelected('private')}

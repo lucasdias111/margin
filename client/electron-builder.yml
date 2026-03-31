@@ -13,8 +13,8 @@ files:
 asarUnpack:
   - resources/**
 win:
-  executableName: Margin
-  icon: build/icon.ico
+  executableName: margin
+  icon: build/icons/win/icon.ico
 nsis:
   artifactName: ${name}-${version}-setup.${ext}
   shortcutName: ${productName}
@@ -44,6 +44,6 @@ appImage:
 npmRebuild: false
 publish:
   provider: generic
-  url: https://example.com/auto-updates
+  url: https://margin.chat/updates
 electronDownload:
   mirror: https://npmmirror.com/mirrors/electron/

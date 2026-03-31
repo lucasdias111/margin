@@ -32,8 +32,14 @@ class WebSocketService {
 
     const token = sessionStorage.getItem('authToken')
     if (!token) {
-      errorService.reportError('No auth token found')
-      connectionState.connectionStatus = 'disconnected'
+      authenticationService.tryRestoreSession().then((restored) => {
+        if (restored) {
+          this.connect()
+        } else {
+          connectionState.connectionStatus = 'disconnected'
+          authenticationService.logoutUser().then(() => push('/'))
+        }
+      })
       return
     }
 

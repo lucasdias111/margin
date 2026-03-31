@@ -1,7 +1,6 @@
 import { notificationState } from '$src/states/NotificationState.svelte'
 import { chatState } from '$src/states/ChatState.svelte'
 import { userState } from '$src/states/UserState.svelte'
-import type { UnreadCount } from '$src/interfaces/UnreadCount'
 import type { Message } from '$src/interfaces/Messages'
 import type { Notification } from '$src/interfaces/Notification'
 import { authenticatedGet, authenticatedPost } from '$src/services/api'
@@ -65,35 +64,21 @@ class NotificationService {
   }
 
   private addDirectUnread(message: Message): void {
-    notificationState.addUnreadDirectMessages([
-      {
-        conversationId: message.conversationId,
-        fromUserId: message.user.id,
-        unreadDmsCount: 1,
-        unreadChannelsCount: 0,
-        marginId: -1
-      }
-    ])
+    notificationState.addUnreadDirectConversations([message.conversationId])
   }
 
   private addChannelUnread(message: Message): void {
-    notificationState.addUnreadChannelMessages([
-      {
-        conversationId: message.conversationId,
-        fromUserId: message.user.id,
-        unreadDmsCount: 0,
-        unreadChannelsCount: 1,
-        marginId: message.marginId ?? -1
-      }
+    notificationState.addUnreadChannelConversations([
+      { conversationId: message.conversationId, marginId: message.marginId ?? -1 }
     ])
   }
 
-  addIncomingDirectMessages(messages: UnreadCount[]): void {
-    notificationState.addUnreadDirectMessages(messages)
+  addIncomingDirectConversations(conversationIds: number[]): void {
+    notificationState.addUnreadDirectConversations(conversationIds)
   }
 
-  addIncomingChannelMessages(messages: UnreadCount[]): void {
-    notificationState.addUnreadChannelMessages(messages)
+  addIncomingChannelConversations(channels: { conversationId: number; marginId: number }[]): void {
+    notificationState.addUnreadChannelConversations(channels)
   }
 
   markConversationAsRead(conversationId: number): void {

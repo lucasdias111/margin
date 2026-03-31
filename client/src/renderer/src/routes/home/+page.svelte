@@ -15,7 +15,6 @@
     WebSocketMessage
   } from '$src/interfaces/WebSocketMessages'
   import { notificationService } from '$src/services/NotificationService'
-  import type { UnreadCount } from '$src/interfaces/UnreadCount'
   import { notificationState } from '$src/states/NotificationState.svelte'
   import { chatState } from '$src/states/ChatState.svelte'
   import Navigation from '$src/components/content/Navigation.svelte'
@@ -36,6 +35,7 @@
   import { spaceState } from '$src/states/SpaceState.svelte'
   import { NotificationSounds } from '$src/utils/NotificationSounds'
   import ConnectionBar from '$src/components/common/messages/ConnectionBar.svelte'
+  import type { UnreadConversations } from '$src/interfaces/UnreadCount'
 
   let incomingCallPayload = $state<CallOfferPayload | null>(null)
   const ringtone = new Audio(NotificationSounds.INCOMING_CALL)
@@ -96,16 +96,11 @@
 
   async function loadUnreadMessages(): Promise<void> {
     notificationState.clearUnreadMessages()
-
-    const response = await authenticatedGet(`conversations/unread`)
-
-    const unreadCounts: UnreadCount[] = await response.json()
-
-    const dms = unreadCounts.filter((count) => count.unreadDmsCount > 0)
-    const channels = unreadCounts.filter((count) => count.unreadChannelsCount > 0)
-
-    notificationService.addIncomingDirectMessages(dms)
-    notificationService.addIncomingChannelMessages(channels)
+    const response = await authenticatedGet('conversations/unread')
+    const unread: UnreadConversations = await response.json()
+    console.log(unread)
+    notificationService.addIncomingDirectConversations(unread.directConversationIds)
+    notificationService.addIncomingChannelConversations(unread.channelUnreads)
   }
 
   async function loadRecentUsers(): Promise<void> {
