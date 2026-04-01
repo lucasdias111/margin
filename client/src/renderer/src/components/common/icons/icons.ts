@@ -100,7 +100,14 @@ export const icons = {
            <path d="M9 21V9" />`,
 
   home: `<path d="M3 9.5L12 3l9 6.5V20a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9.5z" />
-         <polyline points="9 21 9 12 15 12 15 21" />`
+         <polyline points="9 21 9 12 15 12 15 21" />`,
+
+  checkCircle: `<path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
+              <polyline points="22 4 12 14.01 9 11.01" />`,
+
+  arrowUpCircle: `<circle cx="12" cy="12" r="10" />
+                <polyline points="16 12 12 8 8 12" />
+                <line x1="12" y1="16" x2="12" y2="8" />`
 } as const
 
 export type IconName = keyof typeof icons

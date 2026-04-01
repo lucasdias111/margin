@@ -2,12 +2,12 @@
   import Router from 'svelte-spa-router'
   import { routes } from '$src/routes'
   import TitleBar from './TitleBar.svelte'
-  import ErrorBar from '$src/components/common/messages/ErrorBar.svelte'
+  import ErrorToast from '$src/components/common/messages/ErrorToast.svelte'
 </script>
 
 <div class="app-shell">
   <TitleBar title="margin" />
-  <ErrorBar />
+  <ErrorToast />
   <div class="app-content">
     <Router {routes} />
   </div>

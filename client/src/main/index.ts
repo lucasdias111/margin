@@ -4,7 +4,9 @@ import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
 import { API_CONFIG } from '../renderer/src/shared/config'
 import { readFileSync, writeFileSync, existsSync, unlinkSync } from 'fs'
+import pkg from 'electron-updater'
 
+const { autoUpdater } = pkg
 const SECURE_FILE = join(app.getPath('userData'), 'secure.bin')
 const TOKEN_FILE = join(app.getPath('userData'), 'session.bin')
 
@@ -17,6 +19,35 @@ function readEncrypted(filePath: string): string | null {
   if (!existsSync(filePath)) return null
   const encrypted = readFileSync(filePath)
   return safeStorage.decryptString(encrypted)
+}
+
+function checkForUpdates(): void {
+  autoUpdater.autoDownload = false
+  console.log('autoDownload set to:', autoUpdater.autoDownload)
+  autoUpdater.autoInstallOnAppQuit = false
+  autoUpdater.disableDifferentialDownload = true
+
+  autoUpdater.checkForUpdates().catch((err) => console.log('Update check failed:', err))
+
+  autoUpdater.on('update-available', (info) => {
+    BrowserWindow.getAllWindows()[0]?.webContents.send('update-available', info.version)
+  })
+
+  ipcMain.on('update-accept', () => {
+    autoUpdater.downloadUpdate()
+  })
+
+  ipcMain.on('update-decline', () => {
+    // user said no, do nothing
+  })
+
+  autoUpdater.on('update-downloaded', () => {
+    BrowserWindow.getAllWindows()[0]?.webContents.send('update-downloaded')
+  })
+
+  ipcMain.on('update-install', () => {
+    autoUpdater.quitAndInstall()
+  })
 }
 
 ipcMain.handle('secure:saveSession', (_event, token: string, privateKey: string) => {
@@ -38,8 +69,10 @@ ipcMain.handle('secure:clearSession', () => {
 
 function createWindow(): void {
   const mainWindow = new BrowserWindow({
-    width: 900,
-    height: 670,
+    width: 1400,
+    height: 1000,
+    minWidth: 1000,
+    minHeight: 800,
     show: false,
     frame: false,
     titleBarStyle: 'hidden',
@@ -86,6 +119,12 @@ function createWindow(): void {
 
   ipcMain.on('window-close', () => {
     mainWindow.close()
+  })
+
+  ipcMain.on('renderer-ready', () => {
+    if (!is.dev) {
+      checkForUpdates()
+    }
   })
 
   // HMR for renderer base on electron-vite cli.

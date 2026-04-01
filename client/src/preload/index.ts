@@ -20,6 +20,18 @@ if (process.contextIsolated) {
       loadSession: () => ipcRenderer.invoke('secure:loadSession'),
       clearSession: () => ipcRenderer.invoke('secure:clearSession')
     })
+    contextBridge.exposeInMainWorld('updater', {
+      notifyReady: () => ipcRenderer.send('renderer-ready'),
+      onUpdateAvailable: (callback: (version: string) => void) => {
+        ipcRenderer.on('update-available', (_e, version) => callback(version))
+      },
+      onUpdateDownloaded: (callback: () => void) => {
+        ipcRenderer.on('update-downloaded', () => callback())
+      },
+      acceptUpdate: () => ipcRenderer.send('update-accept'),
+      declineUpdate: () => ipcRenderer.send('update-decline'),
+      installUpdate: () => ipcRenderer.send('update-install')
+    })
   } catch (error) {
     console.error(error)
   }

@@ -36,6 +36,8 @@
   import { NotificationSounds } from '$src/utils/NotificationSounds'
   import ConnectionBar from '$src/components/common/messages/ConnectionBar.svelte'
   import type { UnreadConversations } from '$src/interfaces/UnreadCount'
+  import { updateState } from '$src/states/UpdateState.svelte'
+  import UpdateToast from '$src/components/common/messages/UpdateToast.svelte'
 
   let incomingCallPayload = $state<CallOfferPayload | null>(null)
   const ringtone = new Audio(NotificationSounds.INCOMING_CALL)
@@ -83,10 +85,22 @@
       msg: WebSocketMessage<{ spaceId: number; user: User }>
     ) => {
       spaceState.addMemberToSpace(msg.payload.spaceId, msg.payload.user)
-    },
+    }
   })
 
   async function setup(): Promise<void> {
+    window.updater.onUpdateAvailable((version: string) => {
+      updateState.version = version
+      updateState.updateAvailable = true
+    })
+
+    window.updater.onUpdateDownloaded(() => {
+      updateState.downloading = false
+      updateState.updateDownloaded = true
+    })
+
+    window.updater.notifyReady()
+
     await getCurrentUser()
     await loadUnreadMessages()
     await loadRecentUsers()
@@ -159,6 +173,7 @@
 
 <div class="window">
   <ConnectionBar />
+  <UpdateToast />
   {#if callState.isP2PCall}
     <div class="call-overlay" class:minimized={callState.isMinimized}>
       <CallWindow />
