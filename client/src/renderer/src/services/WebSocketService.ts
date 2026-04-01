@@ -19,6 +19,7 @@ class WebSocketService {
   private handlers: Map<string, MessageHandler[]> = new Map()
   private reconnectAttempts = 0
   private intentionalDisconnect = false
+  private isConnecting = false
 
   private pingInterval: ReturnType<typeof setInterval> | null = null
   private pongTimeout: ReturnType<typeof setTimeout> | null = null
@@ -27,12 +28,15 @@ class WebSocketService {
   private onReconnectCallback: (() => void) | null = null
 
   connect(): void {
+    if (this.isConnecting) return
     if (this.ws?.readyState === WebSocket.OPEN || this.ws?.readyState === WebSocket.CONNECTING)
       return
 
     const token = sessionStorage.getItem('authToken')
     if (!token) {
+      this.isConnecting = true
       authenticationService.tryRestoreSession().then((restored) => {
+        this.isConnecting = false
         if (restored) {
           this.connect()
         } else {
