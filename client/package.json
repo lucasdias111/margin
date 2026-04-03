@@ -24,7 +24,9 @@
     "test": "vitest",
     "test:ci": "vitest --run",
     "test:ui": "vitest --ui",
-    "test:coverage": "vitest --coverage"
+    "test:coverage": "vitest --coverage",
+    "test:fast": "vitest run --exclude='**/EncryptionService.test.ts'",
+    "prepare": "husky"
   },
   "dependencies": {
     "@electron-toolkit/preload": "^3.0.2",
@@ -49,6 +51,7 @@
     "eslint": "^9.39.1",
     "eslint-plugin-svelte": "^3.13.1",
     "jsdom": "^27.4.0",
+    "husky": "^9.1.7",
     "prettier": "^3.7.4",
     "prettier-plugin-svelte": "^3.4.0",
     "svelte": "^5.45.6",

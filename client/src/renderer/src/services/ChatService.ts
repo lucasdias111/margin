@@ -1,9 +1,9 @@
 import type { ConversationMessagesResponse, Message } from '$src/interfaces/Messages'
 import type { User } from '$src/interfaces/User'
 import {
-  isDirectConversation,
+  type Conversation,
   isChannelConversation,
-  type Conversation
+  isDirectConversation
 } from '$src/interfaces/Conversation'
 import { encryptionService } from './EncryptionService'
 import { webSocketService } from './WebSocketService'
@@ -82,6 +82,7 @@ class ChatService {
     const alreadyInList = userListState.recentUsers.find((u) => u.user.id === user.id)
     if (alreadyInList) return
     userListState.addUser({
+      conversationId: msg.conversationId,
       user,
       lastMessage: preview,
       lastMessageTime: msg.createdAt,

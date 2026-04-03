@@ -134,7 +134,7 @@
           class="input"
           type="text"
           name="betaKey"
-          placeholder="MARGIN-XXXXXXXXXXXX"
+          placeholder="MARGIN-BETA-XXXXXXXXXXXX"
           bind:value={betaKey}
           required
           autocomplete="off"
@@ -243,7 +243,7 @@
       <span>or</span>
     </div>
 
-    <button class="btn-secondary" onclick={goBack}> Back to sign in </button>
+    <button class="btn-secondary" onclick={goBack}> Back to sign in</button>
   </div>
 </div>
 

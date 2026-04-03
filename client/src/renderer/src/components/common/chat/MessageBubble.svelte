@@ -54,7 +54,8 @@
               showMenu = false
             }}
           >
-            <Icon name="edit" size={14} /> Edit
+            <Icon name="edit" size={14} />
+            Edit
           </button>
           <button class="delete" onclick={() => chatService.deleteMessage(message)}>
             <Icon name="trash" size={14} />
@@ -197,7 +198,7 @@
     gap: 2px;
     word-break: break-word;
     line-height: 1.5;
-    font-size: 12px;
+    font-size: 14px;
   }
 
   .bubble:not(.sent) {
@@ -207,7 +208,7 @@
   }
 
   .bubble.sent {
-    background: #e8712a;
+    background: #f47e3a;
     color: #2d2d2d;
     border-bottom-right-radius: 4px;
   }
@@ -273,7 +274,8 @@
     align-items: center;
     gap: 4px;
     margin-top: 2px;
-    font-size: 9px;
+    font-size: 10px;
+    font-weight: 500;
     align-self: flex-end;
   }
 

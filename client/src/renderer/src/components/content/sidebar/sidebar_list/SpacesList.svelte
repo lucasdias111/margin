@@ -2,7 +2,7 @@
   import { chatState } from '$src/states/ChatState.svelte.js'
   import { spaceState } from '$src/states/SpaceState.svelte.js'
   import type { Space } from '$src/interfaces/Space'
-  import { onDestroy, onMount } from 'svelte'
+  import { onDestroy } from 'svelte'
   import { spacesService } from '$src/services/SpacesService'
   import ChannelEntry from '$src/components/content/sidebar/sidebar_list/ChannelEntry.svelte'
   import { notificationState } from '$src/states/NotificationState.svelte.js'
@@ -83,11 +83,7 @@
           </span>
 
           {#if !isOpen}
-            <UnreadNotificationBadge
-              shouldShow={unreadCount > 0}
-              count={1}
-              variant="inline"
-            />
+            <UnreadNotificationBadge shouldShow={unreadCount > 0} count={1} variant="inline" />
           {/if}
 
           <span class="chevron" class:rotated={isOpen}>

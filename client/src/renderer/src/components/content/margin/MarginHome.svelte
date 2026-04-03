@@ -134,6 +134,7 @@
   .margin-home::-webkit-scrollbar {
     width: 4px;
   }
+
   .margin-home::-webkit-scrollbar-thumb {
     background: rgba(0, 0, 0, 0.08);
     border-radius: 4px;
@@ -253,7 +254,7 @@
   }
 
   .margin-description {
-    font-size: 13px;
+    font-size: 14px;
     color: #999;
     margin: 0;
     line-height: 1.4;

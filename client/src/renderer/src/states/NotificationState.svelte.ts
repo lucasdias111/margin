@@ -50,8 +50,6 @@ class NotificationStateManager {
     return this.state.notifications.filter((n) => n.marginId === marginId && !n.seen).length
   }
 
-  // --- Unread conversations ---
-
   addUnreadDirectConversations(conversationIds: number[]): void {
     conversationIds.forEach((id) => this.state.unreadDirectConversationIds.add(id))
     this.state.unreadDirectConversationIds = new Set(this.state.unreadDirectConversationIds)

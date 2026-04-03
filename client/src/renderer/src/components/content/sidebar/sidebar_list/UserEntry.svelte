@@ -140,13 +140,14 @@
 
   .timestamp {
     font-size: 11px;
+    font-weight: 500;
     color: #bbb;
     flex-shrink: 0;
     margin-left: 8px;
   }
 
   .last-message {
-    font-size: 12px;
+    font-size: 14px;
     color: #c1c1c1;
     white-space: nowrap;
     overflow: hidden;
