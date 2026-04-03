@@ -7,6 +7,7 @@
   import ChatInput from '$src/components/common/chat/ChatInput.svelte'
   import MessagesContainer from '$src/components/common/chat/MessagesContainer.svelte'
   import PrivateChatHeader from '$src/components/content/chat/private/PrivateChatHeader.svelte'
+  import Icon from '$src/components/common/icons/Icon.svelte'
 
   let messageInput = $state('')
   let chatInputRef = $state<ChatInput | null>(null)
@@ -64,20 +65,27 @@
       handleStartVideoCall={handleVideoCall}
       isLoading={conversationState.isLoading}
     />
-  {/if}
-  <div class="chat-background">
-    <MessagesContainer
-      messages={conversationState.messages}
-      isLoading={conversationState.isLoading}
-      isDirectMessage={true}
+    <div class="chat-background">
+      <MessagesContainer
+        messages={conversationState.messages}
+        isLoading={conversationState.isLoading}
+        isDirectMessage={true}
+      />
+    </div>
+    <ChatInput
+      bind:this={chatInputRef}
+      selectedContent={true}
+      bind:messageInput
+      onSubmit={handleSubmitMessage}
     />
-  </div>
-  <ChatInput
-    bind:this={chatInputRef}
-    selectedContent={!!chatState.selectedUser}
-    bind:messageInput
-    onSubmit={handleSubmitMessage}
-  />
+  {:else}
+    <div class="empty-state">
+      <div class="empty-state-icon">
+        <Icon name="messages" size={40} />
+      </div>
+      <p class="empty-state-text">Select a conversation to start chatting</p>
+    </div>
+  {/if}
 </div>
 
 <style>
@@ -99,5 +107,25 @@
     z-index: 1;
     display: flex;
     flex-direction: column;
+  }
+
+  .empty-state {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+  }
+
+  .empty-state-icon {
+    color: #b0b0b0;
+  }
+
+  .empty-state-text {
+    color: #888;
+    font-size: 15px;
+    font-family: inherit;
+    margin: 0;
   }
 </style>
