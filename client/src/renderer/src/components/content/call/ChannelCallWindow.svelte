@@ -86,7 +86,7 @@
         {localParticipant}
         {remoteParticipants}
         {remoteScreenStream}
-        isAudioEnabled={true}
+        isAudioEnabled={callState.groupCallState?.isAudioEnabled ?? true}
         isVideoEnabled={callState.groupCallState?.isVideoEnabled ?? false}
         isScreenSharing={callState.groupCallState?.isScreenSharing ?? false}
         {isRemoteScreenSharing}
@@ -96,7 +96,7 @@
         callTitle={channelName}
         forceGrid={remoteParticipants.length > 1}
         onMinimize={() => callState.toggleMinimized()}
-        onToggleAudio={() => {}}
+        onToggleAudio={() => channelCallService.toggleAudio()}
         onToggleVideo={() => channelCallService.toggleVideo()}
         onToggleScreenShare={() => channelCallService.toggleScreenShare()}
         onEndCall={() => channelCallService.endChannelCall()}

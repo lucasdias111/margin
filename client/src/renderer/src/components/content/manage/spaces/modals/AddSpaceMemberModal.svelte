@@ -10,10 +10,10 @@
     open: boolean
     onClose: () => void
     onAddMember: (spaceMember: SpaceMember) => void
-    isMarginMember: boolean
   }
 
   let { space, open, onClose, onAddMember }: Props = $props()
+  let marginId = $derived(space.marginId)
 
   let memberToAdd = $state<User>()
   let initialTitle = 'Add Member To Space'
@@ -70,7 +70,7 @@
       </select>
     </div>
   {:else}
-    <UserSearchBar {onSelectUser} />
+    <UserSearchBar {onSelectUser} {marginId} />
   {/if}
   <div class="actions">
     <button class="cancel" onclick={handleCancel}>Cancel</button>

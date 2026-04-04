@@ -94,7 +94,6 @@
     scrollHeightBeforePrepend = messagesContainer.scrollHeight
 
     await tick()
-
     await chatService.loadMoreMessages()
     await tick()
 

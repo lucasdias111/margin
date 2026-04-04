@@ -88,6 +88,7 @@ class CallState {
       session: null,
       participants: [],
       isVideoEnabled: false,
+      isAudioEnabled: true,
       screenShareProducer: null,
       isScreenSharing: false
     }
@@ -96,6 +97,11 @@ class CallState {
   setGroupSession(session: ChannelCallSession): void {
     if (!this.isGroupCall || !this.groupData) return
     this.groupData.session = session
+  }
+
+  setGroupAudioEnabled(enabled: boolean): void {
+    if (!this.isGroupCall || !this.groupData) return
+    this.groupData.isAudioEnabled = enabled
   }
 
   setGroupVideoEnabled(enabled: boolean): void {

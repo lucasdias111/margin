@@ -37,6 +37,7 @@ class MarginInviteService {
 
   async acceptLinkInvite(code: string): Promise<any> {
     const response = await authenticatedPost(null, `invites/join/${code}`)
+    if (!response.ok) throw new Error(`Invite failed: ${response.status}`)
     return response.json()
   }
 

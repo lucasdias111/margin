@@ -12,11 +12,7 @@
   let selectedSpace = $state<Space | null>(null)
 
   onMount(async () => {
-    try {
-      spaces = await spacesService.getAllSpacesForMargin(chatState.selectedMargin.marginId)
-    } catch (e) {
-      console.error('Failed to load spaces:', e)
-    }
+    spaces = await spacesService.getAllSpacesForMargin(chatState.selectedMargin.marginId)
   })
 
   function onSelectSpace(space: Space): void {
@@ -24,80 +20,55 @@
   }
 
   async function onAddSpace(space: CreateSpace): Promise<void> {
-    try {
-      const newSpace = await spacesService.addSpace(space)
-      spaces = [...spaces, newSpace]
-    } catch (e) {
-      console.error('Failed to create space:', e)
-    }
+    let newSpace: Space
+    newSpace = await spacesService.createSpace(space)
+    if (!newSpace) return
+    spaces = [...spaces, newSpace]
   }
 
   async function onAddMember(user: SpaceMember): Promise<void> {
-    try {
-      const newMember = await spacesService.addSpaceMemberToSpace(user)
-      selectedSpace.members = [...selectedSpace.members, newMember]
-    } catch (e) {
-      console.error('Failed to add member:', e)
-    }
+    const newMember = await spacesService.addSpaceMemberToSpace(user)
+    if (!newMember) return
+    selectedSpace.members = [...selectedSpace.members, newMember]
   }
 
   async function onUpdateMemberRole(spaceMember: SpaceMember): Promise<void> {
-    try {
-      const updated = await spacesService.updateSpaceMemberRole(spaceMember)
-      selectedSpace.members = selectedSpace.members.map((m) =>
-        m.user.id === updated.user.id ? updated : m
-      )
-    } catch (e) {
-      console.error('Failed to update member role:', e)
-    }
+    const updated = await spacesService.updateSpaceMemberRole(spaceMember)
+    if (!updated) return
+    selectedSpace.members = selectedSpace.members.map((m) =>
+      m.user.id === updated.user.id ? updated : m
+    )
   }
+
   async function onAddChannel(channel: CreateChannel): Promise<void> {
-    try {
-      const newChannel = await spacesService.createChannel(channel)
-      selectedSpace.channels = [...selectedSpace.channels, newChannel]
-    } catch (e) {
-      console.error('Failed to create channel:', e)
-    }
+    const newChannel = await spacesService.createChannel(channel)
+    if (!newChannel) return
+    selectedSpace.channels = [...selectedSpace.channels, newChannel]
   }
 
   async function onSaveInfo(space: Space): Promise<void> {
-    try {
-      const updatedSpace = await spacesService.updateSpaceInfo(space)
-      spaces = spaces.map((s) => (s.spaceId === updatedSpace.spaceId ? updatedSpace : s))
-      selectedSpace = updatedSpace
-    } catch (e) {
-      console.error('Failed to update space:', e)
-    }
+    const updatedSpace = await spacesService.updateSpaceInfo(space)
+    if (!updatedSpace) return
+    spaces = spaces.map((s) => (s.spaceId === updatedSpace.spaceId ? updatedSpace : s))
+    selectedSpace = updatedSpace
   }
 
   async function onDeleteSpace(space: Space): Promise<void> {
-    try {
-      await spacesService.deleteSpace(space)
-      spaces = spaces.filter((s) => s.spaceId !== space.spaceId)
-      selectedSpace = null
-    } catch (e) {
-      console.error('Failed to delete space:', e)
-    }
+    await spacesService.deleteSpace(space)
+    spaces = spaces.filter((s) => s.spaceId !== space.spaceId)
+    selectedSpace = null
   }
 
   async function onUpdateChannel(channel: Channel): Promise<void> {
-    try {
-      const updatedChannel = await spacesService.updateChannel(channel)
-      selectedSpace.channels = selectedSpace.channels.map((c) =>
-        c.id === updatedChannel.id ? updatedChannel : c
-      )
-    } catch (e) {
-      console.error('Failed to update channel:', e)
-    }
+    const updatedChannel = await spacesService.updateChannel(channel)
+    selectedSpace.channels = selectedSpace.channels.map((c) =>
+      c.id === updatedChannel.id ? updatedChannel : c
+    )
   }
 
   async function onDeleteChannel(channel: Channel): Promise<void> {
-    try {
-      await spacesService.deleteChannel(channel)
-      selectedSpace.channels = selectedSpace.channels.filter((c) => c.id !== channel.id)
-    } catch (e) {
-      console.error('Failed to delete channel:', e)
-    }
+    await spacesService.deleteChannel(channel)
+    selectedSpace.channels = selectedSpace.channels.filter((c) => c.id !== channel.id)
   }
 </script>
 

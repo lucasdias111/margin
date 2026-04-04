@@ -1,4 +1,4 @@
-import { authenticatedGet } from '$src/services/api'
+import { authenticatedPost } from '$src/services/api'
 import { userState } from '$src/states/UserState.svelte.js'
 import { Device } from 'mediasoup-client'
 import type {
@@ -181,7 +181,7 @@ class ChannelCallService {
     if (callState.isGroupCall) return
 
     try {
-      const response = await authenticatedGet(`sfu/create_or_join?roomId=${channelId}`)
+      const response = await authenticatedPost(null, `sfu/create_or_join?roomId=${channelId}`)
       if (!response.ok) {
         errorService.reportError('Failed to join voice channel')
         return
@@ -230,6 +230,15 @@ class ChannelCallService {
       console.error(err)
       errorService.reportError('Failed to join voice channel')
     }
+  }
+
+  toggleAudio(): void {
+    const session = callState.groupCallState?.session
+    if (!session) return
+    const audioTrack = session.localStream.getAudioTracks()[0]
+    if (!audioTrack) return
+    audioTrack.enabled = !audioTrack.enabled
+    callState.setGroupAudioEnabled(audioTrack.enabled)
   }
 
   async toggleVideo(): Promise<void> {

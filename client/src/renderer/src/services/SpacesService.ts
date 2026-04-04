@@ -14,13 +14,15 @@ class SpacesService {
     spaceState.setSpaces(await response.json())
   }
 
-  async addSpace(space: CreateSpace): Promise<Space> {
+  async createSpace(space: CreateSpace): Promise<Space | null> {
     const response = await authenticatedPost(space, 'spaces/create_space')
+    if (!response.ok) return null
     return response.json()
   }
 
   async updateSpaceInfo(space: Space): Promise<Space> {
     const response = await authenticatedPost(space, 'spaces/update_space_info')
+    if (!response.ok) return null
     return response.json()
   }
 
@@ -30,16 +32,19 @@ class SpacesService {
 
   async addSpaceMemberToSpace(newSpaceMember: SpaceMember): Promise<SpaceMember> {
     const response = await authenticatedPost(newSpaceMember, 'spaces/add_space_member')
+    if (!response.ok) return null
     return response.json()
   }
 
   async createChannel(channel: CreateChannel): Promise<Channel> {
     const response = await authenticatedPost(channel, 'channels/create_channel')
+    if (!response.ok) return null
     return response.json()
   }
 
   async updateChannel(channel: Channel): Promise<Channel> {
     const response = await authenticatedPost(channel, 'channels/update_channel')
+    if (!response.ok) return null
     return response.json()
   }
 
@@ -49,6 +54,7 @@ class SpacesService {
 
   async updateSpaceMemberRole(spaceMember: SpaceMember): Promise<SpaceMember> {
     const response = await authenticatedPost(spaceMember, 'spaces/update_space_member_role')
+    if (!response.ok) return null
     return response.json()
   }
 

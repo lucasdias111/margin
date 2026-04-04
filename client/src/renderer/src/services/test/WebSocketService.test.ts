@@ -90,8 +90,14 @@ function resetInternalState(): void {
   service.onReconnectCallback = null
 }
 
+function createFakeToken(expiresInMs: number = 3600_000): string {
+  const header = btoa(JSON.stringify({ alg: 'HS256', typ: 'JWT' }))
+  const payload = btoa(JSON.stringify({ exp: Math.floor((Date.now() + expiresInMs) / 1000) }))
+  return `${header}.${payload}.fake-signature`
+}
+
 function connectWithToken(): MockWebSocket {
-  sessionStorage.setItem('authToken', 'test-token')
+  sessionStorage.setItem('authToken', createFakeToken())
   webSocketService.connect()
   lastCreatedWs!.readyState = WebSocket.OPEN
   lastCreatedWs!.onopen?.({} as Event)
@@ -323,10 +329,10 @@ describe('WebSocketService', () => {
       const callback = vi.fn()
       webSocketService.onReconnect(callback)
 
-      sessionStorage.setItem('authToken', 'test-token')
       const service = webSocketService as unknown as { reconnectAttempts: number }
       service.reconnectAttempts = 1
 
+      sessionStorage.setItem('authToken', createFakeToken())
       webSocketService.connect()
       lastCreatedWs!.readyState = WebSocket.OPEN
       lastCreatedWs!.onopen?.({} as Event)
@@ -341,6 +347,19 @@ describe('WebSocketService', () => {
       connectWithToken()
 
       expect(callback).not.toHaveBeenCalled()
+    })
+
+    it('clears session and logs out when token is expired', async () => {
+      const { authenticationService } = await import('$src/services/AuthenticationService')
+
+      sessionStorage.setItem('authToken', createFakeToken(-1000))
+      webSocketService.connect()
+
+      expect(lastCreatedWs).toBeNull()
+      expect(sessionStorage.getItem('authToken')).toBeNull()
+      expect(sessionStorage.getItem('privateKey')).toBeNull()
+      expect(connectionState.connectionStatus).toBe('disconnected')
+      expect(authenticationService.logoutUser).toHaveBeenCalled()
     })
   })
 })

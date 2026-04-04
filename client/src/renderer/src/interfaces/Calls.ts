@@ -35,6 +35,7 @@ export interface GroupCallData {
   session: ChannelCallSession | null
   participants: SFUParticipant[]
   isVideoEnabled: boolean
+  isAudioEnabled: boolean
   screenShareProducer: Producer | null
   isScreenSharing: boolean
 }

@@ -7,9 +7,10 @@
   interface Props {
     onSelectUser: (user: User) => void
     showSharedMargins?: boolean
+    marginId?: number
   }
 
-  let { onSelectUser, showSharedMargins = false }: Props = $props()
+  let { onSelectUser, showSharedMargins = false, marginId }: Props = $props()
 
   let searchQuery = $state('')
   let searchResults = $state<UserSearchResult[]>([])
@@ -32,10 +33,19 @@
     hasError = false
 
     try {
-      const response = await authenticatedGet(
-        `users/search?query=${encodeURIComponent(query.slice(0, 100))}`
-      )
-      const data = await response.json()
+      let data: UserSearchResult[]
+
+      if (marginId) {
+        const url = `users/search_by_margin?query=${encodeURIComponent(query.slice(0, 100))}&marginId=${marginId}`
+        const response = await authenticatedGet(url)
+        const users: User[] = await response.json()
+        data = users.map((user) => ({ user, sharedMargins: [] }))
+      } else {
+        const url = `users/search_shared_margin?query=${encodeURIComponent(query.slice(0, 100))}`
+        const response = await authenticatedGet(url)
+        data = await response.json()
+      }
+
       searchResults = data || []
     } catch (error) {
       console.error('Search failed:', error)

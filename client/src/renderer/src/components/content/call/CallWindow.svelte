@@ -27,6 +27,7 @@
     if (!videoTrack) return null
     return new MediaStream([videoTrack])
   })
+  const isAudioEnabled = $derived(callState.p2pCallState?.isAudioEnabled ?? true)
 
   onCallCreated((data) => callState.setCallId(data.payload!.callId))
   onCallResponse(async (data) => await callService.handleCallResponse(data))
@@ -95,7 +96,7 @@
         {localParticipant}
         {remoteParticipants}
         {remoteScreenStream}
-        isAudioEnabled={callState.p2pCallState.isAudioEnabled}
+        {isAudioEnabled}
         isVideoEnabled={callState.p2pCallState.isVideoEnabled}
         isScreenSharing={callState.p2pCallState.isScreenSharing}
         isRemoteScreenSharing={callState.p2pCallState.isRemoteScreenSharing}

@@ -55,7 +55,7 @@ export async function unauthenticatedPost<T>(body: T, url: string): Promise<Resp
 }
 
 async function fetchPost<T>(url: string, body: T, headers: HeadersInit): Promise<Response> {
-  let response = null
+  let response: Response | null = null
   try {
     response = await fetch(API_CONFIG.baseUrl + url, {
       method: 'POST',
@@ -63,11 +63,16 @@ async function fetchPost<T>(url: string, body: T, headers: HeadersInit): Promise
       body: body instanceof FormData ? body : JSON.stringify(body)
     })
   } catch (error) {
-    errorService.reportError('Failed to fetch: ' + error)
+    errorService.reportError('Network error — could not reach server')
+    throw error
   }
-  if (!response) errorService.reportError('Error fetching')
-  if (!response.ok)
-    errorService.reportError('Error fetching: ' + response.status + response.statusText)
+
+  if (!response.ok) {
+    const message = await extractErrorMessage(response)
+    errorService.reportError(message)
+    throw new Error(message)
+  }
+
   return response
 }
 
@@ -87,6 +92,7 @@ async function fetchPatch<T>(url: string, body: T, headers: HeadersInit): Promis
   if (!response.ok) {
     const message = await extractErrorMessage(response)
     errorService.reportError(message)
+    throw new Error(message)
   }
 
   return response
@@ -121,6 +127,7 @@ async function fetchDelete<T>(url: string, body: T, headers: HeadersInit): Promi
   if (!response.ok) {
     const message = await extractErrorMessage(response)
     errorService.reportError(message)
+    throw new Error(message)
   }
 
   return response
@@ -141,6 +148,7 @@ async function fetchGet(url: string, headers: HeadersInit): Promise<Response> {
   if (!response.ok) {
     const message = await extractErrorMessage(response)
     errorService.reportError(message)
+    throw new Error(message)
   }
 
   return response

@@ -47,6 +47,15 @@ class WebSocketService {
       return
     }
 
+    if (this.isTokenExpired(token)) {
+      console.warn('JWT expired — clearing session and logging out')
+      sessionStorage.removeItem('authToken')
+      sessionStorage.removeItem('privateKey')
+      connectionState.connectionStatus = 'disconnected'
+      authenticationService.logoutUser().then(() => push('/'))
+      return
+    }
+
     this.intentionalDisconnect = false
     connectionState.connectionStatus =
       this.reconnectAttempts > 0 ? 'reconnecting' : connectionState.connectionStatus
@@ -232,6 +241,15 @@ class WebSocketService {
 
   onReconnect(callback: () => void): void {
     this.onReconnectCallback = callback
+  }
+
+  private isTokenExpired(token: string): boolean {
+    try {
+      const payload = JSON.parse(atob(token.split('.')[1]))
+      return payload.exp * 1000 < Date.now()
+    } catch {
+      return true
+    }
   }
 }
 

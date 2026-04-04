@@ -62,7 +62,7 @@ class MarginService {
     return response.json()
   }
 
-  async createMargin(margin: CreateMargin, marginIcon?: File | null): Promise<Margin> {
+  async createMargin(margin: CreateMargin): Promise<Margin> {
     const formData = new FormData()
     formData.append(
       'data',
@@ -77,8 +77,8 @@ class MarginService {
         { type: 'application/json' }
       )
     )
-    if (marginIcon) {
-      formData.append('marginIcon', marginIcon)
+    if (margin.marginIcon) {
+      formData.append('marginIcon', margin.marginIcon)
     }
 
     const response = await authenticatedPostForm(formData, 'margins/create_new_margin')

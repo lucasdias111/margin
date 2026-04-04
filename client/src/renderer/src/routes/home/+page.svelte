@@ -31,7 +31,7 @@
   import IncomingCallModal from '$src/components/content/call/modal/IncomingCallModal.svelte'
   import type { Notification } from '$src/interfaces/Notification'
   import Notifications from '$src/components/content/notification/Notifications.svelte'
-  import SFUCallWindow from '$src/components/content/call/SFUCallWindow.svelte'
+  import ChannelCallWindow from '$src/components/content/call/ChannelCallWindow.svelte'
   import { spaceState } from '$src/states/SpaceState.svelte'
   import { NotificationSounds } from '$src/utils/NotificationSounds'
   import ConnectionBar from '$src/components/common/messages/ConnectionBar.svelte'
@@ -112,7 +112,6 @@
     notificationState.clearUnreadMessages()
     const response = await authenticatedGet('conversations/unread')
     const unread: UnreadConversations = await response.json()
-    console.log(unread)
     notificationService.addIncomingDirectConversations(unread.directConversationIds)
     notificationService.addIncomingChannelConversations(unread.channelUnreads)
   }
@@ -180,7 +179,7 @@
     </div>
   {:else if callState.isGroupCall}
     <div class="call-overlay" class:minimized={callState.isMinimized}>
-      <SFUCallWindow />
+      <ChannelCallWindow />
     </div>
   {/if}
   <Navigation />
