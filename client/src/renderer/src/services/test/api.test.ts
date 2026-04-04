@@ -79,8 +79,7 @@ describe('API helpers', () => {
       sessionStorage.setItem('authToken', 'token')
       mockFetchError(403, { detail: 'Forbidden access' })
 
-      await authenticatedGet('users/1')
-
+      await expect(authenticatedGet('users/1')).rejects.toThrow('Forbidden access')
       expect(errorService.reportError).toHaveBeenCalledWith('Forbidden access')
     })
 
@@ -88,8 +87,7 @@ describe('API helpers', () => {
       sessionStorage.setItem('authToken', 'token')
       mockFetchError(400, { message: 'Bad request body' })
 
-      await authenticatedGet('users/1')
-
+      await expect(authenticatedGet('users/1')).rejects.toThrow('Bad request body')
       expect(errorService.reportError).toHaveBeenCalledWith('Bad request body')
     })
 
@@ -97,8 +95,7 @@ describe('API helpers', () => {
       sessionStorage.setItem('authToken', 'token')
       mockFetchError(500, {})
 
-      await authenticatedGet('users/1')
-
+      await expect(authenticatedGet('users/1')).rejects.toThrow('Error 500')
       expect(errorService.reportError).toHaveBeenCalledWith('Error 500')
     })
 
@@ -113,8 +110,7 @@ describe('API helpers', () => {
         }
       } as unknown as Response)
 
-      await authenticatedGet('users/1')
-
+      await expect(authenticatedGet('users/1')).rejects.toThrow('Error 502')
       expect(errorService.reportError).toHaveBeenCalledWith('Error 502')
     })
 
@@ -206,8 +202,9 @@ describe('API helpers', () => {
       sessionStorage.setItem('authToken', 'token')
       mockFetchError(422, { detail: 'Validation failed' })
 
-      await authenticatedPatchForm(new FormData(), 'update')
-
+      await expect(authenticatedPatchForm(new FormData(), 'update')).rejects.toThrow(
+        'Validation failed'
+      )
       expect(errorService.reportError).toHaveBeenCalledWith('Validation failed')
     })
 
@@ -243,8 +240,7 @@ describe('API helpers', () => {
       sessionStorage.setItem('authToken', 'token')
       mockFetchError(404, { message: 'Not found' })
 
-      await authenticatedDelete(1, 'margins/delete')
-
+      await expect(authenticatedDelete(1, 'margins/delete')).rejects.toThrow('Not found')
       expect(errorService.reportError).toHaveBeenCalledWith('Not found')
     })
 
