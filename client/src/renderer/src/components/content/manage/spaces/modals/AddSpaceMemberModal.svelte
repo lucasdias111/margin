@@ -45,7 +45,7 @@
   function clear(): void {
     memberToAdd = null
     title = initialTitle
-    selectedRole = null
+    selectedRole = roles[0].value
   }
 
   function onSelectUser(user: User): void {
