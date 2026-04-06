@@ -3,9 +3,11 @@ import type {
   CallStatus,
   ChannelCallSession,
   GroupCallData,
-  P2PCallData
+  P2PCallData,
+  SFUParticipant
 } from '$src/interfaces/Calls'
 import type { User } from '$src/interfaces/User'
+import type { Producer } from 'mediasoup-client/types'
 
 type CallType = 'p2p' | 'group'
 
@@ -63,11 +65,14 @@ class CallState {
       localStream: null,
       remoteStream: null,
       candidateQueue: [],
+      isAudioEnabled: true,
+      isRemoteAudioEnabled: false,
       isVideoEnabled: false,
       isRemoteVideoEnabled: false,
       isScreenSharing: false,
       isRemoteScreenSharing: false,
-      screenShareTrack: null
+      screenShareTrack: null,
+      remoteScreenStream: null
     }
   }
 
@@ -76,16 +81,47 @@ class CallState {
     this.baseState.callId = callId
     this.baseState.status = 'connecting'
     this.baseState.duration = 0
+    this.baseState.isMinimized = true
 
     this.groupData = {
       channelId,
-      session: null
+      session: null,
+      participants: [],
+      isVideoEnabled: false,
+      isAudioEnabled: true,
+      screenShareProducer: null,
+      isScreenSharing: false
     }
   }
 
   setGroupSession(session: ChannelCallSession): void {
     if (!this.isGroupCall || !this.groupData) return
     this.groupData.session = session
+  }
+
+  setGroupAudioEnabled(enabled: boolean): void {
+    if (!this.isGroupCall || !this.groupData) return
+    this.groupData.isAudioEnabled = enabled
+  }
+
+  setGroupVideoEnabled(enabled: boolean): void {
+    if (!this.isGroupCall || !this.groupData) return
+    this.groupData.isVideoEnabled = enabled
+  }
+
+  setGroupVideoProducer(producer: Producer | null): void {
+    if (!this.isGroupCall || !this.groupData?.session) return
+    this.groupData.session.videoProducer = producer
+  }
+
+  setGroupScreenShareProducer(producer: Producer | null): void {
+    if (!this.isGroupCall || !this.groupData) return
+    this.groupData.screenShareProducer = producer
+  }
+
+  setGroupScreenSharing(enabled: boolean): void {
+    if (!this.isGroupCall || !this.groupData) return
+    this.groupData.isScreenSharing = enabled
   }
 
   setStatus(status: CallStatus): void {
@@ -122,6 +158,16 @@ class CallState {
     this.p2pData.candidateQueue = []
   }
 
+  setAudioEnabled(isAudioEnabled: boolean): void {
+    if (!this.isP2PCall || !this.p2pData) return
+    this.p2pData.isAudioEnabled = isAudioEnabled
+  }
+
+  setRemoteAudioEnabled(isRemoteAudioEnabled: boolean): void {
+    if (!this.isP2PCall || !this.p2pData) return
+    this.p2pData.isRemoteAudioEnabled = isRemoteAudioEnabled
+  }
+
   setVideoEnabled(enabled: boolean): void {
     if (!this.isP2PCall || !this.p2pData) return
     this.p2pData.isVideoEnabled = enabled
@@ -132,16 +178,16 @@ class CallState {
     this.p2pData.isRemoteVideoEnabled = enabled
   }
 
-  // screenShareStream removed — the transceiver sender owns the track lifecycle
   setScreenSharing(enabled: boolean, track: MediaStreamTrack | null = null): void {
     if (!this.isP2PCall || !this.p2pData) return
     this.p2pData.isScreenSharing = enabled
     this.p2pData.screenShareTrack = track
   }
 
-  setRemoteScreenSharing(enabled: boolean): void {
+  setRemoteScreenSharing(enabled: boolean, stream: MediaStream | null): void {
     if (!this.isP2PCall || !this.p2pData) return
     this.p2pData.isRemoteScreenSharing = enabled
+    this.p2pData.remoteScreenStream = stream
   }
 
   toggleMinimized(): void {
@@ -165,6 +211,21 @@ class CallState {
     this.p2pData = null
     this.groupData = null
     this.baseState.isMinimized = false
+  }
+
+  addGroupParticipant(participant: SFUParticipant): void {
+    if (!this.isGroupCall || !this.groupData) return
+    const existing = this.groupData.participants.findIndex((p) => p.peerId === participant.peerId)
+    if (existing >= 0) {
+      this.groupData.participants[existing] = participant
+    } else {
+      this.groupData.participants = [...this.groupData.participants, participant]
+    }
+  }
+
+  removeGroupParticipant(peerId: string): void {
+    if (!this.isGroupCall || !this.groupData) return
+    this.groupData.participants = this.groupData.participants.filter((p) => p.peerId !== peerId)
   }
 }
 

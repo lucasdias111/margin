@@ -13,6 +13,7 @@
 
   let editedName = $derived(selectedSpace?.spaceName ?? '')
   let editedDescription = $derived(selectedSpace?.spaceDescription ?? '')
+  let editedIsDefault = $derived(selectedSpace?.isDefault ?? false)
 
   $effect(() => {
     editedName = selectedSpace?.spaceName ?? ''
@@ -21,14 +22,16 @@
 
   let isDirty = $derived(
     editedName !== (selectedSpace?.spaceName ?? '') ||
-      editedDescription !== (selectedSpace?.spaceDescription ?? '')
+      editedDescription !== (selectedSpace?.spaceDescription ?? '') ||
+      editedIsDefault !== (selectedSpace?.isDefault ?? false)
   )
 
   async function handleSave(): Promise<void> {
     await onSaveInfo?.({
       ...selectedSpace,
       spaceName: editedName,
-      spaceDescription: editedDescription
+      spaceDescription: editedDescription,
+      isDefault: editedIsDefault
     })
   }
 
@@ -66,6 +69,11 @@
       <button class="upload-btn">Upload</button>
     </div>
   </div>
+
+  <label class="default-toggle">
+    <input type="checkbox" bind:checked={editedIsDefault} />
+    <span>Auto-join for new members</span>
+  </label>
 
   <div class="danger-zone">
     <div class="danger-zone-text">
@@ -184,5 +192,22 @@
     font-size: 0.78rem;
     color: #888;
     margin: 2px 0 0 0;
+  }
+
+  .default-toggle {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 16px;
+    cursor: pointer;
+    font-size: 13px;
+    color: #2d2d2d;
+  }
+
+  .default-toggle input[type='checkbox'] {
+    width: 15px;
+    height: 15px;
+    accent-color: #e8712a;
+    cursor: pointer;
   }
 </style>

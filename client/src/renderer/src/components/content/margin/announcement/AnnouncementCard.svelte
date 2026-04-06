@@ -1,6 +1,7 @@
 <script lang="ts">
   import type { Announcement } from '$src/interfaces/Announcement'
   import { formatTimestamp } from '$src/utils/DateUtils'
+  import Icon from '$src/components/common/icons/Icon.svelte'
 
   interface Props {
     announcement: Announcement
@@ -24,36 +25,14 @@
             aria-label="Edit announcement"
             onclick={() => onEdit(announcement)}
           >
-            <svg
-              width="12"
-              height="12"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2.5"
-            >
-              <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
-              <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
-            </svg>
+            <Icon name="edit" size={12} strokeWidth={2.5} />
           </button>
           <button
             class="action-btn delete-btn"
             aria-label="Delete announcement"
             onclick={() => onDelete(announcement.announcementId)}
           >
-            <svg
-              width="12"
-              height="12"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2.5"
-            >
-              <polyline points="3 6 5 6 21 6" />
-              <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
-              <path d="M10 11v6M14 11v6" />
-              <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2" />
-            </svg>
+            <Icon name="trash" size={12} strokeWidth={2.5} />
           </button>
         </div>
       {/if}
@@ -158,6 +137,7 @@
     font-size: 13px;
     color: #555;
     line-height: 1.65;
+    white-space: pre-wrap;
   }
 
   .announcement-footer {

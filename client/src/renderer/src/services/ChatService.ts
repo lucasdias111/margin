@@ -1,9 +1,9 @@
 import type { ConversationMessagesResponse, Message } from '$src/interfaces/Messages'
 import type { User } from '$src/interfaces/User'
 import {
-  isDirectConversation,
+  type Conversation,
   isChannelConversation,
-  type Conversation
+  isDirectConversation
 } from '$src/interfaces/Conversation'
 import { encryptionService } from './EncryptionService'
 import { webSocketService } from './WebSocketService'
@@ -17,10 +17,9 @@ import { chatState } from '$src/states/ChatState.svelte'
 import { conversationState } from '$src/states/ConversationState.svelte'
 import { userListState } from '$src/states/UserListState.svelte'
 import type { ContentType } from '$src/interfaces/Content'
-import { errorService } from '$src/services/ErrorService'
 
 class ChatService {
-  private static readonly PAGE_SIZE = 50
+  private static readonly PAGE_SIZE = 30
 
   handleIncomingMessage = async (data: WebSocketMessage<Message>): Promise<void> => {
     const msg = data.payload
@@ -83,6 +82,7 @@ class ChatService {
     const alreadyInList = userListState.recentUsers.find((u) => u.user.id === user.id)
     if (alreadyInList) return
     userListState.addUser({
+      conversationId: msg.conversationId,
       user,
       lastMessage: preview,
       lastMessageTime: msg.createdAt,
@@ -99,16 +99,16 @@ class ChatService {
       return
 
     await this.loadMessages(
-      `api/conversations/${user.id}/direct_messages?limit=${ChatService.PAGE_SIZE}`,
+      `conversations/${user.id}/direct_messages?limit=${ChatService.PAGE_SIZE}`,
       (conv) => this.markConversationAsRead(conv.id)
     )
   }
 
-  async loadMessagesForChannel(channel: Channel): Promise<void> {
+  async loadConversationForChannel(channel: Channel): Promise<void> {
     if (conversationState.currentConversation?.id === channel.conversationId) return
 
     await this.loadMessages(
-      `api/conversations/${channel.id}/channel_messages?limit=${ChatService.PAGE_SIZE}`,
+      `conversations/${channel.id}/channel_messages?limit=${ChatService.PAGE_SIZE}`,
       () => this.markConversationAsRead(channel.conversationId)
     )
   }
@@ -124,10 +124,7 @@ class ChatService {
 
     try {
       const response = await authenticatedGet(url)
-      if (!response.ok) {
-        console.error(`Failed to load messages: ${response.status}`)
-        return
-      }
+      if (!response.ok) return
 
       const messageResponse: ConversationMessagesResponse = await response.json()
       if (messageResponse.conversation == null) return
@@ -137,6 +134,8 @@ class ChatService {
         messageResponse.messages,
         messageResponse.conversation
       )
+
+      conversationState.hasMore = messageResponse.messages.length >= ChatService.PAGE_SIZE
 
       await onLoaded(messageResponse.conversation)
     } catch (error) {
@@ -189,10 +188,10 @@ class ChatService {
 
   private buildPaginationUrl(conversation: Conversation, before: number): string | null {
     if (isDirectConversation(conversation)) {
-      return `api/conversations/${conversation.otherUserId}/direct_messages?limit=${ChatService.PAGE_SIZE}&before=${before}`
+      return `conversations/${conversation.otherUserId}/direct_messages?limit=${ChatService.PAGE_SIZE}&before=${before}`
     }
     if (isChannelConversation(conversation)) {
-      return `api/conversations/${conversation.channelId}/channel_messages?limit=${ChatService.PAGE_SIZE}&before=${before}`
+      return `conversations/${conversation.channelId}/channel_messages?limit=${ChatService.PAGE_SIZE}&before=${before}`
     }
     return null
   }
@@ -223,16 +222,11 @@ class ChatService {
     messageText: string
   ): Promise<{ conversation: Conversation; message: Message }> {
     const content = await this.encryptForUser(messageText, toUserId, currentUser.id)
-
     const response = await authenticatedPost(
-      {
-        recipientUserId: toUserId,
-        encryptedContent: content
-      },
-      `api/conversations/create_private`
+      { recipientUserId: toUserId, encryptedContent: content },
+      'conversations/create_private'
     )
     const conversation: Conversation = await response.json()
-
     const message = this.buildOptimisticMessage(currentUser, conversation.id, messageText, 'DIRECT')
 
     return { conversation, message }
@@ -309,16 +303,12 @@ class ChatService {
     newContent: string,
     toUserId: number
   ): Promise<void> {
-    try {
-      const encrypted = await this.encryptForUser(newContent, toUserId, userState.currentUser.id)
-      webSocketService.send({
-        type: WebSocketMessageType.SEND_EDIT_MESSAGE,
-        recipientId: message.conversationId,
-        payload: { messageId: message.id, content: encrypted }
-      })
-    } catch (error) {
-      errorService.reportError(error)
-    }
+    const encrypted = await this.encryptForUser(newContent, toUserId, userState.currentUser.id)
+    webSocketService.send({
+      type: WebSocketMessageType.SEND_EDIT_MESSAGE,
+      recipientId: message.conversationId,
+      payload: { messageId: message.id, content: encrypted }
+    })
   }
 
   async editChannelMessage(message: Message, newContent: string): Promise<void> {
@@ -332,7 +322,7 @@ class ChatService {
   async markConversationAsRead(conversationId: number): Promise<void> {
     if (!conversationId) return
     try {
-      await authenticatedPost(null, `api/conversations/${conversationId}/read`)
+      await authenticatedPost(null, `conversations/${conversationId}/read`)
       notificationService.markConversationAsRead(conversationId)
     } catch (error) {
       console.error('Failed to mark conversation as read:', error)
@@ -346,6 +336,12 @@ class ChatService {
     }
     chatState.currentlySelectedContent = content
     chatState.selectedChannel = null
+  }
+
+  setConversationReadAt(conversationId: number, readAt: string): void {
+    const conv = conversationState.currentConversation
+    if (conv?.type !== 'DIRECT' || conv.id !== conversationId) return
+    conv.otherUserReadAt = readAt
   }
 }
 

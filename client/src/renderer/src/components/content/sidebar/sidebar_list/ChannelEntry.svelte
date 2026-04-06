@@ -11,9 +11,7 @@
 
   let { channel, active }: Props = $props()
 
-  let hasUnread = $derived(
-    notificationState.getTotalUnreadMessagesForChannel(channel.conversationId).length > 0
-  )
+  let hasUnread = $derived(notificationState.isChannelUnread(channel.conversationId))
 
   function selectChannel(): void {
     chatState.selectChannel(channel)
@@ -29,11 +27,7 @@
         {channel.voiceParticipants.length}
       </span>
     {/if}
-    <UnreadNotificationBadge
-      shouldShow={hasUnread}
-      count={notificationState.getTotalUnreadMessagesForChannel(channel.conversationId).length}
-      variant="inline"
-    />
+    <UnreadNotificationBadge shouldShow={hasUnread} count={1} variant="inline" />
   </button>
 </li>
 

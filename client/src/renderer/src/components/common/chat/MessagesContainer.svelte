@@ -13,13 +13,16 @@
   let {
     messages,
     isLoading = false,
+    isDirectMessage = false,
     messagesContainer = $bindable()
   }: {
     messages: (Message | undefined)[]
     isLoading?: boolean
-    messagesContainer?: HTMLDivElement
     isDirectMessage?: boolean
+    messagesContainer?: HTMLDivElement
   } = $props()
+
+  const CLUMP_THRESHOLD_MS = 60_000
 
   let scrollHeightBeforePrepend = 0
   let isPrepending = $state(false)
@@ -94,7 +97,6 @@
     scrollHeightBeforePrepend = messagesContainer.scrollHeight
 
     await tick()
-
     await chatService.loadMoreMessages()
     await tick()
 
@@ -109,8 +111,10 @@
     }
     if (!initialScrollDone && messages.length > 0) {
       tick().then(() => {
-        scrollToBottom('smooth')
-        initialScrollDone = true
+        requestAnimationFrame(() => {
+          scrollToBottom('instant')
+          initialScrollDone = true
+        })
       })
     }
   })
@@ -122,6 +126,32 @@
       tick().then(() => scrollToBottom('smooth'))
     }
   })
+
+  function shouldShowMeta(message: Message, next: Message | undefined): boolean {
+    if (!next) return true
+    if (next.user.id !== message.user.id) return true
+    return (
+      new Date(next.createdAt).getTime() - new Date(message.createdAt).getTime() >
+      CLUMP_THRESHOLD_MS
+    )
+  }
+
+  function isMessageRead(message: Message): boolean {
+    const conv = conversationState.currentConversation
+    if (conv?.type !== 'DIRECT') return false
+    if (message.user.id !== userState.currentUser?.id) return false
+    if (conv.otherUserReadAt == null) return false
+    return new Date(message.createdAt) <= new Date(conv.otherUserReadAt)
+  }
+
+  function isFirstInClump(message: Message, prev: Message | undefined): boolean {
+    if (!prev) return true
+    if (prev.user.id !== message.user.id) return true
+    return (
+      new Date(message.createdAt).getTime() - new Date(prev.createdAt).getTime() >
+      CLUMP_THRESHOLD_MS
+    )
+  }
 </script>
 
 <div class="messages-wrapper" bind:this={messagesContainer} onscroll={onScroll}>
@@ -144,14 +174,27 @@
         {/if}
       </div>
 
-      {#each messages as message (message?.id)}
+      {#each messages as message, i (message?.id)}
         {#if message}
-          <div class="message-row" class:sent={message.user.id === userState.currentUser?.id}>
-            {#if message.conversationType === 'DIRECT'}
-              <MessageBubble {message} showReadStatus={true} {onEditMessage} />
-            {:else}
-              <MessageBubble {message} {onEditMessage} />
-            {/if}
+          {@const prev = messages[i - 1]}
+          {@const next = messages[i + 1]}
+          {@const showMeta = shouldShowMeta(message, next)}
+          {@const showDisplayName = isFirstInClump(message, prev)}
+          {@const isRead = isMessageRead(message)}
+
+          <div
+            class="message-row"
+            class:sent={message.user.id === userState.currentUser?.id}
+            class:clumped={!showMeta}
+          >
+            <MessageBubble
+              {message}
+              {showMeta}
+              {showDisplayName}
+              {isRead}
+              {onEditMessage}
+              showReadStatus={isDirectMessage}
+            />
           </div>
         {/if}
       {/each}
@@ -189,6 +232,12 @@
     display: flex;
     justify-content: flex-start;
     width: 100%;
+    padding-bottom: 10px;
+  }
+
+  .message-row.clumped {
+    padding-top: 0;
+    padding-bottom: 0;
   }
 
   .message-row.sent {

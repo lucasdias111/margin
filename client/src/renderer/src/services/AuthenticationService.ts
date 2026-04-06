@@ -8,6 +8,7 @@ import type { AuthResponse } from '$src/interfaces/AuthResponse'
 import { errorService } from '$src/services/ErrorService'
 import { webSocketService } from '$src/services/WebSocketService'
 import { push } from 'svelte-spa-router'
+import { conversationState } from '$src/states/ConversationState.svelte'
 
 class AuthenticationService {
   async login(email: string, password: string, keepLoggedIn: boolean = false): Promise<void> {
@@ -51,9 +52,11 @@ class AuthenticationService {
   }
 
   async register(
-    username: string,
+    handle: string,
+    displayName: string,
     password: string,
     email: string,
+    betaKey: string,
     profilePicture?: File
   ): Promise<Response> {
     const { publicKey, privateKey } = await encryptionService.generateKeyPairFromPassword(password)
@@ -66,9 +69,11 @@ class AuthenticationService {
     const formData = new FormData()
 
     const registrationData = {
-      username,
+      handle: handle,
+      displayName,
       password,
       email,
+      betaKey,
       publicKey,
       encryptedPrivateKey: encryptedKey,
       salt,
@@ -115,6 +120,7 @@ class AuthenticationService {
 
     userState.reset()
     chatState.reset()
+    conversationState.reset()
     callState.endCall()
 
     await window.secureStorage.clearSession()

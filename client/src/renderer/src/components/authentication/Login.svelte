@@ -122,6 +122,7 @@
     justify-content: center;
     background-color: #f2eee8;
     padding: 50px;
+    flex: 1;
   }
 
   .card {

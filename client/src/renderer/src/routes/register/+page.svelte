@@ -5,35 +5,95 @@
   import UploadImageButton from '$src/components/common/buttons/UploadImageButton.svelte'
   import UserAvatar from '$src/components/common/user/UserAvatar.svelte'
   import avatar from '$src/assets/pics/anonym-avatar.png'
+  import { errorService } from '$src/services/ErrorService'
+  import type { AuthResponse } from '$src/interfaces/AuthResponse'
 
-  let username = $state('')
+  let handle = $state('')
+  let displayName = $state('')
   let password = $state('')
   let repeatPassword = $state('')
   let email = $state('')
   let profilePicture = $state<File | null>(null)
-  let registerResponse = $state('')
-  let hasError = $state(false)
   let isLoading = $state(false)
   let previewUrl = $state<string | null>(avatar)
+  let betaKey = $state('')
+
+  let handleError = $derived(deriveHandleError(handle))
+  let passwordError = $derived(derivePasswordError(password))
+  let repeatPasswordError = $derived(deriveRepeatPasswordError(password, repeatPassword))
+
+  let handleTouched = $state(false)
+  let passwordTouched = $state(false)
+  let repeatPasswordTouched = $state(false)
+
+  function deriveHandleError(value: string): string | null {
+    if (value.length === 0) return null
+    if (value.length < 3) return 'Must be at least 3 characters'
+    if (value.length > 24) return 'Must be 24 characters or fewer'
+    if (!/^[a-zA-Z0-9._-]+$/.test(value))
+      return 'Only letters, numbers, dots, hyphens, and underscores'
+    if (!/^[a-zA-Z]/.test(value)) return 'Must start with a letter'
+    return null
+  }
+
+  function derivePasswordError(value: string): string | null {
+    if (value.length === 0) return null
+    if (value.length < 8) return 'Must be at least 8 characters'
+    return null
+  }
+
+  function deriveRepeatPasswordError(pw: string, rpw: string): string | null {
+    if (rpw.length === 0) return null
+    if (pw !== rpw) return "Passwords don't match"
+    return null
+  }
+
+  let hasErrors = $derived(
+    !handle ||
+      !displayName ||
+      !email ||
+      !password ||
+      !repeatPassword ||
+      handleError !== null ||
+      passwordError !== null ||
+      repeatPasswordError !== null
+  )
+
+  function sanitizeHandle(event: Event): void {
+    const input = event.currentTarget as HTMLInputElement
+    input.value = input.value.replace(/\s/g, '')
+    handle = input.value
+  }
 
   async function handleRegistration(event: SubmitEvent): Promise<void> {
     event.preventDefault()
-    hasError = false
-    registerResponse = ''
 
-    if (password !== repeatPassword) {
-      hasError = true
-      registerResponse = 'Passwords do not match'
-      return
-    }
+    handleTouched = true
+    passwordTouched = true
+    repeatPasswordTouched = true
+
+    if (hasErrors) return
 
     isLoading = true
     try {
-      await authenticationService.register(username, password, email, profilePicture || undefined)
+      const response = await authenticationService.register(
+        handle,
+        displayName,
+        password,
+        email,
+        betaKey,
+        profilePicture || undefined
+      )
+
+      if (!response.ok) {
+        const body: AuthResponse = await response.json()
+        errorService.reportError(body.message ?? 'Registration failed.')
+        return
+      }
+
       await push('/')
     } catch (e) {
-      hasError = true
-      registerResponse = 'Registration failed. Please try again.'
+      errorService.reportError('Failed to connect to server.')
     } finally {
       isLoading = false
     }
@@ -56,10 +116,6 @@
   <div class="card">
     <img src={marginLogo} alt="Margin" class="logo" />
 
-    <div class="header">
-      <h1 class="title">Create account</h1>
-    </div>
-
     <div class="avatar-row">
       {#if previewUrl}
         <UserAvatar profilePictureUrl={previewUrl} width={72} height={72} />
@@ -72,17 +128,54 @@
 
     <form class="form" onsubmit={handleRegistration}>
       <div class="field">
-        <label class="label" for="username">Username</label>
+        <label class="label" for="beta-key">Beta key</label>
         <input
-          id="username"
+          id="beta-key"
           class="input"
           type="text"
-          name="username"
-          placeholder="yourhandle"
-          bind:value={username}
+          name="betaKey"
+          placeholder="MARGIN-BETA-XXXXXXXXXXXX"
+          bind:value={betaKey}
           required
-          autocomplete="username"
+          autocomplete="off"
+          style="font-family: monospace; letter-spacing: 0.5px;"
         />
+      </div>
+
+      <div class="field">
+        <label class="label" for="display-name">Display name</label>
+        <input
+          id="display-name"
+          class="input"
+          type="text"
+          name="displayName"
+          placeholder="Your Name"
+          bind:value={displayName}
+          required
+          autocomplete="name"
+        />
+      </div>
+
+      <div class="field">
+        <label class="label" for="handle">Handle</label>
+        <div class="input-with-badge" class:input-error={handleTouched && handleError}>
+          <span class="input-badge">@</span>
+          <input
+            id="handle"
+            class="input input-badged"
+            type="text"
+            name="handle"
+            placeholder="Handle"
+            bind:value={handle}
+            oninput={sanitizeHandle}
+            onblur={() => (handleTouched = true)}
+            required
+            autocomplete="handle"
+          />
+        </div>
+        {#if handleTouched && handleError}
+          <span class="error-text">{handleError}</span>
+        {/if}
       </div>
 
       <div class="field">
@@ -104,13 +197,18 @@
         <input
           id="password"
           class="input"
+          class:input-error={passwordTouched && passwordError}
           type="password"
           name="password"
           placeholder="••••••••"
           bind:value={password}
+          onblur={() => (passwordTouched = true)}
           required
           autocomplete="new-password"
         />
+        {#if passwordTouched && passwordError}
+          <span class="error-text">{passwordError}</span>
+        {/if}
       </div>
 
       <div class="field">
@@ -118,18 +216,19 @@
         <input
           id="repeatPassword"
           class="input"
+          class:input-error={repeatPasswordTouched && repeatPasswordError}
           type="password"
           name="repeatPassword"
           placeholder="••••••••"
           bind:value={repeatPassword}
+          onblur={() => (repeatPasswordTouched = true)}
           required
           autocomplete="new-password"
         />
+        {#if repeatPasswordTouched && repeatPasswordError}
+          <span class="error-text">{repeatPasswordError}</span>
+        {/if}
       </div>
-
-      {#if hasError}
-        <p class="error">{registerResponse}</p>
-      {/if}
 
       <button class="btn-primary" type="submit" disabled={isLoading}>
         {#if isLoading}
@@ -144,13 +243,13 @@
       <span>or</span>
     </div>
 
-    <button class="btn-secondary" onclick={goBack}> Back to sign in </button>
+    <button class="btn-secondary" onclick={goBack}> Back to sign in</button>
   </div>
 </div>
 
 <style>
   .page {
-    min-height: 100vh;
+    flex: 1;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -174,24 +273,10 @@
   }
 
   .logo {
-    width: 160px;
+    width: 100px;
     height: auto;
     display: block;
     align-self: center;
-  }
-
-  .header {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-  }
-
-  .title {
-    font-size: 22px;
-    font-weight: 600;
-    color: #1a1a1a;
-    margin: 0;
-    letter-spacing: -0.3px;
   }
 
   .avatar-row {
@@ -263,14 +348,71 @@
     color: #c4bfb8;
   }
 
-  .error {
-    font-size: 13px;
-    color: #d4621a;
+  .input-error {
+    border-color: #d94040;
+  }
+
+  .input-error:focus {
+    border-color: #d94040;
+  }
+
+  .error-text {
+    font-size: 12px;
+    color: #d94040;
     margin: 0;
-    padding: 10px 14px;
-    background: #fdf0e8;
-    border-radius: 8px;
-    border: 1px solid #f5d5be;
+  }
+
+  .input-with-badge {
+    display: flex;
+    align-items: center;
+    height: 42px;
+    border-radius: 10px;
+    border: 1px solid #ece8e0;
+    background: #f7f4ef;
+    overflow: hidden;
+    transition: border-color 0.15s ease;
+    padding-left: 5px;
+  }
+
+  .input-with-badge:focus-within {
+    border-color: #e8712a;
+    background: #ffffff;
+  }
+
+  .input-with-badge.input-error {
+    border-color: #d94040;
+  }
+
+  .input-with-badge.input-error:focus-within {
+    border-color: #d94040;
+  }
+
+  .input-badge {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 30px;
+    height: 30px;
+    border-radius: 7px;
+    background: #ece8e0;
+    font-size: 14px;
+    font-weight: 600;
+    color: #888480;
+    flex-shrink: 0;
+    user-select: none;
+  }
+
+  .input-badged {
+    border: none;
+    border-radius: 0;
+    background: transparent;
+    padding-left: 8px;
+    height: 100%;
+  }
+
+  .input-badged:focus {
+    border-color: transparent;
+    background: transparent;
   }
 
   .btn-primary {
@@ -298,15 +440,6 @@
   .btn-primary:disabled {
     opacity: 0.6;
     cursor: not-allowed;
-  }
-
-  #backbut {
-    position: fixed;
-    border-radius: 999px;
-    top: 50px;
-    left: 10px;
-    padding: 5px;
-    background-color: #f47e3a;
   }
 
   .spinner {

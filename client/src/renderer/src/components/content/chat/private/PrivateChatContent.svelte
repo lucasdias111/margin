@@ -2,18 +2,20 @@
   import { chatState } from '$src/states/ChatState.svelte.js'
   import { conversationState } from '$src/states/ConversationState.svelte.js'
   import { chatService } from '$src/services/ChatService'
-  import { callService } from '$src/services/CallService'
-  import { callState } from '$src/states/CallState.svelte.js'
+  import { callService } from '$src/services/call/CallService'
   import { userState } from '$src/states/UserState.svelte.js'
   import ChatInput from '$src/components/common/chat/ChatInput.svelte'
   import MessagesContainer from '$src/components/common/chat/MessagesContainer.svelte'
   import PrivateChatHeader from '$src/components/content/chat/private/PrivateChatHeader.svelte'
+  import Icon from '$src/components/common/icons/Icon.svelte'
 
   let messageInput = $state('')
+  let chatInputRef = $state<ChatInput | null>(null)
 
   $effect(() => {
     if (chatState.selectedUser) {
       chatService.loadConversationForUser(chatState.selectedUser)
+      chatInputRef?.focus()
     }
   })
 
@@ -45,15 +47,13 @@
 
   function startCall(): void {
     if (chatState.selectedUser) {
-      callService.startCall(null, chatState.selectedUser, false, null)
-      callState.setVideoEnabled(false)
+      callService.startCall(null, chatState.selectedUser, false, false)
     }
   }
 
   function handleVideoCall(): void {
     if (chatState.selectedUser) {
-      callService.startCall(null, chatState.selectedUser, false, null)
-      callState.setVideoEnabled(true)
+      callService.startCall(null, chatState.selectedUser, false, true)
     }
   }
 </script>
@@ -65,19 +65,27 @@
       handleStartVideoCall={handleVideoCall}
       isLoading={conversationState.isLoading}
     />
-  {/if}
-  <div class="chat-background">
-    <MessagesContainer
-      messages={conversationState.messages}
-      isLoading={conversationState.isLoading}
-      isDirectMessage={true}
+    <div class="chat-background">
+      <MessagesContainer
+        messages={conversationState.messages}
+        isLoading={conversationState.isLoading}
+        isDirectMessage={true}
+      />
+    </div>
+    <ChatInput
+      bind:this={chatInputRef}
+      selectedContent={true}
+      bind:messageInput
+      onSubmit={handleSubmitMessage}
     />
-  </div>
-  <ChatInput
-    selectedContent={!!chatState.selectedUser}
-    bind:messageInput
-    onSubmit={handleSubmitMessage}
-  />
+  {:else}
+    <div class="empty-state">
+      <div class="empty-state-icon">
+        <Icon name="messages" size={40} />
+      </div>
+      <p class="empty-state-text">Select a conversation to start chatting</p>
+    </div>
+  {/if}
 </div>
 
 <style>
@@ -99,5 +107,25 @@
     z-index: 1;
     display: flex;
     flex-direction: column;
+  }
+
+  .empty-state {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+  }
+
+  .empty-state-icon {
+    color: #b0b0b0;
+  }
+
+  .empty-state-text {
+    color: #888;
+    font-size: 15px;
+    font-family: inherit;
+    margin: 0;
   }
 </style>

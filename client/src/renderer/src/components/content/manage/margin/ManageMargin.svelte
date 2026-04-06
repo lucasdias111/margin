@@ -1,11 +1,12 @@
 <script lang="ts">
   import { onMount } from 'svelte'
   import { chatState } from '$src/states/ChatState.svelte.js'
-  import type { Margin, MarginMember, UpdateMargin } from '$src/interfaces/Margin'
+  import { type Margin, type MarginMember, type UpdateMargin } from '$src/interfaces/Margin'
   import ManageMarginInformation from '$src/components/content/manage/margin/ManageMarginInformation.svelte'
   import ManageMarginMembers from '$src/components/content/manage/margin/ManageMarginMembers.svelte'
   import { marginService } from '$src/services/MarginService'
   import type { User } from '$src/interfaces/User'
+  import { marginInviteService } from '$src/services/MarginInviteService'
 
   let margin = $state<Margin | null>(null)
   let isLoading = $state(true)
@@ -23,7 +24,12 @@
   async function onSaveInfo(updated: UpdateMargin): Promise<void> {
     try {
       margin = await marginService.updateMargin(updated)
-      chatState.selectedMargin.marginIconUrl = margin.marginIconUrl
+      chatState.updateMarginDetails(
+        margin.marginId,
+        margin.marginName,
+        margin.marginDescription,
+        margin.marginIconUrl
+      )
     } catch (e) {
       console.error('Failed to update margin:', e)
     }
@@ -32,19 +38,26 @@
   async function onDeleteMargin(): Promise<void> {
     try {
       await marginService.deleteMargin(margin.marginId)
-      chatState.currentlySelectedContent = 'margin'
       chatState.margins = chatState.margins.filter((m) => m.marginId !== margin.marginId)
+
+      if (chatState.margins.length > 0) {
+        chatState.selectMargin(chatState.margins[0])
+      } else {
+        chatState.hasMargin = false
+      }
+      chatState.currentlySelectedContent = 'margin'
     } catch (e) {
       console.error('Failed to delete margin:', e)
     }
   }
 
-  async function onAddMember(user: User, role: string): Promise<void> {
+  async function onInviteUser(user: User): Promise<void> {
     try {
-      const newMember = await marginService.addMarginMember(margin.marginId, user.id, role)
-      margin = { ...margin, members: [...margin.members, newMember] }
+      console.log(user.handle)
+      await marginInviteService.sendDirectInvite(margin.marginId, user.handle)
     } catch (e) {
-      console.error('Failed to add member:', e)
+      console.error('Failed to send invite:', e)
+      throw e
     }
   }
 
@@ -78,7 +91,7 @@
     <div class="loading">Loading margin...</div>
   {:else if margin}
     <ManageMarginInformation {margin} {onSaveInfo} {onDeleteMargin} />
-    <ManageMarginMembers {margin} {onAddMember} {onUpdateMemberRole} {onRemoveMember} />
+    <ManageMarginMembers {margin} {onInviteUser} {onUpdateMemberRole} {onRemoveMember} />
   {/if}
 </div>
 

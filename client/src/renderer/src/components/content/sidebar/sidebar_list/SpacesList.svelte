@@ -1,34 +1,32 @@
 <script lang="ts">
   import { chatState } from '$src/states/ChatState.svelte.js'
+  import { spaceState } from '$src/states/SpaceState.svelte.js'
   import type { Space } from '$src/interfaces/Space'
-  import { onDestroy, onMount } from 'svelte'
+  import { onDestroy } from 'svelte'
   import { spacesService } from '$src/services/SpacesService'
   import ChannelEntry from '$src/components/content/sidebar/sidebar_list/ChannelEntry.svelte'
   import { notificationState } from '$src/states/NotificationState.svelte.js'
   import UnreadNotificationBadge from '$src/components/common/chat/UnreadNotificationBadge.svelte'
-  import { useWebsocketSvelte } from '$src/composables/useWebsocket.svelte'
-  import { WebSocketMessageType } from '$src/interfaces/WebSocketMessageType'
-  import type {
-    ChannelVoiceParticipantPayload,
-    WebSocketMessage
-  } from '$src/interfaces/WebSocketMessages'
+  import Icon from '$src/components/common/icons/Icon.svelte'
 
-  let spaces = $state<Space[]>([])
+  const spaces = $derived(spaceState.spaces)
   let expandedSpaceId = $state<number | null>(null)
-
   let selectedChannelId = $derived(chatState.selectedChannel?.id)
 
-  onMount(async () => {
-    spaces = await spacesService.getAllSpacesForUser()
+  $effect(() => {
+    const marginId = chatState.selectedMargin?.marginId
+    if (marginId) {
+      spacesService.getAllSpacesForUser(marginId)
+    }
   })
 
   onDestroy(() => {
-    chatState.selectSpace(null)
+    spaceState.setSelectedSpace(null)
     chatState.selectChannel(null)
   })
 
   async function toggleSpace(space: Space): Promise<void> {
-    chatState.selectSpace(space)
+    spaceState.setSelectedSpace(space)
     expandedSpaceId = expandedSpaceId === space.spaceId ? null : space.spaceId
 
     if (expandedSpaceId === space.spaceId) {
@@ -55,38 +53,6 @@
       .map((w) => w[0]?.toUpperCase() ?? '')
       .join('')
   }
-
-  useWebsocketSvelte({
-    [WebSocketMessageType.USER_JOINED_VOICE]: (
-      msg: WebSocketMessage<ChannelVoiceParticipantPayload>
-    ) => {
-      console.log('USER_JOINED_VOICE received', msg)
-
-      for (const space of spaces) {
-        const channel = space.channels.find((c) => c.id === msg.payload.channelId)
-        if (channel) {
-          channel.voiceParticipants = [
-            ...(channel.voiceParticipants ?? []).filter((p) => p.id !== msg.payload.user.id),
-            msg.payload.user
-          ]
-          break
-        }
-      }
-    },
-    [WebSocketMessageType.USER_LEFT_VOICE]: (
-      msg: WebSocketMessage<ChannelVoiceParticipantPayload>
-    ) => {
-      for (const space of spaces) {
-        const channel = space.channels.find((c) => c.id === msg.payload.channelId)
-        if (channel?.voiceParticipants) {
-          channel.voiceParticipants = channel.voiceParticipants.filter(
-            (p) => p.id !== msg.payload.user.id
-          )
-          break
-        }
-      }
-    }
-  })
 </script>
 
 <div class="spaces-list">
@@ -99,7 +65,7 @@
     {#each spaces as space (space.spaceId)}
       {@const color = spaceColor(space.spaceId)}
       {@const isOpen = expandedSpaceId === space.spaceId}
-      {@const unreadCount = notificationState.getTotalUnreadMessagesForSpace(space).length}
+      {@const unreadCount = notificationState.getTotalUnreadMessagesForSpace(space)}
 
       <div
         class="space-card"
@@ -117,26 +83,11 @@
           </span>
 
           {#if !isOpen}
-            <UnreadNotificationBadge
-              shouldShow={unreadCount > 0}
-              count={unreadCount}
-              variant="inline"
-            />
+            <UnreadNotificationBadge shouldShow={unreadCount > 0} count={1} variant="inline" />
           {/if}
 
           <span class="chevron" class:rotated={isOpen}>
-            <svg
-              width="10"
-              height="10"
-              viewBox="0 0 10 10"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="1.8"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-            >
-              <polyline points="2,3.5 5,6.5 8,3.5" />
-            </svg>
+            <Icon name="chevronDown" size={10} strokeWidth={1.8} />
           </span>
         </button>
 

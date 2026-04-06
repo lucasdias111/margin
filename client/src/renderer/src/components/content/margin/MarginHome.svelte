@@ -7,6 +7,7 @@
   import CreateOrEditAnnouncementModal from '$src/components/content/margin/announcement/modals/CreateOrEditAnnouncementModal.svelte'
   import AnnouncementCard from '$src/components/content/margin/announcement/AnnouncementCard.svelte'
   import MarginIcon from '$src/components/content/margin/MarginIcon.svelte'
+  import Icon from '$src/components/common/icons/Icon.svelte'
 
   const currentUserRole = $derived(
     chatState.selectedMargin?.members.find((m) => m.user.id === userState.currentUser?.id)?.role
@@ -56,9 +57,15 @@
 
 <div class="margin-home">
   <div class="welcome-card">
-    <div class="welcome-top">
-      <div class="logo-mark">
-        <MarginIcon marginIcon={chatState.selectedMargin.marginIconUrl} width={200} height={125} />
+    <div class="welcome-row">
+      <div class="margin-icon">
+        <MarginIcon marginIcon={chatState.selectedMargin?.marginIconUrl} width={75} height={75} />
+      </div>
+      <div class="welcome-info">
+        <h1 class="margin-name">{chatState.selectedMargin?.marginName}</h1>
+        {#if chatState.selectedMargin?.marginDescription}
+          <p class="margin-description">{chatState.selectedMargin.marginDescription}</p>
+        {/if}
       </div>
       {#if canManage}
         <button class="manage-btn" onclick={() => (chatState.currentlySelectedContent = 'manage')}>
@@ -70,18 +77,7 @@
 
   <div class="announcements-section">
     <div class="card-header">
-      <svg
-        width="12"
-        height="12"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        stroke-width="2.5"
-      >
-        <path
-          d="M22 17H2a3 3 0 0 0 3-3V9a7 7 0 0 1 14 0v5a3 3 0 0 0 3 3zm-8.27 4a2 2 0 0 1-3.46 0"
-        />
-      </svg>
+      <Icon name="notifications" size={12} strokeWidth={2.5} />
       <span class="card-title">Announcements</span>
       {#if canManage}
         <button class="new-announcement-btn" onclick={() => (modalOpen = true)}>+ New</button>
@@ -138,27 +134,15 @@
   .margin-home::-webkit-scrollbar {
     width: 4px;
   }
+
   .margin-home::-webkit-scrollbar-thumb {
     background: rgba(0, 0, 0, 0.08);
     border-radius: 4px;
   }
 
   .welcome-card {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
     padding-bottom: 20px;
     border-bottom: 1px solid rgba(0, 0, 0, 0.06);
-  }
-
-  .welcome-top {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-  }
-
-  .logo-mark {
-    line-height: 1;
   }
 
   .manage-btn {
@@ -230,5 +214,70 @@
     display: flex;
     flex-direction: column;
     gap: 10px;
+  }
+
+  .welcome-row {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+
+  .margin-icon {
+    flex-shrink: 0;
+    width: 100px;
+    height: 100px;
+    border-radius: 12px;
+    overflow: hidden;
+    background: #f7f4ef;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .welcome-info {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    flex: 1;
+    min-width: 0;
+  }
+
+  .margin-name {
+    font-size: 18px;
+    font-weight: 700;
+    color: #2a2a2a;
+    margin: 0;
+    letter-spacing: -0.01em;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .margin-description {
+    font-size: 14px;
+    color: #999;
+    margin: 0;
+    line-height: 1.4;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .manage-btn {
+    padding: 7px 14px;
+    background-color: #f47e3a;
+    border: none;
+    border-radius: 10px;
+    color: #fff;
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background-color 0.15s;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+
+  .manage-btn:hover {
+    background-color: #e06b28;
   }
 </style>

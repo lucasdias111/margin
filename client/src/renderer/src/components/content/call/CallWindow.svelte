@@ -1,110 +1,123 @@
 <script lang="ts">
-  import { onMount, tick } from 'svelte'
-  import { WebSocketMessageType } from '$src/interfaces/WebSocketMessageType'
-  import { callState } from '$src/states/CallState.svelte.js'
-  import type {
-    CallCandidatePayload,
-    CallResponsePayload,
-    WebSocketMessage
-  } from '$src/interfaces/WebSocketMessages'
-  import { callService } from '$src/services/CallService'
-  import { useWebsocketSvelte } from '$src/composables/useWebsocket.svelte.js'
+  import { srcObject } from '$src/actions/srcObject'
+  import { onMount, onDestroy } from 'svelte'
+  import { fade, scale } from 'svelte/transition'
+  import { cubicInOut } from 'svelte/easing'
+  import { callState } from '$src/states/CallState.svelte'
+  import { callService } from '$src/services/call/CallService'
+  import {
+    onCallCandidate,
+    onCallCreated,
+    onCallMediaState,
+    onCallResponse
+  } from '$src/composables/useCallWebSocket.svelte'
   import CallPipWidget from '$src/components/content/call/CallPipWidget.svelte'
-  import CallWindowContent from '$src/components/content/call/CallWindowContent.svelte'
+  import CallLayout from '$src/components/content/call/CallLayout.svelte'
 
-  let remoteAudio = $state<HTMLAudioElement | null>(null)
-  let remoteVideo = $state<HTMLVideoElement | null>(null)
-  let localVideo = $state<HTMLVideoElement | null>(null)
-  let screenShareVideo = $state<HTMLVideoElement | null>(null)
-  let remoteVideoStream = $state<MediaStream | null>(null)
-  let screenShareStream = $state<MediaStream | null>(null)
+  const { user, isIncoming, offer } = callState.p2pCallState!
 
-  onMount(() => {
-    if (!callState.isP2PCall || !callState.p2pCallState) return
-    const { user, isIncoming, offer } = callState.p2pCallState
+  const remoteStream = $derived(callState.p2pCallState?.remoteStream ?? null)
+  const localStream = $derived(callState.p2pCallState?.localStream ?? null)
+  const remoteScreenStream = $derived(callState.p2pCallState?.remoteScreenStream ?? null)
+  const remoteVideoStream = $derived.by(() => {
+    if (!callState.p2pCallState?.isRemoteVideoEnabled) return null
+    const stream = callState.p2pCallState?.remoteStream
+    if (!stream) return null
+    const videoTrack = stream.getVideoTracks()[0]
+    if (!videoTrack) return null
+    return new MediaStream([videoTrack])
+  })
+  const isAudioEnabled = $derived(callState.p2pCallState?.isAudioEnabled ?? true)
 
-    callService.onRemoteStream((stream) => {
-      if (remoteAudio) remoteAudio.srcObject = stream
-      if (stream.getVideoTracks().length > 0) remoteVideoStream = stream
-    })
+  onCallCreated((data) => callState.setCallId(data.payload!.callId))
+  onCallResponse(async (data) => await callService.handleCallResponse(data))
+  onCallCandidate(async (data) => await callService.handleCallCandidate(data))
+  onCallMediaState((data) =>
+    callService.handleMediaState(data.payload!.video, data.payload!.screenShare)
+  )
 
-    callService.onLocalStream((stream) => {
-      if (localVideo && stream.getVideoTracks().length > 0) localVideo.srcObject = stream
-    })
-
-    callService.onRemoteScreenShare(async (stream) => {
-      if (stream) {
-        screenShareStream = stream
-        callState.setRemoteScreenSharing(true)
-        await tick()
-        if (screenShareVideo) screenShareVideo.srcObject = stream
-      } else {
-        screenShareStream = null
-        if (screenShareVideo) screenShareVideo.srcObject = null
-        callState.setRemoteScreenSharing(false)
-      }
-    })
-
-    if (isIncoming && offer) {
-      callService.answerCall(user.id, offer)
+  onMount(async () => {
+    if (isIncoming) {
+      await callService.answerCall(user.id, offer!)
     } else {
-      callService.initiateCall(user.id)
-      callService.noAnswer()
+      await callService.initiateCall(user.id)
     }
   })
 
-  $effect(() => {
-    if (screenShareVideo && screenShareStream) screenShareVideo.srcObject = screenShareStream
+  onDestroy(() => callService.endCall(true))
+
+  const localParticipant = $derived({
+    id: -1,
+    displayName: 'You',
+    profilePictureUrl: null,
+    stream: localStream,
+    isVideoEnabled: callState.p2pCallState?.isVideoEnabled ?? false,
+    isScreenSharing: callState.p2pCallState?.isScreenSharing ?? false,
+    isLocal: true
   })
 
-  $effect(() => {
-    if (callState.p2pCallState?.isRemoteVideoEnabled && remoteVideo && remoteVideoStream) {
-      remoteVideo.srcObject = remoteVideoStream
-    }
-  })
-
-  $effect(() => {
-    const stream = callState.p2pCallState?.localStream
-    if (callState.p2pCallState?.isVideoEnabled && localVideo && stream) {
-      localVideo.srcObject = stream
-    }
-  })
-
-  useWebsocketSvelte({
-    [WebSocketMessageType.CALL_RESPONSE]: async (data: WebSocketMessage<CallResponsePayload>) =>
-      await callService.handleCallResponse(data),
-    [WebSocketMessageType.CALL_CANDIDATE]: async (data: WebSocketMessage<CallCandidatePayload>) =>
-      await callService.handleIceCandidate(data),
-    [WebSocketMessageType.CALL_CREATED]: (data: WebSocketMessage<{ callId: number }>) =>
-      callState.setCallId(data.payload!.callId)
-  })
-
-  function handleMinimize(): void {
-    callState.toggleMinimized()
-  }
-
-  function handleRestore(): void {
-    callState.toggleMinimized()
-  }
+  const remoteParticipants = $derived(
+    callState.p2pCallState
+      ? [
+          {
+            id: user.id,
+            displayName: user.displayName,
+            profilePictureUrl: user.profilePictureUrl ?? null,
+            stream: remoteVideoStream ?? remoteStream,
+            isVideoEnabled: callState.p2pCallState.isRemoteVideoEnabled,
+            isScreenSharing: callState.p2pCallState.isRemoteScreenSharing,
+            isLocal: false
+          }
+        ]
+      : []
+  )
 </script>
 
-{#if callState.isP2PCall && callState.p2pCallState}
-  <audio bind:this={remoteAudio} autoplay style="display:none"></audio>
-
-  <div style="display:none">
-    <video bind:this={remoteVideo} autoplay playsinline></video>
-    <video bind:this={localVideo} autoplay playsinline muted></video>
-    <video bind:this={screenShareVideo} autoplay playsinline></video>
-  </div>
-
+{#if callState.p2pCallState}
+  <audio use:srcObject={remoteStream} autoplay style="display:none"></audio>
   {#if callState.isMinimized}
-    <CallPipWidget {remoteVideoStream} {screenShareStream} onRestore={handleRestore} />
+    <div
+      in:scale={{ duration: 250, start: 0.85, easing: cubicInOut, opacity: 0 }}
+      out:scale={{ duration: 200, start: 0.85, easing: cubicInOut, opacity: 0 }}
+    >
+      <CallPipWidget
+        remoteVideoStream={remoteStream}
+        screenShareStream={remoteScreenStream}
+        onRestore={() => callState.toggleMinimized()}
+      />
+    </div>
   {:else}
-    <CallWindowContent
-      bind:remoteVideo
-      bind:localVideo
-      bind:screenShareVideo
-      onMinimize={handleMinimize}
-    />
+    <div
+      class="call-layout-wrapper"
+      in:fade={{ duration: 200, easing: cubicInOut }}
+      out:scale={{ duration: 250, start: 0.95, easing: cubicInOut, opacity: 0 }}
+    >
+      <CallLayout
+        {localParticipant}
+        {remoteParticipants}
+        {remoteScreenStream}
+        {isAudioEnabled}
+        isVideoEnabled={callState.p2pCallState.isVideoEnabled}
+        isScreenSharing={callState.p2pCallState.isScreenSharing}
+        isRemoteScreenSharing={callState.p2pCallState.isRemoteScreenSharing}
+        status={callState.status}
+        duration={callState.duration}
+        onMinimize={() => callState.toggleMinimized()}
+        onToggleAudio={() => callService.toggleAudio()}
+        onToggleVideo={() => callService.toggleVideo()}
+        onToggleScreenShare={() =>
+          callState.p2pCallState?.isScreenSharing
+            ? callService.stopScreenShare()
+            : callService.startScreenShare()}
+        onEndCall={() => callService.endCall(false)}
+      />
+    </div>
   {/if}
 {/if}
+
+<style>
+  .call-layout-wrapper {
+    width: 100%;
+    height: 100%;
+  }
+</style>

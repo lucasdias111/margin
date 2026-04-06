@@ -1,79 +1,128 @@
-<!-- MarginSwitcher.svelte -->
 <script lang="ts">
   import { chatState } from '$src/states/ChatState.svelte.js'
-  import type { Margin } from '$src/interfaces/Margin'
+  import type { CreateMargin, Margin } from '$src/interfaces/Margin'
   import CreateMarginModal from '$src/components/content/manage/margin/modals/CreateMarginModal.svelte'
+  import { spacesService } from '$src/services/SpacesService'
+  import { marginService } from '$src/services/MarginService'
+  import { clickOutside } from '$src/actions/clickOutside'
+  import UnreadNotificationBadge from '$src/components/common/chat/UnreadNotificationBadge.svelte'
+  import { notificationState } from '$src/states/NotificationState.svelte'
+  import Icon from '$src/components/common/icons/Icon.svelte'
+  import { marginInviteService } from '$src/services/MarginInviteService'
 
   let open = $state(false)
   let createMarginOpen = $state(false)
+  let joinCode = $state('')
+  let joinLoading = $state(false)
+  let joinError = $state<string | null>(null)
+
+  async function handleJoinWithCode(): Promise<void> {
+    if (!joinCode.trim()) return
+    joinLoading = true
+    joinError = null
+    try {
+      const margin = await marginInviteService.acceptLinkInvite(joinCode.trim())
+      chatState.selectMargin(margin)
+      marginService.addNewMargin(margin)
+      joinCode = ''
+      open = false
+    } catch (e) {
+      joinError = 'Invalid or expired code'
+    } finally {
+      joinLoading = false
+    }
+  }
 
   function selectMargin(margin: Margin): void {
     chatState.selectMargin(margin)
+    spacesService.getAllSpacesForUser(chatState.selectedMargin.marginId)
     open = false
   }
+
+  function close(): void {
+    createMarginOpen = false
+    open = false
+  }
+
+  async function createMargin(createRequest: CreateMargin): Promise<void> {
+    const newMargin = await marginService.createMargin(createRequest)
+    chatState.selectMargin(newMargin)
+    marginService.addNewMargin(newMargin)
+    close()
+  }
+
+  const unreadPerMargin = $derived(
+    new Map(
+      chatState.margins.map((m) => [
+        m.marginId,
+        notificationState.getTotalUnreadForMargin(m.marginId)
+      ])
+    )
+  )
 </script>
 
-<div class="switcher-wrapper">
+<div class="switcher-wrapper" use:clickOutside={() => (open = false)}>
   <button class="switcher-btn" onclick={() => (open = !open)}>
-    <svg
-      width="14"
-      height="14"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      stroke-width="2"
-      stroke-linecap="round"
-    >
-      <rect x="3" y="3" width="7" height="7" rx="1.5" />
-      <rect x="14" y="3" width="7" height="7" rx="1.5" />
-      <rect x="3" y="14" width="7" height="7" rx="1.5" />
-      <rect x="14" y="14" width="7" height="7" rx="1.5" />
-    </svg>
+    <Icon name="grid" size={14} />
     Switch margin
-    <svg
-      class="chevron"
-      class:rotated={open}
-      width="12"
-      height="12"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      stroke-width="2.5"
-    >
-      <polyline points="9 18 15 12 9 6" />
-    </svg>
+    <span class="chevron" class:rotated={open}>
+      <Icon name="chevronRight" size={12} strokeWidth={2.5} />
+    </span>
   </button>
 
   {#if open}
     <div class="dropdown">
-      {#each chatState.margins as margin (margin.marginId)}
-        <button
-          class="margin-item"
-          class:active={chatState.selectedMargin?.marginId === margin.marginId}
-          onclick={() => selectMargin(margin)}
-        >
-          <span class="margin-avatar">{margin.marginName[0].toUpperCase()}</span>
-          <span class="margin-name">{margin.marginName}</span>
-          {#if chatState.selectedMargin?.marginId === margin.marginId}
-            <svg
-              width="12"
-              height="12"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2.5"
-            >
-              <polyline points="20 6 9 17 4 12" />
-            </svg>
-          {/if}
-        </button>
-      {/each}
+      <div class="margin-list">
+        {#each chatState.margins as margin (margin.marginId)}
+          {@const unread = unreadPerMargin.get(margin.marginId) ?? 0}
+          <button
+            class="margin-item"
+            class:active={chatState.selectedMargin?.marginId === margin.marginId}
+            onclick={() => selectMargin(margin)}
+          >
+            <span class="margin-avatar">{margin.marginName?.[0]?.toUpperCase() ?? '?'}</span>
+            <span class="margin-name">{margin.marginName}</span>
+            <span class="margin-actions">
+              <UnreadNotificationBadge shouldShow={unread > 0} count={unread} variant="inline" />
+            </span>
+          </button>
+        {/each}
+      </div>
+
+      <div class="join-divider"></div>
+
       <button class="margin-item" onclick={() => (createMarginOpen = true)}
-        >Create new margin</button
-      >
+        >Create new margin
+      </button>
+
+      <div class="join-section">
+        <span class="join-label">Join with invite code</span>
+        <div class="join-row">
+          <input
+            class="join-input"
+            type="text"
+            placeholder="Paste code"
+            bind:value={joinCode}
+            maxlength="36"
+            onkeydown={(e) => {
+              if (e.key === 'Enter') handleJoinWithCode()
+            }}
+          />
+          <button
+            class="join-btn"
+            onclick={handleJoinWithCode}
+            disabled={joinLoading || !joinCode.trim()}
+          >
+            {joinLoading ? '...' : 'Join'}
+          </button>
+        </div>
+        {#if joinError}
+          <span class="join-error">{joinError}</span>
+        {/if}
+      </div>
     </div>
   {/if}
-  <CreateMarginModal open={createMarginOpen} onClose={() => (createMarginOpen = false)} />
+  <CreateMarginModal open={createMarginOpen} onCreate={createMargin} onClose={close} />
 </div>
 
 <style>
@@ -108,6 +157,7 @@
   .chevron {
     margin-left: auto;
     transition: transform 0.15s;
+    display: flex;
   }
 
   .chevron.rotated {
@@ -116,10 +166,11 @@
 
   .dropdown {
     position: absolute;
-    left: 100%;
-    top: 0;
-    margin-left: 8px;
-    min-width: 200px;
+    left: 0;
+    right: 0;
+    top: calc(100% + 4px);
+    margin-left: 0;
+    min-width: unset;
     background: #fff;
     border: 1px solid #ece8e0;
     border-radius: 14px;
@@ -150,6 +201,7 @@
   }
 
   .margin-item.active {
+    background: rgba(228, 113, 42, 0.08);
     color: #f47e3a;
   }
 
@@ -172,5 +224,93 @@
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+  }
+
+  .margin-actions {
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-shrink: 0;
+  }
+
+  .join-divider {
+    height: 1px;
+    background: #ece8e0;
+    margin: 4px 6px;
+  }
+
+  .join-section {
+    padding: 8px 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .join-label {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #888;
+  }
+
+  .join-row {
+    display: flex;
+    gap: 6px;
+  }
+
+  .join-input {
+    flex: 1;
+    padding: 6px 10px;
+    border-radius: 8px;
+    border: 1px solid #ece8e0;
+    background: #fafafa;
+    font-family: monospace;
+    font-size: 12px;
+    color: #2a2a2a;
+    outline: none;
+    min-width: 0;
+  }
+
+  .join-input:focus {
+    border-color: #f47e3a;
+    background: white;
+  }
+
+  .join-btn {
+    padding: 6px 12px;
+    background: #e8712a;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 12px;
+    font-weight: 600;
+    font-family: inherit;
+    cursor: pointer;
+  }
+
+  .join-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+
+  .join-error {
+    font-size: 11px;
+    color: #c0392b;
+  }
+
+  .margin-list {
+    max-height: 400px;
+    overflow-y: auto;
+  }
+
+  .margin-list::-webkit-scrollbar {
+    width: 3px;
+  }
+
+  .margin-list::-webkit-scrollbar-thumb {
+    background: rgba(0, 0, 0, 0.1);
+    border-radius: 3px;
   }
 </style>

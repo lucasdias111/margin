@@ -15,7 +15,9 @@
   let { recentUser, isSelected = false, isOnline }: Props = $props()
   const { user: chatUser, lastMessage, lastMessageTime } = $derived(recentUser)
 
-  const unreadCount = $derived(notificationState.getTotalUnreadDirectMessagesForUser(chatUser.id))
+  const unreadCount = $derived(
+    notificationState.isDirectConversationUnread(recentUser.conversationId) ? 1 : 0
+  )
 </script>
 
 <button
@@ -36,7 +38,7 @@
 
   <div class="user-info">
     <div class="top-row">
-      <span class="username">{chatUser.displayName}</span>
+      <span class="handle">{chatUser.displayName}</span>
       {#if lastMessageTime}
         <span class="timestamp">{formatTime(lastMessageTime)}</span>
       {/if}
@@ -44,7 +46,7 @@
     <div class="bottom-row">
       <span class="last-message">{lastMessage}</span>
       {#if unreadCount > 0}
-        <UnreadNotificationBadge shouldShow={true} count={unreadCount} variant="inline" />
+        <UnreadNotificationBadge shouldShow={true} count={1} variant="inline" />
       {/if}
     </div>
   </div>
@@ -78,7 +80,7 @@
     background: rgba(168, 80, 26, 0.1);
   }
 
-  .user-button.selected .username {
+  .user-button.selected .handle {
     color: #e8712aff;
   }
 
@@ -127,7 +129,7 @@
     align-items: center;
   }
 
-  .username {
+  .handle {
     font-size: 14px;
     font-weight: 550;
     color: #2a2a2a;
@@ -138,13 +140,14 @@
 
   .timestamp {
     font-size: 11px;
+    font-weight: 500;
     color: #bbb;
     flex-shrink: 0;
     margin-left: 8px;
   }
 
   .last-message {
-    font-size: 12px;
+    font-size: 14px;
     color: #c1c1c1;
     white-space: nowrap;
     overflow: hidden;

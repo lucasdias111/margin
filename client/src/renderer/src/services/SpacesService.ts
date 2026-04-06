@@ -1,63 +1,60 @@
 import type { CreateSpace, Space, SpaceMember } from '$src/interfaces/Space'
-import { authenticatedGet, authenticatedPost } from '$src/services/api'
+import { authenticatedGet, authenticatedPost, authenticatedDelete } from '$src/services/api'
 import type { Channel, CreateChannel } from '$src/interfaces/Channel'
+import { spaceState } from '$src/states/SpaceState.svelte'
 
 class SpacesService {
   async getAllSpacesForMargin(marginId: number): Promise<Space[]> {
-    const response = await authenticatedGet(`api/spaces/get_all_spaces_for_margin/${marginId}`)
-    if (!response.ok) throw new Error(`Failed to get spaces: ${response.status}`)
+    const response = await authenticatedGet(`spaces/get_all_spaces_for_margin/${marginId}`)
     return response.json()
   }
 
-  async getAllSpacesForUser(): Promise<Space[]> {
-    const response = await authenticatedGet('api/spaces/get_all_spaces_for_user')
-    if (!response.ok) throw new Error(`Failed to get spaces for user: ${response.status}`)
-    return response.json()
+  async getAllSpacesForUser(marginId: number): Promise<void> {
+    const response = await authenticatedGet(`spaces/get_all_spaces_for_user/${marginId}`)
+    spaceState.setSpaces(await response.json())
   }
 
-  async addSpace(space: CreateSpace): Promise<Space> {
-    const response = await authenticatedPost(space, 'api/spaces/create_space')
-    if (!response.ok) throw new Error(`Failed to create space: ${response.status}`)
+  async createSpace(space: CreateSpace): Promise<Space | null> {
+    const response = await authenticatedPost(space, 'spaces/create_space')
+    if (!response.ok) return null
     return response.json()
   }
 
   async updateSpaceInfo(space: Space): Promise<Space> {
-    const response = await authenticatedPost(space, 'api/spaces/update_space_info')
-    if (!response.ok) throw new Error(`Failed to update space: ${response.status}`)
+    const response = await authenticatedPost(space, 'spaces/update_space_info')
+    if (!response.ok) return null
     return response.json()
   }
 
   async deleteSpace(space: Space): Promise<void> {
-    const response = await authenticatedPost(space, 'api/spaces/delete_space')
-    if (!response.ok) throw new Error(`Failed to delete space: ${response.status}`)
+    await authenticatedDelete(space, 'spaces/delete_space')
   }
 
   async addSpaceMemberToSpace(newSpaceMember: SpaceMember): Promise<SpaceMember> {
-    const response = await authenticatedPost(newSpaceMember, 'api/spaces/add_space_member')
-    if (!response.ok) throw new Error(`Failed to add space member: ${response.status}`)
+    const response = await authenticatedPost(newSpaceMember, 'spaces/add_space_member')
+    if (!response.ok) return null
     return response.json()
   }
 
   async createChannel(channel: CreateChannel): Promise<Channel> {
-    const response = await authenticatedPost(channel, 'api/channels/create_channel')
-    if (!response.ok) throw new Error(`Failed to create channel: ${response.status}`)
+    const response = await authenticatedPost(channel, 'channels/create_channel')
+    if (!response.ok) return null
     return response.json()
   }
 
   async updateChannel(channel: Channel): Promise<Channel> {
-    const response = await authenticatedPost(channel, 'api/channels/update_channel')
-    if (!response.ok) throw new Error(`Failed to update channel: ${response.status}`)
+    const response = await authenticatedPost(channel, 'channels/update_channel')
+    if (!response.ok) return null
     return response.json()
   }
 
   async deleteChannel(channel: Channel): Promise<void> {
-    const response = await authenticatedPost(channel.id, 'api/channels/delete_channel')
-    if (!response.ok) throw new Error(`Failed to delete channel: ${response.status}`)
+    await authenticatedDelete(channel.id, 'channels/delete_channel')
   }
 
   async updateSpaceMemberRole(spaceMember: SpaceMember): Promise<SpaceMember> {
-    const response = await authenticatedPost(spaceMember, 'api/spaces/update_space_member_role')
-    if (!response.ok) throw new Error(`Failed to update space member role: ${response.status}`)
+    const response = await authenticatedPost(spaceMember, 'spaces/update_space_member_role')
+    if (!response.ok) return null
     return response.json()
   }
 

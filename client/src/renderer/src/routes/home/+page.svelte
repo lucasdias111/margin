@@ -8,10 +8,13 @@
   import { WebSocketMessageType } from '$src/interfaces/WebSocketMessageType'
   import { callState } from '$src/states/CallState.svelte'
   import CallWindow from '$src/components/content/call/CallWindow.svelte'
-  import { callService } from '$src/services/CallService'
-  import type { CallOfferPayload, WebSocketMessage } from '$src/interfaces/WebSocketMessages'
+  import { callService } from '$src/services/call/CallService'
+  import type {
+    CallOfferPayload,
+    ChannelVoiceParticipantPayload,
+    WebSocketMessage
+  } from '$src/interfaces/WebSocketMessages'
   import { notificationService } from '$src/services/NotificationService'
-  import type { UnreadCount } from '$src/interfaces/UnreadCount'
   import { notificationState } from '$src/states/NotificationState.svelte'
   import { chatState } from '$src/states/ChatState.svelte'
   import Navigation from '$src/components/content/Navigation.svelte'
@@ -28,13 +31,32 @@
   import IncomingCallModal from '$src/components/content/call/modal/IncomingCallModal.svelte'
   import type { Notification } from '$src/interfaces/Notification'
   import Notifications from '$src/components/content/notification/Notifications.svelte'
-  import type { Margin } from '$src/interfaces/Margin'
+  import ChannelCallWindow from '$src/components/content/call/ChannelCallWindow.svelte'
+  import { spaceState } from '$src/states/SpaceState.svelte'
+  import { NotificationSounds } from '$src/utils/NotificationSounds'
+  import ConnectionBar from '$src/components/common/messages/ConnectionBar.svelte'
+  import type { UnreadConversations } from '$src/interfaces/UnreadCount'
+  import { updateState } from '$src/states/UpdateState.svelte'
+  import UpdateToast from '$src/components/common/messages/UpdateToast.svelte'
 
   let incomingCallPayload = $state<CallOfferPayload | null>(null)
+  const ringtone = new Audio(NotificationSounds.INCOMING_CALL)
+  ringtone.loop = true
 
   onMount(() => {
     setup()
     webSocketService.connect()
+    webSocketService.onReconnect(resync)
+  })
+
+  $effect(() => {
+    if (incomingCallPayload) {
+      ringtone.currentTime = 0
+      ringtone.play().catch(() => {})
+    } else {
+      ringtone.pause()
+      ringtone.currentTime = 0
+    }
   })
 
   useWebsocketSvelte({
@@ -45,41 +67,58 @@
       presenceService.setOnline(data.payload.id),
     [WebSocketMessageType.USER_LOGOUT]: (data: WebSocketMessage<User>) =>
       presenceService.setOffline(data.payload.id),
-    [WebSocketMessageType.NOTIFICATION]: (data: WebSocketMessage<Notification>) =>
-      notificationState.incrementUnseenAnnouncements(data.payload.marginId),
-    [WebSocketMessageType.USER_ADDED_TO_MARGIN]: (data: WebSocketMessage<Margin>) => {
-      chatState.selectMargin(data.payload)
-      notificationState.incrementUnseenAnnouncements(data.payload.marginId)
+    [WebSocketMessageType.NOTIFICATION]: (data: WebSocketMessage<Notification>) => {
+      notificationState.addNotification(data.payload)
+    },
+    [WebSocketMessageType.CALL_NO_ANSWER]: () => (incomingCallPayload = null),
+    [WebSocketMessageType.USER_JOINED_VOICE]: (
+      msg: WebSocketMessage<ChannelVoiceParticipantPayload>
+    ) => {
+      spaceState.updateVoiceParticipant(msg.payload.channelId, msg.payload.user, true)
+    },
+    [WebSocketMessageType.USER_LEFT_VOICE]: (
+      msg: WebSocketMessage<ChannelVoiceParticipantPayload>
+    ) => {
+      spaceState.updateVoiceParticipant(msg.payload.channelId, msg.payload.user, false)
+    },
+    [WebSocketMessageType.USER_JOINED_SPACE]: (
+      msg: WebSocketMessage<{ spaceId: number; user: User }>
+    ) => {
+      spaceState.addMemberToSpace(msg.payload.spaceId, msg.payload.user)
+    },
+    [WebSocketMessageType.CONVERSATION_READ]: (
+      msg: WebSocketMessage<{ conversationId: number; readAt: string }>
+    ) => {
+      chatService.setConversationReadAt(msg.payload.conversationId, msg.payload.readAt)
     }
   })
 
   async function setup(): Promise<void> {
+    window.updater.onUpdateAvailable((version: string) => {
+      updateState.version = version
+      updateState.updateAvailable = true
+    })
+
+    window.updater.onUpdateDownloaded(() => {
+      updateState.downloading = false
+      updateState.updateDownloaded = true
+    })
+
+    window.updater.notifyReady()
+
     await getCurrentUser()
     await loadUnreadMessages()
     await loadRecentUsers()
-    await notificationState.loadUnseenAnnouncementCounts()
-    await marginService.getMargins().then((margins) => {
-      chatState.margins = margins
-      if (margins.length === 0) {
-        chatState.hasMargin = false
-      } else {
-        chatState.selectMargin(margins[0])
-      }
-    })
+    await notificationService.loadAll()
+    await marginService.loadMarginsForUser()
   }
 
   async function loadUnreadMessages(): Promise<void> {
     notificationState.clearUnreadMessages()
-
-    const response = await authenticatedGet(`api/conversations/unread`)
-
-    const unreadCounts: UnreadCount[] = await response.json()
-
-    const dms = unreadCounts.filter((count) => count.unreadDmsCount > 0)
-    const channels = unreadCounts.filter((count) => count.unreadChannelsCount > 0)
-
-    notificationService.addIncomingDirectMessages(dms)
-    notificationService.addIncomingChannelMessages(channels)
+    const response = await authenticatedGet('conversations/unread')
+    const unread: UnreadConversations = await response.json()
+    notificationService.addIncomingDirectConversations(unread.directConversationIds)
+    notificationService.addIncomingChannelConversations(unread.channelUnreads)
   }
 
   async function loadRecentUsers(): Promise<void> {
@@ -105,10 +144,11 @@
     if (!incomingCallPayload) return
     const p = incomingCallPayload
     incomingCallPayload = null
-    callService.startCall(p.callId, p.caller, true, { type: 'offer' as const, sdp: p.sdp })
+    callService.startCall(p.callId, p.caller, true, false, { type: 'offer' as const, sdp: p.sdp })
   }
 
   function declineCall(): void {
+    callService.rejectCall(incomingCallPayload.callId, incomingCallPayload.caller.id)
     incomingCallPayload = null
   }
 
@@ -117,17 +157,34 @@
   }
 
   async function getCurrentUser(): Promise<void> {
-    const response = await authenticatedGet(`api/users/me`)
+    const response = await authenticatedGet(`users/me`)
 
     const user: User = await response.json()
     userState.setUser(user)
   }
+
+  async function resync(): Promise<void> {
+    await loadUnreadMessages()
+    await loadRecentUsers()
+
+    if (chatState.currentlySelectedContent === 'private' && chatState.selectedUser) {
+      await chatService.loadConversationForUser(chatState.selectedUser)
+    } else if (chatState.selectedChannel) {
+      await chatService.loadConversationForChannel(chatState.selectedChannel)
+    }
+  }
 </script>
 
 <div class="window">
+  <ConnectionBar />
+  <UpdateToast />
   {#if callState.isP2PCall}
     <div class="call-overlay" class:minimized={callState.isMinimized}>
       <CallWindow />
+    </div>
+  {:else if callState.isGroupCall}
+    <div class="call-overlay" class:minimized={callState.isMinimized}>
+      <ChannelCallWindow />
     </div>
   {/if}
   <Navigation />
@@ -148,7 +205,7 @@
   .window {
     position: relative;
     display: flex;
-    height: 95vh;
+    flex: 1;
     padding: 10px;
     box-sizing: border-box;
     gap: 10px;
@@ -170,9 +227,6 @@
 
   .call-overlay.minimized {
     background: transparent;
-    position: static;
-    width: 0;
-    height: 0;
-    overflow: visible;
+    pointer-events: none;
   }
 </style>

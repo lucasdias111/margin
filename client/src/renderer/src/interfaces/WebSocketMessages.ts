@@ -26,16 +26,7 @@ export interface CallResponsePayload {
   response: RTCSessionDescriptionInit
 }
 
-export interface CallCandidatePayload {
-  callId: number
-  candidate: string
-  sdpMid: string | null
-  sdpMLineIndex: number | null
-  usernameFragment: string
-}
-
 export interface ChannelVoiceParticipantPayload {
   channelId: number
   user: User
 }
-

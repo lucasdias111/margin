@@ -1,5 +1,6 @@
 <script lang="ts">
   import type { Snippet } from 'svelte'
+  import Icon from '$src/components/common/icons/Icon.svelte'
 
   interface Props {
     isLoading?: boolean
@@ -9,13 +10,7 @@
     right?: Snippet
   }
 
-  let {
-    isLoading = false,
-    onToggleSidebar,
-    sidebarOpen = true,
-    left,
-    right
-  }: Props = $props()
+  let { isLoading = false, onToggleSidebar, sidebarOpen = true, left, right }: Props = $props()
 </script>
 
 <div class="chat-header">
@@ -44,19 +39,7 @@
         title="Toggle member list"
         aria-label="Toggle sidebar"
       >
-        <svg
-          width="17"
-          height="17"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          stroke-width="2"
-          stroke-linecap="round"
-          stroke-linejoin="round"
-        >
-          <rect x="3" y="3" width="18" height="18" rx="2" />
-          <line x1="15" y1="3" x2="15" y2="21" />
-        </svg>
+        <Icon name="sidebar" size={17} />
       </button>
     {/if}
   </div>

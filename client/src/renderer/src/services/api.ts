@@ -8,12 +8,9 @@ export async function authenticatedGet(url: string): Promise<Response> {
     errorService.reportError('Token is required')
   }
 
-  return fetch(API_CONFIG.baseUrl + url, {
-    headers: {
-      'Content-Type': 'application/json',
-      method: 'GET',
-      Authorization: `Bearer ${token}`
-    }
+  return fetchGet(url, {
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${token}`
   })
 }
 
@@ -58,7 +55,7 @@ export async function unauthenticatedPost<T>(body: T, url: string): Promise<Resp
 }
 
 async function fetchPost<T>(url: string, body: T, headers: HeadersInit): Promise<Response> {
-  let response = null
+  let response: Response | null = null
   try {
     response = await fetch(API_CONFIG.baseUrl + url, {
       method: 'POST',
@@ -66,11 +63,16 @@ async function fetchPost<T>(url: string, body: T, headers: HeadersInit): Promise
       body: body instanceof FormData ? body : JSON.stringify(body)
     })
   } catch (error) {
-    errorService.reportError('Failed to fetch: ' + error)
+    errorService.reportError('Network error — could not reach server')
+    throw error
   }
-  if (!response) errorService.reportError('Error fetching')
-  if (!response.ok)
-    errorService.reportError('Error fetching: ' + response.status + response.statusText)
+
+  if (!response.ok) {
+    const message = await extractErrorMessage(response)
+    errorService.reportError(message)
+    throw new Error(message)
+  }
+
   return response
 }
 
@@ -90,6 +92,63 @@ async function fetchPatch<T>(url: string, body: T, headers: HeadersInit): Promis
   if (!response.ok) {
     const message = await extractErrorMessage(response)
     errorService.reportError(message)
+    throw new Error(message)
+  }
+
+  return response
+}
+
+export async function authenticatedDelete<T>(body: T, url: string): Promise<Response> {
+  const token = sessionStorage.getItem('authToken')
+
+  if (!token) {
+    errorService.reportError('Token is required')
+  }
+
+  return fetchDelete(url, body, {
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${token}`
+  })
+}
+
+async function fetchDelete<T>(url: string, body: T, headers: HeadersInit): Promise<Response> {
+  let response: Response | null = null
+  try {
+    response = await fetch(API_CONFIG.baseUrl + url, {
+      method: 'DELETE',
+      headers,
+      body: JSON.stringify(body)
+    })
+  } catch (error) {
+    errorService.reportError('Network error — could not reach server')
+    throw error
+  }
+
+  if (!response.ok) {
+    const message = await extractErrorMessage(response)
+    errorService.reportError(message)
+    throw new Error(message)
+  }
+
+  return response
+}
+
+async function fetchGet(url: string, headers: HeadersInit): Promise<Response> {
+  let response: Response | null = null
+  try {
+    response = await fetch(API_CONFIG.baseUrl + url, {
+      method: 'GET',
+      headers
+    })
+  } catch (error) {
+    errorService.reportError('Network error — could not reach server')
+    throw error
+  }
+
+  if (!response.ok) {
+    const message = await extractErrorMessage(response)
+    errorService.reportError(message)
+    throw new Error(message)
   }
 
   return response

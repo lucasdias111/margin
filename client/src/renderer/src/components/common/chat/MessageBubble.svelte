@@ -4,22 +4,33 @@
   import UserAvatar from '$src/components/common/user/UserAvatar.svelte'
   import type { Message } from '$src/interfaces/Messages'
   import { chatService } from '$src/services/ChatService'
-  import EditIcon from '$src/components/svg/EditIcon.svelte'
-  import TrashIcon from '$src/components/svg/TrashIcon.svelte'
+  import Icon from '$src/components/common/icons/Icon.svelte'
+  import type { IconName } from '$src/components/common/icons/icons'
 
   interface Props {
     message: Message
+    showMeta?: boolean
+    showDisplayName?: boolean
+    isRead?: boolean
     showReadStatus?: boolean
     onEditMessage: (e: Message, editedContent: string) => void
   }
 
-  let { message, showReadStatus = false, onEditMessage }: Props = $props()
+  let {
+    message,
+    showMeta = true,
+    showDisplayName = true,
+    isRead = false,
+    showReadStatus = false,
+    onEditMessage
+  }: Props = $props()
 
   let isEditing = $state(false)
   let editedContent = $derived(message.content)
   let showActions = $state(false)
   let showMenu = $state(false)
   let isSent = $derived(message.user.id === userState.currentUser?.id)
+  let checkmarkIcon: IconName = $derived(isRead ? 'checkmarkFilled' : 'checkmark')
 
   function handleSaveEdit(): void {
     onEditMessage(message, editedContent)
@@ -53,39 +64,48 @@
             onclick={() => {
               isEditing = true
               showMenu = false
-            }}><EditIcon />Edit</button
+            }}
           >
-          <button class="delete" onclick={() => chatService.deleteMessage(message)}
-            ><TrashIcon />Delete</button
-          >
+            <Icon name="edit" size={14} />
+            Edit
+          </button>
+          <button class="delete" onclick={() => chatService.deleteMessage(message)}>
+            <Icon name="trash" size={14} />
+            Delete
+          </button>
         </div>
       {/if}
     </div>
   {/if}
 
-  <div class="bubble" class:sent={isSent}>
-    {#if message.conversationType === 'CHANNEL' && message.user.id !== userState.currentUser?.id}
-      <span class="username">{message.user.displayName}</span>
+  <div class="message-column" class:sent={isSent}>
+    {#if showDisplayName && message.conversationType === 'CHANNEL' && message.user.id !== userState.currentUser?.id}
+      <span class="handle">{message.user.displayName}</span>
     {/if}
 
-    {#if isEditing}
-      <div class="editactions">
-        <button class="editbut" onclick={handleSaveEdit}>Save</button>
-        <button class="editbut" onclick={() => (isEditing = false)}>Cancel</button>
-      </div>
-      <input class="editinput" bind:value={editedContent} />
-    {:else}
-      <p class="text">{message.content}</p>
-    {/if}
-    <div class="meta">
-      {#if message.isEdited}
-        <span class="edited">edited</span>
-      {/if}
-      <span class="timestamp">{formatTimestamp(message.createdAt)}</span>
-      {#if showReadStatus && isSent}
-        <span class="checkmark">✓✓</span>
+    <div class="bubble" class:sent={isSent}>
+      {#if isEditing}
+        <div class="editactions">
+          <button class="editbut" onclick={handleSaveEdit}>Save</button>
+          <button class="editbut" onclick={() => (isEditing = false)}>Cancel</button>
+        </div>
+        <input class="editinput" bind:value={editedContent} />
+      {:else}
+        <p class="text">{message.content}</p>
       {/if}
     </div>
+
+    {#if showMeta}
+      <div class="meta">
+        {#if message.isEdited}
+          <span class="edited">edited</span>
+        {/if}
+        <span class="timestamp">{formatTimestamp(message.createdAt)}</span>
+        {#if isSent && showReadStatus}
+          <Icon name={checkmarkIcon} size={12} />
+        {/if}
+      </div>
+    {/if}
   </div>
 </div>
 
@@ -105,6 +125,17 @@
   .avatar {
     flex-shrink: 0;
     margin-bottom: 2px;
+  }
+
+  .message-column {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    max-width: 60%;
+  }
+
+  .message-column.sent {
+    align-items: flex-end;
   }
 
   .msgoptions-wrapper {
@@ -185,17 +216,13 @@
   }
 
   .bubble {
-    position: relative;
-    padding: 10px 14px 8px;
+    padding: 10px 14px;
     border-radius: 18px;
-    max-width: 60%;
     width: fit-content;
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
+    min-width: 50px;
     word-break: break-word;
     line-height: 1.5;
-    font-size: 12px;
+    font-size: 14px;
   }
 
   .bubble:not(.sent) {
@@ -205,17 +232,18 @@
   }
 
   .bubble.sent {
-    background: #e8712a;
+    background: #f47e3a;
     color: #2d2d2d;
     border-bottom-right-radius: 4px;
   }
 
-  .username {
+  .handle {
     font-size: 11px;
     font-weight: 600;
     color: #f47e3a;
     letter-spacing: 0.02em;
     margin-bottom: 2px;
+    padding-left: 6px;
   }
 
   .text {
@@ -262,34 +290,22 @@
     border-color: rgba(255, 255, 255, 0.7);
   }
 
-  .editinput::placeholder {
-    color: rgba(255, 255, 255, 0.5);
-  }
-
   .meta {
     display: flex;
     align-items: center;
     gap: 4px;
-    margin-top: 2px;
-    font-size: 9px;
-    align-self: flex-end;
-  }
-
-  .bubble:not(.sent) .meta {
-    color: rgba(45, 45, 45, 0.5);
-  }
-
-  .bubble.sent .meta {
-    color: rgba(45, 45, 45, 0.5);
+    margin-top: 3px;
+    padding: 0 6px;
+    font-size: 10px;
+    font-weight: 500;
+    color: rgba(0, 0, 0, 0.4);
   }
 
   .edited {
     font-style: italic;
-    font-weight: bold;
   }
 
-  .bubble.sent .checkmark {
-    color: rgba(45, 45, 45, 0.5);
-    font-size: 11px;
+  .message-column.clumped {
+    margin-bottom: -4px;
   }
 </style>

@@ -1,0 +1,338 @@
+import { fireEvent, render, screen, waitFor } from '@testing-library/svelte'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
+import RegisterPage from './+page.svelte'
+import { authenticationService } from '$src/services/AuthenticationService'
+import { errorService } from '$src/services/ErrorService'
+import * as svelteRouter from 'svelte-spa-router'
+
+vi.mock('$src/services/AuthenticationService', () => ({
+  authenticationService: {
+    register: vi.fn()
+  }
+}))
+
+vi.mock('$src/services/ErrorService', () => ({
+  errorService: {
+    reportError: vi.fn()
+  }
+}))
+
+vi.mock('svelte-spa-router', () => ({
+  push: vi.fn()
+}))
+
+vi.mock('$src/assets/pics/margin.png', () => ({ default: 'margin-logo.png' }))
+vi.mock('$src/assets/pics/anonym-avatar.png', () => ({ default: 'anonym-avatar.png' }))
+
+vi.mock('$src/components/common/buttons/UploadImageButton.svelte', () => ({
+  default: vi.fn()
+}))
+
+vi.mock('$src/components/common/user/UserAvatar.svelte', () => ({
+  default: vi.fn()
+}))
+
+function fillForm(
+  overrides: Partial<{
+    betaKey: string
+    displayName: string
+    handle: string
+    email: string
+    password: string
+    repeatPassword: string
+  }> = {}
+): {
+  fill: () => Promise<void>
+  values: {
+    betaKey: string
+    displayName: string
+    handle: string
+    email: string
+    password: string
+    repeatPassword: string
+  }
+} {
+  const defaults = {
+    betaKey: 'MARGIN-ABCDEF123456',
+    displayName: 'John Doe',
+    handle: 'johndoe',
+    email: 'john@test.com',
+    password: 'secret123',
+    repeatPassword: 'secret123',
+    ...overrides
+  }
+
+  return {
+    fill: async () => {
+      await fireEvent.input(screen.getByLabelText('Beta key'), {
+        target: { value: defaults.betaKey }
+      })
+      await fireEvent.input(screen.getByLabelText('Display name'), {
+        target: { value: defaults.displayName }
+      })
+      await fireEvent.input(screen.getByLabelText('Handle'), {
+        target: { value: defaults.handle }
+      })
+      await fireEvent.input(screen.getByLabelText('Email'), { target: { value: defaults.email } })
+      await fireEvent.input(screen.getByLabelText('Password'), {
+        target: { value: defaults.password }
+      })
+      await fireEvent.input(screen.getByLabelText('Confirm password'), {
+        target: { value: defaults.repeatPassword }
+      })
+    },
+    values: defaults
+  }
+}
+
+describe('RegisterPage', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
+  it('renders all form fields', () => {
+    render(RegisterPage)
+
+    expect(screen.getByLabelText('Beta key')).toBeInTheDocument()
+    expect(screen.getByLabelText('Display name')).toBeInTheDocument()
+    expect(screen.getByLabelText('Handle')).toBeInTheDocument()
+    expect(screen.getByLabelText('Email')).toBeInTheDocument()
+    expect(screen.getByLabelText('Password')).toBeInTheDocument()
+    expect(screen.getByLabelText('Confirm password')).toBeInTheDocument()
+  })
+
+  it('renders create account and back to sign in buttons', () => {
+    render(RegisterPage)
+
+    expect(screen.getByRole('button', { name: /create account/i })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /back to sign in/i })).toBeInTheDocument()
+  })
+
+  it('calls authenticationService.register with correct args on valid submit', async () => {
+    vi.mocked(authenticationService.register).mockResolvedValue({ ok: true } as Response)
+    render(RegisterPage)
+
+    const form = fillForm()
+    await form.fill()
+    await fireEvent.click(screen.getByRole('button', { name: /create account/i }))
+
+    expect(authenticationService.register).toHaveBeenCalledWith(
+      'johndoe',
+      'John Doe',
+      'secret123',
+      'john@test.com',
+      'MARGIN-ABCDEF123456',
+      undefined
+    )
+  })
+
+  it('navigates to / on successful registration', async () => {
+    vi.mocked(authenticationService.register).mockResolvedValue({ ok: true } as Response)
+    render(RegisterPage)
+
+    await fillForm().fill()
+    await fireEvent.click(screen.getByRole('button', { name: /create account/i }))
+
+    await waitFor(() => {
+      expect(svelteRouter.push).toHaveBeenCalledWith('/')
+    })
+  })
+
+  it('reports error when server returns non-ok response', async () => {
+    vi.mocked(authenticationService.register).mockResolvedValue({
+      ok: false,
+      json: async () => ({ message: 'Email already taken' })
+    } as unknown as Response)
+    render(RegisterPage)
+
+    await fillForm().fill()
+    await fireEvent.click(screen.getByRole('button', { name: /create account/i }))
+
+    await waitFor(() => {
+      expect(errorService.reportError).toHaveBeenCalledWith('Email already taken')
+    })
+
+    expect(svelteRouter.push).not.toHaveBeenCalled()
+  })
+
+  it('reports fallback error when server response has no message', async () => {
+    vi.mocked(authenticationService.register).mockResolvedValue({
+      ok: false,
+      json: async () => ({})
+    } as unknown as Response)
+    render(RegisterPage)
+
+    await fillForm().fill()
+    await fireEvent.click(screen.getByRole('button', { name: /create account/i }))
+
+    await waitFor(() => {
+      expect(errorService.reportError).toHaveBeenCalledWith('Registration failed.')
+    })
+  })
+
+  it('reports connection error when request throws', async () => {
+    vi.mocked(authenticationService.register).mockRejectedValue(new Error('Network error'))
+    render(RegisterPage)
+
+    await fillForm().fill()
+    await fireEvent.click(screen.getByRole('button', { name: /create account/i }))
+
+    await waitFor(() => {
+      expect(errorService.reportError).toHaveBeenCalledWith('Failed to connect to server.')
+    })
+  })
+
+  it('does not submit when required fields are empty', async () => {
+    render(RegisterPage)
+
+    await fireEvent.click(screen.getByRole('button', { name: /create account/i }))
+
+    expect(authenticationService.register).not.toHaveBeenCalled()
+  })
+
+  // Handle validation
+
+  it('shows error when handle is fewer than 3 characters after blur', async () => {
+    render(RegisterPage)
+
+    const input = screen.getByLabelText('Handle')
+    await fireEvent.input(input, { target: { value: 'ab' } })
+    await fireEvent.blur(input)
+
+    expect(screen.getByText('Must be at least 3 characters')).toBeInTheDocument()
+  })
+
+  it('shows error when handle exceeds 24 characters after blur', async () => {
+    render(RegisterPage)
+
+    const input = screen.getByLabelText('Handle')
+    await fireEvent.input(input, { target: { value: 'a'.repeat(25) } })
+    await fireEvent.blur(input)
+
+    expect(screen.getByText('Must be 24 characters or fewer')).toBeInTheDocument()
+  })
+
+  it('shows error when handle contains invalid characters after blur', async () => {
+    render(RegisterPage)
+
+    const input = screen.getByLabelText('Handle')
+    await fireEvent.input(input, { target: { value: 'user name!' } })
+    await fireEvent.blur(input)
+
+    expect(
+      screen.getByText('Only letters, numbers, dots, hyphens, and underscores')
+    ).toBeInTheDocument()
+  })
+
+  it('shows error when handle starts with a non-letter after blur', async () => {
+    render(RegisterPage)
+
+    const input = screen.getByLabelText('Handle')
+    await fireEvent.input(input, { target: { value: '1handle' } })
+    await fireEvent.blur(input)
+
+    expect(screen.getByText('Must start with a letter')).toBeInTheDocument()
+  })
+
+  it('shows no error for valid handle', async () => {
+    render(RegisterPage)
+
+    const input = screen.getByLabelText('Handle')
+    await fireEvent.input(input, { target: { value: 'john.doe-1' } })
+    await fireEvent.blur(input)
+
+    expect(screen.queryByText('Must be at least 3 characters')).not.toBeInTheDocument()
+    expect(screen.queryByText('Must start with a letter')).not.toBeInTheDocument()
+    expect(screen.queryByText(/only letters/i)).not.toBeInTheDocument()
+  })
+
+  // Password validation
+
+  it('shows error when password is fewer than 8 characters after blur', async () => {
+    render(RegisterPage)
+
+    const input = screen.getByLabelText('Password')
+    await fireEvent.input(input, { target: { value: 'short' } })
+    await fireEvent.blur(input)
+
+    expect(screen.getByText('Must be at least 8 characters')).toBeInTheDocument()
+  })
+
+  it('shows error when passwords do not match after blur', async () => {
+    render(RegisterPage)
+
+    await fireEvent.input(screen.getByLabelText('Password'), { target: { value: 'secret123' } })
+    const repeatInput = screen.getByLabelText('Confirm password')
+    await fireEvent.input(repeatInput, { target: { value: 'different' } })
+    await fireEvent.blur(repeatInput)
+
+    expect(screen.getByText("Passwords don't match")).toBeInTheDocument()
+  })
+
+  it('does not show validation errors before blur', async () => {
+    render(RegisterPage)
+
+    await fireEvent.input(screen.getByLabelText('Handle'), { target: { value: 'ab' } })
+    await fireEvent.input(screen.getByLabelText('Password'), { target: { value: 'short' } })
+
+    expect(screen.queryByText('Must be at least 3 characters')).not.toBeInTheDocument()
+    expect(screen.queryByText('Must be at least 8 characters')).not.toBeInTheDocument()
+  })
+
+  it('does not submit when there are validation errors', async () => {
+    render(RegisterPage)
+
+    await fillForm({ password: 'short', repeatPassword: 'short' }).fill()
+    await fireEvent.click(screen.getByRole('button', { name: /create account/i }))
+
+    expect(authenticationService.register).not.toHaveBeenCalled()
+  })
+
+  // Loading state
+
+  it('disables submit button while loading', async () => {
+    let resolveRegister: (value: Response) => void
+    vi.mocked(authenticationService.register).mockImplementation(
+      () =>
+        new Promise<Response>((resolve) => {
+          resolveRegister = resolve
+        })
+    )
+    render(RegisterPage)
+
+    await fillForm().fill()
+    await fireEvent.click(screen.getByRole('button', { name: /create account/i }))
+
+    await waitFor(() => {
+      const submitButton = document.querySelector('button[type="submit"]')!
+      expect(submitButton).toBeDisabled()
+    })
+
+    resolveRegister!({ ok: true } as Response)
+
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: /create account/i })).not.toBeDisabled()
+    })
+  })
+
+  // Navigation
+
+  it('navigates to / when back to sign in is clicked', async () => {
+    render(RegisterPage)
+
+    await fireEvent.click(screen.getByRole('button', { name: /back to sign in/i }))
+
+    expect(svelteRouter.push).toHaveBeenCalledWith('/')
+  })
+
+  // Handle sanitization
+
+  it('strips whitespace from handle input', async () => {
+    render(RegisterPage)
+
+    const input = screen.getByLabelText('Handle')
+    await fireEvent.input(input, { target: { value: 'john doe' } })
+
+    expect(input).toHaveValue('johndoe')
+  })
+})

@@ -1,5 +1,6 @@
 <script lang="ts">
   import AppModal from '$src/components/common/modals/AppModal.svelte'
+  import Icon from '$src/components/common/icons/Icon.svelte'
 
   interface Props {
     open: boolean
@@ -44,16 +45,7 @@
   onClose={handleCancel}
 >
   <div class="broadcast-banner">
-    <svg
-      width="13"
-      height="13"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      stroke-width="2.5"
-    >
-      <path d="M22 17H2a3 3 0 0 0 3-3V9a7 7 0 0 1 14 0v5a3 3 0 0 0 3 3zm-8.27 4a2 2 0 0 1-3.46 0" />
-    </svg>
+    <Icon name="notifications" size={13} strokeWidth={2.5} />
     This announcement will be sent to all members of the margin
   </div>
 

@@ -1,5 +1,5 @@
 <script lang="ts">
-  export let title: string
+  let { title }: { title: string } = $props()
 
   function minimize(): void {
     window.api?.minimizeWindow()
@@ -19,17 +19,17 @@
     <span class="title">{title}</span>
   </div>
   <div class="window-controls">
-    <button class="window-button minimize" on:click={minimize} title="Minimize">
+    <button class="window-button minimize" onclick={minimize} title="Minimize">
       <svg width="10" height="10" viewBox="0 0 10 10">
         <path d="M0,5 L10,5" stroke="currentColor" stroke-width="1" />
       </svg>
     </button>
-    <button class="window-button maximize" on:click={maximize} title="Maximize">
+    <button class="window-button maximize" onclick={maximize} title="Maximize">
       <svg width="10" height="10" viewBox="0 0 10 10">
         <path d="M0,0 L10,0 L10,10 L0,10 Z" stroke="currentColor" stroke-width="1" fill="none" />
       </svg>
     </button>
-    <button class="window-button close" on:click={close} title="Close">
+    <button class="window-button close" onclick={close} title="Close">
       <svg width="10" height="10" viewBox="0 0 10 10">
         <path d="M0,0 L10,10 M10,0 L0,10" stroke="currentColor" stroke-width="1" />
       </svg>

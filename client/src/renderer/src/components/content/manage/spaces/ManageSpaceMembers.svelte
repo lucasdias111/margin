@@ -30,11 +30,11 @@
     <ListView
       columns={[
         {
-          key: 'username',
+          key: 'handle',
           label: 'Member',
           flex: 1,
           sortable: true,
-          render: (m) => m.user.username
+          render: (m) => m.user.displayName
         },
         {
           key: 'role',
@@ -52,7 +52,7 @@
       rows={selectedSpace.members}
       getKey={(member) => member.user.id}
       searchPlaceholder="Search member"
-      searchFilter={(member, query) => member.user.username.toLowerCase().includes(query)}
+      searchFilter={(member, query) => member.user.handle.toLowerCase().includes(query)}
       onAction={(member) => onUpdateMemberRole(member)}
       cellSnippets={{ role: roleCell }}
     />

@@ -5,16 +5,11 @@
   import { notificationState } from '$src/states/NotificationState.svelte.js'
   import { userState } from '$src/states/UserState.svelte.js'
   import UserAvatar from '$src/components/common/user/UserAvatar.svelte'
-  import SettingsIcon from '$src/components/svg/SettingsIcon.svelte'
-  import MsgIgon from '$src/components/svg/MessagesIcon.svelte'
-  import SpaceIcon from '$src/components/svg/SpacesIcon.svelte'
-  import LogoutIcon from '$src/components/svg/LogoutIcon.svelte'
   import { chatService } from '$src/services/ChatService'
   import { authenticationService } from '$src/services/AuthenticationService'
   import { push } from 'svelte-spa-router'
   import { clickOutside } from '$src/actions/clickOutside'
-  import BellIcon from '$src/components/svg/BellIcon.svelte'
-
+  import Icon from '$src/components/common/icons/Icon.svelte'
 
   function onContentSelected(selectedContent: ContentType): void {
     chatService.selectContent(selectedContent)
@@ -28,7 +23,7 @@
 
   let showDropdown = $state(false)
 
-  const totalAnnouncements = $derived(notificationState.getTotalUnseenAnnouncements())
+  const totalAnnouncements = $derived(notificationState.getTotalUnseenNotifications())
 </script>
 
 <div class="navigation">
@@ -44,12 +39,12 @@
       {#if showDropdown}
         <div class="dropdown">
           <div class="dropdown-header">
-            <span class="dropdown-username">{userState.currentUser.displayName}</span>
+            <span class="dropdown-displayname">{userState.currentUser.displayName}</span>
           </div>
           <div class="divider"></div>
           <button class="dropdown-item" onclick={handleLogout}>
             <span class="item-label">Log out</span>
-            <LogoutIcon />
+            <Icon name="logout" size={16} />
           </button>
         </div>
       {/if}
@@ -63,11 +58,8 @@
       aria-label="Notifications"
       title="Notifications"
     >
-      <BellIcon />
-      <UnreadNotificationBadge
-        shouldShow={totalAnnouncements > 0}
-        count={totalAnnouncements}
-      />
+      <Icon name="notifications" size={28} />
+      <UnreadNotificationBadge shouldShow={totalAnnouncements > 0} count={1} />
     </button>
     <button
       onclick={() => onContentSelected('private')}
@@ -75,7 +67,7 @@
       aria-label="Private conversations"
       title="Private conversations"
     >
-      <MsgIgon />
+      <Icon name="messages" size={28} />
       <UnreadNotificationBadge
         shouldShow={notificationState.getTotalUnreadDirectMessages() > 0}
         count={notificationState.getTotalUnreadDirectMessages()}
@@ -87,7 +79,7 @@
       aria-label="Spaces"
       title="Spaces"
     >
-      <SpaceIcon />
+      <Icon name="users" size={28} />
       <UnreadNotificationBadge
         shouldShow={notificationState.getTotalUnreadChannelMessages() > 0}
         count={notificationState.getTotalUnreadChannelMessages()}
@@ -102,7 +94,7 @@
     title="Settings"
     class="setbut"
   >
-    <SettingsIcon width={32} height={32} />
+    <Icon name="settings" size={28} />
   </button>
 </div>
 
@@ -154,7 +146,7 @@
     padding: 8px 10px 6px;
   }
 
-  .dropdown-username {
+  .dropdown-displayname {
     font-size: 12px;
     font-weight: 600;
     color: #aaa;
@@ -201,7 +193,7 @@
     align-items: center;
     justify-content: center;
     flex-direction: column;
-    gap: 1.75rem;
+    gap: 4rem;
   }
 
   button :global(svg) {
