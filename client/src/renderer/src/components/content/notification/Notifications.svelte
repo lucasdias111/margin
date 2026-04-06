@@ -211,7 +211,7 @@
         <div class="invite-item">
           <div class="invite-body">
             <div class="invite-title">
-              {invite.invitedByUsername} invited you to {invite.marginName}
+              {invite.invitedByUser} invited you to {invite.marginName}
             </div>
             <div class="invite-date">{formatTimestamp(invite.createdAt)}</div>
           </div>

@@ -107,7 +107,12 @@ export const icons = {
 
   arrowUpCircle: `<circle cx="12" cy="12" r="10" />
                 <polyline points="16 12 12 8 8 12" />
-                <line x1="12" y1="16" x2="12" y2="8" />`
+                <line x1="12" y1="16" x2="12" y2="8" />`,
+
+  checkmark: `<circle cx="12" cy="12" r="10" />
+             <polyline points="16 9 10.5 14.5 8 12" />`,
+
+  checkmarkFilled: `<path style="fill: currentColor; stroke: none" d="M12 2.25c-5.385 0-9.75 4.365-9.75 9.75s4.365 9.75 9.75 9.75 9.75-4.365 9.75-9.75-4.365-9.75-9.75-9.75zM17.444 9.23l-7.115 7.114c-0.179 0.178-0.467 0.178-0.646 0l-0.143-0.143-3.914-3.942c-0.179-0.179-0.179-0.468 0-0.647l0.971-0.97c0.178-0.178 0.468-0.178 0.646 0l2.767 2.787 5.817-5.817c0.179-0.179 0.468-0.179 0.647 0l0.97 0.971c0.179 0.178 0.179 0.467 0 0.647z" />`
 } as const
 
 export type IconName = keyof typeof icons

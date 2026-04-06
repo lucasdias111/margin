@@ -52,7 +52,7 @@ class AuthenticationService {
   }
 
   async register(
-    username: string,
+    handle: string,
     displayName: string,
     password: string,
     email: string,
@@ -69,7 +69,7 @@ class AuthenticationService {
     const formData = new FormData()
 
     const registrationData = {
-      username,
+      handle: handle,
       displayName,
       password,
       email,

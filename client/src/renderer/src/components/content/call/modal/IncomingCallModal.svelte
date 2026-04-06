@@ -19,7 +19,7 @@
         <UserAvatar profilePictureUrl={payload.caller.profilePictureUrl} width={56} height={56} />
       </div>
       <div class="info">
-        <p class="name">{payload.caller.username}</p>
+        <p class="name">{payload.caller.handle}</p>
         <p class="subtitle">Incoming call</p>
       </div>
       <div class="actions">

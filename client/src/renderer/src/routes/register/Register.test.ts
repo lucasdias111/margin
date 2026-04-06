@@ -36,7 +36,7 @@ function fillForm(
   overrides: Partial<{
     betaKey: string
     displayName: string
-    username: string
+    handle: string
     email: string
     password: string
     repeatPassword: string
@@ -46,7 +46,7 @@ function fillForm(
   values: {
     betaKey: string
     displayName: string
-    username: string
+    handle: string
     email: string
     password: string
     repeatPassword: string
@@ -55,7 +55,7 @@ function fillForm(
   const defaults = {
     betaKey: 'MARGIN-ABCDEF123456',
     displayName: 'John Doe',
-    username: 'johndoe',
+    handle: 'johndoe',
     email: 'john@test.com',
     password: 'secret123',
     repeatPassword: 'secret123',
@@ -70,8 +70,8 @@ function fillForm(
       await fireEvent.input(screen.getByLabelText('Display name'), {
         target: { value: defaults.displayName }
       })
-      await fireEvent.input(screen.getByLabelText('Username'), {
-        target: { value: defaults.username }
+      await fireEvent.input(screen.getByLabelText('Handle'), {
+        target: { value: defaults.handle }
       })
       await fireEvent.input(screen.getByLabelText('Email'), { target: { value: defaults.email } })
       await fireEvent.input(screen.getByLabelText('Password'), {
@@ -95,7 +95,7 @@ describe('RegisterPage', () => {
 
     expect(screen.getByLabelText('Beta key')).toBeInTheDocument()
     expect(screen.getByLabelText('Display name')).toBeInTheDocument()
-    expect(screen.getByLabelText('Username')).toBeInTheDocument()
+    expect(screen.getByLabelText('Handle')).toBeInTheDocument()
     expect(screen.getByLabelText('Email')).toBeInTheDocument()
     expect(screen.getByLabelText('Password')).toBeInTheDocument()
     expect(screen.getByLabelText('Confirm password')).toBeInTheDocument()
@@ -190,32 +190,32 @@ describe('RegisterPage', () => {
     expect(authenticationService.register).not.toHaveBeenCalled()
   })
 
-  // Username validation
+  // Handle validation
 
-  it('shows error when username is fewer than 3 characters after blur', async () => {
+  it('shows error when handle is fewer than 3 characters after blur', async () => {
     render(RegisterPage)
 
-    const input = screen.getByLabelText('Username')
+    const input = screen.getByLabelText('Handle')
     await fireEvent.input(input, { target: { value: 'ab' } })
     await fireEvent.blur(input)
 
     expect(screen.getByText('Must be at least 3 characters')).toBeInTheDocument()
   })
 
-  it('shows error when username exceeds 24 characters after blur', async () => {
+  it('shows error when handle exceeds 24 characters after blur', async () => {
     render(RegisterPage)
 
-    const input = screen.getByLabelText('Username')
+    const input = screen.getByLabelText('Handle')
     await fireEvent.input(input, { target: { value: 'a'.repeat(25) } })
     await fireEvent.blur(input)
 
     expect(screen.getByText('Must be 24 characters or fewer')).toBeInTheDocument()
   })
 
-  it('shows error when username contains invalid characters after blur', async () => {
+  it('shows error when handle contains invalid characters after blur', async () => {
     render(RegisterPage)
 
-    const input = screen.getByLabelText('Username')
+    const input = screen.getByLabelText('Handle')
     await fireEvent.input(input, { target: { value: 'user name!' } })
     await fireEvent.blur(input)
 
@@ -224,20 +224,20 @@ describe('RegisterPage', () => {
     ).toBeInTheDocument()
   })
 
-  it('shows error when username starts with a non-letter after blur', async () => {
+  it('shows error when handle starts with a non-letter after blur', async () => {
     render(RegisterPage)
 
-    const input = screen.getByLabelText('Username')
-    await fireEvent.input(input, { target: { value: '1username' } })
+    const input = screen.getByLabelText('Handle')
+    await fireEvent.input(input, { target: { value: '1handle' } })
     await fireEvent.blur(input)
 
     expect(screen.getByText('Must start with a letter')).toBeInTheDocument()
   })
 
-  it('shows no error for valid username', async () => {
+  it('shows no error for valid handle', async () => {
     render(RegisterPage)
 
-    const input = screen.getByLabelText('Username')
+    const input = screen.getByLabelText('Handle')
     await fireEvent.input(input, { target: { value: 'john.doe-1' } })
     await fireEvent.blur(input)
 
@@ -272,7 +272,7 @@ describe('RegisterPage', () => {
   it('does not show validation errors before blur', async () => {
     render(RegisterPage)
 
-    await fireEvent.input(screen.getByLabelText('Username'), { target: { value: 'ab' } })
+    await fireEvent.input(screen.getByLabelText('Handle'), { target: { value: 'ab' } })
     await fireEvent.input(screen.getByLabelText('Password'), { target: { value: 'short' } })
 
     expect(screen.queryByText('Must be at least 3 characters')).not.toBeInTheDocument()
@@ -325,12 +325,12 @@ describe('RegisterPage', () => {
     expect(svelteRouter.push).toHaveBeenCalledWith('/')
   })
 
-  // Username sanitization
+  // Handle sanitization
 
-  it('strips whitespace from username input', async () => {
+  it('strips whitespace from handle input', async () => {
     render(RegisterPage)
 
-    const input = screen.getByLabelText('Username')
+    const input = screen.getByLabelText('Handle')
     await fireEvent.input(input, { target: { value: 'john doe' } })
 
     expect(input).toHaveValue('johndoe')

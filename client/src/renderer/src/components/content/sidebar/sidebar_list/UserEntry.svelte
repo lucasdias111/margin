@@ -38,7 +38,7 @@
 
   <div class="user-info">
     <div class="top-row">
-      <span class="username">{chatUser.displayName}</span>
+      <span class="handle">{chatUser.displayName}</span>
       {#if lastMessageTime}
         <span class="timestamp">{formatTime(lastMessageTime)}</span>
       {/if}
@@ -80,7 +80,7 @@
     background: rgba(168, 80, 26, 0.1);
   }
 
-  .user-button.selected .username {
+  .user-button.selected .handle {
     color: #e8712aff;
   }
 
@@ -129,7 +129,7 @@
     align-items: center;
   }
 
-  .username {
+  .handle {
     font-size: 14px;
     font-weight: 550;
     color: #2a2a2a;

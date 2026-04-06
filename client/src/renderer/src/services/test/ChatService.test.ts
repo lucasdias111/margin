@@ -116,7 +116,7 @@ const mockUserListState = userListState as unknown as MockUserListState
 function buildUser(overrides: Partial<User> = {}): User {
   return {
     id: 1,
-    username: 'lucas',
+    handle: 'lucas',
     displayName: 'Lucas',
     email: 'lucas@margin.chat',
     createdAt: '2025-01-01T00:00:00Z',
@@ -245,7 +245,7 @@ describe('ChatService', () => {
     })
 
     it('decrypts and appends DM to active conversation', async () => {
-      const sender = buildUser({ id: 2, username: 'kasper' })
+      const sender = buildUser({ id: 2, handle: 'kasper' })
       const msg = buildMessage({
         conversationType: 'DIRECT',
         conversationId: 10,
@@ -268,7 +268,7 @@ describe('ChatService', () => {
     })
 
     it('updates sidebar preview for DM in background conversation', async () => {
-      const sender = buildUser({ id: 2, username: 'kasper' })
+      const sender = buildUser({ id: 2, handle: 'kasper' })
       const msg = buildMessage({
         conversationType: 'DIRECT',
         conversationId: 10,
@@ -295,7 +295,7 @@ describe('ChatService', () => {
     })
 
     it('adds unknown sender to recent users list', async () => {
-      const sender = buildUser({ id: 3, username: 'unknown' })
+      const sender = buildUser({ id: 3, handle: 'unknown' })
       const msg = buildMessage({
         conversationType: 'DIRECT',
         conversationId: 10,
@@ -324,7 +324,7 @@ describe('ChatService', () => {
     })
 
     it('does not add user to recent list if already present', async () => {
-      const sender = buildUser({ id: 2, username: 'kasper' })
+      const sender = buildUser({ id: 2, handle: 'kasper' })
       const msg = buildMessage({
         conversationType: 'DIRECT',
         conversationId: 10,
@@ -377,7 +377,7 @@ describe('ChatService', () => {
     })
 
     it('sets content to [Decryption failed] when decryption throws', async () => {
-      const sender = buildUser({ id: 2, username: 'kasper' })
+      const sender = buildUser({ id: 2, handle: 'kasper' })
       const msg = buildMessage({
         conversationType: 'DIRECT',
         conversationId: 10,

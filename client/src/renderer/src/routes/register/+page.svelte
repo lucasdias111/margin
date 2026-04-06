@@ -8,7 +8,7 @@
   import { errorService } from '$src/services/ErrorService'
   import type { AuthResponse } from '$src/interfaces/AuthResponse'
 
-  let username = $state('')
+  let handle = $state('')
   let displayName = $state('')
   let password = $state('')
   let repeatPassword = $state('')
@@ -18,15 +18,15 @@
   let previewUrl = $state<string | null>(avatar)
   let betaKey = $state('')
 
-  let usernameError = $derived(deriveUsernameError(username))
+  let handleError = $derived(deriveHandleError(handle))
   let passwordError = $derived(derivePasswordError(password))
   let repeatPasswordError = $derived(deriveRepeatPasswordError(password, repeatPassword))
 
-  let usernameTouched = $state(false)
+  let handleTouched = $state(false)
   let passwordTouched = $state(false)
   let repeatPasswordTouched = $state(false)
 
-  function deriveUsernameError(value: string): string | null {
+  function deriveHandleError(value: string): string | null {
     if (value.length === 0) return null
     if (value.length < 3) return 'Must be at least 3 characters'
     if (value.length > 24) return 'Must be 24 characters or fewer'
@@ -49,26 +49,26 @@
   }
 
   let hasErrors = $derived(
-    !username ||
+    !handle ||
       !displayName ||
       !email ||
       !password ||
       !repeatPassword ||
-      usernameError !== null ||
+      handleError !== null ||
       passwordError !== null ||
       repeatPasswordError !== null
   )
 
-  function sanitizeUsername(event: Event): void {
+  function sanitizeHandle(event: Event): void {
     const input = event.currentTarget as HTMLInputElement
     input.value = input.value.replace(/\s/g, '')
-    username = input.value
+    handle = input.value
   }
 
   async function handleRegistration(event: SubmitEvent): Promise<void> {
     event.preventDefault()
 
-    usernameTouched = true
+    handleTouched = true
     passwordTouched = true
     repeatPasswordTouched = true
 
@@ -77,7 +77,7 @@
     isLoading = true
     try {
       const response = await authenticationService.register(
-        username,
+        handle,
         displayName,
         password,
         email,
@@ -157,24 +157,24 @@
       </div>
 
       <div class="field">
-        <label class="label" for="username">Username</label>
-        <div class="input-with-badge" class:input-error={usernameTouched && usernameError}>
+        <label class="label" for="handle">Handle</label>
+        <div class="input-with-badge" class:input-error={handleTouched && handleError}>
           <span class="input-badge">@</span>
           <input
-            id="username"
+            id="handle"
             class="input input-badged"
             type="text"
-            name="username"
-            placeholder="username"
-            bind:value={username}
-            oninput={sanitizeUsername}
-            onblur={() => (usernameTouched = true)}
+            name="handle"
+            placeholder="Handle"
+            bind:value={handle}
+            oninput={sanitizeHandle}
+            onblur={() => (handleTouched = true)}
             required
-            autocomplete="username"
+            autocomplete="handle"
           />
         </div>
-        {#if usernameTouched && usernameError}
-          <span class="error-text">{usernameError}</span>
+        {#if handleTouched && handleError}
+          <span class="error-text">{handleError}</span>
         {/if}
       </div>
 

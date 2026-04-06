@@ -29,7 +29,7 @@
       <span class="presence-dot" class:online={isOnline}></span>
     </div>
     <div class="user-info">
-      <span class="username">{chatState.selectedUser.displayName}</span>
+      <span class="handle">{chatState.selectedUser.displayName}</span>
       <span class="status-label" class:online={isOnline}>
         {isOnline ? 'Online' : 'Offline'}
       </span>
@@ -87,7 +87,7 @@
     gap: 2px;
   }
 
-  .username {
+  .handle {
     font-size: 16px;
     font-weight: 600;
     color: #1a1a1a;

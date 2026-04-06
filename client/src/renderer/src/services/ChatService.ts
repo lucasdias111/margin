@@ -222,7 +222,6 @@ class ChatService {
     messageText: string
   ): Promise<{ conversation: Conversation; message: Message }> {
     const content = await this.encryptForUser(messageText, toUserId, currentUser.id)
-
     const response = await authenticatedPost(
       { recipientUserId: toUserId, encryptedContent: content },
       'conversations/create_private'
@@ -337,6 +336,12 @@ class ChatService {
     }
     chatState.currentlySelectedContent = content
     chatState.selectedChannel = null
+  }
+
+  setConversationReadAt(conversationId: number, readAt: string): void {
+    const conv = conversationState.currentConversation
+    if (conv?.type !== 'DIRECT' || conv.id !== conversationId) return
+    conv.otherUserReadAt = readAt
   }
 }
 

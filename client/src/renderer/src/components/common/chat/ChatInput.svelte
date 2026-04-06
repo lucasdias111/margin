@@ -16,11 +16,16 @@
   } = $props()
 
   let showPicker = $state(false)
-  let inputRef = $state<HTMLInputElement | null>(null)
+  let inputRef = $state<HTMLTextAreaElement | null>(null)
 
   function handleKeydown(event: KeyboardEvent): void {
     if (event.key === ' ') {
       messageInput = replaceEmoticons(messageInput)
+    }
+
+    if (event.key === 'Enter' && !event.shiftKey) {
+      event.preventDefault()
+      inputRef?.form?.requestSubmit()
     }
   }
 
@@ -48,21 +53,22 @@
 
 <div class="chat-page">
   <form class="input-area" onsubmit={onSubmit}>
-    <input
+    <textarea
       bind:this={inputRef}
       bind:value={messageInput}
       placeholder="Type a message..."
       disabled={!selectedContent}
       onkeydown={handleKeydown}
-    />
+      rows="1"
+    ></textarea>
     <button class="secondary-button" type="submit" aria-label="Attach file(s)">
       <Icon name="paperclip" size={18} color="#f47e3a" />
     </button>
     <div class="emoji-wrapper" use:clickOutside={() => (showPicker = false)}>
       <div class="picker-container" class:visible={showPicker} use:emojiPicker></div>
       <button class="secondary-button" type="button" onclick={() => (showPicker = !showPicker)}
-        >😊</button
-      >
+        >😊
+      </button>
     </div>
     <button
       class="sendbut"
@@ -91,24 +97,28 @@
     gap: 8px;
   }
 
-  .input-area input {
+  .input-area textarea {
     flex: 1;
     padding: 11px 16px;
     background-color: #ffffff;
     border: 1px solid #e4cbb2;
-    border-radius: 999px;
+    border-radius: 20px;
     color: #1d2021;
     font: inherit;
     font-size: 14px;
     outline: none;
     transition: border-color 0.2s;
+    resize: none;
+    overflow-y: auto;
+    max-height: 120px;
+    field-sizing: content;
   }
 
-  .input-area input:focus {
+  .input-area textarea:focus {
     border-color: #f47e3a;
   }
 
-  .input-area input::placeholder {
+  .input-area textarea::placeholder {
     color: #c4a98a;
   }
 

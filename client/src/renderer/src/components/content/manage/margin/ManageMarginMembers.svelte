@@ -8,8 +8,6 @@
   import { roleRank } from '$src/interfaces/Margin'
   import { errorService } from '$src/services/ErrorService'
   import { marginInviteService } from '$src/services/MarginInviteService'
-  import { chatState } from '$src/states/ChatState.svelte'
-  import { marginService } from '$src/services/MarginService'
 
   interface Props {
     margin: Margin
@@ -62,7 +60,7 @@
           {inviteLoading ? 'Generating...' : 'Create invite link'}
         </button>
         <button class="add-member-btn" onclick={() => (addMemberOpen = true)}>
-          Invite by username
+          Invite by handle
         </button>
       </div>
     </div>
@@ -94,11 +92,11 @@
     <ListView
       columns={[
         {
-          key: 'username',
+          key: 'displayName',
           label: 'Member',
           flex: 1,
           sortable: true,
-          render: (m) => m.user.username
+          render: (m) => m.user.displayName
         },
         {
           key: 'role',
@@ -117,7 +115,7 @@
       getKey={(m) => m.user.id}
       onAction={(m) => onRemoveMember(m)}
       searchPlaceholder="Search member"
-      searchFilter={(m, q) => m.user.username.toLowerCase().includes(q)}
+      searchFilter={(m, q) => m.user.handle.toLowerCase().includes(q)}
       cellSnippets={{ role: roleCell }}
     />
   </div>

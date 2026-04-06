@@ -3,7 +3,7 @@ import { authenticatedGet, authenticatedPost } from '$src/services/api'
 export interface MarginInviteDetails {
   id: number
   marginName: string
-  invitedByUsername: string
+  invitedByUser: string
   expiresAt: string
   inviteCode: string
 }
@@ -11,7 +11,7 @@ export interface MarginInviteDetails {
 export interface PendingInvite {
   id: number
   marginName: string
-  invitedByUsername: string
+  invitedByUser: string
   createdAt: string
   inviteCode: string
 }
@@ -23,10 +23,10 @@ class MarginInviteService {
     return response.json()
   }
 
-  async sendDirectInvite(marginId: number, username: string): Promise<void> {
+  async sendDirectInvite(marginId: number, handle: string): Promise<void> {
     await authenticatedPost(
       null,
-      `invites/margins/${marginId}/username?username=${encodeURIComponent(username)}`
+      `invites/margins/${marginId}/handle?handle=${encodeURIComponent(handle)}`
     )
   }
 

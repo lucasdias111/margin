@@ -13,7 +13,7 @@
   let { open, onClose, onInviteUser }: Props = $props()
 
   let userToInvite = $state<User | undefined>(undefined)
-  let exactUsername = $state('')
+  let exactHandle = $state('')
   let exactLookupLoading = $state(false)
   let exactLookupError = $state<string | null>(null)
   let inviteSent = $state(false)
@@ -22,13 +22,13 @@
   let title = $state<string>(initialTitle)
 
   async function handleExactLookup(): Promise<void> {
-    if (!exactUsername.trim()) return
+    if (!exactHandle.trim()) return
     exactLookupLoading = true
     exactLookupError = null
 
     try {
       const response = await authenticatedGet(
-        `users/lookup?username=${encodeURIComponent(exactUsername.trim())}`
+        `users/lookup?handle=${encodeURIComponent(exactHandle.trim())}`
       )
       if (!response.ok) {
         exactLookupError = 'User not found.'
@@ -36,7 +36,7 @@
       }
       const user: User = await response.json()
       userToInvite = user
-      title = `Invite ${user.displayName ?? user.username} to margin?`
+      title = `Invite ${user.displayName ?? user.handle} to margin?`
     } catch (e) {
       exactLookupError = 'Lookup failed. Try again.'
     } finally {
@@ -62,7 +62,7 @@
   function clear(): void {
     userToInvite = undefined
     title = initialTitle
-    exactUsername = ''
+    exactHandle = ''
     exactLookupError = null
     exactLookupLoading = false
     inviteSent = false
@@ -72,7 +72,7 @@
 <AppModal {open} {title} onClose={handleCancel}>
   {#if inviteSent}
     <div class="success-message">
-      <span>Invite sent to {userToInvite?.displayName ?? userToInvite?.username}.</span>
+      <span>Invite sent to {userToInvite?.displayName ?? userToInvite?.handle}.</span>
     </div>
     <div class="actions">
       <button class="confirm" onclick={handleCancel}>Done</button>
@@ -80,7 +80,7 @@
   {:else if userToInvite}
     <div class="selected-user">
       <UserAvatar profilePictureUrl={userToInvite.profilePictureUrl} />
-      <span class="username">{userToInvite.displayName ?? userToInvite.username}</span>
+      <span class="handle">{userToInvite.displayName ?? userToInvite.handle}</span>
     </div>
 
     {#if exactLookupError}
@@ -93,14 +93,14 @@
     </div>
   {:else}
     <div class="exact-lookup">
-      <label class="field-label" for="exact-username">Enter exact username</label>
+      <label class="field-label" for="exact-handle">Enter exact handle</label>
       <div class="lookup-row">
         <input
-          id="exact-username"
+          id="exact-handle"
           class="lookup-input"
           type="text"
-          placeholder="username"
-          bind:value={exactUsername}
+          placeholder="handle"
+          bind:value={exactHandle}
           maxlength="100"
           onkeydown={(e) => {
             if (e.key === 'Enter') handleExactLookup()
@@ -109,7 +109,7 @@
         <button
           class="lookup-btn"
           onclick={handleExactLookup}
-          disabled={exactLookupLoading || !exactUsername.trim()}
+          disabled={exactLookupLoading || !exactHandle.trim()}
         >
           {#if exactLookupLoading}
             <span class="spinner"></span>
@@ -230,7 +230,7 @@
     margin-bottom: 16px;
   }
 
-  .username {
+  .handle {
     color: #2d2d2d;
     font-weight: 600;
     font-size: 14px;

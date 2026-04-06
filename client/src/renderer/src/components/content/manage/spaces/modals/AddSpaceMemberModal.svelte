@@ -58,7 +58,7 @@
   {#if memberToAdd}
     <div class="selected-user">
       <UserAvatar profilePictureUrl={memberToAdd.profilePictureUrl} />
-      <span class="username">{memberToAdd.displayName}</span>
+      <span class="handle">{memberToAdd.displayName}</span>
     </div>
 
     <div class="role-field">
@@ -115,7 +115,7 @@
     margin-bottom: 16px;
   }
 
-  .username {
+  .handle {
     color: #2d2d2d;
     font-weight: 600;
     font-size: 14px;

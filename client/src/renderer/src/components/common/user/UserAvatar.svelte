@@ -1,5 +1,6 @@
 <script lang="ts">
   import avatar from '$src/assets/pics/anonym-avatar.png'
+  import { imageService } from '$src/services/ImageService'
 
   interface Props {
     profilePictureUrl: string | null
@@ -8,17 +9,32 @@
   }
 
   let { profilePictureUrl, height = 40, width = 40 }: Props = $props()
+  let blobUrl = $state('')
 
+  $effect(() => {
+    if (!profilePictureUrl) return () => {}
+    if (!profilePictureUrl.includes('/api/')) {
+      blobUrl = profilePictureUrl
+      return () => {}
+    }
+
+    let cancelled = false
+    imageService.getAuthenticatedImageUrl(profilePictureUrl).then(url => {
+      if (!cancelled) blobUrl = url
+    })
+    return () => {
+      cancelled = true
+    }
+  })
 </script>
 
-{#if profilePictureUrl}
+{#if blobUrl}
   <img
-    src={profilePictureUrl}
+    src={blobUrl}
     alt="Profile"
     style="width: {width}px; height: {height}px;"
     class="user-avatar"
   />
-
 {:else}
   <img
     src={avatar}
@@ -33,5 +49,4 @@
     border-radius: 50%;
     object-fit: cover;
   }
-
 </style>

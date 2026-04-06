@@ -85,6 +85,11 @@
       msg: WebSocketMessage<{ spaceId: number; user: User }>
     ) => {
       spaceState.addMemberToSpace(msg.payload.spaceId, msg.payload.user)
+    },
+    [WebSocketMessageType.CONVERSATION_READ]: (
+      msg: WebSocketMessage<{ conversationId: number; readAt: string }>
+    ) => {
+      chatService.setConversationReadAt(msg.payload.conversationId, msg.payload.readAt)
     }
   })
 

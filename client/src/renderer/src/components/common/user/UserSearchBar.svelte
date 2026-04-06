@@ -106,7 +106,7 @@
           onclick={() => handleSelectUser(result.user)}
         >
           <div class="user-result-content">
-            <span class="username">{result.user.username}</span>
+            <span class="handle">{result.user.handle}</span>
             {#if showSharedMargins && result.sharedMargins.length > 0}
               <div class="shared-margins">
                 {#each result.sharedMargins as margin (margin)}
@@ -193,7 +193,7 @@
     gap: 2px;
   }
 
-  .username {
+  .handle {
     font-size: 13px;
     font-weight: 500;
     color: #2a2a2a;

@@ -71,7 +71,7 @@
           width={64}
           height={64}
         />
-        <p class="pip-username">{callState.p2pCallState?.user.displayName}</p>
+        <p class="pip-displayname">{callState.p2pCallState?.user.displayName}</p>
       </div>
     {/if}
   </div>
@@ -152,7 +152,7 @@
     background: radial-gradient(circle at 50% 40%, #2a1f0f, #0d0d0d);
   }
 
-  .pip-username {
+  .pip-displayname {
     margin: 0;
     font-size: 13px;
     font-weight: 500;

@@ -108,7 +108,7 @@ const mockCallState = callState as unknown as MockCallState
 function buildUser(overrides: Partial<User> = {}): User {
   return {
     id: 2,
-    username: 'kasper',
+    handle: 'kasper',
     displayName: 'Kasper',
     email: 'kasper@margin.chat',
     createdAt: '2025-01-01T00:00:00Z',

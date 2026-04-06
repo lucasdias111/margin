@@ -137,6 +137,7 @@
     font-size: 13px;
     color: #555;
     line-height: 1.65;
+    white-space: pre-wrap;
   }
 
   .announcement-footer {

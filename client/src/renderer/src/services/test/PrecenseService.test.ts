@@ -27,7 +27,7 @@ vi.mock('$src/states/SpaceState.svelte.js', () => ({
 function buildUser(overrides: Partial<User> = {}): User {
   return {
     id: 1,
-    username: 'lucas',
+    handle: 'lucas',
     displayName: 'Lucas',
     email: 'lucas@margin.chat',
     createdAt: '2025-01-01T00:00:00Z',

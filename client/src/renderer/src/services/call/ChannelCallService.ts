@@ -10,6 +10,7 @@ import type {
 } from 'mediasoup-client/types'
 import { callState } from '$src/states/CallState.svelte.js'
 import { errorService } from '$src/services/ErrorService'
+import { deviceService } from '$src/services/DeviceService'
 
 class ChannelCallService {
   private async connectToWebSocket(wsUrl: string): Promise<WebSocket> {
@@ -225,6 +226,9 @@ class ChannelCallService {
         videoProducer: null
       })
       callState.setStatus('connected')
+
+      await deviceService.enumerateDevices()
+      deviceService.startListening()
     } catch (err) {
       callState.endCall()
       console.error(err)
@@ -343,6 +347,7 @@ class ChannelCallService {
     session.receiveTransport.close()
     session.sfuWebsocket?.close()
 
+    deviceService.cleanup()
     callState.endCall()
   }
 }

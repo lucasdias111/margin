@@ -39,7 +39,7 @@
       {#if showDropdown}
         <div class="dropdown">
           <div class="dropdown-header">
-            <span class="dropdown-username">{userState.currentUser.displayName}</span>
+            <span class="dropdown-displayname">{userState.currentUser.displayName}</span>
           </div>
           <div class="divider"></div>
           <button class="dropdown-item" onclick={handleLogout}>
@@ -146,7 +146,7 @@
     padding: 8px 10px 6px;
   }
 
-  .dropdown-username {
+  .dropdown-displayname {
     font-size: 12px;
     font-weight: 600;
     color: #aaa;

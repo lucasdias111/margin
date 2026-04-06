@@ -6,6 +6,7 @@ interface BaseConversation {
 export interface DirectConversation extends BaseConversation {
   type: 'DIRECT'
   otherUserId: number
+  otherUserReadAt: string
 }
 
 export interface GroupConversation extends BaseConversation {
