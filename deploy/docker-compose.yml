@@ -111,9 +111,12 @@ services:
              -d ${DOMAIN}"
     profiles:
       - certbot
+
   margin-landing:
     build: /opt/margin-landing
     restart: unless-stopped
+    networks:
+      - margin-net
 
 networks:
   margin-net:
