@@ -122,7 +122,7 @@
   }
 
   async function loadRecentUsers(): Promise<void> {
-    const users = await userService.getRecentChatUsers(userState.currentUser.id)
+    const users = await userService.getRecentChatUsers()
     const decryptedUsers = await Promise.all(
       users.map(async (recentUser) => {
         if (!recentUser.lastMessage) return recentUser

@@ -100,7 +100,7 @@
         </span>
       {/each}
       {#if onAction}
-        <button class="icon-btn" onclick={() => onAction(row)}>⋮</button>
+        <button class="icon-btn" onclick={() => onAction(row)}>🗑️</button>
       {/if}
     </div>
   {/each}

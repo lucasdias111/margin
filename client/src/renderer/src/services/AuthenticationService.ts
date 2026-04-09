@@ -111,13 +111,15 @@ class AuthenticationService {
   }
 
   async logoutUser(): Promise<void> {
-    webSocketService.disconnect()
-
     const response = await authenticatedPost({}, 'auth/logout')
     if (!response.ok) {
       errorService.reportError('Failed to log out.')
     }
+    await this.clear()
+  }
 
+  public async clear(): Promise<void> {
+    webSocketService.disconnect()
     userState.reset()
     chatState.reset()
     conversationState.reset()

@@ -40,21 +40,13 @@ class MarginService {
     await authenticatedDelete(marginId, 'margins/delete_margin')
   }
 
-  async addMarginMember(marginId: number, userId: number, role: string): Promise<MarginMember> {
-    const response = await authenticatedPost(
-      { marginId, userId, role },
-      'margins/add_margin_member'
-    )
-    return response.json()
-  }
-
   async updateMarginMemberRole(marginId: number, member: MarginMember): Promise<MarginMember> {
     const response = await authenticatedPost({ marginId, member }, 'margins/update_member_role')
     return response.json()
   }
 
-  async removeMarginMember(marginId: number): Promise<void> {
-    await authenticatedDelete(marginId, 'margins/remove_margin_member')
+  async removeMarginMember(marginId: number, userIdToRemove: number): Promise<void> {
+    await authenticatedPost({ marginId, userIdToRemove }, 'margins/remove_margin_member')
   }
 
   async getMargins(): Promise<Margin[]> {
@@ -63,7 +55,7 @@ class MarginService {
   }
 
   async createMargin(margin: CreateMargin): Promise<Margin> {
-    const formData = new FormData()
+    const formData = new FormData()!
     formData.append(
       'data',
       new Blob(
