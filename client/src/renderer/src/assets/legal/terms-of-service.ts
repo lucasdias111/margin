@@ -26,7 +26,7 @@ export const termsOfServiceHtml = `
 </ul>
 <p>We reserve the right to suspend or terminate accounts that violate these terms.</p>
 
-<h2>5. Organizations (Margins)</h2>
+<h2>5. Organizations (margins)</h2>
 <p>When you create or administer an organization ("margin") on the platform, you are responsible for managing its members and content. Organization administrators can add and remove members, assign roles, and manage spaces and channels within their organization. If you are a member of an organization, your membership and the content you post within it are subject to the administrator's management decisions.</p>
 
 <h2>6. Your Content</h2>
@@ -64,5 +64,5 @@ export const termsOfServiceHtml = `
 
 <h2>16. Contact</h2>
 <p>If you have questions about these Terms, contact us at:</p>
-<p><strong>[EMAIL ADDRESS]</strong><br/>[POSTAL ADDRESS]</p>
+<p><strong>hello@margin.chat</strong>
 `
