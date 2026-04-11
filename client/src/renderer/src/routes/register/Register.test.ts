@@ -32,6 +32,18 @@ vi.mock('$src/components/common/user/UserAvatar.svelte', () => ({
   default: vi.fn()
 }))
 
+vi.mock('$src/components/common/modals/PolicyModal.svelte', () => ({
+  default: vi.fn()
+}))
+
+vi.mock('$src/assets/legal/privacy-policy', () => ({
+  privacyPolicyHtml: '<p>Privacy policy content</p>'
+}))
+
+vi.mock('$src/assets/legal/terms-of-service', () => ({
+  termsOfServiceHtml: '<p>Terms of service content</p>'
+}))
+
 function fillForm(
   overrides: Partial<{
     betaKey: string
@@ -85,6 +97,13 @@ function fillForm(
   }
 }
 
+async function acceptPolicies(): Promise<void> {
+  const checkboxes = screen.getAllByRole('checkbox')
+  for (const checkbox of checkboxes) {
+    await fireEvent.click(checkbox)
+  }
+}
+
 describe('RegisterPage', () => {
   beforeEach(() => {
     vi.clearAllMocks()
@@ -114,6 +133,7 @@ describe('RegisterPage', () => {
 
     const form = fillForm()
     await form.fill()
+    await acceptPolicies()
     await fireEvent.click(screen.getByRole('button', { name: /create account/i }))
 
     expect(authenticationService.register).toHaveBeenCalledWith(
@@ -131,6 +151,7 @@ describe('RegisterPage', () => {
     render(RegisterPage)
 
     await fillForm().fill()
+    await acceptPolicies()
     await fireEvent.click(screen.getByRole('button', { name: /create account/i }))
 
     await waitFor(() => {
@@ -146,6 +167,7 @@ describe('RegisterPage', () => {
     render(RegisterPage)
 
     await fillForm().fill()
+    await acceptPolicies()
     await fireEvent.click(screen.getByRole('button', { name: /create account/i }))
 
     await waitFor(() => {
@@ -163,6 +185,7 @@ describe('RegisterPage', () => {
     render(RegisterPage)
 
     await fillForm().fill()
+    await acceptPolicies()
     await fireEvent.click(screen.getByRole('button', { name: /create account/i }))
 
     await waitFor(() => {
@@ -175,6 +198,7 @@ describe('RegisterPage', () => {
     render(RegisterPage)
 
     await fillForm().fill()
+    await acceptPolicies()
     await fireEvent.click(screen.getByRole('button', { name: /create account/i }))
 
     await waitFor(() => {
@@ -283,6 +307,7 @@ describe('RegisterPage', () => {
     render(RegisterPage)
 
     await fillForm({ password: 'short', repeatPassword: 'short' }).fill()
+    await acceptPolicies()
     await fireEvent.click(screen.getByRole('button', { name: /create account/i }))
 
     expect(authenticationService.register).not.toHaveBeenCalled()
@@ -301,6 +326,7 @@ describe('RegisterPage', () => {
     render(RegisterPage)
 
     await fillForm().fill()
+    await acceptPolicies()
     await fireEvent.click(screen.getByRole('button', { name: /create account/i }))
 
     await waitFor(() => {
@@ -334,5 +360,58 @@ describe('RegisterPage', () => {
     await fireEvent.input(input, { target: { value: 'john doe' } })
 
     expect(input).toHaveValue('johndoe')
+  })
+
+  // Policy checkboxes
+
+  it('renders terms of service and privacy policy checkboxes', () => {
+    render(RegisterPage)
+
+    const checkboxes = screen.getAllByRole('checkbox')
+    expect(checkboxes).toHaveLength(2)
+    expect(screen.getByRole('button', { name: /terms of service/i })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /privacy policy/i })).toBeInTheDocument()
+  })
+
+  it('does not submit when terms of service checkbox is not checked', async () => {
+    render(RegisterPage)
+
+    await fillForm().fill()
+    const checkboxes = screen.getAllByRole('checkbox')
+    await fireEvent.click(checkboxes[1])
+    await fireEvent.click(screen.getByRole('button', { name: /create account/i }))
+
+    expect(authenticationService.register).not.toHaveBeenCalled()
+  })
+
+  it('does not submit when privacy policy checkbox is not checked', async () => {
+    render(RegisterPage)
+
+    await fillForm().fill()
+    const checkboxes = screen.getAllByRole('checkbox')
+    await fireEvent.click(checkboxes[0]) // only terms
+    await fireEvent.click(screen.getByRole('button', { name: /create account/i }))
+
+    expect(authenticationService.register).not.toHaveBeenCalled()
+  })
+
+  it('does not submit when neither checkbox is checked', async () => {
+    render(RegisterPage)
+
+    await fillForm().fill()
+    await fireEvent.click(screen.getByRole('button', { name: /create account/i }))
+
+    expect(authenticationService.register).not.toHaveBeenCalled()
+  })
+
+  it('submits when both checkboxes are checked and form is valid', async () => {
+    vi.mocked(authenticationService.register).mockResolvedValue({ ok: true } as Response)
+    render(RegisterPage)
+
+    await fillForm().fill()
+    await acceptPolicies()
+    await fireEvent.click(screen.getByRole('button', { name: /create account/i }))
+
+    expect(authenticationService.register).toHaveBeenCalled()
   })
 })
