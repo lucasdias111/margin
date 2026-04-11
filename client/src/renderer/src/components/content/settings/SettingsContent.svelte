@@ -3,17 +3,19 @@
   import { userState } from '$src/states/UserState.svelte.js'
   import UploadImageButton from '$src/components/common/buttons/UploadImageButton.svelte'
   import { userService } from '$src/services/UserService'
+  import ConfirmationModal from '$src/components/common/modals/ConfirmationModal.svelte'
 
   let newProfilePicture = $state<File | null>(null)
   let previewUrl = $state<string | null>(userState.currentUser.profilePictureUrl)
   let displayName = $state(userState.currentUser.displayName)
   let email = $state(userState.currentUser.email)
   let editingField = $state<'displayName' | 'email' | null>(null)
+  let showDeleteConfirm = $state(false)
 
   const hasChanges = $derived(
     displayName !== userState.currentUser.displayName ||
-      email !== userState.currentUser.email ||
-      newProfilePicture !== null
+    email !== userState.currentUser.email ||
+    newProfilePicture !== null
   )
 
   function onFileChange(file: File): void {
@@ -61,6 +63,14 @@
       editingField = null
     } catch {
       // do nothing
+    }
+  }
+
+  async function onDeleteAccount(): Promise<void> {
+    try {
+      await userService.deleteAccount()
+    } catch (e) {
+      console.error('Failed to delete account:', e)
     }
   }
 </script>
@@ -129,8 +139,32 @@
       <button class="discard-btn" disabled={!hasChanges} onclick={discardChanges}>Discard</button>
       <button class="save-btn" disabled={!hasChanges} onclick={onSave}>Save changes</button>
     </div>
+
+    <div class="divider"></div>
+
+    <div class="danger-zone">
+      <div class="danger-info">
+        <span class="danger-title">Delete account</span>
+        <span class="danger-description">
+          Permanently delete your account and all associated data. This action cannot be undone.
+        </span>
+      </div>
+      <button class="delete-account-btn" onclick={() => (showDeleteConfirm = true)}>
+        Delete account
+      </button>
+    </div>
   </div>
 </div>
+
+<ConfirmationModal
+  open={showDeleteConfirm}
+  title="Delete account"
+  message="This will permanently delete your account, remove you from all margins, and anonymize your data. This cannot be undone."
+  confirmLabel="Delete my account"
+  variant="danger"
+  onConfirm={onDeleteAccount}
+  onClose={() => (showDeleteConfirm = false)}
+/>
 
 <style>
   .content {
@@ -279,5 +313,51 @@
   .save-btn:disabled {
     opacity: 0.4;
     cursor: default;
+  }
+
+  .danger-zone {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px;
+    border: 1px solid rgba(192, 57, 43, 0.2);
+    border-radius: 10px;
+    background: rgba(192, 57, 43, 0.03);
+  }
+
+  .danger-info {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .danger-title {
+    font-size: 0.88rem;
+    font-weight: 600;
+    color: #c0392b;
+  }
+
+  .danger-description {
+    font-size: 0.78rem;
+    color: #888;
+    line-height: 1.5;
+  }
+
+  .delete-account-btn {
+    padding: 8px 18px;
+    background: #c0392b;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 0.82rem;
+    font-weight: 600;
+    font-family: inherit;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background 0.12s;
+  }
+
+  .delete-account-btn:hover {
+    background: #a93226;
   }
 </style>

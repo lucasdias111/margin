@@ -7,9 +7,11 @@
   import { marginService } from '$src/services/MarginService'
   import type { User } from '$src/interfaces/User'
   import { marginInviteService } from '$src/services/MarginInviteService'
+  import ConfirmationModal from '$src/components/common/modals/ConfirmationModal.svelte'
 
   let margin = $state<Margin | null>(null)
   let isLoading = $state(true)
+  let memberToRemove = $state<MarginMember | null>(null)
 
   onMount(async () => {
     try {
@@ -75,7 +77,7 @@
 
   async function onRemoveMember(member: MarginMember): Promise<void> {
     try {
-      await marginService.removeMarginMember(margin.marginId)
+      await marginService.removeMarginMember(margin.marginId, member.user.id)
       margin = {
         ...margin,
         members: margin.members.filter((m) => m.user.id !== member.user.id)
@@ -84,6 +86,12 @@
       console.error('Failed to remove member:', e)
     }
   }
+
+  async function confirmRemoveMember(): Promise<void> {
+    if (!memberToRemove) return
+    await onRemoveMember(memberToRemove)
+    memberToRemove = null
+  }
 </script>
 
 <div class="manage-margin-window">
@@ -91,7 +99,22 @@
     <div class="loading">Loading margin...</div>
   {:else if margin}
     <ManageMarginInformation {margin} {onSaveInfo} {onDeleteMargin} />
-    <ManageMarginMembers {margin} {onInviteUser} {onUpdateMemberRole} {onRemoveMember} />
+    <ManageMarginMembers
+      {margin}
+      {onInviteUser}
+      {onUpdateMemberRole}
+      onRemoveMember={(member) => (memberToRemove = member)}
+    />
+
+    <ConfirmationModal
+      open={memberToRemove !== null}
+      title="Remove member"
+      message="Are you sure you want to remove {memberToRemove?.user.displayName} from this margin? They will lose access to all spaces and channels."
+      confirmLabel="Remove"
+      variant="danger"
+      onConfirm={confirmRemoveMember}
+      onClose={() => (memberToRemove = null)}
+    />
   {/if}
 </div>
 

@@ -7,7 +7,9 @@
   import { spacesService } from '$src/services/SpacesService'
   import type { Channel, CreateChannel } from '$src/interfaces/Channel'
   import { chatState } from '$src/states/ChatState.svelte.js'
+  import ConfirmationModal from '$src/components/common/modals/ConfirmationModal.svelte'
 
+  let memberToRemove = $state<SpaceMember | null>(null)
   let spaces = $state<Space[]>([])
   let selectedSpace = $state<Space | null>(null)
 
@@ -70,6 +72,17 @@
     await spacesService.deleteChannel(channel)
     selectedSpace.channels = selectedSpace.channels.filter((c) => c.id !== channel.id)
   }
+
+  async function onRemoveSpaceMember(member: SpaceMember): Promise<void> {
+    await spacesService.removeSpaceMember(member)
+    selectedSpace.members = selectedSpace.members.filter((m) => m.user.id !== member.user.id)
+  }
+
+  async function confirmRemoveMember(): Promise<void> {
+    if (!memberToRemove) return
+    await onRemoveSpaceMember(memberToRemove)
+    memberToRemove = null
+  }
 </script>
 
 <div class="manage-spaces-window">
@@ -82,7 +95,23 @@
     {onUpdateChannel}
     {onDeleteChannel}
   />
-  <ManageSpaceMembers {selectedSpace} {onAddMember} {onUpdateMemberRole} />
+
+  <ManageSpaceMembers
+    {selectedSpace}
+    {onAddMember}
+    {onUpdateMemberRole}
+    onRemoveMember={(member) => (memberToRemove = member)}
+  />
+
+  <ConfirmationModal
+    open={memberToRemove !== null}
+    title="Remove member"
+    message="Are you sure you want to remove {memberToRemove?.user.displayName} from this space? They will lose access to all channels."
+    confirmLabel="Remove"
+    variant="danger"
+    onConfirm={confirmRemoveMember}
+    onClose={() => (memberToRemove = null)}
+  />
 </div>
 
 <style>

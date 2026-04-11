@@ -1,10 +1,11 @@
-import { authenticatedGet, authenticatedPatchForm } from '$src/services/api'
+import { authenticatedDelete, authenticatedGet, authenticatedPatchForm } from '$src/services/api'
 import type { RecentChatUser } from '$src/interfaces/RecentChatUser'
 import { userState } from '$src/states/UserState.svelte'
+import { authenticationService } from '$src/services/AuthenticationService'
 
 class UserService {
-  async getRecentChatUsers(userId: number): Promise<RecentChatUser[]> {
-    const response = await authenticatedGet(`users/${userId}/recent_chat_users`)
+  async getRecentChatUsers(): Promise<RecentChatUser[]> {
+    const response = await authenticatedGet(`users/recent_chat_users`)
 
     if (!response.ok) {
       return []
@@ -21,6 +22,11 @@ class UserService {
     userState.currentUser.profilePictureUrl = data.profilePictureUrl
     userState.currentUser.displayName = data.displayName
     userState.currentUser.email = data.email
+  }
+
+  async deleteAccount(): Promise<void> {
+    await authenticatedDelete(null, 'users/delete')
+    await authenticationService.clear()
   }
 }
 

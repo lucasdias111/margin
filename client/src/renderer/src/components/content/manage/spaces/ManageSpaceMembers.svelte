@@ -8,9 +8,10 @@
     selectedSpace: Space
     onAddMember: (user: SpaceMember) => Promise<void>
     onUpdateMemberRole: (member: SpaceMember) => Promise<void>
+    onRemoveMember: (member: SpaceMember) => void
   }
 
-  let { selectedSpace, onAddMember, onUpdateMemberRole }: Props = $props()
+  let { selectedSpace, onAddMember, onUpdateMemberRole, onRemoveMember }: Props = $props()
   let addMemberOpen = $state(false)
 
   const spaceRoles = ['MEMBER', 'ADMIN']
@@ -53,7 +54,7 @@
       getKey={(member) => member.user.id}
       searchPlaceholder="Search member"
       searchFilter={(member, query) => member.user.handle.toLowerCase().includes(query)}
-      onAction={(member) => onUpdateMemberRole(member)}
+      onAction={(member) => onRemoveMember(member)}
       cellSnippets={{ role: roleCell }}
     />
   {/if}

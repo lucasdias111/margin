@@ -7,6 +7,9 @@
   import avatar from '$src/assets/pics/anonym-avatar.png'
   import { errorService } from '$src/services/ErrorService'
   import type { AuthResponse } from '$src/interfaces/AuthResponse'
+  import PolicyModal from '$src/components/common/modals/PolicyModal.svelte'
+  import { privacyPolicyHtml } from '$src/assets/legal/privacy-policy'
+  import { termsOfServiceHtml } from '$src/assets/legal/terms-of-service'
 
   let handle = $state('')
   let displayName = $state('')
@@ -17,6 +20,13 @@
   let isLoading = $state(false)
   let previewUrl = $state<string | null>(avatar)
   let betaKey = $state('')
+
+  let acceptedTerms = $state(false)
+  let acceptedPrivacy = $state(false)
+
+  let policyModalOpen = $state(false)
+  let policyModalTitle = $state('')
+  let policyModalContent = $state('')
 
   let handleError = $derived(deriveHandleError(handle))
   let passwordError = $derived(derivePasswordError(password))
@@ -50,19 +60,32 @@
 
   let hasErrors = $derived(
     !handle ||
-      !displayName ||
-      !email ||
-      !password ||
-      !repeatPassword ||
-      handleError !== null ||
-      passwordError !== null ||
-      repeatPasswordError !== null
+    !displayName ||
+    !email ||
+    !password ||
+    !repeatPassword ||
+    !acceptedTerms ||
+    !acceptedPrivacy ||
+    handleError !== null ||
+    passwordError !== null ||
+    repeatPasswordError !== null
   )
 
   function sanitizeHandle(event: Event): void {
     const input = event.currentTarget as HTMLInputElement
     input.value = input.value.replace(/\s/g, '')
     handle = input.value
+  }
+
+  function openPolicy(type: 'terms' | 'privacy'): void {
+    if (type === 'terms') {
+      policyModalTitle = 'Terms of Service'
+      policyModalContent = termsOfServiceHtml
+    } else {
+      policyModalTitle = 'Privacy Policy'
+      policyModalContent = privacyPolicyHtml
+    }
+    policyModalOpen = true
   }
 
   async function handleRegistration(event: SubmitEvent): Promise<void> {
@@ -114,7 +137,7 @@
 
 <div class="page">
   <div class="card">
-    <img src={marginLogo} alt="Margin" class="logo" />
+    <img src={marginLogo} alt="margin" class="logo" />
 
     <div class="avatar-row">
       {#if previewUrl}
@@ -230,6 +253,28 @@
         {/if}
       </div>
 
+      <div class="legal-checkboxes">
+        <label class="checkbox-row">
+          <input type="checkbox" bind:checked={acceptedTerms} />
+          <span>
+            I agree to the
+            <button type="button" class="link" onclick={() => openPolicy('terms')}>
+              Terms of Service
+            </button>
+          </span>
+        </label>
+
+        <label class="checkbox-row">
+          <input type="checkbox" bind:checked={acceptedPrivacy} />
+          <span>
+            I agree to the
+            <button type="button" class="link" onclick={() => openPolicy('privacy')}>
+              Privacy Policy
+            </button>
+          </span>
+        </label>
+      </div>
+
       <button class="btn-primary" type="submit" disabled={isLoading}>
         {#if isLoading}
           <span class="spinner"></span>
@@ -246,6 +291,13 @@
     <button class="btn-secondary" onclick={goBack}> Back to sign in</button>
   </div>
 </div>
+
+<PolicyModal
+  open={policyModalOpen}
+  title={policyModalTitle}
+  content={policyModalContent}
+  onClose={() => (policyModalOpen = false)}
+/>
 
 <style>
   .page {
@@ -413,6 +465,46 @@
   .input-badged:focus {
     border-color: transparent;
     background: transparent;
+  }
+
+  .legal-checkboxes {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 2px 0;
+  }
+
+  .checkbox-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    color: #555250;
+    cursor: pointer;
+  }
+
+  .checkbox-row input[type='checkbox'] {
+    width: 16px;
+    height: 16px;
+    accent-color: #e8712a;
+    cursor: pointer;
+    flex-shrink: 0;
+  }
+
+  .link {
+    background: none;
+    border: none;
+    padding: 0;
+    color: #e8712a;
+    font-size: 13px;
+    font-family: inherit;
+    cursor: pointer;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+  }
+
+  .link:hover {
+    color: #d4621a;
   }
 
   .btn-primary {

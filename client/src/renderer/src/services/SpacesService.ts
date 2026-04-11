@@ -66,6 +66,10 @@ class SpacesService {
       })
     )
   }
+
+  async removeSpaceMember(member: SpaceMember): Promise<void> {
+    await authenticatedDelete(member, 'spaces/remove_space_member')
+  }
 }
 
 export const spacesService = new SpacesService()
