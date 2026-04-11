@@ -9,7 +9,7 @@
   let { onFileChange, onPreviewUrlChange, label }: Props = $props()
   let file: File = $state<File>(null)
 
-  function handleFileChange(event: Event): void {
+  async function handleFileChange(event: Event): Promise<void> {
     const input = event.target as HTMLInputElement
     file = input.files?.[0]
 
@@ -41,8 +41,8 @@
   .fileUpload {
     height: 40px;
     border-radius: 10px;
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    border: 1px solid #4e4d4d;
+    font-family: inherit;
+    border: 1px solid rgba(78, 77, 77, 0.46);
     display: flex;
     justify-content: center;
     align-items: center;

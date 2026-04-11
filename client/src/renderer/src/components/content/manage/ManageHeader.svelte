@@ -77,7 +77,7 @@
   }
 
   .tab-btn.active {
-    color: #f5a623;
+    color: #f47e3a;
     font-weight: 600;
   }
 </style>

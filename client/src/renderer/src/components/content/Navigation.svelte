@@ -10,6 +10,7 @@
   import { push } from 'svelte-spa-router'
   import { clickOutside } from '$src/actions/clickOutside'
   import Icon from '$src/components/common/icons/Icon.svelte'
+  import MarginIconSvg from '$src/assets/marginIconSvg.svelte'
 
   function onContentSelected(selectedContent: ContentType): void {
     chatService.selectContent(selectedContent)
@@ -79,7 +80,7 @@
       aria-label="Spaces"
       title="Spaces"
     >
-      <Icon name="users" size={28} />
+      <MarginIconSvg selected={chatState.currentlySelectedContent === 'margin'} />
       <UnreadNotificationBadge
         shouldShow={notificationState.getTotalUnreadChannelMessages() > 0}
         count={notificationState.getTotalUnreadChannelMessages()}
@@ -202,8 +203,8 @@
     transition: color 0.15s ease;
   }
 
-  button:hover :global(svg),
-  button.selected :global(svg) {
+  button:hover :global(svg path),
+  button.selected :global(svg path) {
     color: #f47e3a;
   }
 

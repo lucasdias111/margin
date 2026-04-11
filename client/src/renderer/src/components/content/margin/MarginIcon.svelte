@@ -19,7 +19,7 @@
     }
 
     let cancelled = false
-    imageService.getAuthenticatedImageUrl(marginIcon).then(url => {
+    imageService.getAuthenticatedImageUrl(marginIcon).then((url) => {
       if (!cancelled) blobUrl = url
     })
     return () => {
@@ -36,5 +36,16 @@
     class="user-avatar"
   />
 {:else}
-  <img src={marginLogo} alt="Margin icon" style="max-width: {width}px; max-height: {height}px;" />
+  <img
+    class="defaultLogo"
+    src={marginLogo}
+    alt="Margin icon"
+    style="max-width: {width}px; max-height: {height}px;"
+  />
 {/if}
+
+<style>
+  .defaultLogo {
+    background: white;
+  }
+</style>

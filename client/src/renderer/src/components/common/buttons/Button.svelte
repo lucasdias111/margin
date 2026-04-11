@@ -1,25 +1,35 @@
 <script lang="ts">
-  type ButtonType = 'primary' | 'secondary' | 'ternary' | 'danger'
+  import type { Snippet } from 'svelte'
+
+  type ButtonType = 'primary' | 'secondary' | 'ternary' | 'danger' | 'delete' | 'list'
   type Size = 'small' | 'medium' | 'large'
   interface ButtonProps {
-    text: string
+    text?: string
     onClick?: (event: Event) => void
     buttonType: ButtonType
     size?: Size
-    height?: number
-    width?: number
     disabled?: boolean
+    fullWidth?: boolean
+    children?: Snippet
   }
 
-  let { text, buttonType, size, onClick }: ButtonProps = $props()
+  let { text, buttonType, size, onClick, fullWidth, disabled, children }: ButtonProps = $props()
 </script>
 
-<button class="but {buttonType} {size}" onclick={onClick}> {text || 'Button text'}</button>
+<button class="but {buttonType} {size}" class:full-width={fullWidth} onclick={onClick} {disabled}>
+  {#if children}
+    {@render children()}
+  {:else}
+    {text || 'Button text'}
+  {/if}</button
+>
 
 <style>
   .but {
-    padding: 14px 18px;
-    display: inline-block;
+    padding: 12px 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
     width: fit-content;
     height: fit-content;
     cursor: pointer;
@@ -29,25 +39,50 @@
     background-color: #f47e3a;
     color: white;
     border: none;
+    cursor: pointer;
   }
 
   .but.secondary {
     background-color: white;
     color: #f47e3a;
-    border: #312f2f solid 1px;
+    border: rgba(244, 126, 58, 0.43) solid 1px;
+    cursor: pointer;
   }
 
   .but.ternary {
     background-color: #312f2f;
     color: #f47e3a;
     border: none;
+    cursor: pointer;
   }
 
   .but.danger {
-    border: 1px solid #f5c6c5;
-    color: rgba(229, 18, 18, 0.62);
+    border: 0.5px solid #c0392b;
+    color: #c0392b;
     border-radius: 8px;
     background: #fff8f8;
+    cursor: pointer;
+  }
+
+  .but.delete {
+    background: #c0392b;
+    color: white;
+    border: none;
+    cursor: pointer;
+  }
+
+  .but.list {
+    border-radius: 12px;
+    border: 1px solid transparent;
+    background: #fafafa;
+    transition:
+      border-color 0.15s,
+      box-shadow 0.15s;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    color: black;
   }
 
   .but.small {
@@ -66,5 +101,25 @@
     border-radius: 15px;
     padding: 15px 30px;
     font-size: 15px;
+  }
+
+  .but.full-width:not(.list) {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .but.full-width {
+    width: 100%;
+    justify-content: flex-start;
+  }
+
+  .but:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+
+  .but.list:hover {
+    border-color: #ebebeb;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
   }
 </style>

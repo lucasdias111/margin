@@ -22,7 +22,7 @@
   .save-btn {
     background: transparent;
     color: #f47e3a;
-    border: 1px solid #f47e3a;
+    border: rgba(49, 47, 47, 0.37) solid 1px;
     border-radius: 6px;
     padding: 4px 12px;
     font-size: 0.8rem;

@@ -8,6 +8,7 @@
   import { roleRank } from '$src/interfaces/Margin'
   import { errorService } from '$src/services/ErrorService'
   import { marginInviteService } from '$src/services/MarginInviteService'
+  import Button from '$src/components/common/buttons/Button.svelte'
 
   interface Props {
     margin: Margin
@@ -56,12 +57,19 @@
     <div class="members-header">
       <h2>Members</h2>
       <div class="header-actions">
-        <button class="invite-btn" onclick={handleCreateInviteLink} disabled={inviteLoading}>
-          {inviteLoading ? 'Generating...' : 'Create invite link'}
-        </button>
-        <button class="add-member-btn" onclick={() => (addMemberOpen = true)}>
-          Invite by handle
-        </button>
+        <Button
+          buttonType="primary"
+          size="small"
+          onClick={handleCreateInviteLink}
+          disabled={inviteLoading}
+          text={inviteLoading ? 'Generating...' : 'Create invite link'}
+        />
+        <Button
+          buttonType="secondary"
+          size="small"
+          onClick={() => (addMemberOpen = true)}
+          text="Invite by handle"
+        />
       </div>
     </div>
 
@@ -70,7 +78,7 @@
         <span class="invite-label">Invite code</span>
         <div class="invite-link-row">
           <input class="invite-code-input" type="text" value={inviteLink} readonly />
-          <button class="copy-btn" onclick={copyInviteLink}>Copy</button>
+          <Button buttonType="primary" size="small" onClick={copyInviteLink} text="Copy" />
           <button class="dismiss-btn" onclick={() => (inviteLink = null)}>✕</button>
         </div>
         <span class="invite-expiry">Expires in 7 days</span>
@@ -143,44 +151,10 @@
     gap: 8px;
   }
 
-  .invite-btn {
-    background: none;
-    color: #e8712a;
-    border: 1px solid #e8712a;
-    border-radius: 8px;
-    padding: 9px 18px;
-    font-size: 0.88rem;
-    font-weight: 600;
-    font-family: inherit;
-    cursor: pointer;
-    transition: all 0.15s;
-  }
-
-  .invite-btn:hover:not(:disabled) {
-    background: rgba(232, 113, 42, 0.06);
-  }
-
-  .invite-btn:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-  }
-
   .members-header {
     display: flex;
     align-items: center;
     justify-content: space-between;
-  }
-
-  .add-member-btn {
-    background: #2d2d2d;
-    color: #fff;
-    border: none;
-    border-radius: 8px;
-    padding: 9px 18px;
-    font-size: 0.88rem;
-    font-weight: 600;
-    cursor: pointer;
-    font-family: inherit;
   }
 
   .role-select {
@@ -234,30 +208,14 @@
     outline: none;
   }
 
-  .copy-btn {
-    padding: 7px 14px;
-    background: #e8712a;
-    color: white;
-    border: none;
-    border-radius: 8px;
-    font-size: 12px;
-    font-weight: 600;
-    font-family: inherit;
-    cursor: pointer;
-  }
-
-  .copy-btn:hover {
-    background: #d4621a;
-  }
-
   .dismiss-btn {
-    padding: 7px 10px;
+    padding: 3px 10px;
     background: none;
     border: 1px solid #ddd;
     border-radius: 8px;
     color: #888;
     cursor: pointer;
-    font-size: 12px;
+    font-size: 8px;
   }
 
   .invite-expiry {

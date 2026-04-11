@@ -2,6 +2,7 @@
   import AppModal from '$src/components/common/modals/AppModal.svelte'
   import type { CreateSpace } from '$src/interfaces/Space'
   import { Visibility } from '$src/interfaces/Visibility'
+  import Button from '$src/components/common/buttons/Button.svelte'
 
   interface Props {
     marginId: number
@@ -44,8 +45,8 @@
     <option value={Visibility.PRIVATE}>Private</option>
   </select>
   <div class="actions">
-    <button class="cancel" onclick={onClose}>Cancel</button>
-    <button class="confirm" onclick={handleSubmit}>Create</button>
+    <Button buttonType="secondary" size="small" onClick={onClose} text="Cancel" />
+    <Button buttonType="primary" size="small" onClick={handleSubmit} text="Create" />
   </div>
 </AppModal>
 

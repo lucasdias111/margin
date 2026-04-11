@@ -10,6 +10,7 @@
   import PolicyModal from '$src/components/common/modals/PolicyModal.svelte'
   import { privacyPolicyHtml } from '$src/assets/legal/privacy-policy'
   import { termsOfServiceHtml } from '$src/assets/legal/terms-of-service'
+  import Button from '$src/components/common/buttons/Button.svelte'
 
   let handle = $state('')
   let displayName = $state('')
@@ -60,15 +61,15 @@
 
   let hasErrors = $derived(
     !handle ||
-    !displayName ||
-    !email ||
-    !password ||
-    !repeatPassword ||
-    !acceptedTerms ||
-    !acceptedPrivacy ||
-    handleError !== null ||
-    passwordError !== null ||
-    repeatPasswordError !== null
+      !displayName ||
+      !email ||
+      !password ||
+      !repeatPassword ||
+      !acceptedTerms ||
+      !acceptedPrivacy ||
+      handleError !== null ||
+      passwordError !== null ||
+      repeatPasswordError !== null
   )
 
   function sanitizeHandle(event: Event): void {
@@ -275,20 +276,29 @@
         </label>
       </div>
 
-      <button class="btn-primary" type="submit" disabled={isLoading}>
-        {#if isLoading}
-          <span class="spinner"></span>
-        {:else}
-          Create account
-        {/if}
-      </button>
+      <Button
+        buttonType="primary"
+        size="medium"
+        text="Create account"
+        fullWidth
+        onClick={handleRegistration}
+      />
+      {#if isLoading}
+        <span class="spinner"></span>
+      {/if}
     </form>
 
     <div class="divider">
       <span>or</span>
     </div>
 
-    <button class="btn-secondary" onclick={goBack}> Back to sign in</button>
+    <Button
+      buttonType="secondary"
+      size="medium"
+      text="Back to sign in"
+      fullWidth
+      onClick={goBack}
+    />
   </div>
 </div>
 

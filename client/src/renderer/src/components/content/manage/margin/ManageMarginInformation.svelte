@@ -87,7 +87,7 @@
     </div>
 
     <div class="info-picture">
-      <span class="picture-label">Margin picture</span>
+      <span class="picture-label"></span>
       <MarginIcon {marginIcon} width={100} height={100} />
       <UploadImageButton {onFileChange} {onPreviewUrlChange} />
     </div>
