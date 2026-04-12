@@ -6,6 +6,7 @@
   import { chatService } from '$src/services/ChatService'
   import Icon from '$src/components/common/icons/Icon.svelte'
   import type { IconName } from '$src/components/common/icons/icons'
+  import { openExternalLink, parseLinks } from '$src/utils/LinksUtils'
 
   interface Props {
     message: Message
@@ -25,10 +26,12 @@
     onEditMessage
   }: Props = $props()
 
-  let isEditing = $state(false)
+  let parsedContent = $derived(parseLinks(message.content))
   let editedContent = $derived(message.content)
+  let isEditing = $state(false)
   let showActions = $state(false)
   let showMenu = $state(false)
+
   let isSent = $derived(message.user.id === userState.currentUser?.id)
   let checkmarkIcon: IconName = $derived(isRead ? 'checkmarkFilled' : 'checkmark')
 
@@ -36,6 +39,10 @@
     onEditMessage(message, editedContent)
     isEditing = false
   }
+
+  $effect(() => {
+    if (isEditing) editedContent = message.content
+  })
 </script>
 
 <div
@@ -91,7 +98,17 @@
         </div>
         <input class="editinput" bind:value={editedContent} />
       {:else}
-        <p class="text">{message.content}</p>
+        <p class="text">
+          {#each parsedContent as part, i (`${i}-${part.content}`)}
+            {#if part.type === 'link'}
+              <a href={part.href} class="chat-link" onclick={(e) => openExternalLink(e, part.href)}>
+                {part.content}
+              </a>
+            {:else}
+              {part.content}
+            {/if}
+          {/each}
+        </p>
       {/if}
     </div>
 
@@ -251,6 +268,20 @@
     white-space: pre-wrap;
   }
 
+  .chat-link {
+    color: inherit;
+    text-decoration: underline;
+    cursor: pointer;
+  }
+
+  .bubble.sent .chat-link {
+    color: #2d2d2d;
+  }
+
+  .bubble:not(.sent) .chat-link {
+    color: #f47e3a;
+  }
+
   .editactions {
     display: flex;
     gap: 4px;
@@ -269,10 +300,6 @@
     transition: background 0.12s;
   }
 
-  .editbut:hover {
-    background: rgba(255, 255, 255, 0.35);
-  }
-
   .editinput {
     background: rgba(255, 255, 255, 0.2);
     border: 1.5px solid rgba(255, 255, 255, 0.4);
@@ -284,10 +311,6 @@
     outline: none;
     width: 100%;
     box-sizing: border-box;
-  }
-
-  .editinput:focus {
-    border-color: rgba(255, 255, 255, 0.7);
   }
 
   .meta {
@@ -303,9 +326,5 @@
 
   .edited {
     font-style: italic;
-  }
-
-  .message-column.clumped {
-    margin-bottom: -4px;
   }
 </style>
