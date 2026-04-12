@@ -11,11 +11,7 @@ import { WebSocketMessageType } from '$src/interfaces/WebSocketMessageType'
 import * as api from '$src/services/api'
 import type { ConversationMessagesResponse, Message } from '$src/interfaces/Messages'
 import type { User } from '$src/interfaces/User'
-import type {
-  ChannelConversation,
-  Conversation,
-  DirectConversation
-} from '$src/interfaces/Conversation'
+import type { ChannelConversation, Conversation, DirectConversation } from '$src/interfaces/Conversation'
 import type { Channel } from '$src/interfaces/Channel'
 import type { RecentChatUser } from '$src/interfaces/RecentChatUser'
 import type { ContentType } from '$src/interfaces/Content'
@@ -140,7 +136,7 @@ function buildMessage(overrides: Partial<Message> = {}): Message {
 }
 
 function buildDirectConversation(overrides: Partial<DirectConversation> = {}): DirectConversation {
-  return {
+  return <DirectConversation>{
     id: 10,
     type: 'DIRECT',
     otherUserId: 2,
@@ -242,6 +238,28 @@ describe('ChatService', () => {
       })
 
       expect(mockConversationState.messages).toEqual([])
+    })
+
+    it('notifies when a DM arrives and window is blurred', async () => {
+      vi.spyOn(document, 'hasFocus').mockReturnValue(false)
+
+      const sender = buildUser({ id: 2 })
+      const msg = buildMessage({
+        conversationType: 'DIRECT',
+        conversationId: 10,
+        user: sender
+      })
+
+      mockConversationState.currentConversation = buildDirectConversation({ id: 10 })
+      mockChatState.selectedUser = sender
+
+      await chatService.handleIncomingMessage({
+        timestamp: 0,
+        type: WebSocketMessageType.RECEIVE_MESSAGE,
+        payload: msg
+      })
+
+      expect(notificationService.handleIncomingMessage).toHaveBeenCalledWith(msg)
     })
 
     it('decrypts and appends DM to active conversation', async () => {
@@ -384,12 +402,12 @@ describe('ChatService', () => {
         user: sender,
         content: 'bad-data'
       })
+
       mockConversationState.currentConversation = buildDirectConversation({ id: 10 })
       mockConversationState.messages = []
       mockChatState.selectedUser = sender
-      vi.mocked(encryptionService.decryptMessage)
-        .mockResolvedValueOnce('preview')
-        .mockRejectedValueOnce(new Error('decrypt failed'))
+
+      vi.mocked(encryptionService.decryptMessage).mockRejectedValue(new Error('decrypt failed'))
 
       await chatService.handleIncomingMessage({
         timestamp: 0,
@@ -401,11 +419,19 @@ describe('ChatService', () => {
     })
 
     it('marks conversation as read after appending DM to active conversation', async () => {
+      vi.spyOn(document, 'hasFocus').mockReturnValue(true)
+
       const sender = buildUser({ id: 2 })
-      const msg = buildMessage({ conversationType: 'DIRECT', conversationId: 10, user: sender })
+      const msg = buildMessage({
+        conversationType: 'DIRECT',
+        conversationId: 10,
+        user: sender
+      })
+
       mockConversationState.currentConversation = buildDirectConversation({ id: 10 })
       mockConversationState.messages = []
       mockChatState.selectedUser = sender
+
       vi.mocked(encryptionService.decryptMessage).mockResolvedValue('text')
       mockApiPost({})
 

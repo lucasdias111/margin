@@ -23,9 +23,9 @@ class ChatService {
 
   handleIncomingMessage = async (data: WebSocketMessage<Message>): Promise<void> => {
     const msg = data.payload
-    notificationService.handleIncomingMessage(msg)
     if (msg.conversationType === 'CHANNEL') {
       await this.handleIncomingChannelMessage(msg)
+      notificationService.handleIncomingMessage(msg)
     } else {
       await this.handleIncomingDirectMessage(msg)
     }
@@ -43,34 +43,39 @@ class ChatService {
     const otherUserId = otherUser?.id
     if (!otherUser || !otherUserId) return
 
-    const preview = await encryptionService.decryptMessage(msg.content, !isFromMe)
-    await this.ensureUserInRecentList(otherUser, preview, msg, isFromMe)
-
-    const isActiveConversation = conversationState.currentConversation?.id === msg.conversationId
-    if (!isActiveConversation) {
-      userListState.updateLastMessage(otherUserId, preview, !isFromMe, msg.createdAt)
-      return
-    }
-
     try {
       msg.content = await encryptionService.decryptMessage(msg.content, !isFromMe)
     } catch {
       msg.content = '[Decryption failed]'
     }
 
+    await this.ensureUserInRecentList(otherUser, msg.content, msg, isFromMe)
+
+    const isActiveConversation = conversationState.currentConversation?.id === msg.conversationId
+    if (!isActiveConversation) {
+      userListState.updateLastMessage(otherUserId, msg.content, !isFromMe, msg.createdAt)
+      notificationService.handleIncomingMessage(msg)
+      return
+    }
+
     if (isFromMe) {
       const optimisticIndex = conversationState.messages.findIndex((m) => m.id < 0)
       if (optimisticIndex !== -1) {
         conversationState.messages[optimisticIndex] = msg
-        userListState.updateLastMessage(otherUserId, preview, !isFromMe, msg.createdAt)
+        userListState.updateLastMessage(otherUserId, msg.content, !isFromMe, msg.createdAt)
         await this.markConversationAsRead(conversationState.currentConversation!.id)
         return
       }
     }
 
     conversationState.messages = [...conversationState.messages, msg]
-    userListState.updateLastMessage(otherUserId, preview, !isFromMe, msg.createdAt)
-    await this.markConversationAsRead(conversationState.currentConversation!.id)
+    userListState.updateLastMessage(otherUserId, msg.content, !isFromMe, msg.createdAt)
+
+    if (document.hasFocus()) {
+      await this.markConversationAsRead(conversationState.currentConversation!.id)
+    } else {
+      notificationService.handleIncomingMessage(msg)
+    }
   }
 
   private ensureUserInRecentList = async (
