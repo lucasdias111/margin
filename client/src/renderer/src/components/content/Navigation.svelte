@@ -196,7 +196,7 @@
 
   .item-label {
     font-size: 13px;
-    color: #ffffff;
+    color: #f47e3a;
     font-weight: 500;
   }
 

@@ -11,14 +11,33 @@
     disabled?: boolean
     fullWidth?: boolean
     children?: Snippet
+    onSave?: () => void | Promise<void>
   }
 
-  let { text, buttonType, size, onClick, fullWidth, disabled, children }: ButtonProps = $props()
+  let { text, buttonType, size, onClick, fullWidth, disabled, children, onSave }: ButtonProps =
+    $props()
+  let saving = $state(false)
+
+  async function handleSave(): Promise<void> {
+    if (!onSave) saving = true
+    try {
+      await onSave()
+    } finally {
+      saving = false
+    }
+  }
 </script>
 
-<button class="but {buttonType} {size}" class:full-width={fullWidth} onclick={onClick} {disabled}>
+<button
+  class="but {buttonType} {size}"
+  class:full-width={fullWidth}
+  onclick={onSave ? handleSave : onClick}
+  disabled={disabled || saving}
+>
   {#if children}
     {@render children()}
+  {:else if saving}
+    Saving...
   {:else}
     {text || 'Button text'}
   {/if}</button
