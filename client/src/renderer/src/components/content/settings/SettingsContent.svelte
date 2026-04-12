@@ -14,8 +14,8 @@
 
   const hasChanges = $derived(
     displayName !== userState.currentUser.displayName ||
-    email !== userState.currentUser.email ||
-    newProfilePicture !== null
+      email !== userState.currentUser.email ||
+      newProfilePicture !== null
   )
 
   function onFileChange(file: File): void {
@@ -96,6 +96,7 @@
         role="button"
         tabindex="0"
         onclick={() => startEditing('displayName')}
+        onkeydown={() => {}}
       >
         <span class="field-label">Display name</span>
         {#if editingField === 'displayName'}
@@ -118,6 +119,7 @@
         role="button"
         tabindex="0"
         onclick={() => startEditing('email')}
+        onkeydown={() => {}}
       >
         <span class="field-label">Email</span>
         {#if editingField === 'email'}
