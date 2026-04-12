@@ -11,6 +11,7 @@
   import { clickOutside } from '$src/actions/clickOutside'
   import Icon from '$src/components/common/icons/Icon.svelte'
   import MarginIconSvg from '$src/assets/marginIconSvg.svelte'
+  import BugReportModal from '$src/components/common/modals/BugReportModal.svelte'
 
   function onContentSelected(selectedContent: ContentType): void {
     chatService.selectContent(selectedContent)
@@ -23,6 +24,7 @@
   }
 
   let showDropdown = $state(false)
+  let bugReportOpen = $state(false)
 
   const totalAnnouncements = $derived(notificationState.getTotalUnseenNotifications())
 </script>
@@ -43,12 +45,33 @@
             <span class="dropdown-displayname">{userState.currentUser.displayName}</span>
           </div>
           <div class="divider"></div>
+          <button
+            class="dropdown-item"
+            onclick={() => onContentSelected('settings')}
+            class:selected={chatState.currentlySelectedContent === 'settings'}
+            aria-label="Settings"
+            title="Settings"
+          >
+            <span class="item-label">Settings</span>
+            <Icon name="settings"></Icon>
+          </button>
+
+          <div class="divider"></div>
+          <button class="dropdown-item" onclick={() => (bugReportOpen = true)}>
+            <span class="logout-label">Report bug</span>
+            <Icon name="bug" size={20} />
+          </button>
           <button class="dropdown-item" onclick={handleLogout}>
-            <span class="item-label">Log out</span>
+            <span class="logout-label">Log out</span>
             <Icon name="logout" size={16} />
           </button>
         </div>
       {/if}
+      <BugReportModal
+        open={bugReportOpen}
+        onClose={() => (bugReportOpen = false)}
+        onSubmit={() => {}}
+      />
     </div>
   {/if}
 
@@ -87,16 +110,7 @@
       />
     </button>
   </div>
-
-  <button
-    onclick={() => onContentSelected('settings')}
-    class:selected={chatState.currentlySelectedContent === 'settings'}
-    aria-label="Settings"
-    title="Settings"
-    class="setbut"
-  >
-    <Icon name="settings" size={28} />
-  </button>
+  <div class="avatar-space"></div>
 </div>
 
 <style>
@@ -134,6 +148,9 @@
     position: absolute;
     left: calc(100% + 14px);
     top: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
     background-color: #2a2a2a;
     border: 1px solid rgba(255, 255, 255, 0.07);
     border-radius: 12px;
@@ -179,7 +196,13 @@
 
   .item-label {
     font-size: 13px;
-    color: #e05a5a;
+    color: #ffffff;
+    font-weight: 500;
+  }
+
+  .logout-label {
+    font-size: 13px;
+    color: #f47e3a;
     font-weight: 500;
   }
 
@@ -191,7 +214,6 @@
 
   .button-group {
     display: flex;
-    align-items: center;
     justify-content: center;
     flex-direction: column;
     gap: 4rem;
@@ -219,5 +241,10 @@
     box-shadow: none;
     outline: none;
     -webkit-appearance: none;
+  }
+
+  .avatar-space {
+    width: 32px;
+    height: 32px;
   }
 </style>
