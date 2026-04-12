@@ -1,3 +1,5 @@
+import type { User } from '$src/interfaces/User'
+
 export interface WebSocketMessage<T> {
   type: string
   timestamp: number
@@ -13,7 +15,7 @@ export interface WebSocketMessageOut<T> {
 
 export interface CallOfferPayload {
   callId: number
-  callerId: number
+  caller: User
   sdp: string
   callType: 'AUDIO' | 'VIDEO'
 }
@@ -24,22 +26,7 @@ export interface CallResponsePayload {
   response: RTCSessionDescriptionInit
 }
 
-export interface CallAnswerPayload {
-  callId: number
-  action: 'ACCEPT' | 'REJECT'
-  sdp?: string
-  type?: string
-}
-
-export interface CallEndPayload {
-  callId: number
-  callDuration: number
-}
-
-export interface CallCandidatePayload {
-  callId: number
-  candidate: string
-  sdpMid: string | null
-  sdpMLineIndex: number | null
-  usernameFragment: string
+export interface ChannelVoiceParticipantPayload {
+  channelId: number
+  user: User
 }

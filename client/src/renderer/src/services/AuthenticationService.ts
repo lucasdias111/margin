@@ -1,28 +1,29 @@
-import { unauthenticatedPost } from './api'
+import { authenticatedPost, unauthenticatedPost } from './api'
 import { encryptionService } from './EncryptionService'
 import { userState } from '$src/states/UserState.svelte'
 import { chatState } from '$src/states/ChatState.svelte'
 import { callState } from '$src/states/CallState.svelte'
 import { API_CONFIG } from '$src/shared/config'
+import type { AuthResponse } from '$src/interfaces/AuthResponse'
+import { errorService } from '$src/services/ErrorService'
+import { webSocketService } from '$src/services/WebSocketService'
+import { push } from 'svelte-spa-router'
+import { conversationState } from '$src/states/ConversationState.svelte'
 
 class AuthenticationService {
-  async login(username: string, password: string): Promise<void> {
-    const response = await unauthenticatedPost({ username, password }, 'auth/login')
-
-    if (!response.ok) {
-      throw new Error('Login failed')
-    }
-
-    const authResponse = await response.json()
-
-    if (!authResponse.token) {
-      throw new Error('No token in response')
+  async login(email: string, password: string, keepLoggedIn: boolean = false): Promise<void> {
+    const response = await unauthenticatedPost({ email, password }, 'auth/login')
+    const authResponse: AuthResponse = await response.json()
+    if (!authResponse.success) {
+      errorService.reportError('Error login: ' + authResponse.message)
+      throw new Error(authResponse.message)
     }
 
     sessionStorage.setItem('authToken', authResponse.token)
 
+    let privateKey: string | undefined
     if (authResponse.encryptedPrivateKey && authResponse.salt && authResponse.iv) {
-      const privateKey = await encryptionService.decryptPrivateKey(
+      privateKey = await encryptionService.decryptPrivateKey(
         authResponse.encryptedPrivateKey,
         password,
         authResponse.salt,
@@ -34,12 +35,28 @@ class AuthenticationService {
     if (authResponse.publicKey) {
       sessionStorage.setItem('publicKey', authResponse.publicKey)
     }
+
+    if (keepLoggedIn && privateKey) {
+      await window.secureStorage.saveSession(authResponse.token, privateKey)
+    }
+  }
+
+  async tryRestoreSession(): Promise<boolean> {
+    const stored = await window.secureStorage.loadSession()
+
+    if (!stored) return false
+
+    sessionStorage.setItem('authToken', stored.token)
+    sessionStorage.setItem('privateKey', stored.privateKey)
+    return true
   }
 
   async register(
-    username: string,
+    handle: string,
+    displayName: string,
     password: string,
     email: string,
+    betaKey: string,
     profilePicture?: File
   ): Promise<Response> {
     const { publicKey, privateKey } = await encryptionService.generateKeyPairFromPassword(password)
@@ -52,9 +69,11 @@ class AuthenticationService {
     const formData = new FormData()
 
     const registrationData = {
-      username,
+      handle: handle,
+      displayName,
       password,
       email,
+      betaKey,
       publicKey,
       encryptedPrivateKey: encryptedKey,
       salt,
@@ -85,36 +104,30 @@ class AuthenticationService {
     return response
   }
 
-  getStoredToken(): string | null {
-    if (typeof window !== 'undefined') {
-      return sessionStorage.getItem('authToken')
-    }
-    return null
-  }
-
   clearToken(): void {
     if (typeof window !== 'undefined') {
       sessionStorage.removeItem('authToken')
     }
   }
 
-  async logoutUser(userId: number): Promise<void> {
-    const response = await unauthenticatedPost(
-      {
-        userId
-      },
-      'auth/logout'
-    )
-
+  async logoutUser(): Promise<void> {
+    const response = await authenticatedPost({}, 'auth/logout')
     if (!response.ok) {
-      throw new Error('Logout failed')
+      errorService.reportError('Failed to log out.')
     }
+    await this.clear()
+  }
 
+  public async clear(): Promise<void> {
+    webSocketService.disconnect()
     userState.reset()
     chatState.reset()
+    conversationState.reset()
     callState.endCall()
 
+    await window.secureStorage.clearSession()
     this.clearToken()
+    await push('/')
   }
 }
 export const authenticationService = new AuthenticationService()

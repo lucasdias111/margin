@@ -10,5 +10,5 @@ export const routes = {
   }),
   '/register': wrap({
     asyncComponent: () => import('$src/routes/register/+page.svelte')
-  }),
+  })
 }

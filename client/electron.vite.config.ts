@@ -4,7 +4,17 @@ import path from 'path'
 
 export default defineConfig({
   main: {},
-  preload: {},
+  preload: {
+    build: {
+      outDir: 'out/preload',
+      rollupOptions: {
+        output: {
+          format: 'cjs',
+          entryFileNames: '[name].cjs'
+        }
+      }
+    }
+  },
   renderer: {
     plugins: [svelte()],
     resolve: {

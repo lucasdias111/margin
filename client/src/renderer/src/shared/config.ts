@@ -1,8 +1,11 @@
-// const BASE_ADDRESS = '135.181.100.126'
-const BASE_ADDRESS = 'localhost'
+const isProd = import.meta.env.PROD
 
-export const API_CONFIG = { // TODO: Make into ENV variables
-  baseUrl: `http://${BASE_ADDRESS}:8080/`,
-  wsUrl: `ws://${BASE_ADDRESS}:8081/`,
-  sfuUrl: `ws://localhost:3000/`
+const BASE_ADDRESS = isProd ? 'https://margin.chat' : 'http://localhost:8080'
+const WS_ADDRESS = isProd ? 'wss://margin.chat' : 'ws://localhost:8081'
+const SFU_ADDRESS = isProd ? 'wss://margin.chat' : 'ws://localhost:3000'
+
+export const API_CONFIG = {
+  baseUrl: `${BASE_ADDRESS}/api/`,
+  wsUrl: `${WS_ADDRESS}/ws`,
+  sfuUrl: isProd ? `${SFU_ADDRESS}/sfu` : SFU_ADDRESS
 }

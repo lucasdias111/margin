@@ -1,7 +1,9 @@
 export interface User {
   id: number
-  username: string
+  handle: string
+  displayName: string
   email: string
-  serverDomain: string
   createdAt: string
+  profilePictureUrl: string | null
+  isOnline: boolean
 }

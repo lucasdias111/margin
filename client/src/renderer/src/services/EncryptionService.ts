@@ -2,7 +2,7 @@ import { authenticatedGet } from './api'
 
 class EncryptionService {
   async getPublicKey(userId: number): Promise<string> {
-    const response = await authenticatedGet(`api/users/${userId}/public-key`)
+    const response = await authenticatedGet(`users/${userId}/public-key`)
 
     if (!response.ok) {
       throw new Error('Failed to fetch public key')

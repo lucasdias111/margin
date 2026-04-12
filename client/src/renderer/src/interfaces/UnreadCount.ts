@@ -1,6 +1,4 @@
-export interface UnreadCount {
-  conversationId: number
-  fromUserId: number
-  unreadDmsCount: number
-  unreadChannelsCount: number
+export interface UnreadConversations {
+  directConversationIds: number[]
+  channelUnreads: { conversationId: number; marginId: number }[]
 }

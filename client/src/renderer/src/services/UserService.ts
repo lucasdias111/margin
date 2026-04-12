@@ -1,9 +1,12 @@
+import { authenticatedDelete, authenticatedGet, authenticatedPatchForm } from '$src/services/api'
+import type { RecentChatUser } from '$src/interfaces/RecentChatUser'
+import { userState } from '$src/states/UserState.svelte'
+import { authenticationService } from '$src/services/AuthenticationService'
 import type { User } from '$src/interfaces/User'
-import { authenticatedGet } from '$src/services/api'
 
 class UserService {
-  async getRecentChatUsers(userId: number): Promise<User[]> {
-    const response = await authenticatedGet(`api/users/${userId}/recent_chat_users`)
+  async getRecentChatUsers(): Promise<RecentChatUser[]> {
+    const response = await authenticatedGet(`users/recent_chat_users`)
 
     if (!response.ok) {
       return []
@@ -12,13 +15,23 @@ class UserService {
     return await response.json()
   }
 
-  async getAllUsersForServer(): Promise<User[]> {
-    const response = await authenticatedGet(`api/users/get_all_users`)
+  async updateUserInfo(formData: FormData): Promise<void> {
+    const response = await authenticatedPatchForm(formData, 'users/update_user_info')
+    if (!response.ok) throw new Error('Update failed')
 
-    if (!response.ok) {
-      return []
-    }
+    const data = await response.json()
+    userState.currentUser.profilePictureUrl = data.profilePictureUrl
+    userState.currentUser.displayName = data.displayName
+    userState.currentUser.email = data.email
+  }
 
+  async deleteAccount(): Promise<void> {
+    await authenticatedDelete(null, 'users/delete')
+    await authenticationService.clear()
+  }
+
+  async getById(userId: number): Promise<User> {
+    const response = await authenticatedGet(`users/${userId}`)
     return await response.json()
   }
 }

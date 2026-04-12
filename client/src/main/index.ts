@@ -1,13 +1,78 @@
-import { app, shell, BrowserWindow, ipcMain } from 'electron'
+import { app, shell, BrowserWindow, ipcMain, session, desktopCapturer, safeStorage } from 'electron'
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
 import { API_CONFIG } from '../renderer/src/shared/config'
+import { readFileSync, writeFileSync, existsSync, unlinkSync } from 'fs'
+import pkg from 'electron-updater'
+
+const { autoUpdater } = pkg
+const SECURE_FILE = join(app.getPath('userData'), 'secure.bin')
+const TOKEN_FILE = join(app.getPath('userData'), 'session.bin')
+
+function writeEncrypted(filePath: string, plaintext: string): void {
+  const encrypted = safeStorage.encryptString(plaintext)
+  writeFileSync(filePath, encrypted)
+}
+
+function readEncrypted(filePath: string): string | null {
+  if (!existsSync(filePath)) return null
+  const encrypted = readFileSync(filePath)
+  return safeStorage.decryptString(encrypted)
+}
+
+function checkForUpdates(): void {
+  autoUpdater.autoDownload = false
+  console.log('autoDownload set to:', autoUpdater.autoDownload)
+  autoUpdater.autoInstallOnAppQuit = false
+  autoUpdater.disableDifferentialDownload = true
+
+  autoUpdater.checkForUpdates().catch((err) => console.log('Update check failed:', err))
+
+  autoUpdater.on('update-available', (info) => {
+    BrowserWindow.getAllWindows()[0]?.webContents.send('update-available', info.version)
+  })
+
+  ipcMain.on('update-accept', () => {
+    autoUpdater.downloadUpdate()
+  })
+
+  ipcMain.on('update-decline', () => {
+    // user said no, do nothing
+  })
+
+  autoUpdater.on('update-downloaded', () => {
+    BrowserWindow.getAllWindows()[0]?.webContents.send('update-downloaded')
+  })
+
+  ipcMain.on('update-install', () => {
+    autoUpdater.quitAndInstall()
+  })
+}
+
+ipcMain.handle('secure:saveSession', (_event, token: string, privateKey: string) => {
+  writeEncrypted(TOKEN_FILE, token)
+  writeEncrypted(SECURE_FILE, privateKey)
+})
+
+ipcMain.handle('secure:loadSession', () => {
+  const token = readEncrypted(TOKEN_FILE)
+  const privateKey = readEncrypted(SECURE_FILE)
+  if (!token || !privateKey) return null
+  return { token, privateKey }
+})
+
+ipcMain.handle('secure:clearSession', () => {
+  if (existsSync(TOKEN_FILE)) unlinkSync(TOKEN_FILE)
+  if (existsSync(SECURE_FILE)) unlinkSync(SECURE_FILE)
+})
 
 function createWindow(): void {
   const mainWindow = new BrowserWindow({
-    width: 900,
-    height: 670,
+    width: 1400,
+    height: 1000,
+    minWidth: 1000,
+    minHeight: 800,
     show: false,
     frame: false,
     titleBarStyle: 'hidden',
@@ -15,7 +80,7 @@ function createWindow(): void {
     hasShadow: true,
     ...(process.platform === 'linux' ? { icon } : {}),
     webPreferences: {
-      preload: join(__dirname, '../preload/index.js'),
+      preload: join(__dirname, '../preload/index.cjs'),
       sandbox: false
     }
   })
@@ -25,7 +90,7 @@ function createWindow(): void {
       responseHeaders: {
         ...details.responseHeaders,
         'Content-Security-Policy': [
-          `default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self' ${API_CONFIG.baseUrl} ${API_CONFIG.wsUrl} ${API_CONFIG.sfuUrl}`
+          `default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: ${API_CONFIG.baseUrl} https://hel1.your-objectstorage.com; connect-src 'self' ${API_CONFIG.baseUrl} ${API_CONFIG.wsUrl} ${API_CONFIG.sfuUrl}`
         ]
       }
     })
@@ -56,6 +121,12 @@ function createWindow(): void {
     mainWindow.close()
   })
 
+  ipcMain.on('renderer-ready', () => {
+    if (!is.dev) {
+      checkForUpdates()
+    }
+  })
+
   // HMR for renderer base on electron-vite cli.
   // Load the remote URL for development or the local html file for production.
   if (is.dev && process.env['ELECTRON_RENDERER_URL']) {
@@ -77,6 +148,11 @@ app.whenReady().then(() => {
   // see https://github.com/alex8088/electron-toolkit/tree/master/packages/utils
   app.on('browser-window-created', (_, window) => {
     optimizer.watchWindowShortcuts(window)
+  })
+
+  session.defaultSession.setDisplayMediaRequestHandler(async (_request, callback) => {
+    const sources = await desktopCapturer.getSources({ types: ['screen'] })
+    callback({ video: sources[0], audio: 'loopback' })
   })
 
   // IPC test
