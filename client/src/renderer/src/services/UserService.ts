@@ -2,6 +2,7 @@ import { authenticatedDelete, authenticatedGet, authenticatedPatchForm } from '$
 import type { RecentChatUser } from '$src/interfaces/RecentChatUser'
 import { userState } from '$src/states/UserState.svelte'
 import { authenticationService } from '$src/services/AuthenticationService'
+import type { User } from '$src/interfaces/User'
 
 class UserService {
   async getRecentChatUsers(): Promise<RecentChatUser[]> {
@@ -27,6 +28,11 @@ class UserService {
   async deleteAccount(): Promise<void> {
     await authenticatedDelete(null, 'users/delete')
     await authenticationService.clear()
+  }
+
+  async getById(userId: number): Promise<User> {
+    const response = await authenticatedGet(`users/${userId}`)
+    return await response.json()
   }
 }
 

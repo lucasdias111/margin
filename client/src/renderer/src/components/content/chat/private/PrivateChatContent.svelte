@@ -58,6 +58,14 @@
   }
 </script>
 
+<svelte:window
+  onfocus={() => {
+    if (chatState.selectedUser && conversationState.currentConversation) {
+      chatService.markConversationAsRead(conversationState.currentConversation.id)
+    }
+  }}
+/>
+
 <div class="chat">
   {#if chatState.selectedUser}
     <PrivateChatHeader

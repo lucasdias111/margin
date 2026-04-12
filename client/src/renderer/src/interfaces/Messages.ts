@@ -10,6 +10,7 @@ export interface Message {
   isEdited: boolean
   createdAt: string
   marginId?: number
+  channelName?: string
 }
 
 export interface ConversationMessagesResponse {

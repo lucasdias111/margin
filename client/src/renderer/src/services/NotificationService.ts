@@ -5,6 +5,10 @@ import type { Message } from '$src/interfaces/Messages'
 import type { Notification } from '$src/interfaces/Notification'
 import { authenticatedGet, authenticatedPost } from '$src/services/api'
 import { NotificationSounds } from '$src/utils/NotificationSounds'
+import { marginService } from '$src/services/MarginService'
+import { conversationService } from '$src/services/ConversationService'
+import type { Channel } from '$src/interfaces/Channel'
+import { userService } from '$src/services/UserService'
 
 class NotificationService {
   private sounds: Record<string, HTMLAudioElement> = {}
@@ -35,9 +39,11 @@ class NotificationService {
     if (message.user.id === userState.currentUser.id) return
 
     const isActive = this.isActiveConversation(message)
+    const isWindowFocused = document.hasFocus()
 
-    if (!isActive) {
+    if (!isActive || !isWindowFocused) {
       this.playSound(NotificationSounds.NEW_MESSAGE)
+      this.showSystemNotification(message)
     }
 
     switch (message.conversationType) {
@@ -48,6 +54,50 @@ class NotificationService {
       case 'GROUP':
         if (!isActive) this.addChannelUnread(message)
         break
+    }
+  }
+
+  private showSystemNotification(message: Message): void {
+    if (!('Notification' in window)) return
+
+    if (Notification.permission === 'granted') {
+      this.createNotification(message)
+    } else if (Notification.permission !== 'denied') {
+      Notification.requestPermission().then((permission) => {
+        if (permission === 'granted') {
+          this.createNotification(message)
+        }
+      })
+    }
+  }
+
+  private createNotification(message: Message): void {
+    let title: string = ''
+    let content: string = ''
+    if (message.conversationType === 'DIRECT') {
+      title = message.user.displayName
+      content = message.content
+    } else {
+      title = message.channelName
+      content = `${message.user.displayName}: ${message.content}`
+    }
+
+    const notification = new Notification(title, {
+      body: content,
+      silent: true
+    })
+
+    notification.onclick = async () => {
+      window.parent.focus()
+      if (message.conversationType === 'CHANNEL') {
+        chatState.currentlySelectedContent = 'margin'
+        chatState.selectMargin(await marginService.getMargin(message.marginId))
+        const channel: Channel = await conversationService.getChannelById(message.conversationId)
+        chatState.selectChannel(channel)
+      } else {
+        chatState.currentlySelectedContent = 'private'
+        chatState.selectUser(await userService.getById(message.user.id))
+      }
     }
   }
 
