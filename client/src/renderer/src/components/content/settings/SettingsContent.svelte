@@ -4,6 +4,7 @@
   import UploadImageButton from '$src/components/common/buttons/UploadImageButton.svelte'
   import { userService } from '$src/services/UserService'
   import ConfirmationModal from '$src/components/common/modals/ConfirmationModal.svelte'
+  import Button from '$src/components/common/buttons/Button.svelte'
 
   let newProfilePicture = $state<File | null>(null)
   let previewUrl = $state<string | null>(userState.currentUser.profilePictureUrl)
@@ -96,7 +97,7 @@
         role="button"
         tabindex="0"
         onclick={() => startEditing('displayName')}
-        onkeydown={() => {}}
+        onkeydown={handleKeydown}
       >
         <span class="field-label">Display name</span>
         {#if editingField === 'displayName'}
@@ -119,7 +120,7 @@
         role="button"
         tabindex="0"
         onclick={() => startEditing('email')}
-        onkeydown={() => {}}
+        onkeydown={handleKeydown}
       >
         <span class="field-label">Email</span>
         {#if editingField === 'email'}
@@ -138,8 +139,14 @@
     </div>
 
     <div class="actions">
-      <button class="discard-btn" disabled={!hasChanges} onclick={discardChanges}>Discard</button>
-      <button class="save-btn" disabled={!hasChanges} onclick={onSave}>Save changes</button>
+      <Button
+        buttonType="danger"
+        size="small"
+        text="Discard"
+        disabled={!hasChanges}
+        onClick={discardChanges}
+      />
+      <Button buttonType="primary" size="small" text="Save changes" onClick={onSave} />
     </div>
 
     <div class="divider"></div>
@@ -151,9 +158,7 @@
           Permanently delete your account and all associated data. This action cannot be undone.
         </span>
       </div>
-      <button class="delete-account-btn" onclick={() => (showDeleteConfirm = true)}>
-        Delete account
-      </button>
+      <Button buttonType="delete" size="small" text="Delete account" onClick={onDeleteAccount} />
     </div>
   </div>
 </div>
@@ -163,7 +168,7 @@
   title="Delete account"
   message="This will permanently delete your account, remove you from all margins, and anonymize your data. This cannot be undone."
   confirmLabel="Delete my account"
-  variant="danger"
+  variant="delete"
   onConfirm={onDeleteAccount}
   onClose={() => (showDeleteConfirm = false)}
 />
@@ -274,49 +279,6 @@
     gap: 10px;
   }
 
-  .discard-btn {
-    padding: 8px 20px;
-    background: none;
-    color: #888;
-    border: 1px solid #e0e0e0;
-    border-radius: 8px;
-    font-size: 0.82rem;
-    font-weight: 500;
-    cursor: pointer;
-    transition: all 0.12s ease;
-  }
-
-  .discard-btn:hover:not(:disabled) {
-    background: #f5f5f5;
-    color: #555;
-  }
-
-  .discard-btn:disabled {
-    opacity: 0.4;
-    cursor: default;
-  }
-
-  .save-btn {
-    padding: 8px 20px;
-    background: #f47e3a;
-    color: white;
-    border: none;
-    border-radius: 8px;
-    font-size: 0.82rem;
-    font-weight: 500;
-    cursor: pointer;
-    transition: all 0.12s ease;
-  }
-
-  .save-btn:hover:not(:disabled) {
-    background: #e06d2e;
-  }
-
-  .save-btn:disabled {
-    opacity: 0.4;
-    cursor: default;
-  }
-
   .danger-zone {
     display: flex;
     align-items: center;
@@ -343,23 +305,5 @@
     font-size: 0.78rem;
     color: #888;
     line-height: 1.5;
-  }
-
-  .delete-account-btn {
-    padding: 8px 18px;
-    background: #c0392b;
-    color: white;
-    border: none;
-    border-radius: 8px;
-    font-size: 0.82rem;
-    font-weight: 600;
-    font-family: inherit;
-    cursor: pointer;
-    white-space: nowrap;
-    transition: background 0.12s;
-  }
-
-  .delete-account-btn:hover {
-    background: #a93226;
   }
 </style>

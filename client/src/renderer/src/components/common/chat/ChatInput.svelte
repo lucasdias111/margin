@@ -61,9 +61,6 @@
       onkeydown={handleKeydown}
       rows="1"
     ></textarea>
-    <button class="secondary-button" type="submit" aria-label="Attach file(s)">
-      <Icon name="paperclip" size={18} color="#f47e3a" />
-    </button>
     <div class="emoji-wrapper" use:clickOutside={() => (showPicker = false)}>
       <div class="picker-container" class:visible={showPicker} use:emojiPicker></div>
       <button class="secondary-button" type="button" onclick={() => (showPicker = !showPicker)}

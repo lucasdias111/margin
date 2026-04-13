@@ -5,6 +5,7 @@
   import { chatState } from '$src/states/ChatState.svelte'
   import Icon from '$src/components/common/icons/Icon.svelte'
   import { marginInviteService } from '$src/services/MarginInviteService'
+  import Button from '$src/components/common/buttons/Button.svelte'
 
   let modalOpen = $state(false)
   let joinCode = $state('')
@@ -41,7 +42,12 @@
   </div>
   <h2>No margin yet</h2>
   <p>Create a margin to get started with spaces, channels, and team communication.</p>
-  <button class="create-btn" onclick={() => (modalOpen = true)}>Create margin</button>
+  <Button
+    buttonType="primary"
+    size="medium"
+    text="Create margin"
+    onClick={() => (modalOpen = true)}
+  />
 
   <div class="divider">
     <span>or</span>
@@ -56,15 +62,17 @@
         placeholder="Paste code"
         bind:value={joinCode}
         maxlength="36"
-        onkeydown={(e) => { if (e.key === 'Enter') handleJoinWithCode() }}
+        onkeydown={(e) => {
+          if (e.key === 'Enter') handleJoinWithCode()
+        }}
       />
-      <button
-        class="join-btn"
-        onclick={handleJoinWithCode}
+      <Button
+        buttonType="primary"
+        size="small"
+        onClick={handleJoinWithCode}
+        text="Join"
         disabled={joinLoading || !joinCode.trim()}
-      >
-        {joinLoading ? '...' : 'Join'}
-      </button>
+      />
     </div>
     {#if joinError}
       <span class="join-error">{joinError}</span>
@@ -106,22 +114,6 @@
     line-height: 1.5;
   }
 
-  .create-btn {
-    margin-top: 8px;
-    background: #ff6203;
-    color: #fff;
-    border: none;
-    border-radius: 8px;
-    padding: 10px 24px;
-    font-size: 0.95rem;
-    font-weight: 600;
-    cursor: pointer;
-  }
-
-  .create-btn:hover {
-    background: #e55700;
-  }
-
   .divider {
     display: flex;
     align-items: center;
@@ -161,7 +153,7 @@
   }
 
   .join-input {
-    padding: 8px 12px;
+    padding: 4px 8px;
     border-radius: 8px;
     border: 1px solid #ece8e0;
     background: #fafafa;
@@ -175,23 +167,6 @@
   .join-input:focus {
     border-color: #f47e3a;
     background: white;
-  }
-
-  .join-btn {
-    padding: 8px 14px;
-    background: #e8712a;
-    color: white;
-    border: none;
-    border-radius: 8px;
-    font-size: 13px;
-    font-weight: 600;
-    font-family: inherit;
-    cursor: pointer;
-  }
-
-  .join-btn:disabled {
-    opacity: 0.4;
-    cursor: not-allowed;
   }
 
   .join-error {

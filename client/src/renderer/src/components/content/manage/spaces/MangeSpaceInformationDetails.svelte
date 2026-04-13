@@ -1,7 +1,6 @@
 <script lang="ts">
   import type { Space } from '$src/interfaces/Space'
-  import SaveButton from '$src/components/common/buttons/SaveButton.svelte'
-  import DangerButton from '$src/components/common/buttons/DangerButton.svelte'
+  import Button from '$src/components/common/buttons/Button.svelte'
 
   interface Props {
     selectedSpace: Space
@@ -43,7 +42,13 @@
 <div class="spaces-details">
   <div class="section-header">
     <h2>Information</h2>
-    <SaveButton {isDirty} onSave={handleSave} />
+    <Button
+      buttonType="primary"
+      size="small"
+      text="Save information"
+      disabled={isDirty}
+      onClick={handleSave}
+    />
   </div>
   <div class="info-row">
     <div class="info-fields">
@@ -80,7 +85,13 @@
       <span>Delete space</span>
       <p>Permanently delete the space and all its channels.</p>
     </div>
-    <DangerButton label="Delete space" onAction={handleDelete} />
+    <Button
+      buttonType="danger"
+      size="small"
+      text="Delete space"
+      disabled={isDirty}
+      onClick={handleDelete}
+    />
   </div>
 </div>
 

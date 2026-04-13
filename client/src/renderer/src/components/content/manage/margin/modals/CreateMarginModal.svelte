@@ -5,6 +5,7 @@
   import avatar from '$src/assets/pics/anonym-avatar.png'
   import { Visibility } from '$src/interfaces/Visibility'
   import type { CreateMargin } from '$src/interfaces/Margin'
+  import Button from '$src/components/common/buttons/Button.svelte'
 
   interface Props {
     open: boolean
@@ -60,8 +61,14 @@
   />
   <textarea placeholder="Description" bind:value={marginDescription} rows="3"></textarea>
   <div class="actions">
-    <button class="cancel" onclick={onClose}>Cancel</button>
-    <button class="confirm" onclick={handleSubmit} disabled={!marginName.trim()}>Create</button>
+    <Button buttonType="secondary" size="small" onClick={onClose} text="Cancel" />
+    <Button
+      buttonType="primary"
+      size="small"
+      onClick={handleSubmit}
+      text="Create"
+      disabled={!marginName.trim()}
+    />
   </div>
 </AppModal>
 

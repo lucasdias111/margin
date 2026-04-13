@@ -8,6 +8,7 @@
   import AnnouncementCard from '$src/components/content/margin/announcement/AnnouncementCard.svelte'
   import MarginIcon from '$src/components/content/margin/MarginIcon.svelte'
   import Icon from '$src/components/common/icons/Icon.svelte'
+  import Button from '$src/components/common/buttons/Button.svelte'
 
   const currentUserRole = $derived(
     chatState.selectedMargin?.members.find((m) => m.user.id === userState.currentUser?.id)?.role
@@ -68,9 +69,12 @@
         {/if}
       </div>
       {#if canManage}
-        <button class="manage-btn" onclick={() => (chatState.currentlySelectedContent = 'manage')}>
-          Manage Margin
-        </button>
+        <Button
+          buttonType="primary"
+          size="small"
+          onClick={() => (chatState.currentlySelectedContent = 'manage')}
+          text="Manage"
+        />
       {/if}
     </div>
   </div>
@@ -145,23 +149,6 @@
     border-bottom: 1px solid rgba(0, 0, 0, 0.06);
   }
 
-  .manage-btn {
-    padding: 7px 14px;
-    background-color: #f47e3a;
-    border: none;
-    border-radius: 10px;
-    color: #fff;
-    font-size: 12px;
-    font-weight: 500;
-    cursor: pointer;
-    transition: background-color 0.15s;
-    white-space: nowrap;
-  }
-
-  .manage-btn:hover {
-    background-color: #e06b28;
-  }
-
   .announcements-section {
     background: #f7f7fa;
     border-radius: 14px;
@@ -228,7 +215,7 @@
     height: 100px;
     border-radius: 12px;
     overflow: hidden;
-    background: #f7f4ef;
+    background: #ffffff;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -261,23 +248,5 @@
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-  }
-
-  .manage-btn {
-    padding: 7px 14px;
-    background-color: #f47e3a;
-    border: none;
-    border-radius: 10px;
-    color: #fff;
-    font-size: 12px;
-    font-weight: 500;
-    cursor: pointer;
-    transition: background-color 0.15s;
-    white-space: nowrap;
-    flex-shrink: 0;
-  }
-
-  .manage-btn:hover {
-    background-color: #e06b28;
   }
 </style>

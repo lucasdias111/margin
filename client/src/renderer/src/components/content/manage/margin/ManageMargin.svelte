@@ -111,7 +111,7 @@
       title="Remove member"
       message="Are you sure you want to remove {memberToRemove?.user.displayName} from this margin? They will lose access to all spaces and channels."
       confirmLabel="Remove"
-      variant="danger"
+      variant="delete"
       onConfirm={confirmRemoveMember}
       onClose={() => (memberToRemove = null)}
     />

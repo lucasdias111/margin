@@ -3,6 +3,7 @@
   import UserAvatar from '$src/components/common/user/UserAvatar.svelte'
   import { authenticatedGet } from '$src/services/api'
   import type { User } from '$src/interfaces/User'
+  import Button from '$src/components/common/buttons/Button.svelte'
 
   interface Props {
     open: boolean
@@ -88,7 +89,13 @@
     {/if}
 
     <div class="actions">
-      <button class="cancel" onclick={() => { userToInvite = undefined; title = initialTitle }}>Back</button>
+      <button
+        class="cancel"
+        onclick={() => {
+          userToInvite = undefined
+          title = initialTitle
+        }}>Back</button
+      >
       <button class="confirm" onclick={handleSubmit}>Send Invite</button>
     </div>
   {:else}
@@ -106,25 +113,21 @@
             if (e.key === 'Enter') handleExactLookup()
           }}
         />
-        <button
-          class="lookup-btn"
-          onclick={handleExactLookup}
+        <Button
+          buttonType="primary"
+          size="small"
+          onClick={() => handleExactLookup()}
+          text="Find"
           disabled={exactLookupLoading || !exactHandle.trim()}
-        >
-          {#if exactLookupLoading}
-            <span class="spinner"></span>
-          {:else}
-            Find
-          {/if}
-        </button>
+        />
+
+        {#if exactLookupLoading}
+          <span class="spinner"></span>
+        {/if}
       </div>
       {#if exactLookupError}
         <span class="lookup-error">{exactLookupError}</span>
       {/if}
-    </div>
-
-    <div class="actions">
-      <button class="cancel" onclick={handleCancel}>Cancel</button>
     </div>
   {/if}
 </AppModal>
@@ -151,7 +154,7 @@
 
   .lookup-input {
     flex: 1;
-    padding: 8px 14px;
+    padding: 4px 8px;
     border-radius: 10px;
     border: 1.5px solid #ebebeb;
     background: #fafafa;
@@ -172,32 +175,6 @@
 
   .lookup-input::placeholder {
     color: #c1c1c1;
-  }
-
-  .lookup-btn {
-    padding: 8px 16px;
-    background: #f47e3a;
-    color: white;
-    border: none;
-    border-radius: 10px;
-    font-size: 13px;
-    font-weight: 600;
-    font-family: inherit;
-    cursor: pointer;
-    transition: background 0.15s;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    min-width: 60px;
-  }
-
-  .lookup-btn:hover:not(:disabled) {
-    background: #e06b28;
-  }
-
-  .lookup-btn:disabled {
-    opacity: 0.4;
-    cursor: not-allowed;
   }
 
   .lookup-error {

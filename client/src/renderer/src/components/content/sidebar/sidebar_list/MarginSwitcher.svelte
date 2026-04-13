@@ -9,6 +9,7 @@
   import { notificationState } from '$src/states/NotificationState.svelte'
   import Icon from '$src/components/common/icons/Icon.svelte'
   import { marginInviteService } from '$src/services/MarginInviteService'
+  import Button from '$src/components/common/buttons/Button.svelte'
 
   let open = $state(false)
   let createMarginOpen = $state(false)
@@ -90,10 +91,13 @@
       </div>
 
       <div class="join-divider"></div>
-
-      <button class="margin-item" onclick={() => (createMarginOpen = true)}
-        >Create new margin
-      </button>
+      <Button
+        buttonType="secondary"
+        size="small"
+        onClick={() => (createMarginOpen = true)}
+        text="Create new margin"
+        fullWidth
+      />
 
       <div class="join-section">
         <span class="join-label">Join with invite code</span>
@@ -108,13 +112,13 @@
               if (e.key === 'Enter') handleJoinWithCode()
             }}
           />
-          <button
-            class="join-btn"
-            onclick={handleJoinWithCode}
+          <Button
+            buttonType="primary"
+            size="small"
+            onClick={handleJoinWithCode}
             disabled={joinLoading || !joinCode.trim()}
-          >
-            {joinLoading ? '...' : 'Join'}
-          </button>
+            text={joinLoading ? '...' : 'Join'}
+          />
         </div>
         {#if joinError}
           <span class="join-error">{joinError}</span>

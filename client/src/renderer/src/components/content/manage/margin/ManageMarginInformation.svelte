@@ -1,9 +1,8 @@
 <script lang="ts">
   import type { Margin, UpdateMargin } from '$src/interfaces/Margin'
-  import SaveButton from '$src/components/common/buttons/SaveButton.svelte'
-  import DangerButton from '$src/components/common/buttons/DangerButton.svelte'
   import UploadImageButton from '$src/components/common/buttons/UploadImageButton.svelte'
   import MarginIcon from '$src/components/content/margin/MarginIcon.svelte'
+  import Button from '$src/components/common/buttons/Button.svelte'
 
   interface Props {
     margin: Margin
@@ -64,7 +63,13 @@
 <div class="margin-information">
   <div class="section-header">
     <h2>Information</h2>
-    <SaveButton {isDirty} onSave={handleSave} />
+    <Button
+      buttonType="primary"
+      size="small"
+      text="Save changes"
+      onClick={handleSave}
+      disabled={!isDirty}
+    />
   </div>
 
   <div class="info-row">
@@ -87,7 +92,7 @@
     </div>
 
     <div class="info-picture">
-      <span class="picture-label">Margin picture</span>
+      <span class="picture-label"></span>
       <MarginIcon {marginIcon} width={100} height={100} />
       <UploadImageButton {onFileChange} {onPreviewUrlChange} />
     </div>
@@ -98,7 +103,7 @@
       <span>Delete margin</span>
       <p>Permanently delete this margin, all its spaces, channels, and members.</p>
     </div>
-    <DangerButton label="Delete margin" onAction={handleDelete} />
+    <Button buttonType="delete" size="small" text="Delete margin" onClick={handleDelete} />
   </div>
 </div>
 

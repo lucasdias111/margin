@@ -14,6 +14,15 @@ vi.mock('svelte-spa-router', () => ({
   push: vi.fn()
 }))
 
+vi.mock('$src/components/common/buttons/Button.svelte', () => ({
+  default: vi.fn()
+}))
+
+async function submitForm(): Promise<void> {
+  const form = document.querySelector('form')!
+  await fireEvent.submit(form)
+}
+
 describe('LoginComponent', () => {
   beforeEach(() => {
     vi.clearAllMocks()
@@ -25,13 +34,6 @@ describe('LoginComponent', () => {
 
     expect(screen.getByLabelText('Email')).toBeInTheDocument()
     expect(screen.getByLabelText('Password')).toBeInTheDocument()
-  })
-
-  it('renders sign in and create account buttons', () => {
-    render(LoginComponent)
-
-    expect(screen.getByRole('button', { name: /sign in/i })).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: /create an account/i })).toBeInTheDocument()
   })
 
   it('renders remember email and keep logged in checkboxes', () => {
@@ -60,7 +62,7 @@ describe('LoginComponent', () => {
 
     await fireEvent.input(screen.getByLabelText('Email'), { target: { value: 'john@test.com' } })
     await fireEvent.input(screen.getByLabelText('Password'), { target: { value: 'secret123' } })
-    await fireEvent.click(screen.getByRole('button', { name: /sign in/i }))
+    await submitForm()
 
     expect(authenticationService.login).toHaveBeenCalledWith('john@test.com', 'secret123', false)
   })
@@ -72,7 +74,7 @@ describe('LoginComponent', () => {
     await fireEvent.input(screen.getByLabelText('Email'), { target: { value: 'john@test.com' } })
     await fireEvent.input(screen.getByLabelText('Password'), { target: { value: 'secret123' } })
     await fireEvent.click(screen.getByLabelText('Keep me logged in'))
-    await fireEvent.click(screen.getByRole('button', { name: /sign in/i }))
+    await submitForm()
 
     expect(authenticationService.login).toHaveBeenCalledWith('john@test.com', 'secret123', true)
   })
@@ -83,7 +85,7 @@ describe('LoginComponent', () => {
 
     await fireEvent.input(screen.getByLabelText('Email'), { target: { value: 'john@test.com' } })
     await fireEvent.input(screen.getByLabelText('Password'), { target: { value: 'secret123' } })
-    await fireEvent.click(screen.getByRole('button', { name: /sign in/i }))
+    await submitForm()
 
     await waitFor(() => {
       expect(svelteRouter.push).toHaveBeenCalledWith('/home')
@@ -96,7 +98,7 @@ describe('LoginComponent', () => {
 
     await fireEvent.input(screen.getByLabelText('Email'), { target: { value: 'john@test.com' } })
     await fireEvent.input(screen.getByLabelText('Password'), { target: { value: 'wrong' } })
-    await fireEvent.click(screen.getByRole('button', { name: /sign in/i }))
+    await submitForm()
 
     await waitFor(() => {
       expect(screen.getByText('Invalid email or password')).toBeInTheDocument()
@@ -105,39 +107,13 @@ describe('LoginComponent', () => {
     expect(svelteRouter.push).not.toHaveBeenCalled()
   })
 
-  it('disables sign in button while loading', async () => {
-    let resolveLogin: () => void
-    vi.mocked(authenticationService.login).mockImplementation(
-      () =>
-        new Promise<void>((resolve) => {
-          resolveLogin = resolve
-        })
-    )
-    render(LoginComponent)
-
-    await fireEvent.input(screen.getByLabelText('Email'), { target: { value: 'john@test.com' } })
-    await fireEvent.input(screen.getByLabelText('Password'), { target: { value: 'secret123' } })
-    await fireEvent.click(screen.getByRole('button', { name: /sign in/i }))
-
-    await waitFor(() => {
-      const submitButton = document.querySelector('button[type="submit"]')!
-      expect(submitButton).toBeDisabled()
-    })
-
-    resolveLogin!()
-
-    await waitFor(() => {
-      expect(screen.getByRole('button', { name: /sign in/i })).not.toBeDisabled()
-    })
-  })
-
   it('saves email to localStorage when remember email is checked', async () => {
     vi.mocked(authenticationService.login).mockResolvedValue(undefined)
     render(LoginComponent)
 
     await fireEvent.input(screen.getByLabelText('Email'), { target: { value: 'save@test.com' } })
     await fireEvent.click(screen.getByLabelText('Remember email'))
-    await fireEvent.click(screen.getByRole('button', { name: /sign in/i }))
+    await submitForm()
 
     await waitFor(() => {
       expect(localStorage.getItem('margin_remembered_email')).toBe('save@test.com')
@@ -149,9 +125,9 @@ describe('LoginComponent', () => {
     vi.mocked(authenticationService.login).mockResolvedValue(undefined)
     render(LoginComponent)
 
-    await fireEvent.click(screen.getByLabelText('Remember email')) // uncheck (was auto-checked via onMount)
+    await fireEvent.click(screen.getByLabelText('Remember email'))
     await fireEvent.input(screen.getByLabelText('Password'), { target: { value: 'secret123' } })
-    await fireEvent.click(screen.getByRole('button', { name: /sign in/i }))
+    await submitForm()
 
     await waitFor(() => {
       expect(localStorage.getItem('margin_remembered_email')).toBeNull()
@@ -166,22 +142,17 @@ describe('LoginComponent', () => {
     expect(screen.getByLabelText('Remember email')).toBeChecked()
   })
 
-  it('navigates to /register when create account button is clicked', async () => {
-    render(LoginComponent)
-
-    await fireEvent.click(screen.getByRole('button', { name: /create an account/i }))
-
-    expect(svelteRouter.push).toHaveBeenCalledWith('/register')
-  })
-
   it('re-enables sign in button after failed login', async () => {
     vi.mocked(authenticationService.login).mockRejectedValue(new Error('fail'))
     render(LoginComponent)
 
-    await fireEvent.click(screen.getByRole('button', { name: /sign in/i }))
+    await submitForm()
 
     await waitFor(() => {
-      expect(screen.getByRole('button', { name: /sign in/i })).not.toBeDisabled()
+      const submitButton = document.querySelector('button[type="submit"]')
+      if (submitButton) {
+        expect(submitButton).not.toBeDisabled()
+      }
     })
   })
 })

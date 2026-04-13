@@ -10,6 +10,7 @@
   import PolicyModal from '$src/components/common/modals/PolicyModal.svelte'
   import { privacyPolicyHtml } from '$src/assets/legal/privacy-policy'
   import { termsOfServiceHtml } from '$src/assets/legal/terms-of-service'
+  import Button from '$src/components/common/buttons/Button.svelte'
 
   let handle = $state('')
   let displayName = $state('')
@@ -35,6 +36,7 @@
   let handleTouched = $state(false)
   let passwordTouched = $state(false)
   let repeatPasswordTouched = $state(false)
+  let policyTouched = $state(false)
 
   function deriveHandleError(value: string): string | null {
     if (value.length === 0) return null
@@ -58,17 +60,24 @@
     return null
   }
 
+  let termsError = $derived(
+    policyTouched && !acceptedTerms ? 'You must accept the Terms of Service' : null
+  )
+  let privacyError = $derived(
+    policyTouched && !acceptedPrivacy ? 'You must accept the Privacy Policy' : null
+  )
+
   let hasErrors = $derived(
     !handle ||
-    !displayName ||
-    !email ||
-    !password ||
-    !repeatPassword ||
-    !acceptedTerms ||
-    !acceptedPrivacy ||
-    handleError !== null ||
-    passwordError !== null ||
-    repeatPasswordError !== null
+      !displayName ||
+      !email ||
+      !password ||
+      !repeatPassword ||
+      !acceptedTerms ||
+      !acceptedPrivacy ||
+      handleError !== null ||
+      passwordError !== null ||
+      repeatPasswordError !== null
   )
 
   function sanitizeHandle(event: Event): void {
@@ -94,6 +103,7 @@
     handleTouched = true
     passwordTouched = true
     repeatPasswordTouched = true
+    policyTouched = true
 
     if (hasErrors) return
 
@@ -263,6 +273,9 @@
             </button>
           </span>
         </label>
+        {#if termsError}
+          <span class="error-text">{termsError}</span>
+        {/if}
 
         <label class="checkbox-row">
           <input type="checkbox" bind:checked={acceptedPrivacy} />
@@ -273,22 +286,34 @@
             </button>
           </span>
         </label>
+        {#if privacyError}
+          <span class="error-text">{privacyError}</span>
+        {/if}
       </div>
 
-      <button class="btn-primary" type="submit" disabled={isLoading}>
-        {#if isLoading}
-          <span class="spinner"></span>
-        {:else}
-          Create account
-        {/if}
-      </button>
+      <Button
+        buttonType="primary"
+        size="medium"
+        text="Create account"
+        fullWidth
+        onClick={handleRegistration}
+      />
+      {#if isLoading}
+        <span class="spinner"></span>
+      {/if}
     </form>
 
     <div class="divider">
       <span>or</span>
     </div>
 
-    <button class="btn-secondary" onclick={goBack}> Back to sign in</button>
+    <Button
+      buttonType="secondary"
+      size="medium"
+      text="Back to sign in"
+      fullWidth
+      onClick={goBack}
+    />
   </div>
 </div>
 
@@ -507,33 +532,6 @@
     color: #d4621a;
   }
 
-  .btn-primary {
-    height: 42px;
-    width: 100%;
-    background: #e8712a;
-    color: white;
-    border: none;
-    border-radius: 10px;
-    font-size: 14px;
-    font-weight: 600;
-    cursor: pointer;
-    font-family: inherit;
-    transition: background 0.15s ease;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    letter-spacing: 0.1px;
-  }
-
-  .btn-primary:hover:not(:disabled) {
-    background: #d4621a;
-  }
-
-  .btn-primary:disabled {
-    opacity: 0.6;
-    cursor: not-allowed;
-  }
-
   .spinner {
     width: 16px;
     height: 16px;
@@ -563,24 +561,5 @@
     flex: 1;
     height: 1px;
     background: #ece8e0;
-  }
-
-  .btn-secondary {
-    height: 42px;
-    width: 100%;
-    background: transparent;
-    color: #555250;
-    border: 1px solid #ece8e0;
-    border-radius: 10px;
-    font-size: 14px;
-    font-weight: 500;
-    cursor: pointer;
-    font-family: inherit;
-    transition: all 0.15s ease;
-  }
-
-  .btn-secondary:hover {
-    border-color: #e8712a;
-    color: #e8712a;
   }
 </style>

@@ -2,6 +2,7 @@
   import { authenticationService } from '$src/services/AuthenticationService'
   import { push } from 'svelte-spa-router'
   import { onMount } from 'svelte'
+  import Button from '$src/components/common/buttons/Button.svelte'
 
   const REMEMBERED_EMAIL_KEY = 'margin_remembered_email'
 
@@ -98,20 +99,29 @@
         <p class="error">{loginResponse}</p>
       {/if}
 
-      <button class="btn-primary" type="submit" disabled={isLoading}>
-        {#if isLoading}
-          <span class="spinner"></span>
-        {:else}
-          Sign in
-        {/if}
-      </button>
+      <Button
+        buttonType="primary"
+        size="medium"
+        text="Sign in"
+        onClick={handleLogin}
+        disabled={isLoading}
+        fullWidth
+      />
+      {#if isLoading}
+        <span class="spinner"></span>
+      {/if}
     </form>
 
     <div class="divider">
       <span>or</span>
     </div>
-
-    <button class="btn-secondary" onclick={goToRegister}> Create an account </button>
+    <Button
+      buttonType="secondary"
+      onClick={goToRegister}
+      size="medium"
+      text="Create an account"
+      fullWidth
+    />
   </div>
 </div>
 
@@ -258,33 +268,6 @@
     border: 1px solid #f5d5be;
   }
 
-  .btn-primary {
-    height: 42px;
-    width: 100%;
-    background: #e8712a;
-    color: white;
-    border: none;
-    border-radius: 10px;
-    font-size: 14px;
-    font-weight: 600;
-    cursor: pointer;
-    font-family: inherit;
-    transition: background 0.15s ease;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    letter-spacing: 0.1px;
-  }
-
-  .btn-primary:hover:not(:disabled) {
-    background: #d4621a;
-  }
-
-  .btn-primary:disabled {
-    opacity: 0.6;
-    cursor: not-allowed;
-  }
-
   .spinner {
     width: 16px;
     height: 16px;
@@ -314,24 +297,5 @@
     flex: 1;
     height: 1px;
     background: #ece8e0;
-  }
-
-  .btn-secondary {
-    height: 42px;
-    width: 100%;
-    background: transparent;
-    color: #555250;
-    border: 1px solid #ece8e0;
-    border-radius: 10px;
-    font-size: 14px;
-    font-weight: 500;
-    cursor: pointer;
-    font-family: inherit;
-    transition: all 0.15s ease;
-  }
-
-  .btn-secondary:hover {
-    border-color: #e8712a;
-    color: #e8712a;
   }
 </style>
