@@ -40,8 +40,8 @@ class UserService {
     return await response.json()
   }
 
-  async reportBug(userId: number): Promise<void> {
-    const response = await authenticatedPost(userId, 'users/report_bug')
+  async reportBug(bugTitle: string, bugDescription: string): Promise<void> {
+    const response = await authenticatedPost({ bugTitle, bugDescription }, 'users/report_bug')
     return await response.json()
   }
 }

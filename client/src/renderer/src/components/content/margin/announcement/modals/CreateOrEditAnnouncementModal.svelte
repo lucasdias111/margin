@@ -1,6 +1,7 @@
 <script lang="ts">
   import AppModal from '$src/components/common/modals/AppModal.svelte'
   import Icon from '$src/components/common/icons/Icon.svelte'
+  import Button from '$src/components/common/buttons/Button.svelte'
 
   interface Props {
     open: boolean
@@ -70,10 +71,8 @@
   </div>
 
   <div class="actions">
-    <button class="cancel" onclick={handleCancel}>Cancel</button>
-    <button class="confirm" onclick={handleSubmit} disabled={!title.trim() || !content.trim()}
-      >Post</button
-    >
+    <Button buttonType="secondary" size="small" onClick={onClose} text="Cancel" />
+    <Button buttonType="primary" size="small" onClick={handleSubmit} text="Post" />
   </div>
 </AppModal>
 
@@ -130,29 +129,5 @@
     justify-content: flex-end;
     gap: 8px;
     padding: 5% 0 1% 0;
-  }
-
-  .cancel {
-    background: none;
-    border: 1px solid #d9d9d9;
-    border-radius: 8px;
-    padding: 8px 16px;
-    cursor: pointer;
-    color: #2d2d2d;
-  }
-
-  .confirm {
-    background: #ff6203;
-    color: #fff;
-    border: none;
-    border-radius: 8px;
-    padding: 8px 16px;
-    font-weight: 600;
-    cursor: pointer;
-  }
-
-  .confirm:disabled {
-    opacity: 0.4;
-    cursor: not-allowed;
   }
 </style>

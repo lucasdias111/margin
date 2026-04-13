@@ -1,4 +1,4 @@
-import { contextBridge, ipcRenderer } from 'electron'
+import { contextBridge, ipcRenderer, shell } from 'electron'
 import { electronAPI } from '@electron-toolkit/preload'
 
 const api = {
@@ -31,6 +31,9 @@ if (process.contextIsolated) {
       acceptUpdate: () => ipcRenderer.send('update-accept'),
       declineUpdate: () => ipcRenderer.send('update-decline'),
       installUpdate: () => ipcRenderer.send('update-install')
+    })
+    contextBridge.exposeInMainWorld('shell', {
+      openExternal: (url) => shell.openExternal(url)
     })
   } catch (error) {
     console.error(error)

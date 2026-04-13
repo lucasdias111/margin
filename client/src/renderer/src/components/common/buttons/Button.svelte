@@ -1,7 +1,7 @@
 <script lang="ts">
   import type { Snippet } from 'svelte'
 
-  type ButtonType = 'primary' | 'secondary' | 'ternary' | 'danger' | 'delete' | 'list'
+  type ButtonType = 'primary' | 'secondary' | 'tertiary' | 'danger' | 'delete' | 'list'
   type Size = 'small' | 'medium' | 'large'
   interface ButtonProps {
     text?: string
@@ -53,26 +53,47 @@
     height: fit-content;
     cursor: pointer;
     font-family: inherit;
+    transition: background-color 0.15s ease,
+    border-color 0.15s ease,
+    box-shadow 0.15s ease,
+    transform 0.05s ease,
+    opacity 0.15s ease;
   }
+
+  .but:active:not(:disabled) {
+    transform: scale(0.97);
+  }
+
   .but.primary {
     background-color: #f47e3a;
     color: white;
     border: none;
-    cursor: pointer;
+  }
+
+  .but.primary:hover:not(:disabled) {
+    background-color: #e06d2b;
+    box-shadow: 0 2px 8px rgba(244, 126, 58, 0.3);
   }
 
   .but.secondary {
     background-color: white;
     color: #f47e3a;
     border: rgba(244, 126, 58, 0.43) solid 1px;
-    cursor: pointer;
+  }
+
+  .but.secondary:hover:not(:disabled) {
+    background-color: rgba(244, 126, 58, 0.06);
+    border-color: #f47e3a;
   }
 
   .but.ternary {
     background-color: #312f2f;
     color: #f47e3a;
     border: none;
-    cursor: pointer;
+  }
+
+  .but.ternary:hover:not(:disabled) {
+    background-color: #3d3b3b;
   }
 
   .but.danger {
@@ -80,28 +101,38 @@
     color: #c0392b;
     border-radius: 8px;
     background: #fff8f8;
-    cursor: pointer;
+  }
+
+  .but.danger:hover:not(:disabled) {
+    background-color: #fff0ee;
+    border-color: #a93226;
   }
 
   .but.delete {
     background: #c0392b;
     color: white;
     border: none;
-    cursor: pointer;
+  }
+
+  .but.delete:hover:not(:disabled) {
+    background-color: #a93226;
+    box-shadow: 0 2px 8px rgba(192, 57, 43, 0.3);
   }
 
   .but.list {
     border-radius: 12px;
     border: 1px solid transparent;
     background: #fafafa;
-    transition:
-      border-color 0.15s,
-      box-shadow 0.15s;
     overflow: hidden;
     display: flex;
     align-items: center;
     justify-content: flex-start;
     color: black;
+  }
+
+  .but.list:hover:not(:disabled) {
+    border-color: #ebebeb;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
   }
 
   .but.small {
@@ -135,10 +166,5 @@
   .but:disabled {
     opacity: 0.4;
     cursor: not-allowed;
-  }
-
-  .but.list:hover {
-    border-color: #ebebeb;
-    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
   }
 </style>

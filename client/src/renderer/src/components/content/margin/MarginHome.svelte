@@ -92,7 +92,7 @@
       <div class="card-empty">No announcements yet</div>
     {:else}
       <div class="announcement-list">
-        {#each announcements as announcement (announcement.announcementId)}
+        {#each [...announcements].reverse() as announcement (announcement.announcementId)}
           <AnnouncementCard
             {announcement}
             {canManage}

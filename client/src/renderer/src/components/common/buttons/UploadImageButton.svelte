@@ -1,21 +1,19 @@
 <script lang="ts">
+  import Button from './Button.svelte'
+
   interface Props {
     onFileChange: (file: File) => Promise<void>
     onPreviewUrlChange: (url: string) => Promise<void>
     label?: string
-    width?: number
-    height?: number
   }
   let { onFileChange, onPreviewUrlChange, label }: Props = $props()
-  let file: File = $state<File>(null)
+  let inputRef: HTMLInputElement
 
   async function handleFileChange(event: Event): Promise<void> {
     const input = event.target as HTMLInputElement
-    file = input.files?.[0]
-
+    const file = input.files?.[0]
     if (file) {
       onFileChange(file)
-
       const reader = new FileReader()
       reader.onload = (e) => {
         onPreviewUrlChange(e.target?.result as string)
@@ -24,6 +22,15 @@
     }
   }
 </script>
+
+<input bind:this={inputRef} type="file" accept="image/*" onchange={handleFileChange} hidden />
+
+<Button
+  text={label ?? 'Upload'}
+  buttonType="secondary"
+  size="small"
+  onClick={() => inputRef.click()}
+/>
 
 <input
   id="profilePicture"
@@ -34,8 +41,6 @@
   hidden
   placeholder="Profile Picture (Optional)"
 />
-
-<label for="profilePicture" class="fileUpload"> {label ?? 'Upload'} </label>
 
 <style>
   .fileUpload {

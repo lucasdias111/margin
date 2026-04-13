@@ -1,5 +1,6 @@
 <script lang="ts">
   import AppModal from '$src/components/common/modals/AppModal.svelte'
+  import Button from '$src/components/common/buttons/Button.svelte'
 
   interface Props {
     open: boolean
@@ -16,7 +17,7 @@
     {@html content}
   </div>
   <div class="actions">
-    <button class="close-btn" onclick={onClose}>Close</button>
+    <Button buttonType="primary" onClick={onClose}>Close</Button>
   </div>
 </AppModal>
 
@@ -95,22 +96,5 @@
     display: flex;
     justify-content: flex-end;
     padding-top: 12px;
-  }
-
-  .close-btn {
-    background: none;
-    border: 1px solid #ece8e0;
-    border-radius: 8px;
-    padding: 8px 20px;
-    cursor: pointer;
-    color: #555250;
-    font-family: inherit;
-    font-size: 14px;
-    transition: all 0.15s ease;
-  }
-
-  .close-btn:hover {
-    border-color: #e8712a;
-    color: #e8712a;
   }
 </style>

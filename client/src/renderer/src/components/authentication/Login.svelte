@@ -298,23 +298,4 @@
     height: 1px;
     background: #ece8e0;
   }
-
-  .btn-secondary {
-    height: 42px;
-    width: 100%;
-    background: transparent;
-    color: #555250;
-    border: 1px solid #ece8e0;
-    border-radius: 10px;
-    font-size: 14px;
-    font-weight: 500;
-    cursor: pointer;
-    font-family: inherit;
-    transition: all 0.15s ease;
-  }
-
-  .btn-secondary:hover {
-    border-color: #e8712a;
-    color: #e8712a;
-  }
 </style>

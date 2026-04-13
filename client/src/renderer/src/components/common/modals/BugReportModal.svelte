@@ -50,7 +50,7 @@
       <span>Thanks! Your report has been submitted.</span>
     </div>
     <div class="actions">
-      <button class="confirm" onclick={handleClose}>Done</button>
+      <Button buttonType="primary" size="small" onClick={handleClose} text="Done" />
     </div>
   {:else}
     <div class="form">

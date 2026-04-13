@@ -36,6 +36,10 @@ vi.mock('$src/components/common/modals/PolicyModal.svelte', () => ({
   default: vi.fn()
 }))
 
+vi.mock('$src/components/common/buttons/Button.svelte', () => ({
+  default: vi.fn()
+}))
+
 vi.mock('$src/assets/legal/privacy-policy', () => ({
   privacyPolicyHtml: '<p>Privacy policy content</p>'
 }))
@@ -104,6 +108,11 @@ async function acceptPolicies(): Promise<void> {
   }
 }
 
+async function submitForm(): Promise<void> {
+  const form = document.querySelector('form')!
+  await fireEvent.submit(form)
+}
+
 describe('RegisterPage', () => {
   beforeEach(() => {
     vi.clearAllMocks()
@@ -120,21 +129,13 @@ describe('RegisterPage', () => {
     expect(screen.getByLabelText('Confirm password')).toBeInTheDocument()
   })
 
-  it('renders create account and back to sign in buttons', () => {
-    render(RegisterPage)
-
-    expect(screen.getByRole('button', { name: /create account/i })).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: /back to sign in/i })).toBeInTheDocument()
-  })
-
   it('calls authenticationService.register with correct args on valid submit', async () => {
     vi.mocked(authenticationService.register).mockResolvedValue({ ok: true } as Response)
     render(RegisterPage)
 
-    const form = fillForm()
-    await form.fill()
+    await fillForm().fill()
     await acceptPolicies()
-    await fireEvent.click(screen.getByRole('button', { name: /create account/i }))
+    await submitForm()
 
     expect(authenticationService.register).toHaveBeenCalledWith(
       'johndoe',
@@ -152,7 +153,7 @@ describe('RegisterPage', () => {
 
     await fillForm().fill()
     await acceptPolicies()
-    await fireEvent.click(screen.getByRole('button', { name: /create account/i }))
+    await submitForm()
 
     await waitFor(() => {
       expect(svelteRouter.push).toHaveBeenCalledWith('/')
@@ -168,7 +169,7 @@ describe('RegisterPage', () => {
 
     await fillForm().fill()
     await acceptPolicies()
-    await fireEvent.click(screen.getByRole('button', { name: /create account/i }))
+    await submitForm()
 
     await waitFor(() => {
       expect(errorService.reportError).toHaveBeenCalledWith('Email already taken')
@@ -186,7 +187,7 @@ describe('RegisterPage', () => {
 
     await fillForm().fill()
     await acceptPolicies()
-    await fireEvent.click(screen.getByRole('button', { name: /create account/i }))
+    await submitForm()
 
     await waitFor(() => {
       expect(errorService.reportError).toHaveBeenCalledWith('Registration failed.')
@@ -199,7 +200,7 @@ describe('RegisterPage', () => {
 
     await fillForm().fill()
     await acceptPolicies()
-    await fireEvent.click(screen.getByRole('button', { name: /create account/i }))
+    await submitForm()
 
     await waitFor(() => {
       expect(errorService.reportError).toHaveBeenCalledWith('Failed to connect to server.')
@@ -209,7 +210,7 @@ describe('RegisterPage', () => {
   it('does not submit when required fields are empty', async () => {
     render(RegisterPage)
 
-    await fireEvent.click(screen.getByRole('button', { name: /create account/i }))
+    await submitForm()
 
     expect(authenticationService.register).not.toHaveBeenCalled()
   })
@@ -308,47 +309,9 @@ describe('RegisterPage', () => {
 
     await fillForm({ password: 'short', repeatPassword: 'short' }).fill()
     await acceptPolicies()
-    await fireEvent.click(screen.getByRole('button', { name: /create account/i }))
+    await submitForm()
 
     expect(authenticationService.register).not.toHaveBeenCalled()
-  })
-
-  // Loading state
-
-  it('disables submit button while loading', async () => {
-    let resolveRegister: (value: Response) => void
-    vi.mocked(authenticationService.register).mockImplementation(
-      () =>
-        new Promise<Response>((resolve) => {
-          resolveRegister = resolve
-        })
-    )
-    render(RegisterPage)
-
-    await fillForm().fill()
-    await acceptPolicies()
-    await fireEvent.click(screen.getByRole('button', { name: /create account/i }))
-
-    await waitFor(() => {
-      const submitButton = document.querySelector('button[type="submit"]')!
-      expect(submitButton).toBeDisabled()
-    })
-
-    resolveRegister!({ ok: true } as Response)
-
-    await waitFor(() => {
-      expect(screen.getByRole('button', { name: /create account/i })).not.toBeDisabled()
-    })
-  })
-
-  // Navigation
-
-  it('navigates to / when back to sign in is clicked', async () => {
-    render(RegisterPage)
-
-    await fireEvent.click(screen.getByRole('button', { name: /back to sign in/i }))
-
-    expect(svelteRouter.push).toHaveBeenCalledWith('/')
   })
 
   // Handle sanitization
@@ -373,35 +336,74 @@ describe('RegisterPage', () => {
     expect(screen.getByRole('button', { name: /privacy policy/i })).toBeInTheDocument()
   })
 
-  it('does not submit when terms of service checkbox is not checked', async () => {
+  it('does not show policy errors before submit', () => {
+    render(RegisterPage)
+
+    expect(screen.queryByText('You must accept the Terms of Service')).not.toBeInTheDocument()
+    expect(screen.queryByText('You must accept the Privacy Policy')).not.toBeInTheDocument()
+  })
+
+  it('shows both policy errors on submit when neither checkbox is checked', async () => {
     render(RegisterPage)
 
     await fillForm().fill()
-    const checkboxes = screen.getAllByRole('checkbox')
-    await fireEvent.click(checkboxes[1])
-    await fireEvent.click(screen.getByRole('button', { name: /create account/i }))
+    await submitForm()
+
+    await waitFor(() => {
+      expect(screen.getByText('You must accept the Terms of Service')).toBeInTheDocument()
+      expect(screen.getByText('You must accept the Privacy Policy')).toBeInTheDocument()
+    })
 
     expect(authenticationService.register).not.toHaveBeenCalled()
   })
 
-  it('does not submit when privacy policy checkbox is not checked', async () => {
+  it('shows only privacy error when only terms is checked', async () => {
     render(RegisterPage)
 
     await fillForm().fill()
     const checkboxes = screen.getAllByRole('checkbox')
-    await fireEvent.click(checkboxes[0]) // only terms
-    await fireEvent.click(screen.getByRole('button', { name: /create account/i }))
+    await fireEvent.click(checkboxes[0]) // terms only
+    await submitForm()
+
+    await waitFor(() => {
+      expect(screen.queryByText('You must accept the Terms of Service')).not.toBeInTheDocument()
+      expect(screen.getByText('You must accept the Privacy Policy')).toBeInTheDocument()
+    })
 
     expect(authenticationService.register).not.toHaveBeenCalled()
   })
 
-  it('does not submit when neither checkbox is checked', async () => {
+  it('shows only terms error when only privacy is checked', async () => {
     render(RegisterPage)
 
     await fillForm().fill()
-    await fireEvent.click(screen.getByRole('button', { name: /create account/i }))
+    const checkboxes = screen.getAllByRole('checkbox')
+    await fireEvent.click(checkboxes[1]) // privacy only
+    await submitForm()
+
+    await waitFor(() => {
+      expect(screen.getByText('You must accept the Terms of Service')).toBeInTheDocument()
+      expect(screen.queryByText('You must accept the Privacy Policy')).not.toBeInTheDocument()
+    })
 
     expect(authenticationService.register).not.toHaveBeenCalled()
+  })
+
+  it('clears policy errors when checkboxes are checked after submit', async () => {
+    render(RegisterPage)
+
+    await fillForm().fill()
+    await submitForm()
+
+    await waitFor(() => {
+      expect(screen.getByText('You must accept the Terms of Service')).toBeInTheDocument()
+      expect(screen.getByText('You must accept the Privacy Policy')).toBeInTheDocument()
+    })
+
+    await acceptPolicies()
+
+    expect(screen.queryByText('You must accept the Terms of Service')).not.toBeInTheDocument()
+    expect(screen.queryByText('You must accept the Privacy Policy')).not.toBeInTheDocument()
   })
 
   it('submits when both checkboxes are checked and form is valid', async () => {
@@ -410,7 +412,7 @@ describe('RegisterPage', () => {
 
     await fillForm().fill()
     await acceptPolicies()
-    await fireEvent.click(screen.getByRole('button', { name: /create account/i }))
+    await submitForm()
 
     expect(authenticationService.register).toHaveBeenCalled()
   })

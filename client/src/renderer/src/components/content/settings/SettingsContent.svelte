@@ -168,7 +168,7 @@
   title="Delete account"
   message="This will permanently delete your account, remove you from all margins, and anonymize your data. This cannot be undone."
   confirmLabel="Delete my account"
-  variant="danger"
+  variant="delete"
   onConfirm={onDeleteAccount}
   onClose={() => (showDeleteConfirm = false)}
 />
@@ -279,15 +279,6 @@
     gap: 10px;
   }
 
-  .save-btn:hover:not(:disabled) {
-    background: #e06d2e;
-  }
-
-  .save-btn:disabled {
-    opacity: 0.4;
-    cursor: default;
-  }
-
   .danger-zone {
     display: flex;
     align-items: center;
@@ -314,23 +305,5 @@
     font-size: 0.78rem;
     color: #888;
     line-height: 1.5;
-  }
-
-  .delete-account-btn {
-    padding: 8px 18px;
-    background: #c0392b;
-    color: white;
-    border: none;
-    border-radius: 8px;
-    font-size: 0.82rem;
-    font-weight: 600;
-    font-family: inherit;
-    cursor: pointer;
-    white-space: nowrap;
-    transition: background 0.12s;
-  }
-
-  .delete-account-btn:hover {
-    background: #a93226;
   }
 </style>
