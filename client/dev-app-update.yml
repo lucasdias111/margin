@@ -1,3 +1,3 @@
 provider: generic
-url: https://example.com/auto-updates
+url: https://nbg1.your-objectstorage.com/margininstall
 updaterCacheDirName: margin-desktop-updater

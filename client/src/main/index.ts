@@ -1,9 +1,9 @@
-import { app, shell, BrowserWindow, ipcMain, session, desktopCapturer, safeStorage } from 'electron'
+import { app, BrowserWindow, desktopCapturer, ipcMain, safeStorage, session, shell } from 'electron'
 import { join } from 'path'
-import { electronApp, optimizer, is } from '@electron-toolkit/utils'
+import { electronApp, is, optimizer } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
 import { API_CONFIG } from '../renderer/src/shared/config'
-import { readFileSync, writeFileSync, existsSync, unlinkSync } from 'fs'
+import { existsSync, readFileSync, unlinkSync, writeFileSync } from 'fs'
 import pkg from 'electron-updater'
 
 const { autoUpdater } = pkg
@@ -98,6 +98,12 @@ function createWindow(): void {
 
   mainWindow.on('ready-to-show', () => {
     mainWindow.show()
+  })
+
+  mainWindow.webContents.on('before-input-event', (_event, input) => {
+    if (input.control && input.shift && input.key === 'I') {
+      mainWindow.webContents.toggleDevTools()
+    }
   })
 
   mainWindow.webContents.setWindowOpenHandler((details) => {

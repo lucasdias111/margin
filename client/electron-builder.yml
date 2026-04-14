@@ -45,5 +45,3 @@ npmRebuild: false
 publish:
   provider: generic
   url: https://nbg1.your-objectstorage.com/margininstall
-electronDownload:
-  mirror: https://npmmirror.com/mirrors/electron/
