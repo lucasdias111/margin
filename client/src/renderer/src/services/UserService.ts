@@ -1,9 +1,4 @@
-import {
-  authenticatedDelete,
-  authenticatedGet,
-  authenticatedPatchForm,
-  authenticatedPost
-} from '$src/services/api'
+import { authenticatedDelete, authenticatedGet, authenticatedPatchForm, authenticatedPost } from '$src/services/api'
 import type { RecentChatUser } from '$src/interfaces/RecentChatUser'
 import { userState } from '$src/states/UserState.svelte'
 import { authenticationService } from '$src/services/AuthenticationService'
@@ -42,7 +37,9 @@ class UserService {
 
   async reportBug(bugTitle: string, bugDescription: string): Promise<void> {
     const response = await authenticatedPost({ bugTitle, bugDescription }, 'users/report_bug')
-    return await response.json()
+    if (!response.ok) {
+      throw new Error('Bug report failed')
+    }
   }
 }
 
