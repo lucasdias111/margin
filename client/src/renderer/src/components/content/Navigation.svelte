@@ -32,7 +32,13 @@
 <div class="navigation">
   {#if userState.currentUser}
     <div class="avatar-wrapper" use:clickOutside={() => (showDropdown = false)}>
-      <button class="avatar-btn" onclick={() => (showDropdown = !showDropdown)}>
+      <button
+        class="avatar-btn"
+        onclick={() => {
+          showDropdown = !showDropdown
+          console.log('showDropdown:', showDropdown)
+        }}
+      >
         <UserAvatar
           profilePictureUrl={userState.currentUser.profilePictureUrl}
           width={40}
@@ -148,6 +154,7 @@
     padding: 20px;
     box-sizing: border-box;
     flex-shrink: 0;
+    overflow: visible;
   }
 
   .avatar-btn {
@@ -312,5 +319,9 @@
   .avatar-space {
     width: 32px;
     height: 32px;
+  }
+
+  .avatar-wrapper {
+    position: relative;
   }
 </style>

@@ -19,7 +19,7 @@ class WebSocketService {
   private handlers: Map<string, MessageHandler[]> = new Map()
   private reconnectAttempts = 0
   private intentionalDisconnect = false
-  private isConnecting = false
+  private isRestoringSession = false
 
   private pingInterval: ReturnType<typeof setInterval> | null = null
   private pongTimeout: ReturnType<typeof setTimeout> | null = null
@@ -28,34 +28,111 @@ class WebSocketService {
   private onReconnectCallback: (() => void) | null = null
 
   connect(): void {
-    if (this.isConnecting) return
+    if (this.isRestoringSession) return
     if (this.ws?.readyState === WebSocket.OPEN || this.ws?.readyState === WebSocket.CONNECTING)
       return
 
-    const token = sessionStorage.getItem('authToken')
+    const token = this.resolveToken()
+    if (token === 'restoring') return
     if (!token) {
-      this.isConnecting = true
-      authenticationService.tryRestoreSession().then((restored) => {
-        this.isConnecting = false
-        if (restored) {
-          this.connect()
-        } else {
-          connectionState.connectionStatus = 'disconnected'
-          authenticationService.logoutUser().then(() => push('/'))
-        }
-      })
+      this.terminateSession()
       return
+    }
+
+    this.openConnection(token)
+    document.addEventListener('visibilitychange', this.handleVisibilityChange)
+  }
+
+  disconnect(): void {
+    this.intentionalDisconnect = true
+    this.reconnectAttempts = 0
+    this.stopPing()
+    this.clearReconnectTimeout()
+    document.removeEventListener('visibilitychange', this.handleVisibilityChange)
+
+    if (this.ws) {
+      this.ws.close()
+      this.ws = null
+    }
+
+    connectionState.connectionStatus = 'disconnected'
+  }
+
+  send<T>(message: WebSocketMessageOut<T>): void {
+    if (this.ws?.readyState === WebSocket.OPEN) {
+      this.ws.send(JSON.stringify(message))
+    } else {
+      console.warn('WebSocket is not connected — message dropped', message.type)
+    }
+  }
+
+  on(messageType: string, handler: MessageHandler): void {
+    if (!this.handlers.has(messageType)) {
+      this.handlers.set(messageType, [])
+    }
+    const existing = this.handlers.get(messageType)!
+    if (!existing.includes(handler)) {
+      existing.push(handler)
+    }
+  }
+
+  off(messageType: string, handler: MessageHandler): void {
+    const handlers = this.handlers.get(messageType)
+    if (handlers) {
+      const index = handlers.indexOf(handler)
+      if (index > -1) {
+        handlers.splice(index, 1)
+      }
+    }
+  }
+
+  onReconnect(callback: () => void): void {
+    this.onReconnectCallback = callback
+  }
+
+  private resolveToken(): string | null | 'restoring' {
+    const token = sessionStorage.getItem('authToken')
+
+    if (!token) {
+      this.attemptSessionRestore()
+      return 'restoring'
     }
 
     if (this.isTokenExpired(token)) {
-      console.warn('JWT expired — clearing session and logging out')
+      console.warn('JWT expired — clearing session')
       sessionStorage.removeItem('authToken')
       sessionStorage.removeItem('privateKey')
-      connectionState.connectionStatus = 'disconnected'
-      authenticationService.logoutUser().then(() => push('/'))
-      return
+      return null
     }
 
+    return token
+  }
+
+  private attemptSessionRestore(): void {
+    this.isRestoringSession = true
+
+    authenticationService.tryRestoreSession().then((restored) => {
+      this.isRestoringSession = false
+      if (this.intentionalDisconnect) return
+
+      if (restored) {
+        this.connect()
+      } else {
+        this.terminateSession()
+      }
+    })
+  }
+
+  private isTokenExpired(token: string): boolean {
+    try {
+      const payload = JSON.parse(atob(token.split('.')[1]))
+      return payload.exp * 1000 < Date.now()
+    } catch {
+      return true
+    }
+  }
+
+  private openConnection(token: string): void {
     this.intentionalDisconnect = false
     connectionState.connectionStatus =
       this.reconnectAttempts > 0 ? 'reconnecting' : connectionState.connectionStatus
@@ -107,73 +184,56 @@ class WebSocketService {
 
       if (event.code === 4001) {
         console.warn('WebSocket closed due to auth failure — not reconnecting')
-        connectionState.connectionStatus = 'disconnected'
-        errorService.reportError('Session expired. Please log in again.')
-        authenticationService.logoutUser().then(() => push('/'))
+        this.terminateSession('Session expired. Please log in again.')
+        return
       }
 
       this.scheduleReconnect()
     }
-
-    document.addEventListener('visibilitychange', this.handleVisibilityChange)
   }
 
-  disconnect(): void {
+  private terminateSession(userMessage?: string): void {
     this.intentionalDisconnect = true
-    this.reconnectAttempts = 0
-    this.stopPing()
     this.clearReconnectTimeout()
-    document.removeEventListener('visibilitychange', this.handleVisibilityChange)
-
-    if (this.ws) {
-      this.ws.close()
-      this.ws = null
-    }
-
+    this.stopPing()
     connectionState.connectionStatus = 'disconnected'
+
+    if (userMessage) {
+      errorService.reportError(userMessage)
+    }
+
+    authenticationService.logoutUser().then(() => push('/'))
   }
 
-  send<T>(message: WebSocketMessageOut<T>): void {
-    if (this.ws?.readyState === WebSocket.OPEN) {
-      this.ws.send(JSON.stringify(message))
-    } else {
-      console.warn('WebSocket is not connected — message dropped', message.type)
-    }
-  }
-
-  on(messageType: string, handler: MessageHandler): void {
-    if (!this.handlers.has(messageType)) {
-      this.handlers.set(messageType, [])
-    }
-    const existing = this.handlers.get(messageType)!
-    if (!existing.includes(handler)) {
-      existing.push(handler)
-    }
-  }
-
-  off(messageType: string, handler: MessageHandler): void {
-    const handlers = this.handlers.get(messageType)
-    if (handlers) {
-      const index = handlers.indexOf(handler)
-      if (index > -1) {
-        handlers.splice(index, 1)
-      }
-    }
-  }
-
-  private handleVisibilityChange = (): void => {
-    if (document.visibilityState !== 'visible') return
-    if (this.intentionalDisconnect) return
-
-    if (!this.ws || this.ws.readyState !== WebSocket.OPEN) {
-      console.log('Tab visible — connection dead, reconnecting')
-      this.reconnectAttempts = 0
-      this.clearReconnectTimeout()
-      this.connect()
+  private scheduleReconnect(): void {
+    if (this.reconnectAttempts >= MAX_RECONNECT_ATTEMPTS) {
+      console.error(`Max reconnect attempts (${MAX_RECONNECT_ATTEMPTS}) reached`)
+      connectionState.connectionStatus = 'disconnected'
+      errorService.reportError('Lost connection to server. Please refresh the page.')
       return
     }
 
-    this.sendPing()
+    connectionState.connectionStatus = 'reconnecting'
+    this.reconnectAttempts++
+
+    const exponentialDelay = Math.min(
+      BASE_RECONNECT_DELAY_MS * Math.pow(2, this.reconnectAttempts - 1),
+      MAX_RECONNECT_DELAY_MS
+    )
+    const jitter = exponentialDelay * 0.2 * Math.random()
+    const delay = exponentialDelay + jitter
+
+    console.log(`Reconnecting in ${Math.round(delay)}ms (attempt ${this.reconnectAttempts})`)
+
+    this.clearReconnectTimeout()
+    this.reconnectTimeout = setTimeout(() => this.connect(), delay)
+  }
+
+  private clearReconnectTimeout(): void {
+    if (this.reconnectTimeout) {
+      clearTimeout(this.reconnectTimeout)
+      this.reconnectTimeout = null
+    }
   }
 
   private startPing(): void {
@@ -208,48 +268,19 @@ class WebSocketService {
     }
   }
 
-  private scheduleReconnect(): void {
-    if (this.reconnectAttempts >= MAX_RECONNECT_ATTEMPTS) {
-      console.error(`Max reconnect attempts (${MAX_RECONNECT_ATTEMPTS}) reached`)
-      connectionState.connectionStatus = 'disconnected'
-      errorService.reportError('Lost connection to server. Please refresh the page.')
+  private handleVisibilityChange = (): void => {
+    if (document.visibilityState !== 'visible') return
+    if (this.intentionalDisconnect) return
+
+    if (!this.ws || this.ws.readyState !== WebSocket.OPEN) {
+      console.log('Tab visible — connection dead, reconnecting')
+      this.reconnectAttempts = 0
+      this.clearReconnectTimeout()
+      this.connect()
       return
     }
 
-    connectionState.connectionStatus = 'reconnecting'
-    this.reconnectAttempts++
-
-    const exponentialDelay = Math.min(
-      BASE_RECONNECT_DELAY_MS * Math.pow(2, this.reconnectAttempts - 1),
-      MAX_RECONNECT_DELAY_MS
-    )
-    const jitter = exponentialDelay * 0.2 * Math.random()
-    const delay = exponentialDelay + jitter
-
-    console.log(`Reconnecting in ${Math.round(delay)}ms (attempt ${this.reconnectAttempts})`)
-
-    this.clearReconnectTimeout()
-    this.reconnectTimeout = setTimeout(() => this.connect(), delay)
-  }
-
-  private clearReconnectTimeout(): void {
-    if (this.reconnectTimeout) {
-      clearTimeout(this.reconnectTimeout)
-      this.reconnectTimeout = null
-    }
-  }
-
-  onReconnect(callback: () => void): void {
-    this.onReconnectCallback = callback
-  }
-
-  private isTokenExpired(token: string): boolean {
-    try {
-      const payload = JSON.parse(atob(token.split('.')[1]))
-      return payload.exp * 1000 < Date.now()
-    } catch {
-      return true
-    }
+    this.sendPing()
   }
 }
 
