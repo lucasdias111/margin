@@ -36,7 +36,6 @@
         class="avatar-btn"
         onclick={() => {
           showDropdown = !showDropdown
-          console.log('showDropdown:', showDropdown)
         }}
       >
         <UserAvatar
