@@ -13,6 +13,13 @@
   let editingField = $state<'displayName' | 'email' | null>(null)
   let showDeleteConfirm = $state(false)
 
+  let currentPassword = $state('')
+  let newPassword = $state('')
+  let confirmPassword = $state('')
+  let passwordError = $state<string | null>(null)
+  let passwordSuccess = $state(false)
+  let passwordLoading = $state(false)
+
   const hasChanges = $derived(
     displayName !== userState.currentUser.displayName ||
       email !== userState.currentUser.email ||
@@ -64,6 +71,33 @@
       editingField = null
     } catch {
       // do nothing
+    }
+  }
+
+  async function onChangePassword(): Promise<void> {
+    passwordError = null
+    passwordSuccess = false
+
+    if (newPassword.length < 8) {
+      passwordError = 'New password must be at least 8 characters.'
+      return
+    }
+    if (newPassword !== confirmPassword) {
+      passwordError = 'Passwords do not match.'
+      return
+    }
+
+    passwordLoading = true
+    try {
+      await userService.changePassword(currentPassword, newPassword)
+      passwordSuccess = true
+      currentPassword = ''
+      newPassword = ''
+      confirmPassword = ''
+    } catch {
+      passwordError = 'Incorrect current password or something went wrong.'
+    } finally {
+      passwordLoading = false
     }
   }
 
@@ -147,6 +181,59 @@
         onClick={discardChanges}
       />
       <Button buttonType="primary" size="small" text="Save changes" onClick={onSave} />
+    </div>
+
+    <div class="divider"></div>
+
+    <h2 class="page-title">Change password</h2>
+
+    <div class="password-fields">
+      <div class="password-field">
+        <label class="field-label" for="current-password">Current password</label>
+        <input
+          id="current-password"
+          class="field-input-standalone"
+          type="password"
+          bind:value={currentPassword}
+          autocomplete="current-password"
+        />
+      </div>
+      <div class="password-field">
+        <label class="field-label" for="new-password">New password</label>
+        <input
+          id="new-password"
+          class="field-input-standalone"
+          type="password"
+          bind:value={newPassword}
+          autocomplete="new-password"
+        />
+      </div>
+      <div class="password-field">
+        <label class="field-label" for="confirm-password">Confirm new password</label>
+        <input
+          id="confirm-password"
+          class="field-input-standalone"
+          type="password"
+          bind:value={confirmPassword}
+          autocomplete="new-password"
+        />
+      </div>
+      {#if passwordError}
+        <span class="password-error">{passwordError}</span>
+      {/if}
+      {#if passwordSuccess}
+        <span class="password-success">Password changed successfully.</span>
+      {/if}
+    </div>
+
+    <div class="actions">
+      <Button
+        buttonType="primary"
+        size="small"
+        text={passwordLoading ? 'Saving…' : 'Change password'}
+        disabled={passwordLoading || !currentPassword || !newPassword || !confirmPassword}
+        onClick={onChangePassword}
+      />
     </div>
 
     <div class="divider"></div>
@@ -277,6 +364,45 @@
     display: flex;
     justify-content: flex-end;
     gap: 10px;
+  }
+
+  .password-fields {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .password-field {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .field-input-standalone {
+    padding: 8px 12px;
+    border-radius: 10px;
+    border: 1.5px solid #ebebeb;
+    background: #fafafa;
+    font-family: inherit;
+    font-size: 0.9rem;
+    color: #333;
+    outline: none;
+    transition: border-color 0.15s, background 0.15s;
+  }
+
+  .field-input-standalone:focus {
+    border-color: #f47e3a;
+    background: white;
+  }
+
+  .password-error {
+    font-size: 0.8rem;
+    color: #c0392b;
+  }
+
+  .password-success {
+    font-size: 0.8rem;
+    color: #3d8a52;
   }
 
   .danger-zone {
