@@ -1,4 +1,9 @@
-import { authenticatedDelete, authenticatedGet, authenticatedPatchForm, authenticatedPost } from '$src/services/api'
+import {
+  authenticatedDelete,
+  authenticatedGet,
+  authenticatedPatchForm,
+  authenticatedPost
+} from '$src/services/api'
 import type { RecentChatUser } from '$src/interfaces/RecentChatUser'
 import { userState } from '$src/states/UserState.svelte'
 import { authenticationService } from '$src/services/AuthenticationService'

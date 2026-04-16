@@ -34,20 +34,12 @@ class NotificationStateManager {
     }
   }
 
-  removeNotificationByReferenceId(referenceId: number): void {
-    this.state.notifications = this.state.notifications.filter((n) => n.referenceId !== referenceId)
-  }
-
   addNotification(notification: Notification): void {
     this.state.notifications = [notification, ...this.state.notifications]
   }
 
   getTotalUnseenNotifications(): number {
     return this.state.notifications.filter((n) => !n.seen).length
-  }
-
-  getUnseenCountForMargin(marginId: number): number {
-    return this.state.notifications.filter((n) => n.marginId === marginId && !n.seen).length
   }
 
   addUnreadDirectConversations(conversationIds: number[]): void {
@@ -60,13 +52,6 @@ class NotificationStateManager {
       this.state.unreadChannelConversations.set(ch.conversationId, ch.marginId)
     )
     this.state.unreadChannelConversations = new Map(this.state.unreadChannelConversations)
-  }
-
-  isConversationUnread(conversationId: number): boolean {
-    return (
-      this.state.unreadDirectConversationIds.has(conversationId) ||
-      this.state.unreadChannelConversations.has(conversationId)
-    )
   }
 
   getTotalUnreadDirectMessages(): number {
@@ -100,7 +85,7 @@ class NotificationStateManager {
   }
 
   getTotalUnreadForMargin(marginId: number): number {
-    return this.getTotalUnreadChannelsForMargin(marginId) + this.getUnseenCountForMargin(marginId)
+    return this.getTotalUnreadChannelsForMargin(marginId)
   }
 
   clearUnreadMessagesForConversation(conversationId: number): void {
@@ -114,6 +99,13 @@ class NotificationStateManager {
   clearUnreadMessages(): void {
     this.state.unreadDirectConversationIds = new Set()
     this.state.unreadChannelConversations = new Map()
+  }
+
+  hasUnread(conversationId: number): boolean {
+    return (
+      this.state.unreadDirectConversationIds.has(conversationId) ||
+      this.state.unreadChannelConversations.has(conversationId)
+    )
   }
 }
 

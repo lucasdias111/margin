@@ -168,9 +168,9 @@
     await loadRecentUsers()
 
     if (chatState.currentlySelectedContent === 'private' && chatState.selectedUser) {
-      await chatService.loadConversationForUser(chatState.selectedUser)
+      await chatService.loadConversationForUser(chatState.selectedUser, true)
     } else if (chatState.selectedChannel) {
-      await chatService.loadConversationForChannel(chatState.selectedChannel)
+      await chatService.loadConversationForChannel(chatState.selectedChannel, true)
     }
   }
 </script>

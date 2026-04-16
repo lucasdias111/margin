@@ -95,8 +95,9 @@ class ChatService {
     })
   }
 
-  async loadConversationForUser(user: User): Promise<void> {
+  async loadConversationForUser(user: User, force = false): Promise<void> {
     if (
+      !force &&
       conversationState.currentConversation &&
       isDirectConversation(conversationState.currentConversation) &&
       conversationState.currentConversation.otherUserId === user.id
@@ -109,8 +110,8 @@ class ChatService {
     )
   }
 
-  async loadConversationForChannel(channel: Channel): Promise<void> {
-    if (conversationState.currentConversation?.id === channel.conversationId) return
+  async loadConversationForChannel(channel: Channel, force = false): Promise<void> {
+    if (!force && conversationState.currentConversation?.id === channel.conversationId) return
 
     await this.loadMessages(
       `conversations/${channel.id}/channel_messages?limit=${ChatService.PAGE_SIZE}`,

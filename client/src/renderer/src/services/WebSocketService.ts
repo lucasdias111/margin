@@ -273,9 +273,8 @@ class WebSocketService {
     if (this.intentionalDisconnect) return
 
     if (!this.ws || this.ws.readyState !== WebSocket.OPEN) {
-      console.log('Tab visible — connection dead, reconnecting')
+      if (this.reconnectTimeout) console.log('Tab visible — connection dead, reconnecting')
       this.reconnectAttempts = 0
-      this.clearReconnectTimeout()
       this.connect()
       return
     }

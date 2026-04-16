@@ -2,7 +2,6 @@
   import { chatState } from '$src/states/ChatState.svelte.js'
   import type { CreateMargin, Margin } from '$src/interfaces/Margin'
   import CreateMarginModal from '$src/components/content/manage/margin/modals/CreateMarginModal.svelte'
-  import { spacesService } from '$src/services/SpacesService'
   import { marginService } from '$src/services/MarginService'
   import { clickOutside } from '$src/actions/clickOutside'
   import UnreadNotificationBadge from '$src/components/common/chat/UnreadNotificationBadge.svelte'
@@ -36,7 +35,6 @@
 
   function selectMargin(margin: Margin): void {
     chatState.selectMargin(margin)
-    spacesService.getAllSpacesForUser(chatState.selectedMargin.marginId)
     open = false
   }
 
@@ -280,23 +278,6 @@
   .join-input:focus {
     border-color: #f47e3a;
     background: white;
-  }
-
-  .join-btn {
-    padding: 6px 12px;
-    background: #e8712a;
-    color: white;
-    border: none;
-    border-radius: 8px;
-    font-size: 12px;
-    font-weight: 600;
-    font-family: inherit;
-    cursor: pointer;
-  }
-
-  .join-btn:disabled {
-    opacity: 0.4;
-    cursor: not-allowed;
   }
 
   .join-error {

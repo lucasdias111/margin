@@ -1,5 +1,5 @@
 appId: com.margin.app
-productName: Margin
+productName: margin
 directories:
   buildResources: build
 files:
