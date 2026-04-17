@@ -3,10 +3,13 @@ interface BaseConversation {
   createdAt: string
 }
 
+export type ConversationInviteStatus = 'ACCEPTED' | 'PENDING' | 'DECLINED'
+
 export interface DirectConversation extends BaseConversation {
   type: 'DIRECT'
   otherUserId: number
   otherUserReadAt: string
+  inviteStatus: ConversationInviteStatus
 }
 
 export interface GroupConversation extends BaseConversation {
