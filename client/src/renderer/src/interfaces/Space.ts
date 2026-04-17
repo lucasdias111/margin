@@ -1,13 +1,14 @@
 import type { Channel } from '$src/interfaces/Channel'
 import type { User } from '$src/interfaces/User'
 
+export type SpaceVisibility = 'PUBLIC' | 'PRIVATE'
+
 export interface Space {
   spaceId: number
   spaceName: string
   spaceDescription: string
-  visibility: string
+  visibility: SpaceVisibility
   marginId: number
-  isDefault: boolean
   channels: Channel[]
   members: SpaceMember[]
 }

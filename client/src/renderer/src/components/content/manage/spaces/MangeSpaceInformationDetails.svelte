@@ -1,6 +1,7 @@
 <script lang="ts">
-  import type { Space } from '$src/interfaces/Space'
+  import type { Space, SpaceVisibility } from '$src/interfaces/Space'
   import Button from '$src/components/common/buttons/Button.svelte'
+  import VisibilityToggle from '$src/components/common/visibility/VisibilityToggle.svelte'
 
   interface Props {
     selectedSpace: Space
@@ -12,17 +13,18 @@
 
   let editedName = $derived(selectedSpace?.spaceName ?? '')
   let editedDescription = $derived(selectedSpace?.spaceDescription ?? '')
-  let editedIsDefault = $derived(selectedSpace?.isDefault ?? false)
+  let editedVisibility = $derived<SpaceVisibility>(selectedSpace?.visibility ?? 'PUBLIC')
 
   $effect(() => {
     editedName = selectedSpace?.spaceName ?? ''
     editedDescription = selectedSpace?.spaceDescription ?? ''
+    editedVisibility = selectedSpace?.visibility ?? 'PUBLIC'
   })
 
   let isDirty = $derived(
     editedName !== (selectedSpace?.spaceName ?? '') ||
       editedDescription !== (selectedSpace?.spaceDescription ?? '') ||
-      editedIsDefault !== (selectedSpace?.isDefault ?? false)
+    editedVisibility !== (selectedSpace?.visibility ?? 'PUBLIC')
   )
 
   async function handleSave(): Promise<void> {
@@ -30,7 +32,7 @@
       ...selectedSpace,
       spaceName: editedName,
       spaceDescription: editedDescription,
-      isDefault: editedIsDefault
+      visibility: editedVisibility
     })
   }
 
@@ -46,7 +48,7 @@
       buttonType="primary"
       size="small"
       text="Save information"
-      disabled={isDirty}
+      disabled={!isDirty}
       onClick={handleSave}
     />
   </div>
@@ -75,10 +77,7 @@
     </div>
   </div>
 
-  <label class="default-toggle">
-    <input type="checkbox" bind:checked={editedIsDefault} />
-    <span>Auto-join for new members</span>
-  </label>
+  <VisibilityToggle bind:value={editedVisibility} />
 
   <div class="danger-zone">
     <div class="danger-zone-text">
@@ -99,6 +98,7 @@
   .spaces-details {
     display: flex;
     flex-direction: column;
+    gap: 16px;
   }
 
   .section-header {
@@ -186,7 +186,6 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    margin-top: 24px;
     padding: 14px 16px;
     border: 1px solid #f5c6c5;
     border-radius: 8px;
@@ -205,20 +204,4 @@
     margin: 2px 0 0 0;
   }
 
-  .default-toggle {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    margin-top: 16px;
-    cursor: pointer;
-    font-size: 13px;
-    color: #2d2d2d;
-  }
-
-  .default-toggle input[type='checkbox'] {
-    width: 15px;
-    height: 15px;
-    accent-color: #e8712a;
-    cursor: pointer;
-  }
 </style>
