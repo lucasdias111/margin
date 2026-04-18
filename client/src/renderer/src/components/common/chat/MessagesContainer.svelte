@@ -1,5 +1,5 @@
 <script lang="ts">
-  import type { Message } from '$src/interfaces/Messages'
+  import type { Message, MessageReaction } from '$src/interfaces/Messages'
   import { tick } from 'svelte'
   import { userState } from '$src/states/UserState.svelte.js'
   import { useWebsocketSvelte } from '$src/composables/useWebsocket.svelte'
@@ -55,6 +55,12 @@
     },
     [WebSocketMessageType.RECEIVE_DELETE_MESSAGE]: async (data: WebSocketMessage<Message>) => {
       await handleIncomingDeletedMessage(data)
+    },
+    [WebSocketMessageType.RECEIVE_ADD_REACTION]: (data: WebSocketMessage<MessageReaction>) => {
+      chatService.handleIncomingReactionAdded(data.payload)
+    },
+    [WebSocketMessageType.RECEIVE_REMOVE_REACTION]: (data: WebSocketMessage<MessageReaction>) => {
+      chatService.handleIncomingReactionRemoved(data.payload)
     }
   })
 

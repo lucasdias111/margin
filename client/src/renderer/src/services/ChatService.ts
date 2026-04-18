@@ -1,8 +1,11 @@
-import type { ConversationMessagesResponse, Message } from '$src/interfaces/Messages'
+import type {
+  ConversationMessagesResponse,
+  Message,
+  MessageReaction
+} from '$src/interfaces/Messages'
 import type { User } from '$src/interfaces/User'
 import {
   type Conversation,
-  type DirectConversation,
   isChannelConversation,
   isDirectConversation
 } from '$src/interfaces/Conversation'
@@ -16,7 +19,7 @@ import type { WebSocketMessage } from '$src/interfaces/WebSocketMessages'
 import { userState } from '$src/states/UserState.svelte'
 import { chatState } from '$src/states/ChatState.svelte'
 import { conversationState } from '$src/states/ConversationState.svelte'
-import { userListState, type PendingInvite } from '$src/states/UserListState.svelte'
+import { type PendingInvite, userListState } from '$src/states/UserListState.svelte'
 import type { ContentType } from '$src/interfaces/Content'
 
 class ChatService {
@@ -292,7 +295,8 @@ class ChatService {
       content,
       conversationType,
       isEdited: false,
-      createdAt: new Date().toISOString()
+      createdAt: new Date().toISOString(),
+      reactions: []
     }
   }
 
@@ -324,6 +328,41 @@ class ChatService {
       recipientId: message.conversationId,
       payload: { messageId: message.id, content: newContent }
     })
+  }
+
+  addReaction(message: Message, emoji: string): void {
+    webSocketService.send({
+      type: WebSocketMessageType.SEND_ADD_REACTION,
+      recipientId: message.conversationId,
+      payload: { messageId: message.id, emoji }
+    })
+  }
+
+  removeReaction(message: Message, emoji: string): void {
+    webSocketService.send({
+      type: WebSocketMessageType.SEND_REMOVE_REACTION,
+      recipientId: message.conversationId,
+      payload: { messageId: message.id, emoji }
+    })
+  }
+
+  handleIncomingReactionAdded = (reaction: MessageReaction): void => {
+    const message = conversationState.messages.find((m) => m?.id === reaction.messageId)
+    if (!message) return
+    const already = message.reactions.some(
+      (r) => r.userId === reaction.userId && r.emoji === reaction.emoji
+    )
+    if (!already) {
+      message.reactions = [...message.reactions, reaction]
+    }
+  }
+
+  handleIncomingReactionRemoved = (reaction: MessageReaction): void => {
+    const message = conversationState.messages.find((m) => m?.id === reaction.messageId)
+    if (!message) return
+    message.reactions = message.reactions.filter(
+      (r) => !(r.userId === reaction.userId && r.emoji === reaction.emoji)
+    )
   }
 
   async markConversationAsRead(conversationId: number): Promise<void> {

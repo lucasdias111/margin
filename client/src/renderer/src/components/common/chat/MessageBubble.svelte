@@ -7,6 +7,8 @@
   import Icon from '$src/components/common/icons/Icon.svelte'
   import type { IconName } from '$src/components/common/icons/icons'
   import { openExternalLink, parseLinks } from '$src/utils/LinksUtils'
+  import MessageActions from '$src/components/common/chat/MessageActions.svelte'
+  import MessageReactions from '$src/components/common/chat/MessageReactions.svelte'
 
   interface Props {
     message: Message
@@ -30,7 +32,6 @@
   let editedContent = $derived(message.content)
   let isEditing = $state(false)
   let showActions = $state(false)
-  let showMenu = $state(false)
 
   let isSent = $derived(message.user.id === userState.currentUser?.id)
   let checkmarkIcon: IconName = $derived(isRead ? 'checkmarkFilled' : 'checkmark')
@@ -38,6 +39,17 @@
   function handleSaveEdit(): void {
     onEditMessage(message, editedContent)
     isEditing = false
+  }
+
+  function onToggleReaction(emoji: string): void {
+    const alreadyReacted = (message.reactions ?? []).some(
+      (r) => r.emoji === emoji && r.userId === userState.currentUser?.id
+    )
+    if (alreadyReacted) {
+      chatService.removeReaction(message, emoji)
+    } else {
+      chatService.addReaction(message, emoji)
+    }
   }
 
   $effect(() => {
@@ -50,10 +62,7 @@
   class:sent={isSent}
   role="group"
   onmouseenter={() => (showActions = true)}
-  onmouseleave={() => {
-    showActions = false
-    showMenu = false
-  }}
+  onmouseleave={() => (showActions = false)}
 >
   {#if !isSent && message.conversationType === 'CHANNEL'}
     <div class="avatar">
@@ -61,27 +70,15 @@
     </div>
   {/if}
 
-  {#if isSent && showActions}
-    <div class="msgoptions-wrapper">
-      <button class="menudots" onclick={() => (showMenu = !showMenu)}>⋮</button>
-      {#if showMenu}
-        <div class="msgoptions">
-          <button
-            class="edit"
-            onclick={() => {
-              isEditing = true
-              showMenu = false
-            }}
-          >
-            <Icon name="edit" size={14} />
-            Edit
-          </button>
-          <button class="delete" onclick={() => chatService.deleteMessage(message)}>
-            <Icon name="trash" size={14} />
-            Delete
-          </button>
-        </div>
-      {/if}
+  {#if showActions}
+    <div class="actions-wrapper">
+      <MessageActions
+        {message}
+        {isSent}
+        currentUserId={userState.currentUser?.id}
+        onStartEdit={() => (isEditing = true)}
+        {onToggleReaction}
+      />
     </div>
   {/if}
 
@@ -110,19 +107,20 @@
           {/each}
         </p>
       {/if}
+      {#if showMeta}
+        <div class="meta">
+          {#if message.isEdited}
+            <span class="edited">edited</span>
+          {/if}
+          <span class="timestamp">{formatTimestamp(message.createdAt)}</span>
+          {#if isSent && showReadStatus}
+            <Icon name={checkmarkIcon} size={12} />
+          {/if}
+        </div>
+      {/if}
     </div>
 
-    {#if showMeta}
-      <div class="meta">
-        {#if message.isEdited}
-          <span class="edited">edited</span>
-        {/if}
-        <span class="timestamp">{formatTimestamp(message.createdAt)}</span>
-        {#if isSent && showReadStatus}
-          <Icon name={checkmarkIcon} size={12} />
-        {/if}
-      </div>
-    {/if}
+    <MessageReactions {message} {onToggleReaction} />
   </div>
 </div>
 
@@ -144,99 +142,31 @@
     margin-bottom: 2px;
   }
 
+  .actions-wrapper {
+    order: 3;
+    align-self: center;
+  }
+
+  .wrapper.sent .actions-wrapper {
+    order: 1;
+  }
+
   .message-column {
     display: flex;
     flex-direction: column;
     align-items: flex-start;
     max-width: 60%;
+    order: 2;
   }
 
   .message-column.sent {
     align-items: flex-end;
   }
 
-  .msgoptions-wrapper {
-    position: relative;
-    display: flex;
-    align-items: center;
-    align-self: center;
-  }
-
-  .menudots {
-    background: none;
-    border: none;
-    cursor: pointer;
-    font-size: 16px;
-    color: #bbb;
-    padding: 4px 6px;
-    line-height: 1;
-    border-radius: 7px;
-    transition:
-      background 0.12s,
-      color 0.12s;
-  }
-
-  .menudots:hover {
-    background: rgba(0, 0, 0, 0.05);
-    color: #888;
-  }
-
-  .msgoptions {
-    position: absolute;
-    right: calc(100% + 6px);
-    top: 50%;
-    transform: translateY(-50%);
-    display: flex;
-    flex-direction: column;
-    background: white;
-    border: 2px solid #ebebeb;
-    border-radius: 12px;
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
-    z-index: 10;
-    overflow: hidden;
-    min-width: 110px;
-    padding: 4px;
-  }
-
-  .msgoptions button {
-    background: none;
-    border: none;
-    cursor: pointer;
-    padding: 7px 12px;
-    border-radius: 9px;
-    font-size: 13px;
-    font-family: inherit;
-    font-weight: 500;
-    text-align: left;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    transition:
-      background 0.12s,
-      color 0.12s;
-  }
-
-  .msgoptions .edit {
-    color: #2a2a2a;
-  }
-
-  .msgoptions .edit:hover {
-    background: rgba(0, 0, 0, 0.04);
-  }
-
-  .msgoptions .delete {
-    color: #c0392b;
-  }
-
-  .msgoptions .delete:hover {
-    background: rgba(192, 57, 43, 0.07);
-  }
-
   .bubble {
     padding: 10px 14px;
     border-radius: 18px;
     width: fit-content;
-    min-width: 50px;
     word-break: break-word;
     line-height: 1.5;
     font-size: 14px;
@@ -317,11 +247,10 @@
     display: flex;
     align-items: center;
     gap: 4px;
-    margin-top: 3px;
-    padding: 0 6px;
+    margin-top: 4px;
     font-size: 10px;
     font-weight: 500;
-    color: rgba(0, 0, 0, 0.4);
+    color: rgba(0, 0, 0, 0.35);
   }
 
   .edited {
