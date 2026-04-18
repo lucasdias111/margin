@@ -1,6 +1,6 @@
 {
   "name": "margin",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Desktop application for margin",
   "main": "./out/main/index.js",
   "author": "margin",
