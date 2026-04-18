@@ -19,7 +19,7 @@
   let error = $state<string | null>(null)
   let sent = $state(false)
 
-  const initialTitle = 'New conversation'
+  const initialTitle = 'Invite a user to chat'
   let title = $state(initialTitle)
 
   async function lookup(): Promise<void> {
@@ -27,15 +27,17 @@
     loading = true
     error = null
     try {
-      const response = await authenticatedGet(`users/lookup?handle=${encodeURIComponent(handle.trim())}`)
+      const response = await authenticatedGet(
+        `users/lookup?handle=${encodeURIComponent(handle.trim())}`
+      )
       if (!response.ok) {
         error = 'User not found.'
         return
       }
       foundUser = await response.json()
       title = `Send invite to ${foundUser!.displayName ?? foundUser!.handle}?`
-    } catch {
-      error = 'Lookup failed. Try again.'
+    } catch (e) {
+      error = `${e}. Try again.`
     } finally {
       loading = false
     }
@@ -69,7 +71,10 @@
 <AppModal {open} {title} onClose={close}>
   {#if sent}
     <div class="success">
-      <span>Invite sent to {foundUser?.displayName ?? foundUser?.handle}. They'll need to accept before you can chat.</span>
+      <span
+      >Invite sent to {foundUser?.displayName ?? foundUser?.handle}. They'll need to accept before
+        you can chat.</span
+      >
     </div>
     <div class="actions">
       <button class="confirm" onclick={close}>Done</button>
@@ -83,21 +88,30 @@
       <span class="lookup-error">{error}</span>
     {/if}
     <div class="actions">
-      <button class="cancel" onclick={() => { foundUser = undefined; title = initialTitle }}>Back</button>
+      <button
+        class="cancel"
+        onclick={() => {
+          foundUser = undefined
+          title = initialTitle
+        }}>Back
+      </button
+      >
       <button class="confirm" onclick={sendInvite}>Send Invite</button>
     </div>
   {:else}
     <div class="lookup">
-      <label class="field-label" for="handle-input">Enter exact handle</label>
+      <label class="field-label" for="handle-input">Handle</label>
       <div class="lookup-row">
         <input
           id="handle-input"
           class="lookup-input"
           type="text"
-          placeholder="handle"
+          placeholder="Enter handle for user..."
           bind:value={handle}
           maxlength="100"
-          onkeydown={(e) => { if (e.key === 'Enter') lookup() }}
+          onkeydown={(e) => {
+            if (e.key === 'Enter') lookup()
+          }}
         />
         <Button
           buttonType="primary"
@@ -145,7 +159,8 @@
     font-size: 13px;
     color: #2a2a2a;
     box-sizing: border-box;
-    transition: border-color 0.15s, background 0.15s;
+    transition: border-color 0.15s,
+    background 0.15s;
   }
 
   .lookup-input:focus {

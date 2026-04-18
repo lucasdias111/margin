@@ -253,6 +253,10 @@
     color: rgba(0, 0, 0, 0.35);
   }
 
+  .bubble.sent .meta {
+    justify-content: flex-end;
+  }
+
   .edited {
     font-style: italic;
   }

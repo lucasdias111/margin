@@ -28,7 +28,7 @@
       showMenu = false
     }}
   >
-    😊
+    <Icon name="smile" size={15} />
   </button>
 
   {#if isSent}
@@ -93,10 +93,6 @@
   .btn:hover {
     background: rgba(0, 0, 0, 0.05);
     color: #888;
-  }
-
-  .emoji-btn {
-    font-size: 14px;
   }
 
   .emoji-picker {

@@ -45,13 +45,15 @@
     display: flex;
     flex-wrap: wrap;
     gap: 4px;
+    margin-top: -10px;
+    position: relative;
   }
 
   .pill {
     display: inline-flex;
     align-items: center;
     gap: 3px;
-    background: #f5ece0;
+    background: #ffffff;
     border: 1.5px solid #e8d5c0;
     border-radius: 12px;
     padding: 1px 7px;
@@ -61,14 +63,15 @@
       background 0.12s,
       border-color 0.12s;
     line-height: 1.4;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
   }
 
   .pill:hover {
-    background: #eee0d0;
+    background: #f5ece0;
   }
 
   .pill.mine {
-    background: rgba(244, 126, 58, 0.15);
+    background: #fde8d8;
     border-color: #f47e3a;
   }
 

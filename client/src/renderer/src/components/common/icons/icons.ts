@@ -131,7 +131,12 @@ export const icons = {
        <polyline points="2,4 12,13 22,4" />`,
 
   plus: `<line x1="12" y1="5" x2="12" y2="19" />
-         <line x1="5" y1="12" x2="19" y2="12" />`
+         <line x1="5" y1="12" x2="19" y2="12" />`,
+
+  smile: `<circle cx="12" cy="12" r="9"/>
+          <circle cx="9" cy="10" r="1" fill="currentColor" stroke="none"/>
+          <circle cx="15" cy="10" r="1" fill="currentColor" stroke="none"/>
+          <path d="M8.5 14.5 Q12 17.5 15.5 14.5"/>`
 } as const
 
 export type IconName = keyof typeof icons
