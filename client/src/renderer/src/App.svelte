@@ -3,10 +3,13 @@
   import { routes } from '$src/routes'
   import TitleBar from './TitleBar.svelte'
   import ErrorToast from '$src/components/common/messages/ErrorToast.svelte'
+  import { isElectron } from '$src/utils/platformUtils'
 </script>
 
 <div class="app-shell">
-  <TitleBar title="margin" />
+  {#if isElectron()}
+    <TitleBar title="margin" />
+  {/if}
   <ErrorToast />
   <div class="app-content">
     <Router {routes} />

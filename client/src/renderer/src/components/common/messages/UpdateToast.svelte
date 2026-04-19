@@ -4,7 +4,7 @@
 
   function accept(): void {
     updateState.downloading = true
-    window.updater.acceptUpdate()
+    window.updater?.acceptUpdate()
   }
 
   function dismiss(): void {
@@ -12,7 +12,7 @@
   }
 
   function install(): void {
-    window.updater.installUpdate()
+    window.updater?.installUpdate()
   }
 </script>
 
