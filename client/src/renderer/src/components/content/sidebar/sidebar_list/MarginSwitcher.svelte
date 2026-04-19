@@ -2,13 +2,13 @@
   import { chatState } from '$src/states/ChatState.svelte.js'
   import type { CreateMargin, Margin } from '$src/interfaces/Margin'
   import CreateMarginModal from '$src/components/content/manage/margin/modals/CreateMarginModal.svelte'
-  import { spacesService } from '$src/services/SpacesService'
   import { marginService } from '$src/services/MarginService'
   import { clickOutside } from '$src/actions/clickOutside'
   import UnreadNotificationBadge from '$src/components/common/chat/UnreadNotificationBadge.svelte'
   import { notificationState } from '$src/states/NotificationState.svelte'
   import Icon from '$src/components/common/icons/Icon.svelte'
   import { marginInviteService } from '$src/services/MarginInviteService'
+  import Button from '$src/components/common/buttons/Button.svelte'
 
   let open = $state(false)
   let createMarginOpen = $state(false)
@@ -35,7 +35,6 @@
 
   function selectMargin(margin: Margin): void {
     chatState.selectMargin(margin)
-    spacesService.getAllSpacesForUser(chatState.selectedMargin.marginId)
     open = false
   }
 
@@ -90,10 +89,13 @@
       </div>
 
       <div class="join-divider"></div>
-
-      <button class="margin-item" onclick={() => (createMarginOpen = true)}
-        >Create new margin
-      </button>
+      <Button
+        buttonType="secondary"
+        size="small"
+        onClick={() => (createMarginOpen = true)}
+        text="Create new margin"
+        fullWidth
+      />
 
       <div class="join-section">
         <span class="join-label">Join with invite code</span>
@@ -108,13 +110,13 @@
               if (e.key === 'Enter') handleJoinWithCode()
             }}
           />
-          <button
-            class="join-btn"
-            onclick={handleJoinWithCode}
+          <Button
+            buttonType="primary"
+            size="small"
+            onClick={handleJoinWithCode}
             disabled={joinLoading || !joinCode.trim()}
-          >
-            {joinLoading ? '...' : 'Join'}
-          </button>
+            text={joinLoading ? '...' : 'Join'}
+          />
         </div>
         {#if joinError}
           <span class="join-error">{joinError}</span>
@@ -276,23 +278,6 @@
   .join-input:focus {
     border-color: #f47e3a;
     background: white;
-  }
-
-  .join-btn {
-    padding: 6px 12px;
-    background: #e8712a;
-    color: white;
-    border: none;
-    border-radius: 8px;
-    font-size: 12px;
-    font-weight: 600;
-    font-family: inherit;
-    cursor: pointer;
-  }
-
-  .join-btn:disabled {
-    opacity: 0.4;
-    cursor: not-allowed;
   }
 
   .join-error {

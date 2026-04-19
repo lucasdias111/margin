@@ -10,6 +10,7 @@ describe('EncryptionService', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     sessionStorage.clear()
+    encryptionService.clearCache()
   })
 
   describe('getPublicKey', () => {

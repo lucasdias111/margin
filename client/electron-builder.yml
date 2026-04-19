@@ -1,5 +1,5 @@
 appId: com.margin.app
-productName: Margin
+productName: margin
 directories:
   buildResources: build
 files:
@@ -21,7 +21,7 @@ nsis:
   uninstallDisplayName: ${productName}
   createDesktopShortcut: always
 mac:
-  icon: build/icon.icns
+  icon: build/icons/mac/icon.icns
   entitlementsInherit: build/entitlements.mac.plist
   extendInfo:
     - NSCameraUsageDescription: Application requests access to the device's camera.
@@ -45,5 +45,3 @@ npmRebuild: false
 publish:
   provider: generic
   url: https://nbg1.your-objectstorage.com/margininstall
-electronDownload:
-  mirror: https://npmmirror.com/mirrors/electron/

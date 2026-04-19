@@ -1,5 +1,6 @@
 <script lang="ts">
   import AppModal from '$src/components/common/modals/AppModal.svelte'
+  import Button from '$src/components/common/buttons/Button.svelte'
 
   interface Props {
     open: boolean
@@ -7,7 +8,7 @@
     message: string
     confirmLabel?: string
     cancelLabel?: string
-    variant?: 'danger' | 'warning'
+    variant?: 'delete' | 'primary' | 'secondary'
     onConfirm: () => void
     onClose: () => void
   }
@@ -18,7 +19,7 @@
     message,
     confirmLabel = 'Confirm',
     cancelLabel = 'Cancel',
-    variant = 'danger',
+    variant = 'delete',
     onConfirm,
     onClose
   }: Props = $props()
@@ -27,8 +28,8 @@
 <AppModal {open} {title} {onClose}>
   <p class="message">{message}</p>
   <div class="actions">
-    <button class="cancel" onclick={onClose}>{cancelLabel}</button>
-    <button class="confirm {variant}" onclick={onConfirm}>{confirmLabel}</button>
+    <Button buttonType="secondary" size="small" onClick={onClose} text={cancelLabel} />
+    <Button buttonType={variant} size="small" onClick={onConfirm} text={confirmLabel} />
   </div>
 </AppModal>
 

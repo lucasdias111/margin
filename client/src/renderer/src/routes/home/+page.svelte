@@ -90,7 +90,8 @@
       msg: WebSocketMessage<{ conversationId: number; readAt: string }>
     ) => {
       chatService.setConversationReadAt(msg.payload.conversationId, msg.payload.readAt)
-    }
+    },
+    [WebSocketMessageType.CONVERSATION_INVITE]: chatService.handleIncomingConversationInvite
   })
 
   async function setup(): Promise<void> {
@@ -109,6 +110,7 @@
     await getCurrentUser()
     await loadUnreadMessages()
     await loadRecentUsers()
+    await chatService.loadPendingInvites()
     await notificationService.loadAll()
     await marginService.loadMarginsForUser()
   }
@@ -168,9 +170,9 @@
     await loadRecentUsers()
 
     if (chatState.currentlySelectedContent === 'private' && chatState.selectedUser) {
-      await chatService.loadConversationForUser(chatState.selectedUser)
+      await chatService.loadConversationForUser(chatState.selectedUser, true)
     } else if (chatState.selectedChannel) {
-      await chatService.loadConversationForChannel(chatState.selectedChannel)
+      await chatService.loadConversationForChannel(chatState.selectedChannel, true)
     }
   }
 </script>

@@ -1,4 +1,8 @@
-import type { ConversationMessagesResponse, Message } from '$src/interfaces/Messages'
+import type {
+  ConversationMessagesResponse,
+  Message,
+  MessageReaction
+} from '$src/interfaces/Messages'
 import type { User } from '$src/interfaces/User'
 import {
   type Conversation,
@@ -15,7 +19,7 @@ import type { WebSocketMessage } from '$src/interfaces/WebSocketMessages'
 import { userState } from '$src/states/UserState.svelte'
 import { chatState } from '$src/states/ChatState.svelte'
 import { conversationState } from '$src/states/ConversationState.svelte'
-import { userListState } from '$src/states/UserListState.svelte'
+import { type PendingInvite, userListState } from '$src/states/UserListState.svelte'
 import type { ContentType } from '$src/interfaces/Content'
 
 class ChatService {
@@ -95,8 +99,9 @@ class ChatService {
     })
   }
 
-  async loadConversationForUser(user: User): Promise<void> {
+  async loadConversationForUser(user: User, force = false): Promise<void> {
     if (
+      !force &&
       conversationState.currentConversation &&
       isDirectConversation(conversationState.currentConversation) &&
       conversationState.currentConversation.otherUserId === user.id
@@ -109,8 +114,8 @@ class ChatService {
     )
   }
 
-  async loadConversationForChannel(channel: Channel): Promise<void> {
-    if (conversationState.currentConversation?.id === channel.conversationId) return
+  async loadConversationForChannel(channel: Channel, force = false): Promise<void> {
+    if (!force && conversationState.currentConversation?.id === channel.conversationId) return
 
     await this.loadMessages(
       `conversations/${channel.id}/channel_messages?limit=${ChatService.PAGE_SIZE}`,
@@ -290,7 +295,8 @@ class ChatService {
       content,
       conversationType,
       isEdited: false,
-      createdAt: new Date().toISOString()
+      createdAt: new Date().toISOString(),
+      reactions: []
     }
   }
 
@@ -324,6 +330,41 @@ class ChatService {
     })
   }
 
+  addReaction(message: Message, emoji: string): void {
+    webSocketService.send({
+      type: WebSocketMessageType.SEND_ADD_REACTION,
+      recipientId: message.conversationId,
+      payload: { messageId: message.id, emoji }
+    })
+  }
+
+  removeReaction(message: Message, emoji: string): void {
+    webSocketService.send({
+      type: WebSocketMessageType.SEND_REMOVE_REACTION,
+      recipientId: message.conversationId,
+      payload: { messageId: message.id, emoji }
+    })
+  }
+
+  handleIncomingReactionAdded = (reaction: MessageReaction): void => {
+    const message = conversationState.messages.find((m) => m?.id === reaction.messageId)
+    if (!message) return
+    const already = message.reactions.some(
+      (r) => r.userId === reaction.userId && r.emoji === reaction.emoji
+    )
+    if (!already) {
+      message.reactions = [...message.reactions, reaction]
+    }
+  }
+
+  handleIncomingReactionRemoved = (reaction: MessageReaction): void => {
+    const message = conversationState.messages.find((m) => m?.id === reaction.messageId)
+    if (!message) return
+    message.reactions = message.reactions.filter(
+      (r) => !(r.userId === reaction.userId && r.emoji === reaction.emoji)
+    )
+  }
+
   async markConversationAsRead(conversationId: number): Promise<void> {
     if (!conversationId) return
     try {
@@ -331,6 +372,41 @@ class ChatService {
       notificationService.markConversationAsRead(conversationId)
     } catch (error) {
       console.error('Failed to mark conversation as read:', error)
+    }
+  }
+
+  handleIncomingConversationInvite = (data: WebSocketMessage<PendingInvite>): void => {
+    userListState.addPendingInvite(data.payload)
+  }
+
+  async sendConversationInvite(handle: string): Promise<void> {
+    await authenticatedPost({ handle }, 'conversations/invite')
+  }
+
+  async acceptConversationInvite(conversationId: number, fromUser: User): Promise<void> {
+    await authenticatedPost(null, `conversations/${conversationId}/invite/accept`)
+    userListState.removePendingInvite(conversationId)
+    userListState.addUser({
+      conversationId,
+      user: fromUser,
+      lastMessageTime: new Date().toISOString(),
+      lastMessageIncoming: true
+    })
+  }
+
+  async declineConversationInvite(conversationId: number): Promise<void> {
+    await authenticatedPost(null, `conversations/${conversationId}/invite/decline`)
+    userListState.removePendingInvite(conversationId)
+  }
+
+  async loadPendingInvites(): Promise<void> {
+    try {
+      const response = await authenticatedGet('conversations/pending_invites')
+      if (!response.ok) return
+      const invites: PendingInvite[] = await response.json()
+      invites.forEach((invite) => userListState.addPendingInvite(invite))
+    } catch (error) {
+      console.error('Failed to load pending invites:', error)
     }
   }
 

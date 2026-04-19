@@ -1,6 +1,15 @@
 import type { Conversation } from '$src/interfaces/Conversation'
 import type { User } from '$src/interfaces/User'
 
+export interface MessageReaction {
+  id: number
+  messageId: number
+  conversationId: number
+  userId: number
+  displayName: string
+  emoji: string
+}
+
 export interface Message {
   id: number
   conversationId: number
@@ -11,6 +20,7 @@ export interface Message {
   createdAt: string
   marginId?: number
   channelName?: string
+  reactions: MessageReaction[]
 }
 
 export interface ConversationMessagesResponse {

@@ -10,6 +10,8 @@
   import { push } from 'svelte-spa-router'
   import { clickOutside } from '$src/actions/clickOutside'
   import Icon from '$src/components/common/icons/Icon.svelte'
+  import BugReportModal from '$src/components/common/modals/BugReportModal.svelte'
+  import { userService } from '$src/services/UserService'
 
   function onContentSelected(selectedContent: ContentType): void {
     chatService.selectContent(selectedContent)
@@ -22,6 +24,7 @@
   }
 
   let showDropdown = $state(false)
+  let bugReportOpen = $state(false)
 
   const totalAnnouncements = $derived(notificationState.getTotalUnseenNotifications())
 </script>
@@ -29,11 +32,16 @@
 <div class="navigation">
   {#if userState.currentUser}
     <div class="avatar-wrapper" use:clickOutside={() => (showDropdown = false)}>
-      <button class="avatar-btn" onclick={() => (showDropdown = !showDropdown)}>
+      <button
+        class="avatar-btn"
+        onclick={() => {
+          showDropdown = !showDropdown
+        }}
+      >
         <UserAvatar
           profilePictureUrl={userState.currentUser.profilePictureUrl}
-          width={32}
-          height={32}
+          width={40}
+          height={40}
         />
       </button>
       {#if showDropdown}
@@ -42,17 +50,56 @@
             <span class="dropdown-displayname">{userState.currentUser.displayName}</span>
           </div>
           <div class="divider"></div>
-          <button class="dropdown-item" onclick={handleLogout}>
-            <span class="item-label">Log out</span>
+          <button
+            class="dropdown-item"
+            onclick={() => {
+              onContentSelected('settings')
+              showDropdown = false
+            }}
+            class:selected={chatState.currentlySelectedContent === 'settings'}
+            aria-label="Settings"
+            title="Settings"
+          >
+            <span class="item-label">Settings</span>
+            <Icon name="settings"></Icon>
+          </button>
+
+          <div class="divider"></div>
+          <button
+            class="dropdown-item"
+            onclick={() => {
+              bugReportOpen = true
+              showDropdown = false
+            }}
+          >
+            <span class="logout-label">Report bug</span>
+            <Icon name="bug" size={20} />
+          </button>
+          <button
+            class="dropdown-item"
+            onclick={() => {
+              handleLogout()
+              showDropdown = false
+            }}
+          >
+            <span class="logout-label">Log out</span>
             <Icon name="logout" size={16} />
           </button>
         </div>
       {/if}
+      <BugReportModal
+        open={bugReportOpen}
+        onClose={() => (bugReportOpen = false)}
+        onSubmit={async (report) => {
+          await userService.reportBug(report.title, report.description)
+        }}
+      />
     </div>
   {/if}
 
   <div class="button-group">
     <button
+      class="nav-btn"
       onclick={() => onContentSelected('notifications')}
       class:selected={chatState.currentlySelectedContent === 'notifications'}
       aria-label="Notifications"
@@ -60,8 +107,10 @@
     >
       <Icon name="notifications" size={28} />
       <UnreadNotificationBadge shouldShow={totalAnnouncements > 0} count={1} />
+      <span class="nav-label">Notifications</span>
     </button>
     <button
+      class="nav-btn"
       onclick={() => onContentSelected('private')}
       class:selected={chatState.currentlySelectedContent === 'private'}
       aria-label="Private conversations"
@@ -72,8 +121,10 @@
         shouldShow={notificationState.getTotalUnreadDirectMessages() > 0}
         count={notificationState.getTotalUnreadDirectMessages()}
       />
+      <span class="nav-label">Private Chats</span>
     </button>
     <button
+      class="nav-btn"
       onclick={() => onContentSelected('margin')}
       class:selected={chatState.currentlySelectedContent === 'margin'}
       aria-label="Spaces"
@@ -84,23 +135,15 @@
         shouldShow={notificationState.getTotalUnreadChannelMessages() > 0}
         count={notificationState.getTotalUnreadChannelMessages()}
       />
+      <span class="nav-label">Margins</span>
     </button>
   </div>
-
-  <button
-    onclick={() => onContentSelected('settings')}
-    class:selected={chatState.currentlySelectedContent === 'settings'}
-    aria-label="Settings"
-    title="Settings"
-    class="setbut"
-  >
-    <Icon name="settings" size={28} />
-  </button>
+  <div class="avatar-space"></div>
 </div>
 
 <style>
   .navigation {
-    width: 80px;
+    width: 100px;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -110,29 +153,43 @@
     padding: 20px;
     box-sizing: border-box;
     flex-shrink: 0;
-  }
-
-  .avatar-wrapper {
-    position: relative;
+    overflow: visible;
   }
 
   .avatar-btn {
     background: none;
-    border: none;
     padding: 0;
     cursor: pointer;
-    border-radius: 999px;
-    transition: opacity 0.15s ease;
+    border: none;
+    border-radius: 50%;
+    transition: transform 0.2s ease,
+    opacity 0.2s ease;
+    opacity: 0.85;
   }
 
   .avatar-btn:hover {
-    opacity: 0.8;
+    transform: scale(1.08);
+    opacity: 1;
+  }
+
+  @keyframes dropdownIn {
+    from {
+      opacity: 0;
+      transform: scale(0.95) translateY(-4px);
+    }
+    to {
+      opacity: 1;
+      transform: scale(1) translateY(0);
+    }
   }
 
   .dropdown {
     position: absolute;
     left: calc(100% + 14px);
     top: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
     background-color: #2a2a2a;
     border: 1px solid rgba(255, 255, 255, 0.07);
     border-radius: 12px;
@@ -140,6 +197,8 @@
     min-width: 180px;
     box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
     z-index: 100;
+    animation: dropdownIn 0.15s ease-out;
+    transform-origin: top left;
   }
 
   .dropdown-header {
@@ -178,22 +237,58 @@
 
   .item-label {
     font-size: 13px;
-    color: #e05a5a;
+    color: #ddd;
     font-weight: 500;
   }
 
+  .logout-label {
+    font-size: 13px;
+    color: #ddd;
+    font-weight: 500;
+  }
+
+  .dropdown-item:hover .item-label,
+  .dropdown-item:hover .logout-label {
+    color: #f47e3a;
+  }
+
   .dropdown-item :global(svg) {
-    color: #e05a5a;
+    color: #ddd;
     width: 16px;
     height: 16px;
   }
 
+  .dropdown-item:hover :global(svg) {
+    color: #f47e3a;
+  }
+
   .button-group {
     display: flex;
-    align-items: center;
     justify-content: center;
     flex-direction: column;
-    gap: 4rem;
+    gap: 2.5rem;
+  }
+
+  .nav-btn {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .nav-label {
+    font-size: 9px;
+    font-weight: 500;
+    letter-spacing: 0.4px;
+    text-transform: uppercase;
+    color: #666;
+    transition: color 0.15s ease;
+  }
+
+  .nav-btn:hover .nav-label,
+  .nav-btn.selected .nav-label {
+    color: #f47e3a;
   }
 
   button :global(svg) {
@@ -218,5 +313,14 @@
     box-shadow: none;
     outline: none;
     -webkit-appearance: none;
+  }
+
+  .avatar-space {
+    width: 32px;
+    height: 32px;
+  }
+
+  .avatar-wrapper {
+    position: relative;
   }
 </style>

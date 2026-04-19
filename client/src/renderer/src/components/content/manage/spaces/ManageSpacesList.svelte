@@ -2,6 +2,7 @@
   import type { CreateSpace, Space } from '$src/interfaces/Space'
   import AddSpaceModal from '$src/components/content/manage/spaces/modals/AddSpaceModal.svelte'
   import { chatState } from '$src/states/ChatState.svelte.js'
+  import Button from '$src/components/common/buttons/Button.svelte'
 
   interface Props {
     spaces: Space[]
@@ -13,19 +14,45 @@
   let { spaces, selectedSpace, onSelectSpace, onAddSpace }: Props = $props()
 
   let addSpaceOpen = $state(false)
+
+  const SPACE_COLORS = [
+    { bg: '#FFF0E6', dot: '#E8712A', text: '#C45A18' },
+    { bg: '#E8F4F8', dot: '#4A9EBF', text: '#2E7A96' },
+    { bg: '#EEF6EE', dot: '#5BAD6F', text: '#3D8A52' },
+    { bg: '#F3EEF8', dot: '#9B72CF', text: '#7850AD' },
+    { bg: '#FDF5E6', dot: '#C9A227', text: '#9E7D10' }
+  ]
+
+  function spaceColor(spaceId: number) {
+    return SPACE_COLORS[spaceId % SPACE_COLORS.length]
+  }
+
+  function spaceInitials(name: string): string {
+    return name
+      .split(/\s+/)
+      .slice(0, 2)
+      .map((w) => w[0]?.toUpperCase() ?? '')
+      .join('')
+  }
 </script>
 
 <div class="spaces-list">
   {#each spaces as space (space.spaceId)}
-    <button
-      class="space-item"
-      class:selected={selectedSpace?.spaceId === space.spaceId}
-      onclick={() => onSelectSpace(space)}
-    >
-      {space.spaceName}
-    </button>
+    {@const color = spaceColor(space.spaceId)}
+    <Button buttonType="list" size="small" onClick={() => onSelectSpace(space)} fullWidth>
+      <span class="space-avatar" style="background: {color.bg}; color: {color.text};">
+        {spaceInitials(space.spaceName)}
+      </span>
+      <span class="space-name">{space.spaceName}</span>
+    </Button>
   {/each}
-  <button class="add-space-btn" onclick={() => (addSpaceOpen = true)}>Add space</button>
+
+  <Button
+    buttonType="secondary"
+    size="small"
+    onClick={() => (addSpaceOpen = true)}
+    text="Add space"
+  />
 </div>
 
 <AddSpaceModal
@@ -39,7 +66,7 @@
   .spaces-list {
     width: 200px;
     flex-shrink: 0;
-    border-right: 1px solid #d9d9d9;
+    border-right: 1px solid #ebebeb;
     padding: 16px 12px;
     display: flex;
     flex-direction: column;
@@ -47,36 +74,45 @@
     overflow-y: auto;
   }
 
-  .space-item {
-    background: none;
-    border: none;
-    text-align: left;
-    padding: 10px 14px;
+  :global(.space-avatar) {
+    flex-shrink: 0;
+    width: 32px;
+    height: 32px;
     border-radius: 8px;
-    font-size: 0.95rem;
-    color: #2d2d2d;
-    cursor: pointer;
-    font-weight: 500;
-  }
-
-  .space-item.selected {
-    background: #ffebe5;
-  }
-
-  .space-item:hover:not(.selected) {
-    background: #f6f2f2;
-  }
-
-  .add-space-btn {
-    margin-top: 12px;
-    background: #f47e3a;
-    border: none;
-    border-radius: 20px;
-    color: #fff;
-    font-size: 0.9rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
     font-weight: 600;
-    padding: 9px 16px;
-    cursor: pointer;
-    align-self: center;
+  }
+
+  :global(.space-name) {
+    font-size: 13px;
+    font-weight: 500;
+    color: #2a2a2a;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .space-avatar {
+    flex-shrink: 0;
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    font-weight: 600;
+  }
+
+  .space-name {
+    font-size: 13px;
+    font-weight: 500;
+    color: #2a2a2a;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 </style>

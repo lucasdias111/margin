@@ -8,6 +8,7 @@
   import MessagesContainer from '$src/components/common/chat/MessagesContainer.svelte'
   import PrivateChatHeader from '$src/components/content/chat/private/PrivateChatHeader.svelte'
   import Icon from '$src/components/common/icons/Icon.svelte'
+  import { notificationState } from '$src/states/NotificationState.svelte'
 
   let messageInput = $state('')
   let chatInputRef = $state<ChatInput | null>(null)
@@ -60,7 +61,11 @@
 
 <svelte:window
   onfocus={() => {
-    if (chatState.selectedUser && conversationState.currentConversation) {
+    if (
+      chatState.selectedUser &&
+      conversationState.currentConversation &&
+      notificationState.hasUnread(conversationState.currentConversation.id)
+    ) {
       chatService.markConversationAsRead(conversationState.currentConversation.id)
     }
   }}

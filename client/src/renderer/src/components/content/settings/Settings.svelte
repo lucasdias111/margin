@@ -4,6 +4,7 @@
   import Icon from '$src/components/common/icons/Icon.svelte'
 
   let email: string = $derived(userState.currentUser.email)
+  let handle: string = $derived(userState.currentUser.handle)
 </script>
 
 <div class="settings-panel">
@@ -23,6 +24,10 @@
     <div class="info-row">
       <span class="label">Email</span>
       <span class="value">{email}</span>
+    </div>
+    <div class="info-row">
+      <span class="label">Handle</span>
+      <span class="value">{handle}</span>
     </div>
   </div>
 

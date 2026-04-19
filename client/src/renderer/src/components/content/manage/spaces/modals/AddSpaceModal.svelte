@@ -1,7 +1,8 @@
 <script lang="ts">
   import AppModal from '$src/components/common/modals/AppModal.svelte'
-  import type { CreateSpace } from '$src/interfaces/Space'
-  import { Visibility } from '$src/interfaces/Visibility'
+  import type { CreateSpace, SpaceVisibility } from '$src/interfaces/Space'
+  import Button from '$src/components/common/buttons/Button.svelte'
+  import VisibilityToggle from '$src/components/common/visibility/VisibilityToggle.svelte'
 
   interface Props {
     marginId: number
@@ -14,7 +15,7 @@
 
   let spaceName = $state('')
   let description = $state('')
-  let visibility = $state<Visibility>(Visibility.PUBLIC)
+  let visibility = $state<SpaceVisibility>('PUBLIC')
 
   function handleSubmit(): void {
     const newSpace: CreateSpace = {
@@ -26,7 +27,7 @@
     onAddSpace(newSpace)
     spaceName = ''
     description = ''
-    visibility = Visibility.PUBLIC
+    visibility = 'PUBLIC'
     onClose()
   }
 </script>
@@ -39,20 +40,16 @@
     onkeydown={(e) => e.key === 'Enter' && handleSubmit()}
   />
   <textarea placeholder="Description" bind:value={description} rows="3"></textarea>
-  <select bind:value={visibility}>
-    <option value={Visibility.PUBLIC}>Public</option>
-    <option value={Visibility.PRIVATE}>Private</option>
-  </select>
+  <VisibilityToggle bind:value={visibility} />
   <div class="actions">
-    <button class="cancel" onclick={onClose}>Cancel</button>
-    <button class="confirm" onclick={handleSubmit}>Create</button>
+    <Button buttonType="secondary" size="small" onClick={onClose} text="Cancel" />
+    <Button buttonType="primary" size="small" onClick={handleSubmit} text="Create" />
   </div>
 </AppModal>
 
 <style>
   input,
-  textarea,
-  select {
+  textarea {
     width: 100%;
     padding: 10px 12px;
     border: 1px solid #d9d9d9;
@@ -66,34 +63,10 @@
     resize: vertical;
   }
 
-  select {
-    appearance: auto;
-    background: #fff;
-    cursor: pointer;
-  }
-
   .actions {
     display: flex;
     justify-content: flex-end;
     gap: 8px;
-  }
-
-  .cancel {
-    background: none;
-    border: 1px solid #d9d9d9;
-    border-radius: 8px;
-    padding: 8px 16px;
-    cursor: pointer;
-    color: #2d2d2d;
-  }
-
-  .confirm {
-    background: #ff6203;
-    color: #fff;
-    border: none;
-    border-radius: 8px;
-    padding: 8px 16px;
-    font-weight: 600;
-    cursor: pointer;
+    margin-top: 16px;
   }
 </style>

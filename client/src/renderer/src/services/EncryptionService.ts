@@ -1,7 +1,22 @@
 import { authenticatedGet } from './api'
 
 class EncryptionService {
+  private publicKeyCache = new Map<number, string>()
+
+  clearCache(): void {
+    this.publicKeyCache.clear()
+  }
+
   async getPublicKey(userId: number): Promise<string> {
+    const cached = this.publicKeyCache.get(userId)
+    if (cached) return cached
+
+    const key = await this.fetchPublicKeyFromServer(userId)
+    this.publicKeyCache.set(userId, key)
+    return key
+  }
+
+  async fetchPublicKeyFromServer(userId: number): Promise<string> {
     const response = await authenticatedGet(`users/${userId}/public-key`)
 
     if (!response.ok) {

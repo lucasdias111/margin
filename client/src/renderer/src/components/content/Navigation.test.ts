@@ -58,6 +58,14 @@ vi.mock('$src/components/common/icons/Icon.svelte', () => ({
   default: vi.fn()
 }))
 
+vi.mock('$src/assets/marginIconSvg.svelte', () => ({
+  default: vi.fn()
+}))
+
+vi.mock('$src/components/common/modals/BugReportModal.svelte', () => ({
+  default: vi.fn()
+}))
+
 vi.mock('$src/actions/clickOutside', () => ({
   clickOutside: vi.fn()
 }))
@@ -78,7 +86,6 @@ describe('Navigation', () => {
     expect(screen.getByRole('button', { name: /notifications/i })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: /private conversations/i })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: /spaces/i })).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: /settings/i })).toBeInTheDocument()
   })
 
   it('calls chatService.selectContent with "notifications" when notifications button is clicked', async () => {
@@ -103,14 +110,6 @@ describe('Navigation', () => {
     await fireEvent.click(screen.getByRole('button', { name: /spaces/i }))
 
     expect(chatService.selectContent).toHaveBeenCalledWith('margin')
-  })
-
-  it('calls chatService.selectContent with "settings" when settings button is clicked', async () => {
-    render(Navigation)
-
-    await fireEvent.click(screen.getByRole('button', { name: /settings/i }))
-
-    expect(chatService.selectContent).toHaveBeenCalledWith('settings')
   })
 
   it('renders avatar button when user is logged in', () => {
@@ -146,6 +145,15 @@ describe('Navigation', () => {
     await fireEvent.click(document.querySelector('.avatar-btn')!)
 
     expect(screen.getByText('Lucas')).toBeInTheDocument()
+  })
+
+  it('calls chatService.selectContent with "settings" when settings is clicked in dropdown', async () => {
+    render(Navigation)
+
+    await fireEvent.click(document.querySelector('.avatar-btn')!)
+    await fireEvent.click(screen.getByText('Settings'))
+
+    expect(chatService.selectContent).toHaveBeenCalledWith('settings')
   })
 
   it('calls logoutUser and navigates to / when log out is clicked', async () => {

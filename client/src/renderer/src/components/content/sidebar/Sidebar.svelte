@@ -9,8 +9,11 @@
   import MarginSwitcher from '$src/components/content/sidebar/sidebar_list/MarginSwitcher.svelte'
   import Settings from '$src/components/content/settings/Settings.svelte'
   import Icon from '$src/components/common/icons/Icon.svelte'
+  import NewConversationModal from '$src/components/content/chat/private/NewConversationModal.svelte'
+  import Button from '$src/components/common/buttons/Button.svelte'
 
   let selectedContent = $derived<ContentType>(chatState.currentlySelectedContent)
+  let newConversationOpen = $state(false)
   let isHome = $derived(!chatState.selectedChannel)
 
   function onSelectUser(user: User): void {
@@ -30,7 +33,17 @@
         <div class="section-heading">
           <span class="header-label">Direct messages</span>
         </div>
-        <UserSearchBar {onSelectUser} showSharedMargins={true} />
+        <div class="search-row">
+          <UserSearchBar {onSelectUser} showSharedMargins={true} />
+          <Button
+            buttonType="primary"
+            size="small"
+            onClick={() => (newConversationOpen = true)}
+            text="New conversation"
+          >
+            <Icon name="plus" size={14} />
+          </Button>
+        </div>
       </div>
       <div class="panel-content">
         <UsersList />
@@ -60,6 +73,8 @@
     </div>
   {/if}
 </div>
+
+<NewConversationModal open={newConversationOpen} onClose={() => (newConversationOpen = false)} />
 
 <style>
   .sidebar {
@@ -127,5 +142,11 @@
   .panel-content::-webkit-scrollbar-thumb {
     background: rgba(0, 0, 0, 0.08);
     border-radius: 4px;
+  }
+
+  .search-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
   }
 </style>

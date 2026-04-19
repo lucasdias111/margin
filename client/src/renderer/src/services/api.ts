@@ -48,6 +48,18 @@ export async function authenticatedPatchForm(formData: FormData, url: string): P
   })
 }
 
+export async function authenticatedPatch<T>(body: T, url: string): Promise<Response> {
+  const token = sessionStorage.getItem('authToken')
+
+  if (!token) {
+    errorService.reportError('No token found')
+  }
+  return fetchPatch(url, body, {
+    Authorization: `Bearer ${token}`,
+    'Content-Type': 'application/json'
+  })
+}
+
 export async function unauthenticatedPost<T>(body: T, url: string): Promise<Response> {
   return fetchPost(url, body, {
     'Content-Type': 'application/json'

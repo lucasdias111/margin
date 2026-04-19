@@ -16,6 +16,11 @@
   let searchResults = $state<UserSearchResult[]>([])
   let isLoading = $state(false)
   let hasError = $state(false)
+  let isFocused = $state(false)
+
+  let hintText = $derived(
+    marginId ? 'Search for users in this margin' : 'Search for users you share a margin with'
+  )
 
   $effect(() => {
     const query = searchQuery
@@ -79,12 +84,18 @@
     class="search-user-input"
     bind:value={searchQuery}
     onkeydown={handleKeydown}
+    onfocus={() => (isFocused = true)}
+    onblur={() => (isFocused = false)}
     maxlength="100"
     aria-label="Search users"
     aria-autocomplete="list"
   />
 
-  {#if isLoading}
+  {#if isFocused && !searchQuery.trim()}
+    <div class="search-results">
+      <span class="status-message hint">{hintText}</span>
+    </div>
+  {:else if isLoading}
     <div class="search-results">
       <span class="status-message">Searching...</span>
     </div>
@@ -226,5 +237,10 @@
 
   .status-message.error {
     color: #c0392b;
+  }
+
+  .status-message.hint {
+    color: #aaa;
+    font-style: italic;
   }
 </style>

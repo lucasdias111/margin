@@ -9,7 +9,7 @@ import { conversationState } from '$src/states/ConversationState.svelte'
 import { userListState } from '$src/states/UserListState.svelte'
 import { WebSocketMessageType } from '$src/interfaces/WebSocketMessageType'
 import * as api from '$src/services/api'
-import type { ConversationMessagesResponse, Message } from '$src/interfaces/Messages'
+import type { ConversationMessagesResponse, Message, MessageReaction } from '$src/interfaces/Messages'
 import type { User } from '$src/interfaces/User'
 import type { ChannelConversation, Conversation, DirectConversation } from '$src/interfaces/Conversation'
 import type { Channel } from '$src/interfaces/Channel'
@@ -131,6 +131,19 @@ function buildMessage(overrides: Partial<Message> = {}): Message {
     conversationType: 'DIRECT',
     isEdited: false,
     createdAt: '2025-06-01T12:00:00Z',
+    reactions: [],
+    ...overrides
+  }
+}
+
+function buildReaction(overrides: Partial<MessageReaction> = {}): MessageReaction {
+  return {
+    id: 1,
+    messageId: 100,
+    conversationId: 10,
+    userId: 2,
+    displayName: 'Other User',
+    emoji: '👍',
     ...overrides
   }
 }
@@ -738,6 +751,141 @@ describe('ChatService', () => {
 
       expect(mockConversationState.clear).not.toHaveBeenCalled()
       expect(mockChatState.currentlySelectedContent).toBe('private')
+    })
+  })
+
+  describe('addReaction', () => {
+    it('sends SEND_ADD_REACTION via WebSocket with correct payload', () => {
+      const msg = buildMessage({ id: 100, conversationId: 10 })
+
+      chatService.addReaction(msg, '👍')
+
+      expect(webSocketService.send).toHaveBeenCalledWith({
+        type: WebSocketMessageType.SEND_ADD_REACTION,
+        recipientId: 10,
+        payload: { messageId: 100, emoji: '👍' }
+      })
+    })
+
+    it('uses the message conversationId as recipientId', () => {
+      const msg = buildMessage({ id: 42, conversationId: 99 })
+
+      chatService.addReaction(msg, '❤️')
+
+      expect(webSocketService.send).toHaveBeenCalledWith(
+        expect.objectContaining({ recipientId: 99 })
+      )
+    })
+  })
+
+  describe('removeReaction', () => {
+    it('sends SEND_REMOVE_REACTION via WebSocket with correct payload', () => {
+      const msg = buildMessage({ id: 100, conversationId: 10 })
+
+      chatService.removeReaction(msg, '👍')
+
+      expect(webSocketService.send).toHaveBeenCalledWith({
+        type: WebSocketMessageType.SEND_REMOVE_REACTION,
+        recipientId: 10,
+        payload: { messageId: 100, emoji: '👍' }
+      })
+    })
+  })
+
+  describe('handleIncomingReactionAdded', () => {
+    it('appends reaction to the matching message', () => {
+      const msg = buildMessage({ id: 100, reactions: [] })
+      mockConversationState.messages = [msg]
+      const reaction = buildReaction({ messageId: 100, userId: 2, emoji: '👍' })
+
+      chatService.handleIncomingReactionAdded(reaction)
+
+      expect(mockConversationState.messages[0].reactions).toEqual([reaction])
+    })
+
+    it('does not add duplicate reaction from same user for same emoji', () => {
+      const reaction = buildReaction({ messageId: 100, userId: 2, emoji: '👍' })
+      const msg = buildMessage({ id: 100, reactions: [reaction] })
+      mockConversationState.messages = [msg]
+
+      chatService.handleIncomingReactionAdded(reaction)
+
+      expect(mockConversationState.messages[0].reactions).toHaveLength(1)
+    })
+
+    it('allows same user to react with a different emoji', () => {
+      const existing = buildReaction({ messageId: 100, userId: 2, emoji: '👍' })
+      const msg = buildMessage({ id: 100, reactions: [existing] })
+      mockConversationState.messages = [msg]
+      const newReaction = buildReaction({ id: 2, messageId: 100, userId: 2, emoji: '❤️' })
+
+      chatService.handleIncomingReactionAdded(newReaction)
+
+      expect(mockConversationState.messages[0].reactions).toHaveLength(2)
+    })
+
+    it('allows different users to react with the same emoji', () => {
+      const existing = buildReaction({ messageId: 100, userId: 2, emoji: '👍' })
+      const msg = buildMessage({ id: 100, reactions: [existing] })
+      mockConversationState.messages = [msg]
+      const newReaction = buildReaction({ id: 2, messageId: 100, userId: 3, emoji: '👍' })
+
+      chatService.handleIncomingReactionAdded(newReaction)
+
+      expect(mockConversationState.messages[0].reactions).toHaveLength(2)
+    })
+
+    it('does nothing when the message is not in the current conversation', () => {
+      const msg = buildMessage({ id: 100, reactions: [] })
+      mockConversationState.messages = [msg]
+      const reaction = buildReaction({ messageId: 999, userId: 2, emoji: '👍' })
+
+      chatService.handleIncomingReactionAdded(reaction)
+
+      expect(mockConversationState.messages[0].reactions).toHaveLength(0)
+    })
+  })
+
+  describe('handleIncomingReactionRemoved', () => {
+    it('removes the matching reaction from the message', () => {
+      const reaction = buildReaction({ messageId: 100, userId: 2, emoji: '👍' })
+      const msg = buildMessage({ id: 100, reactions: [reaction] })
+      mockConversationState.messages = [msg]
+
+      chatService.handleIncomingReactionRemoved(reaction)
+
+      expect(mockConversationState.messages[0].reactions).toHaveLength(0)
+    })
+
+    it('only removes the reaction matching both userId and emoji', () => {
+      const keep = buildReaction({ id: 1, messageId: 100, userId: 2, emoji: '❤️' })
+      const remove = buildReaction({ id: 2, messageId: 100, userId: 2, emoji: '👍' })
+      const msg = buildMessage({ id: 100, reactions: [keep, remove] })
+      mockConversationState.messages = [msg]
+
+      chatService.handleIncomingReactionRemoved(remove)
+
+      expect(mockConversationState.messages[0].reactions).toEqual([keep])
+    })
+
+    it('does nothing when the message is not in the current conversation', () => {
+      const reaction = buildReaction({ messageId: 100, userId: 2, emoji: '👍' })
+      const msg = buildMessage({ id: 100, reactions: [reaction] })
+      mockConversationState.messages = [msg]
+      const foreignReaction = buildReaction({ messageId: 999 })
+
+      chatService.handleIncomingReactionRemoved(foreignReaction)
+
+      expect(mockConversationState.messages[0].reactions).toHaveLength(1)
+    })
+
+    it('is a no-op when the reaction does not exist on the message', () => {
+      const msg = buildMessage({ id: 100, reactions: [] })
+      mockConversationState.messages = [msg]
+
+      chatService.handleIncomingReactionRemoved(buildReaction({ messageId: 100 }))
+
+      expect(mockConversationState.messages[0].reactions).toHaveLength(0)
     })
   })
 })
