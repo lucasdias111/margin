@@ -11,6 +11,7 @@ import type {
 import { callState } from '$src/states/CallState.svelte.js'
 import { errorService } from '$src/services/ErrorService'
 import { deviceService } from '$src/services/DeviceService'
+import { ICE_SERVERS } from '$src/services/call/iceServers'
 
 class ChannelCallService {
   private async connectToWebSocket(wsUrl: string): Promise<WebSocket> {
@@ -196,12 +197,15 @@ class ChannelCallService {
       await device.load({ routerRtpCapabilities: rtpCapabilities })
 
       const sendParams = await this.createTransport(sfuWs, 'send', channelId)
-      const sendTransport = device.createSendTransport(sendParams)
+      const sendTransport = device.createSendTransport({ ...sendParams, iceServers: ICE_SERVERS })
       this.setupTransportConnection(sendTransport, sfuWs)
       this.setupProducer(sendTransport, sfuWs)
 
       const receiveParameters = await this.createTransport(sfuWs, 'recv', channelId)
-      const receiveTransport = device.createRecvTransport(receiveParameters)
+      const receiveTransport = device.createRecvTransport({
+        ...receiveParameters,
+        iceServers: ICE_SERVERS
+      })
       this.setupTransportConnection(receiveTransport, sfuWs)
       this.setupConsumer(receiveTransport, device, sfuWs)
 

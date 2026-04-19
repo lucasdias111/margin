@@ -6,20 +6,7 @@ import { errorService } from '$src/services/ErrorService'
 import { webSocketService } from '$src/services/WebSocketService'
 import { WebSocketMessageType } from '$src/interfaces/WebSocketMessageType'
 import { deviceService } from '$src/services/DeviceService'
-
-const ICE_SERVERS = [
-  { urls: 'stun:stun.l.google.com:19302' },
-  {
-    urls: 'turn:135.181.100.126:3478',
-    username: 'margin',
-    credential: 'margincoturn'
-  },
-  {
-    urls: 'turns:135.181.100.126:5349',
-    username: 'margin',
-    credential: 'margincoturn'
-  }
-]
+import { ICE_SERVERS } from '$src/services/call/iceServers'
 
 class CallService {
   private noAnswerTimeout: ReturnType<typeof setTimeout> | null = null
