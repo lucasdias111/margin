@@ -118,6 +118,15 @@ services:
     networks:
       - margin-net
 
+  margin-web:
+    build:
+      context: /opt/margin-desktop
+      dockerfile: Dockerfile.web
+    container_name: margin-web
+    restart: unless-stopped
+    networks:
+      - margin-net
+
 networks:
   margin-net:
     driver: bridge
