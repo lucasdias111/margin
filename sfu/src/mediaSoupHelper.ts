@@ -91,6 +91,10 @@ export function initMediaSoupServer(app: any, rooms: Map<string, Room>) {
             peer.consumers.forEach(c => c.close())
             room.peers.delete(peer.id)
 
+            room.peers.forEach(p => {
+                p.ws.send(JSON.stringify({ type: 'peer_left', peerId: peer!.id }))
+            })
+
             console.log(`Peer ${peer.id} left room ${room.id}`)
 
             notifyPeerLeft(room.id, peer.id).catch(err =>
