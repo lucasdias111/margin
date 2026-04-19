@@ -20,7 +20,7 @@ class UserListState {
   }
 
   setUsers(users: RecentChatUser[]): void {
-    this.recentUsers = users
+    this.recentUsers = [...new Map(users.map((u) => [u.user.id, u])).values()]
     this.sortByRecent()
   }
 
