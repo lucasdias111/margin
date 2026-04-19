@@ -38,6 +38,7 @@
   import type { UnreadConversations } from '$src/interfaces/UnreadCount'
   import { updateState } from '$src/states/UpdateState.svelte'
   import UpdateToast from '$src/components/common/messages/UpdateToast.svelte'
+  import { isElectron } from '$src/utils/platformUtils'
 
   let incomingCallPayload = $state<CallOfferPayload | null>(null)
   const ringtone = new Audio(NotificationSounds.INCOMING_CALL)
@@ -95,17 +96,19 @@
   })
 
   async function setup(): Promise<void> {
-    window.updater.onUpdateAvailable((version: string) => {
-      updateState.version = version
-      updateState.updateAvailable = true
-    })
+    if (isElectron()) {
+      window.updater!.onUpdateAvailable((version: string) => {
+        updateState.version = version
+        updateState.updateAvailable = true
+      })
 
-    window.updater.onUpdateDownloaded(() => {
-      updateState.downloading = false
-      updateState.updateDownloaded = true
-    })
+      window.updater!.onUpdateDownloaded(() => {
+        updateState.downloading = false
+        updateState.updateDownloaded = true
+      })
 
-    window.updater.notifyReady()
+      window.updater!.notifyReady()
+    }
 
     await getCurrentUser()
     await loadUnreadMessages()

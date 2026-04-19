@@ -9,6 +9,7 @@ import { errorService } from '$src/services/ErrorService'
 import { webSocketService } from '$src/services/WebSocketService'
 import { push } from 'svelte-spa-router'
 import { conversationState } from '$src/states/ConversationState.svelte'
+import { isElectron } from '$src/utils/platformUtils'
 
 class AuthenticationService {
   async login(email: string, password: string, keepLoggedIn: boolean = false): Promise<void> {
@@ -37,18 +38,46 @@ class AuthenticationService {
     }
 
     if (keepLoggedIn && privateKey) {
-      await window.secureStorage.saveSession(authResponse.token, privateKey)
+      await this.saveSession(authResponse.token, privateKey)
     }
   }
 
   async tryRestoreSession(): Promise<boolean> {
-    const stored = await window.secureStorage.loadSession()
+    const stored = await this.loadSession()
 
     if (!stored) return false
 
     sessionStorage.setItem('authToken', stored.token)
     sessionStorage.setItem('privateKey', stored.privateKey)
     return true
+  }
+
+  private async saveSession(token: string, privateKey: string): Promise<void> {
+    if (isElectron()) {
+      await window.secureStorage!.saveSession(token, privateKey)
+    } else {
+      localStorage.setItem('session_token', token)
+      localStorage.setItem('session_privateKey', privateKey)
+    }
+  }
+
+  private async loadSession(): Promise<{ token: string; privateKey: string } | null> {
+    if (isElectron()) {
+      return window.secureStorage!.loadSession()
+    }
+    const token = localStorage.getItem('session_token')
+    const privateKey = localStorage.getItem('session_privateKey')
+    if (!token || !privateKey) return null
+    return { token, privateKey }
+  }
+
+  private async clearSession(): Promise<void> {
+    if (isElectron()) {
+      await window.secureStorage!.clearSession()
+    } else {
+      localStorage.removeItem('session_token')
+      localStorage.removeItem('session_privateKey')
+    }
   }
 
   async register(
@@ -125,7 +154,7 @@ class AuthenticationService {
     conversationState.reset()
     callState.endCall()
 
-    await window.secureStorage.clearSession()
+    await this.clearSession()
     this.clearToken()
     await push('/')
   }
