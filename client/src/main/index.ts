@@ -45,8 +45,17 @@ function checkForUpdates(): void {
     BrowserWindow.getAllWindows()[0]?.webContents.send('update-downloaded')
   })
 
+  autoUpdater.on('error', (err) => {
+    console.error('AutoUpdater error:', err)
+  })
+
   ipcMain.on('update-install', () => {
-    autoUpdater.quitAndInstall()
+    console.log('update-install received, calling quitAndInstall')
+    try {
+      autoUpdater.quitAndInstall(false, true)
+    } catch (err) {
+      console.error('quitAndInstall failed:', err)
+    }
   })
 }
 

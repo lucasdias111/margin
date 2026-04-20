@@ -107,20 +107,21 @@
           {/each}
         </p>
       {/if}
-      {#if showMeta}
-        <div class="meta">
-          {#if message.isEdited}
-            <span class="edited">edited</span>
-          {/if}
-          <span class="timestamp">{formatTimestamp(message.createdAt)}</span>
-          {#if isSent && showReadStatus}
-            <Icon name={checkmarkIcon} size={12} />
-          {/if}
-        </div>
-      {/if}
     </div>
 
     <MessageReactions {message} {onToggleReaction} />
+
+    {#if showMeta}
+      <div class="meta" class:sent={isSent}>
+        {#if message.isEdited}
+          <span class="edited">edited</span>
+        {/if}
+        <span class="timestamp">{formatTimestamp(message.createdAt)}</span>
+        {#if isSent && showReadStatus}
+          <Icon name={checkmarkIcon} size={12} />
+        {/if}
+      </div>
+    {/if}
   </div>
 </div>
 
@@ -247,14 +248,15 @@
     display: flex;
     align-items: center;
     gap: 4px;
-    margin-top: 4px;
+    margin-top: 2px;
     font-size: 10px;
     font-weight: 500;
     color: rgba(0, 0, 0, 0.35);
+    align-self: flex-start;
   }
 
-  .bubble.sent .meta {
-    justify-content: flex-end;
+  .meta.sent {
+    align-self: flex-end;
   }
 
   .edited {

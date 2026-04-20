@@ -23,7 +23,13 @@
   async function handleSubmitMessage(event: SubmitEvent): Promise<void> {
     event.preventDefault()
 
-    if (!chatState.selectedUser || !messageInput.trim() || !userState.currentUser) return
+    if (
+      !chatState.selectedUser ||
+      !messageInput.trim() ||
+      !userState.currentUser ||
+      conversationState.isLoading
+    )
+      return
 
     const messageContent = messageInput
     messageInput = ''
