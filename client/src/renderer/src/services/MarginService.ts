@@ -1,10 +1,5 @@
 import type { CreateMargin, Margin, MarginMember, UpdateMargin } from '$src/interfaces/Margin'
-import {
-  authenticatedGet,
-  authenticatedPost,
-  authenticatedPostForm,
-  authenticatedDelete
-} from '$src/services/api'
+import { authenticatedDelete, authenticatedGet, authenticatedPost, authenticatedPostForm } from '$src/services/api'
 import { chatState } from '$src/states/ChatState.svelte'
 
 class MarginService {
@@ -79,6 +74,19 @@ class MarginService {
 
   addNewMargin(newMargin: Margin): void {
     chatState.margins = [...chatState.margins, newMargin]
+  }
+
+  removeMargin(marginId: number): void {
+    const remaining = chatState.margins.filter((margin) => margin.marginId !== marginId)
+    chatState.margins = remaining
+    if (chatState.selectedMargin?.marginId === marginId) {
+      if (remaining.length > 0) {
+        chatState.selectMargin(remaining[0])
+      } else {
+        chatState.selectedMargin = null
+        chatState.hasMargin = false
+      }
+    }
   }
 
   async loadMarginsForUser(): Promise<void> {

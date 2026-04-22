@@ -89,12 +89,6 @@
     gap: 12px;
   }
 
-  .empty-state-icon {
-    width: 32px;
-    height: 32px;
-    color: #b0b0b0;
-  }
-
   .empty-state-text {
     color: #888;
     font-size: 13px;

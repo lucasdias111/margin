@@ -4,11 +4,14 @@
   import { userState } from '$src/states/UserState.svelte.js'
   import { announcementService } from '$src/services/AnnouncementService.js'
   import type { Announcement } from '$src/interfaces/Announcement'
-  import CreateOrEditAnnouncementModal from '$src/components/content/margin/announcement/modals/CreateOrEditAnnouncementModal.svelte'
+  import CreateOrEditAnnouncementModal
+    from '$src/components/content/margin/announcement/modals/CreateOrEditAnnouncementModal.svelte'
   import AnnouncementCard from '$src/components/content/margin/announcement/AnnouncementCard.svelte'
   import MarginIcon from '$src/components/content/margin/MarginIcon.svelte'
   import Icon from '$src/components/common/icons/Icon.svelte'
   import Button from '$src/components/common/buttons/Button.svelte'
+  import ConfirmationModal from '$src/components/common/modals/ConfirmationModal.svelte'
+  import { marginService } from '$src/services/MarginService'
 
   const currentUserRole = $derived(
     chatState.selectedMargin?.members.find((m) => m.user.id === userState.currentUser?.id)?.role
@@ -21,6 +24,7 @@
   let modalOpen = $state(false)
   let editTarget = $state<Announcement | undefined>(undefined)
   let editModalOpen = $state(false)
+  let leaveModalOpen = $state(false)
 
   $effect(() => {
     const marginId = chatState.selectedMargin?.marginId
@@ -54,6 +58,16 @@
       a.announcementId === updated.announcementId ? updated : a
     )
   }
+
+  async function confirmLeaveMargin(marginId: number): Promise<void> {
+    if (!marginId) return
+    await marginService.removeMarginMember(marginId, userState.currentUser?.id)
+    marginService.removeMargin(marginId)
+  }
+
+  async function handleLeaveMargin(): Promise<void> {
+    leaveModalOpen = true
+  }
 </script>
 
 <div class="margin-home">
@@ -76,6 +90,12 @@
           text="Manage"
         />
       {/if}
+      <Button
+        buttonType="danger"
+        size="small"
+        onClick={() => handleLeaveMargin()}
+        text="Leave margin"
+      />
     </div>
   </div>
 
@@ -120,6 +140,16 @@
     editTarget = undefined
   }}
   onSubmit={handleUpdateAnnouncement}
+/>
+
+<ConfirmationModal
+  open={leaveModalOpen}
+  title="Remove member"
+  message="Are you sure you want to leave this margin? You will lose access to all spaces and channels."
+  confirmLabel="Remove"
+  variant="delete"
+  onConfirm={() => confirmLeaveMargin(chatState.selectedMargin.marginId)}
+  onClose={() => (leaveModalOpen = false)}
 />
 
 <style>

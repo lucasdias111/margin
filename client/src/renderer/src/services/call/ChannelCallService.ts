@@ -1,7 +1,13 @@
 import { authenticatedPost } from '$src/services/api'
 import { userState } from '$src/states/UserState.svelte.js'
 import { Device } from 'mediasoup-client'
-import type { Producer, RtpCapabilities, RtpParameters, Transport, TransportOptions } from 'mediasoup-client/types'
+import type {
+  Producer,
+  RtpCapabilities,
+  RtpParameters,
+  Transport,
+  TransportOptions
+} from 'mediasoup-client/types'
 import { callState } from '$src/states/CallState.svelte.js'
 import { errorService } from '$src/services/ErrorService'
 import { deviceService } from '$src/services/DeviceService'
