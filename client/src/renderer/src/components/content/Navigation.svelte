@@ -12,6 +12,7 @@
   import Icon from '$src/components/common/icons/Icon.svelte'
   import BugReportModal from '$src/components/common/modals/BugReportModal.svelte'
   import { userService } from '$src/services/UserService'
+  import { isElectron } from '$src/utils/platformUtils'
 
   function onContentSelected(selectedContent: ContentType): void {
     chatService.selectContent(selectedContent)
@@ -64,6 +65,18 @@
             <Icon name="settings"></Icon>
           </button>
 
+          {#if !isElectron()}
+            <a
+              class="dropdown-item"
+              href="https://margin.chat/download"
+              target="_blank"
+              rel="noopener noreferrer"
+              onclick={() => (showDropdown = false)}
+            >
+              <span class="item-label">Download desktop app</span>
+              <Icon name="download" size={16} />
+            </a>
+          {/if}
           <div class="divider"></div>
           <button
             class="dropdown-item"
@@ -194,7 +207,7 @@
     border: 1px solid rgba(255, 255, 255, 0.07);
     border-radius: 12px;
     padding: 6px;
-    min-width: 180px;
+    min-width: 200px;
     box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
     z-index: 100;
     animation: dropdownIn 0.15s ease-out;
@@ -229,6 +242,7 @@
     cursor: pointer;
     width: 100%;
     box-sizing: border-box;
+    text-decoration: none;
   }
 
   .dropdown-item:hover {
