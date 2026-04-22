@@ -47,6 +47,7 @@ export interface ChannelCallSession {
   sendTransport: Transport
   receiveTransport: Transport
   localStream: MediaStream
+  audioProducer: Producer | null
   videoProducer: Producer | null
 }
 

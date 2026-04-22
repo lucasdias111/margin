@@ -112,7 +112,8 @@
     {isVideoEnabled}
     {isScreenSharing}
     {isRemoteScreenSharing}
-    callTitle={callTitle ?? (isOneOnOne ? `Call with ${remoteParticipants[0]?.displayName}` : 'Group call')}
+    callTitle={callTitle ??
+      (isOneOnOne ? `Call with ${remoteParticipants[0]?.displayName}` : 'Group call')}
     {status}
     {duration}
     {onMinimize}
