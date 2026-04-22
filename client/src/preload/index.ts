@@ -5,8 +5,7 @@ const api = {
   minimizeWindow: () => ipcRenderer.send('window-minimize'),
   maximizeWindow: () => ipcRenderer.send('window-maximize'),
   closeWindow: () => ipcRenderer.send('window-close'),
-  setBadgeCount: (count: number) => ipcRenderer.send('set-badge-count', count),
-  setAppIcon: (dataUrl: string | null) => ipcRenderer.send('set-app-icon', dataUrl)
+  setBadgeCount: (count: number) => ipcRenderer.send('set-badge-count', count)
 }
 
 // Use `contextBridge` APIs to expose Electron APIs to

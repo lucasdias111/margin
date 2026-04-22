@@ -12,6 +12,7 @@ import { userService } from '$src/services/UserService'
 
 class NotificationService {
   private sounds: Record<string, HTMLAudioElement> = {}
+  private pendingNotifications = new Map<number, globalThis.Notification[]>()
 
   private getSound(path: string): HTMLAudioElement {
     if (!this.sounds[path]) {
@@ -87,8 +88,23 @@ class NotificationService {
       silent: true
     })
 
+    const conversationId = message.conversationId
+    if (!this.pendingNotifications.has(conversationId)) {
+      this.pendingNotifications.set(conversationId, [])
+    }
+    this.pendingNotifications.get(conversationId)!.push(notification)
+
+    notification.onclose = () => {
+      const list = this.pendingNotifications.get(conversationId)
+      if (list) {
+        const idx = list.indexOf(notification)
+        if (idx !== -1) list.splice(idx, 1)
+      }
+    }
+
     notification.onclick = async () => {
-      window.parent.focus()
+      window.focus()
+      this.clearNotificationsForConversation(conversationId)
       if (message.conversationType === 'CHANNEL') {
         chatState.currentlySelectedContent = 'margin'
         chatState.selectMargin(await marginService.getMargin(message.marginId))
@@ -98,6 +114,14 @@ class NotificationService {
         chatState.currentlySelectedContent = 'private'
         chatState.selectUser(await userService.getById(message.user.id))
       }
+    }
+  }
+
+  private clearNotificationsForConversation(conversationId: number): void {
+    const list = this.pendingNotifications.get(conversationId)
+    if (list) {
+      list.forEach((n) => n.close())
+      this.pendingNotifications.delete(conversationId)
     }
   }
 
@@ -133,6 +157,7 @@ class NotificationService {
 
   markConversationAsRead(conversationId: number): void {
     notificationState.clearUnreadMessagesForConversation(conversationId)
+    this.clearNotificationsForConversation(conversationId)
   }
 
   async getAll(): Promise<Notification[]> {

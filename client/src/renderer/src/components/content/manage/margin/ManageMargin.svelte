@@ -55,7 +55,6 @@
 
   async function onInviteUser(user: User): Promise<void> {
     try {
-      console.log(user.handle)
       await marginInviteService.sendDirectInvite(margin.marginId, user.handle)
     } catch (e) {
       console.error('Failed to send invite:', e)
