@@ -46,7 +46,7 @@ const mockCallState = callState as {
   groupCallState: unknown
 }
 
-const mockDeviceState = deviceState as {
+const mockDeviceState = deviceState as unknown as {
   selectedAudioDeviceId: string | undefined
   selectedVideoDeviceId: string | undefined
   setAudioInputs: ReturnType<typeof vi.fn>
@@ -77,15 +77,39 @@ function makeMockStream(
   } as unknown as MediaStream
 }
 
-function makeMockProducer() {
+type MockProducer = { replaceTrack: ReturnType<typeof vi.fn> }
+
+type MockGroupCallState = {
+  session:
+    | {
+        localStream: MediaStream
+        audioProducer: MockProducer | null
+        videoProducer: MockProducer | null
+      }
+    | null
+    | object
+  isAudioEnabled: boolean
+  isVideoEnabled: boolean
+}
+
+type MockP2PCallState = {
+  localStream: MediaStream | null
+  peerConnection: object | null
+  isAudioEnabled: boolean
+  isVideoEnabled: boolean
+}
+
+function makeMockProducer(): MockProducer {
   return { replaceTrack: vi.fn() }
 }
 
-function makeMockGroupCallState(overrides: {
-  session?: object | null
-  isAudioEnabled?: boolean
-  isVideoEnabled?: boolean
-} = {}) {
+function makeMockGroupCallState(
+  overrides: {
+    session?: object | null
+    isAudioEnabled?: boolean
+    isVideoEnabled?: boolean
+  } = {}
+): MockGroupCallState {
   const {
     session = {
       localStream: makeMockStream([makeMockTrack()]),
@@ -98,12 +122,14 @@ function makeMockGroupCallState(overrides: {
   return { session, isAudioEnabled, isVideoEnabled }
 }
 
-function makeMockP2PCallState(overrides: {
-  localStream?: MediaStream | null
-  peerConnection?: object | null
-  isAudioEnabled?: boolean
-  isVideoEnabled?: boolean
-} = {}) {
+function makeMockP2PCallState(
+  overrides: {
+    localStream?: MediaStream | null
+    peerConnection?: object | null
+    isAudioEnabled?: boolean
+    isVideoEnabled?: boolean
+  } = {}
+): MockP2PCallState {
   return {
     localStream: makeMockStream([makeMockTrack()]),
     peerConnection: null,
@@ -145,9 +171,7 @@ describe('DeviceService.switchAudioDevice', () => {
         session: { localStream, audioProducer, videoProducer: null }
       })
       const newTrack = makeMockTrack('mic-2')
-      mockMediaDevices.getUserMedia.mockResolvedValue(
-        makeMockStream([newTrack])
-      )
+      mockMediaDevices.getUserMedia.mockResolvedValue(makeMockStream([newTrack]))
 
       await deviceService.switchAudioDevice('mic-2')
 
@@ -161,15 +185,13 @@ describe('DeviceService.switchAudioDevice', () => {
       mockCallState.groupCallState = makeMockGroupCallState({
         session: { localStream, audioProducer: makeMockProducer(), videoProducer: null }
       })
-      mockMediaDevices.getUserMedia.mockResolvedValue(
-        makeMockStream([newTrack])
-      )
+      mockMediaDevices.getUserMedia.mockResolvedValue(makeMockStream([newTrack]))
 
       await deviceService.switchAudioDevice('mic-2')
 
-      expect((localStream.removeTrack as ReturnType<typeof vi.fn>)).toHaveBeenCalledWith(oldTrack)
-      expect((oldTrack.stop as ReturnType<typeof vi.fn>)).toHaveBeenCalled()
-      expect((localStream.addTrack as ReturnType<typeof vi.fn>)).toHaveBeenCalledWith(newTrack)
+      expect(localStream.removeTrack as ReturnType<typeof vi.fn>).toHaveBeenCalledWith(oldTrack)
+      expect(oldTrack.stop as ReturnType<typeof vi.fn>).toHaveBeenCalled()
+      expect(localStream.addTrack as ReturnType<typeof vi.fn>).toHaveBeenCalledWith(newTrack)
     })
 
     it('sets new track enabled to match group isAudioEnabled', async () => {
@@ -179,9 +201,7 @@ describe('DeviceService.switchAudioDevice', () => {
         session: { localStream, audioProducer: makeMockProducer(), videoProducer: null },
         isAudioEnabled: false
       })
-      mockMediaDevices.getUserMedia.mockResolvedValue(
-        makeMockStream([newTrack])
-      )
+      mockMediaDevices.getUserMedia.mockResolvedValue(makeMockStream([newTrack]))
 
       await deviceService.switchAudioDevice('mic-2')
 
@@ -228,9 +248,7 @@ describe('DeviceService.switchAudioDevice', () => {
           getTransceivers: vi.fn().mockReturnValue([{ sender: { replaceTrack } }])
         }
       })
-      mockMediaDevices.getUserMedia.mockResolvedValue(
-        makeMockStream([newTrack])
-      )
+      mockMediaDevices.getUserMedia.mockResolvedValue(makeMockStream([newTrack]))
 
       await deviceService.switchAudioDevice('mic-2')
 
@@ -266,9 +284,7 @@ describe('DeviceService.switchVideoDevice', () => {
         session: { localStream, audioProducer: null, videoProducer }
       })
       const newTrack = makeMockTrack('cam-2')
-      mockMediaDevices.getUserMedia.mockResolvedValue(
-        makeMockStream([], [newTrack])
-      )
+      mockMediaDevices.getUserMedia.mockResolvedValue(makeMockStream([], [newTrack]))
 
       await deviceService.switchVideoDevice('cam-2')
 
@@ -283,15 +299,13 @@ describe('DeviceService.switchVideoDevice', () => {
       mockCallState.groupCallState = makeMockGroupCallState({
         session: { localStream, audioProducer: null, videoProducer: makeMockProducer() }
       })
-      mockMediaDevices.getUserMedia.mockResolvedValue(
-        makeMockStream([], [newTrack])
-      )
+      mockMediaDevices.getUserMedia.mockResolvedValue(makeMockStream([], [newTrack]))
 
       await deviceService.switchVideoDevice('cam-2')
 
-      expect((localStream.removeTrack as ReturnType<typeof vi.fn>)).toHaveBeenCalledWith(oldTrack)
-      expect((oldTrack.stop as ReturnType<typeof vi.fn>)).toHaveBeenCalled()
-      expect((localStream.addTrack as ReturnType<typeof vi.fn>)).toHaveBeenCalledWith(newTrack)
+      expect(localStream.removeTrack as ReturnType<typeof vi.fn>).toHaveBeenCalledWith(oldTrack)
+      expect(oldTrack.stop as ReturnType<typeof vi.fn>).toHaveBeenCalled()
+      expect(localStream.addTrack as ReturnType<typeof vi.fn>).toHaveBeenCalledWith(newTrack)
     })
 
     it('skips replaceTrack when videoProducer is null', async () => {
@@ -327,9 +341,7 @@ describe('DeviceService.switchVideoDevice', () => {
           getTransceivers: vi.fn().mockReturnValue([{}, { sender: { replaceTrack } }])
         }
       })
-      mockMediaDevices.getUserMedia.mockResolvedValue(
-        makeMockStream([], [newTrack])
-      )
+      mockMediaDevices.getUserMedia.mockResolvedValue(makeMockStream([], [newTrack]))
 
       await deviceService.switchVideoDevice('cam-2')
 
@@ -423,7 +435,11 @@ describe('DeviceService.enumerateDevices (inferSelectedDevices)', () => {
     mockDeviceState.selectedAudioDeviceId = 'already-selected'
     const audioTrack = makeMockTrack('mic-1')
     mockCallState.groupCallState = {
-      session: { localStream: makeMockStream([audioTrack]), audioProducer: null, videoProducer: null }
+      session: {
+        localStream: makeMockStream([audioTrack]),
+        audioProducer: null,
+        videoProducer: null
+      }
     }
 
     await deviceService.enumerateDevices()

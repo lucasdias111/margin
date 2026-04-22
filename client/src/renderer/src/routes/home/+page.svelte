@@ -39,6 +39,7 @@
   import { updateState } from '$src/states/UpdateState.svelte'
   import UpdateToast from '$src/components/common/messages/UpdateToast.svelte'
   import { isElectron } from '$src/utils/platformUtils'
+  import marginPng from '$src/assets/pics/margin.png'
 
   let incomingCallPayload = $state<CallOfferPayload | null>(null)
   const ringtone = new Audio(NotificationSounds.INCOMING_CALL)
@@ -59,6 +60,58 @@
       ringtone.currentTime = 0
     }
   })
+
+  $effect(() => {
+    if (!isElectron()) return
+    const total =
+      notificationState.getTotalUnreadDirectMessages() +
+      notificationState.getTotalUnreadChannelMessages()
+    console.log('[badge] effect fired, total:', total)
+    window.api!.setBadgeCount(total)
+    applyBadgeIcon(total)
+  })
+
+  async function applyBadgeIcon(count: number): Promise<void> {
+    console.log('[badge] applyBadgeIcon called, count:', count, 'marginPng:', marginPng)
+    const size = 128
+    const canvas = document.createElement('canvas')
+    canvas.width = size
+    canvas.height = size
+    const ctx = canvas.getContext('2d')!
+
+    await new Promise<void>((resolve) => {
+      const img = new Image()
+      img.onload = () => {
+        console.log('[badge] base icon loaded')
+        ctx.drawImage(img, 0, 0, size, size)
+        resolve()
+      }
+      img.onerror = (e) => {
+        console.log('[badge] base icon failed to load:', e)
+        resolve()
+      }
+      img.src = marginPng
+    })
+
+    if (count > 0) {
+      const r = 22
+      const x = size - r - 4
+      const y = r + 4
+      ctx.fillStyle = '#e83838'
+      ctx.beginPath()
+      ctx.arc(x, y, r, 0, Math.PI * 2)
+      ctx.fill()
+      ctx.fillStyle = 'white'
+      ctx.font = `bold ${count > 9 ? 18 : 22}px sans-serif`
+      ctx.textAlign = 'center'
+      ctx.textBaseline = 'middle'
+      ctx.fillText(count > 99 ? '99+' : String(count), x, y)
+    }
+
+    const dataUrl = count > 0 ? canvas.toDataURL('image/png') : null
+    console.log('[badge] sending setAppIcon, hasDataUrl:', dataUrl !== null)
+    window.api!.setAppIcon(dataUrl)
+  }
 
   useWebsocketSvelte({
     [WebSocketMessageType.RECEIVE_MESSAGE]: chatService.handleIncomingMessage,

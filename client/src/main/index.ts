@@ -1,7 +1,8 @@
-import { app, BrowserWindow, desktopCapturer, ipcMain, safeStorage, session, shell } from 'electron'
+import { app, BrowserWindow, desktopCapturer, ipcMain, nativeImage, safeStorage, session, shell } from 'electron'
 import { join } from 'path'
 import { electronApp, is, optimizer } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
+import notificationBadge from '../../resources/notification-badge.png?asset'
 import { API_CONFIG } from '../renderer/src/shared/config'
 import { existsSync, readFileSync, unlinkSync, writeFileSync } from 'fs'
 import pkg from 'electron-updater'
@@ -9,6 +10,33 @@ import pkg from 'electron-updater'
 const { autoUpdater } = pkg
 const SECURE_FILE = join(app.getPath('userData'), 'secure.bin')
 const TOKEN_FILE = join(app.getPath('userData'), 'session.bin')
+
+const badgeImage = nativeImage.createFromPath(notificationBadge)
+
+ipcMain.on('set-badge-count', (_event, count: number) => {
+  if (process.platform === 'darwin') {
+    app.dock?.setBadge(count > 0 ? String(count) : '')
+  } else if (process.platform === 'win32') {
+    const win = BrowserWindow.getAllWindows()[0]
+    if (!win) return
+    if (count > 0) {
+      win.setOverlayIcon(badgeImage, `${count} unread messages`)
+    } else {
+      win.setOverlayIcon(null, '')
+    }
+  }
+})
+
+ipcMain.on('set-app-icon', (_event, dataUrl: string | null) => {
+  console.log('[badge] set-app-icon received, hasDataUrl:', dataUrl !== null)
+  const win = BrowserWindow.getAllWindows()[0]
+  if (!win) return
+  if (dataUrl) {
+    win.setIcon(nativeImage.createFromDataURL(dataUrl))
+  } else {
+    win.setIcon(nativeImage.createFromPath(icon))
+  }
+})
 
 function writeEncrypted(filePath: string, plaintext: string): void {
   const encrypted = safeStorage.encryptString(plaintext)
