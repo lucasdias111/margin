@@ -12,7 +12,7 @@ class PresenceService {
   private setPresence(userId: number, isOnline: boolean): void {
     const existing = usersState.byId.get(userId)
     if (!existing) return
-    usersState.byId.set(userId, { ...existing, isOnline })
+    usersState.add({ ...existing, isOnline })
   }
 }
 

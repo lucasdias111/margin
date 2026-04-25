@@ -11,6 +11,10 @@ import { View } from '$src/interfaces/View'
 import { channelService } from '$src/services/ChannelService'
 import { navigationService } from '$src/services/NavigationService'
 import { navigationState } from '$src/states/NavigationState.svelte'
+import { conversationsState } from '$src/states/ConversationsState.svelte'
+import { spaceState } from '$src/states/SpaceState.svelte'
+import { isChannelConversation, isDirectConversation } from '$src/interfaces/Conversation'
+import type { Space } from '$src/interfaces/Space'
 
 class NotificationService {
   private sounds: Record<string, HTMLAudioElement> = {}
@@ -47,16 +51,6 @@ class NotificationService {
     if (!isActive || !isWindowFocused) {
       this.playSound(NotificationSounds.NEW_MESSAGE)
       this.showSystemNotification(message)
-    }
-
-    switch (message.conversationType) {
-      case 'DIRECT':
-        if (!isActive) this.addDirectUnread(message)
-        break
-      case 'CHANNEL':
-      case 'GROUP':
-        if (!isActive) this.addChannelUnread(message)
-        break
     }
   }
 
@@ -139,32 +133,52 @@ class NotificationService {
     }
   }
 
-  private addDirectUnread(message: Message): void {
-    notificationState.addUnreadDirectConversations([message.conversationId])
-  }
-
-  private addChannelUnread(message: Message): void {
-    notificationState.addUnreadChannelConversations([
-      { conversationId: message.conversationId, marginId: message.marginId ?? -1 }
-    ])
-  }
-
-  addIncomingDirectConversations(conversationIds: number[]): void {
-    notificationState.addUnreadDirectConversations(conversationIds)
-  }
-
-  addIncomingChannelConversations(channels: { conversationId: number; marginId: number }[]): void {
-    notificationState.addUnreadChannelConversations(channels)
-  }
-
-  markConversationAsRead(conversationId: number): void {
-    notificationState.clearUnreadMessagesForConversation(conversationId)
+  dismissNotificationsForConversation(conversationId: number): void {
     this.clearNotificationsForConversation(conversationId)
   }
 
+  isUnread(conversationId: number): boolean {
+    return conversationsState.conversationMetaById.get(conversationId)?.unread === true
+  }
+
+  totalUnreadDirectMessages(): number {
+    let count = 0
+    for (const [conversationId, meta] of conversationsState.conversationMetaById) {
+      if (!meta.unread) continue
+      const conversation = conversationsState.byId.get(conversationId)
+      if (conversation && isDirectConversation(conversation)) count++
+    }
+    return count
+  }
+
+  totalUnreadChannelMessages(): number {
+    let count = 0
+    for (const [conversationId, meta] of conversationsState.conversationMetaById) {
+      if (!meta.unread) continue
+      const conversation = conversationsState.byId.get(conversationId)
+      if (conversation && isChannelConversation(conversation)) count++
+    }
+    return count
+  }
+
+  totalUnreadMessagesForSpace(space: Space): number {
+    return space.channels.filter((ch) => this.isUnread(ch.conversationId)).length
+  }
+
+  totalUnreadForMargin(marginId: number): number {
+    let count = 0
+    for (const space of spaceState.spaces) {
+      if (space.marginId !== marginId) continue
+      for (const ch of space.channels) {
+        if (this.isUnread(ch.conversationId)) count++
+      }
+    }
+    return count
+  }
+
   async getAll(): Promise<Notification[]> {
-    const res = await authenticatedGet('notifications/all')
-    return res.json()
+    const response = await authenticatedGet('notifications/all')
+    return response.json()
   }
 
   async markNotificationAsSeen(notification: Notification): Promise<void> {

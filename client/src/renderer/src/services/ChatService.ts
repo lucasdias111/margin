@@ -1,8 +1,4 @@
-import type {
-  ConversationMessagesResponse,
-  Message,
-  MessageReaction
-} from '$src/interfaces/Messages'
+import type { ConversationMessagesResponse, Message, MessageReaction } from '$src/interfaces/Messages'
 import type { User } from '$src/interfaces/User'
 import {
   type Conversation,
@@ -45,17 +41,24 @@ class ChatService {
 
     if (isFromMe && this.replaceOptimisticIfPresent(msg)) {
       if (isActive && document.hasFocus()) {
-        await this.markConversationAsRead(msg.conversationId)
+        const meta = conversationsState.conversationMetaById.get(msg.conversationId)
+        if (meta?.unread) await this.markConversationAsRead(msg.conversationId)
       }
       return
     }
 
+    if (isActive && document.hasFocus()) {
+      conversationsState.markRead(msg.conversationId, new Date().toISOString())
+    }
     conversationsState.appendMessage(msg, !isFromMe)
 
-    if (!isActive) {
-      notificationService.handleIncomingMessage(msg)
-    } else if (document.hasFocus()) {
+    if (isFromMe) return
+
+    if (isActive && document.hasFocus()) {
       await this.markConversationAsRead(msg.conversationId)
+    } else {
+      conversationsState.markUnread(msg.conversationId)
+      if (!isActive) notificationService.handleIncomingMessage(msg)
     }
   }
 
@@ -75,18 +78,25 @@ class ChatService {
     const isActive = navigationState.selectedUser?.id === otherUserId
 
     if (isFromMe && this.replaceOptimisticIfPresent(msg)) {
-      if (document.hasFocus()) {
-        await this.markConversationAsRead(msg.conversationId)
+      if (document.hasFocus() && isActive) {
+        const meta = conversationsState.conversationMetaById.get(msg.conversationId)
+        if (meta?.unread) await this.markConversationAsRead(msg.conversationId)
       }
       return
     }
 
+    if (isActive && document.hasFocus()) {
+      conversationsState.markRead(msg.conversationId, new Date().toISOString())
+    }
     conversationsState.appendMessage(msg, !isFromMe)
 
-    if (!isActive) {
-      notificationService.handleIncomingMessage(msg)
-    } else if (document.hasFocus()) {
+    if (isFromMe) return
+
+    if (isActive && document.hasFocus()) {
       await this.markConversationAsRead(msg.conversationId)
+    } else {
+      conversationsState.markUnread(msg.conversationId)
+      if (!isActive) notificationService.handleIncomingMessage(msg)
     }
   }
 
@@ -98,10 +108,6 @@ class ChatService {
     const updated = [...messages]
     updated[optimisticIndex] = msg
     conversationsState.messagesByConversationId.set(msg.conversationId, updated)
-    conversationsState.messagesByConversationId = new Map(
-      conversationsState.messagesByConversationId
-    )
-
     const meta = conversationsState.conversationMetaById.get(msg.conversationId) ?? defaultMeta()
     conversationsState.conversationMetaById.set(msg.conversationId, {
       ...meta,
@@ -109,7 +115,6 @@ class ChatService {
       lastMessageTime: msg.createdAt,
       lastMessageIncoming: false
     })
-    conversationsState.conversationMetaById = new Map(conversationsState.conversationMetaById)
 
     return true
   }
@@ -118,8 +123,12 @@ class ChatService {
     if (!force) {
       for (const [convId, conv] of conversationsState.byId) {
         if (conv.type === 'DIRECT' && conv.otherUserId === user.id) {
-          const existing = conversationsState.messagesByConversationId.get(convId)
-          if (existing && existing.length > 0) return
+          const messages = conversationsState.messagesByConversationId.get(convId)
+          const meta = conversationsState.conversationMetaById.get(convId)
+          if (messages && messages.length > 1 && !meta?.isLoading) {
+            if (document.hasFocus()) await this.markConversationAsRead(convId)
+            return
+          }
           break
         }
       }
@@ -127,19 +136,24 @@ class ChatService {
 
     await this.loadMessages(
       `conversations/${user.id}/direct_messages?limit=${ChatService.PAGE_SIZE}`,
-      (conv) => this.markConversationAsRead(conv.id)
+      (conv) => (document.hasFocus() ? this.markConversationAsRead(conv.id) : Promise.resolve())
     )
   }
 
   async loadConversationForChannel(channel: Channel, force = false): Promise<void> {
+    const conversationId = channel.conversationId
     if (!force) {
-      const existing = conversationsState.messagesByConversationId.get(channel.conversationId)
-      if (existing && existing.length > 0) return
+      const existing = conversationsState.messagesByConversationId.get(conversationId)
+      const meta = conversationsState.conversationMetaById.get(conversationId)
+      if (existing && existing.length > 1 && !meta?.isLoading) {
+        if (document.hasFocus()) await this.markConversationAsRead(conversationId)
+        return
+      }
     }
 
     await this.loadMessages(
       `conversations/${channel.id}/channel_messages?limit=${ChatService.PAGE_SIZE}`,
-      () => this.markConversationAsRead(channel.conversationId)
+      () => (document.hasFocus() ? this.markConversationAsRead(conversationId) : Promise.resolve())
     )
   }
 
@@ -158,26 +172,21 @@ class ChatService {
       const convId = conv.id
 
       conversationsState.byId.set(convId, conv)
-      conversationsState.byId = new Map(conversationsState.byId)
 
-      const meta = conversationsState.conversationMetaById.get(convId) ?? defaultMeta()
-      conversationsState.conversationMetaById.set(convId, { ...meta, isLoading: true })
-      conversationsState.conversationMetaById = new Map(conversationsState.conversationMetaById)
+      conversationsState.conversationMetaById.set(convId, {
+        ...(conversationsState.conversationMetaById.get(convId) ?? defaultMeta()),
+        isLoading: true
+      })
 
       const decryptedMessages = await this.decryptIfDirect(messageResponse.messages, conv)
 
       conversationsState.messagesByConversationId.set(convId, decryptedMessages)
-      conversationsState.messagesByConversationId = new Map(
-        conversationsState.messagesByConversationId
-      )
-
       conversationsState.conversationMetaById.set(convId, {
-        ...meta,
+        ...(conversationsState.conversationMetaById.get(convId) ?? defaultMeta()),
         isLoading: false,
         hasMore: messageResponse.messages.length >= ChatService.PAGE_SIZE,
         lastMessage: decryptedMessages[decryptedMessages.length - 1]?.content ?? null
       })
-      conversationsState.conversationMetaById = new Map(conversationsState.conversationMetaById)
 
       await onLoaded(conv)
     } catch (error) {
@@ -399,9 +408,10 @@ class ChatService {
 
   async markConversationAsRead(conversationId: number): Promise<void> {
     if (!conversationId) return
+    conversationsState.markRead(conversationId, new Date().toISOString())
+    notificationService.dismissNotificationsForConversation(conversationId)
     try {
       await authenticatedPost(null, `conversations/${conversationId}/read`)
-      notificationService.markConversationAsRead(conversationId)
     } catch (error) {
       console.error('Failed to mark conversation as read:', error)
     }
@@ -427,11 +437,9 @@ class ChatService {
       inviteStatus: 'ACCEPTED'
     }
     conversationsState.byId.set(accepted.id, accepted)
-    conversationsState.byId = new Map(conversationsState.byId)
 
     if (!conversationsState.conversationMetaById.has(accepted.id)) {
       conversationsState.conversationMetaById.set(accepted.id, defaultMeta())
-      conversationsState.conversationMetaById = new Map(conversationsState.conversationMetaById)
     }
   }
 
@@ -461,9 +469,23 @@ class ChatService {
   }
 
   setConversationReadAt(conversationId: number, readAt: string): void {
-    const conv = conversationsState.currentConversation
-    if (conv?.type !== 'DIRECT' || conv.id !== conversationId) return
-    conv.otherUserReadAt = readAt
+    const conv = conversationsState.byId.get(conversationId)
+    if (!conv) return
+    if (conv.type === 'DIRECT') {
+      conversationsState.byId.set(conversationId, {
+        ...conv,
+        otherUserReadAt: readAt
+      })
+    }
+
+    const meta = conversationsState.conversationMetaById.get(conversationId)
+    if (meta) {
+      conversationsState.conversationMetaById.set(conversationId, {
+        ...meta,
+        lastReadAt: readAt,
+        unread: false
+      })
+    }
   }
 }
 

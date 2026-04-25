@@ -1,9 +1,8 @@
 <script lang="ts">
-  import { type ContentType, View } from '$src/interfaces/View'
+  import { View } from '$src/interfaces/View'
   import UnreadNotificationBadge from '$src/components/common/chat/UnreadNotificationBadge.svelte'
   import { notificationState } from '$src/states/NotificationState.svelte.js'
   import UserAvatar from '$src/components/common/user/UserAvatar.svelte'
-  import { chatService } from '$src/services/ChatService'
   import { authenticationService } from '$src/services/AuthenticationService'
   import { push } from 'svelte-spa-router'
   import { clickOutside } from '$src/actions/clickOutside'
@@ -13,9 +12,11 @@
   import { isElectron } from '$src/utils/platformUtils'
   import { navigationState } from '$src/states/NavigationState.svelte'
   import { sessionState } from '$src/states/SessionState.svelte'
+  import { notificationService } from '$src/services/NotificationService'
+  import { navigationService } from '$src/services/NavigationService'
 
-  function onContentSelected(selectedContent: ContentType): void {
-    chatService.selectContent(selectedContent)
+  function onContentSelected(selectedContent: View): void {
+    navigationService.setView(selectedContent)
   }
 
   async function handleLogout(): Promise<void> {
@@ -28,6 +29,8 @@
   let bugReportOpen = $state(false)
 
   const totalAnnouncements = $derived(notificationState.getTotalUnseenNotifications())
+  const directUnread = $derived(notificationService.totalUnreadDirectMessages())
+  const channelUnread = $derived(notificationService.totalUnreadChannelMessages())
 </script>
 
 <div class="navigation">
@@ -54,7 +57,7 @@
           <button
             class="dropdown-item"
             onclick={() => {
-              onContentSelected('settings')
+              onContentSelected(View.Settings)
               showDropdown = false
             }}
             class:selected={navigationState.view === View.Settings}
@@ -113,7 +116,7 @@
   <div class="button-group">
     <button
       class="nav-btn"
-      onclick={() => onContentSelected('notifications')}
+      onclick={() => onContentSelected(View.Notifications)}
       class:selected={navigationState.view === View.Notifications}
       aria-label="Notifications"
       title="Notifications"
@@ -124,30 +127,24 @@
     </button>
     <button
       class="nav-btn"
-      onclick={() => onContentSelected('private')}
+      onclick={() => onContentSelected(View.Private)}
       class:selected={navigationState.view === View.Private}
       aria-label="Private conversations"
       title="Private conversations"
     >
       <Icon name="messages" size={28} />
-      <UnreadNotificationBadge
-        shouldShow={notificationState.getTotalUnreadDirectMessages() > 0}
-        count={notificationState.getTotalUnreadDirectMessages()}
-      />
+      <UnreadNotificationBadge shouldShow={directUnread > 0} count={directUnread} />
       <span class="nav-label">Private Chats</span>
     </button>
     <button
       class="nav-btn"
-      onclick={() => onContentSelected('margin')}
+      onclick={() => onContentSelected(View.Margin)}
       class:selected={navigationState.view === View.Margin}
       aria-label="Spaces"
       title="Spaces"
     >
       <Icon name="users" size={28} />
-      <UnreadNotificationBadge
-        shouldShow={notificationState.getTotalUnreadChannelMessages() > 0}
-        count={notificationState.getTotalUnreadChannelMessages()}
-      />
+      <UnreadNotificationBadge shouldShow={channelUnread > 0} count={channelUnread} />
       <span class="nav-label">Margins</span>
     </button>
   </div>

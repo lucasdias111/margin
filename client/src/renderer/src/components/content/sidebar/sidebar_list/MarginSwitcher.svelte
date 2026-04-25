@@ -4,7 +4,7 @@
   import { marginService } from '$src/services/MarginService'
   import { clickOutside } from '$src/actions/clickOutside'
   import UnreadNotificationBadge from '$src/components/common/chat/UnreadNotificationBadge.svelte'
-  import { notificationState } from '$src/states/NotificationState.svelte'
+  import { notificationService } from '$src/services/NotificationService'
   import Icon from '$src/components/common/icons/Icon.svelte'
   import { marginInviteService } from '$src/services/MarginInviteService'
   import Button from '$src/components/common/buttons/Button.svelte'
@@ -51,10 +51,7 @@
 
   const unreadPerMargin = $derived(
     new Map(
-      marginState.margins.map((m) => [
-        m.marginId,
-        notificationState.getTotalUnreadForMargin(m.marginId)
-      ])
+      marginState.margins.map((m) => [m.marginId, notificationService.totalUnreadForMargin(m.marginId)])
     )
   )
 </script>

@@ -1,6 +1,6 @@
 <script lang="ts">
   import type { Channel } from '$src/interfaces/Channel'
-  import { notificationState } from '$src/states/NotificationState.svelte.js'
+  import { notificationService } from '$src/services/NotificationService'
   import UnreadNotificationBadge from '$src/components/common/chat/UnreadNotificationBadge.svelte'
   import { channelService } from '$src/services/ChannelService'
 
@@ -11,7 +11,7 @@
 
   let { channel, active }: Props = $props()
 
-  let hasUnread = $derived(notificationState.isChannelUnread(channel.conversationId))
+  let hasUnread = $derived(notificationService.isUnread(channel.conversationId))
 
   function selectChannel(): void {
     channelService.select(channel)

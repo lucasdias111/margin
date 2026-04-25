@@ -1,13 +1,7 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it } from 'vitest'
 import { presenceService } from '../PrecenseService'
 import { usersState } from '$src/states/UsersState.svelte'
 import type { User } from '$src/interfaces/User'
-
-vi.mock('$src/states/UsersState.svelte', () => ({
-  usersState: {
-    byId: new Map<number, User>()
-  }
-}))
 
 function buildUser(overrides: Partial<User> = {}): User {
   return {
@@ -24,13 +18,13 @@ function buildUser(overrides: Partial<User> = {}): User {
 
 describe('PresenceService', () => {
   beforeEach(() => {
-    usersState.byId = new Map()
+    usersState.reset()
   })
 
   describe('setOnline', () => {
     it('sets isOnline to true on matching user in usersState.byId', () => {
       const user = buildUser({ id: 2, isOnline: false })
-      usersState.byId.set(2, user)
+      usersState.add(user)
 
       presenceService.setOnline(2)
 
@@ -44,10 +38,8 @@ describe('PresenceService', () => {
     })
 
     it('does not affect unrelated users', () => {
-      const target = buildUser({ id: 2, isOnline: false })
-      const other = buildUser({ id: 3, isOnline: false })
-      usersState.byId.set(2, target)
-      usersState.byId.set(3, other)
+      usersState.add(buildUser({ id: 2, isOnline: false }))
+      usersState.add(buildUser({ id: 3, isOnline: false }))
 
       presenceService.setOnline(2)
 
@@ -59,7 +51,7 @@ describe('PresenceService', () => {
   describe('setOffline', () => {
     it('sets isOnline to false on matching user in usersState.byId', () => {
       const user = buildUser({ id: 2, isOnline: true })
-      usersState.byId.set(2, user)
+      usersState.add(user)
 
       presenceService.setOffline(2)
 
@@ -72,10 +64,8 @@ describe('PresenceService', () => {
     })
 
     it('does not affect unrelated users', () => {
-      const target = buildUser({ id: 2, isOnline: true })
-      const other = buildUser({ id: 3, isOnline: true })
-      usersState.byId.set(2, target)
-      usersState.byId.set(3, other)
+      usersState.add(buildUser({ id: 2, isOnline: true }))
+      usersState.add(buildUser({ id: 3, isOnline: true }))
 
       presenceService.setOffline(2)
 

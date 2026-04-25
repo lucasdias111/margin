@@ -4,7 +4,7 @@
   import { onDestroy } from 'svelte'
   import { spaceService } from '$src/services/SpaceService'
   import ChannelEntry from '$src/components/content/sidebar/sidebar_list/ChannelEntry.svelte'
-  import { notificationState } from '$src/states/NotificationState.svelte.js'
+  import { notificationService } from '$src/services/NotificationService'
   import UnreadNotificationBadge from '$src/components/common/chat/UnreadNotificationBadge.svelte'
   import Icon from '$src/components/common/icons/Icon.svelte'
   import { channelService } from '$src/services/ChannelService'
@@ -66,7 +66,7 @@
     {#each spaces as space (space.spaceId)}
       {@const color = spaceColor(space.spaceId)}
       {@const isOpen = expandedSpaceId === space.spaceId}
-      {@const unreadCount = notificationState.getTotalUnreadMessagesForSpace(space)}
+      {@const unreadCount = notificationService.totalUnreadMessagesForSpace(space)}
 
       <div
         class="space-card"

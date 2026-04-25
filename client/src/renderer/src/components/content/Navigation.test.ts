@@ -1,38 +1,27 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/svelte'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import Navigation from './Navigation.svelte'
-import { chatService } from '$src/services/ChatService'
+import { navigationService } from '$src/services/NavigationService'
 import { authenticationService } from '$src/services/AuthenticationService'
 import * as svelteRouter from 'svelte-spa-router'
 import { sessionState } from '$src/states/SessionState.svelte'
 
-vi.mock('$src/states/ChatState.svelte.js', () => ({
-  chatState: {
-    currentlySelectedContent: 'private'
-  }
-}))
-
 vi.mock('$src/states/NotificationState.svelte.js', () => ({
   notificationState: {
-    getTotalUnseenNotifications: vi.fn().mockReturnValue(0),
-    getTotalUnreadDirectMessages: vi.fn().mockReturnValue(0),
-    getTotalUnreadChannelMessages: vi.fn().mockReturnValue(0)
+    getTotalUnseenNotifications: vi.fn().mockReturnValue(0)
   }
 }))
 
-vi.mock('$src/states/UserState.svelte.js', () => ({
-  userState: {
-    currentUser: {
-      id: 1,
-      displayName: 'Lucas',
-      profilePictureUrl: '/avatar.png'
-    }
+vi.mock('$src/services/NavigationService', () => ({
+  navigationService: {
+    setView: vi.fn()
   }
 }))
 
-vi.mock('$src/services/ChatService', () => ({
-  chatService: {
-    selectContent: vi.fn()
+vi.mock('$src/services/NotificationService', () => ({
+  notificationService: {
+    totalUnreadDirectMessages: vi.fn().mockReturnValue(0),
+    totalUnreadChannelMessages: vi.fn().mockReturnValue(0)
   }
 }))
 
@@ -93,7 +82,7 @@ describe('Navigation', () => {
 
     await fireEvent.click(screen.getByRole('button', { name: /notifications/i }))
 
-    expect(chatService.selectContent).toHaveBeenCalledWith('notifications')
+    expect(navigationService.setView).toHaveBeenCalledWith('notifications')
   })
 
   it('calls chatService.selectContent with "private" when private conversations button is clicked', async () => {
@@ -101,7 +90,7 @@ describe('Navigation', () => {
 
     await fireEvent.click(screen.getByRole('button', { name: /private conversations/i }))
 
-    expect(chatService.selectContent).toHaveBeenCalledWith('private')
+    expect(navigationService.setView).toHaveBeenCalledWith('private')
   })
 
   it('calls chatService.selectContent with "margin" when spaces button is clicked', async () => {
@@ -109,7 +98,7 @@ describe('Navigation', () => {
 
     await fireEvent.click(screen.getByRole('button', { name: /spaces/i }))
 
-    expect(chatService.selectContent).toHaveBeenCalledWith('margin')
+    expect(navigationService.setView).toHaveBeenCalledWith('margin')
   })
 
   it('renders avatar button when user is logged in', () => {
@@ -153,7 +142,7 @@ describe('Navigation', () => {
     await fireEvent.click(document.querySelector('.avatar-btn')!)
     await fireEvent.click(screen.getByText('Settings'))
 
-    expect(chatService.selectContent).toHaveBeenCalledWith('settings')
+    expect(navigationService.setView).toHaveBeenCalledWith('settings')
   })
 
   it('calls logoutUser and navigates to / when log out is clicked', async () => {

@@ -1,6 +1,6 @@
 <script lang="ts">
   import UnreadNotificationBadge from '$src/components/common/chat/UnreadNotificationBadge.svelte'
-  import { notificationState } from '$src/states/NotificationState.svelte.js'
+  import { notificationService } from '$src/services/NotificationService'
   import type { Conversation } from '$src/interfaces/Conversation'
   import type { User } from '$src/interfaces/User'
   import type { ConversationMeta } from '$src/states/ConversationsState.svelte.js'
@@ -24,9 +24,7 @@
   const chatUser = $derived(recentUser.user)
   const meta = $derived(recentUser.meta)
 
-  const unreadCount = $derived(
-    notificationState.isDirectConversationUnread(recentUser.conversation.id) ? 1 : 0
-  )
+  const unreadCount = $derived(notificationService.isUnread(recentUser.conversation.id) ? 1 : 0)
 </script>
 
 <button

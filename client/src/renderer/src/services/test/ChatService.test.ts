@@ -3,11 +3,16 @@ import { chatService } from '../ChatService'
 import { encryptionService } from '$src/services/EncryptionService'
 import { webSocketService } from '$src/services/WebSocketService'
 import { notificationService } from '$src/services/NotificationService'
-import { usersState } from '$src/states/UsersState.svelte.js'
-import { conversationState } from '$src/states/ConversationsState.svelte.js'
+import { navigationService } from '$src/services/NavigationService'
+import { channelService } from '$src/services/ChannelService'
+import { conversationsState } from '$src/states/ConversationsState.svelte'
+import { navigationState } from '$src/states/NavigationState.svelte'
+import { sessionState } from '$src/states/SessionState.svelte'
+import { usersState } from '$src/states/UsersState.svelte'
 import { conversationInviteService } from '$src/states/UserListState.svelte'
 import { WebSocketMessageType } from '$src/interfaces/WebSocketMessageType'
 import * as api from '$src/services/api'
+import { View } from '$src/interfaces/View'
 import type {
   ConversationMessagesResponse,
   Message,
@@ -20,35 +25,6 @@ import type {
   DirectConversation
 } from '$src/interfaces/Conversation'
 import type { Channel } from '$src/interfaces/Channel'
-import type { RecentChatUser } from '$src/interfaces/RecentChatUser'
-import { View } from '$src/interfaces/View'
-import { navigationState } from '$src/states/NavigationState.svelte'
-
-interface MockUserState {
-  currentUser: User | null
-}
-
-interface MockNavigationState {
-  selectedUser: User | null
-  selectedChannel: Pick<Channel, 'conversationId'> | null
-}
-
-interface MockConversationState {
-  currentConversation: Conversation | null
-  messages: Message[]
-  isLoading: boolean
-  hasMore: boolean
-  isLoadingMore: boolean
-  selectConversation: ReturnType<typeof vi.fn>
-  clear: ReturnType<typeof vi.fn>
-  deleteMessage: ReturnType<typeof vi.fn>
-}
-
-interface MockUserListState {
-  recentUsers: RecentChatUser[]
-  updateLastMessage: ReturnType<typeof vi.fn>
-  addUser: ReturnType<typeof vi.fn>
-}
 
 vi.mock('$src/services/EncryptionService', () => ({
   encryptionService: {
@@ -67,39 +43,19 @@ vi.mock('$src/services/WebSocketService', () => ({
 vi.mock('$src/services/NotificationService', () => ({
   notificationService: {
     handleIncomingMessage: vi.fn(),
-    markConversationAsRead: vi.fn()
+    dismissNotificationsForConversation: vi.fn()
   }
 }))
 
-vi.mock('$src/states/UserState.svelte', () => ({
-  userState: {
-    currentUser: null
+vi.mock('$src/services/NavigationService', () => ({
+  navigationService: {
+    setView: vi.fn()
   }
 }))
 
-vi.mock('$src/states/ConversationState.svelte', () => ({
-  conversationState: {
-    currentConversation: null,
-    messages: [],
-    isLoading: false,
-    hasMore: true,
-    isLoadingMore: false,
-    selectConversation: vi.fn(),
-    clear: vi.fn(),
-    deleteMessage: vi.fn()
-  }
-}))
-
-vi.mock('$src/states/UserListState.svelte', () => ({
-  userListState: {
-    recentUsers: [],
-    updateLastMessage: vi.fn(),
-    addUser: vi.fn()
-  },
-  conversationInviteService: {
-    pendingInvites: [],
-    addPendingInvite: vi.fn(),
-    removePendingInvite: vi.fn()
+vi.mock('$src/services/ChannelService', () => ({
+  channelService: {
+    select: vi.fn()
   }
 }))
 
@@ -107,11 +63,6 @@ vi.mock('$src/services/api', () => ({
   authenticatedGet: vi.fn(),
   authenticatedPost: vi.fn()
 }))
-
-const mockUserState = usersState as MockUserState
-const mockNavigationState = navigationState as unknown as MockNavigationState
-const mockConversationState = conversationState as unknown as MockConversationState
-const mockUserListState = conversationInviteService as unknown as MockUserListState
 
 function buildUser(overrides: Partial<User> = {}): User {
   return {
@@ -140,23 +91,13 @@ function buildMessage(overrides: Partial<Message> = {}): Message {
   }
 }
 
-function buildReaction(overrides: Partial<MessageReaction> = {}): MessageReaction {
-  return {
-    id: 1,
-    messageId: 100,
-    conversationId: 10,
-    userId: 2,
-    displayName: 'Other User',
-    emoji: '👍',
-    ...overrides
-  }
-}
-
 function buildDirectConversation(overrides: Partial<DirectConversation> = {}): DirectConversation {
-  return <DirectConversation>{
+  return {
     id: 10,
     type: 'DIRECT',
     otherUserId: 2,
+    otherUserReadAt: '2025-01-01T00:00:00Z',
+    inviteStatus: 'ACCEPTED',
     createdAt: '2025-06-01T12:00:00Z',
     ...overrides
   }
@@ -187,551 +128,553 @@ function buildChannel(overrides: Partial<Channel> = {}): Channel {
   }
 }
 
-function mockApiGet(body: ConversationMessagesResponse | Record<string, never>, ok = true): void {
+function buildReaction(overrides: Partial<MessageReaction> = {}): MessageReaction {
+  return {
+    id: 1,
+    messageId: 100,
+    conversationId: 10,
+    userId: 2,
+    displayName: 'Other User',
+    emoji: '👍',
+    ...overrides
+  }
+}
+
+function mockApiGet(body: ConversationMessagesResponse | unknown, ok = true): void {
   vi.mocked(api.authenticatedGet).mockResolvedValue({
     ok,
     json: async () => body
   } as Response)
 }
 
-function mockApiPost(body: Conversation | Record<string, never>, ok = true): void {
+function mockApiPost(body: Conversation | unknown, ok = true): void {
   vi.mocked(api.authenticatedPost).mockResolvedValue({
     ok,
     json: async () => body
   } as Response)
 }
 
-// TODO: rewrite this test suite for the new architecture.
-// These tests were written against the pre-refactor ChatService which used the old
-// singular `conversationState` API (.messages, .currentConversation) and the old
-// `userListState.recentUsers` / `updateLastMessage` / `addUser` surface. Both are gone.
-// Skipping until the architecture settles (post unread-tracking migration) so they
-// don't block CI in the meantime.
-describe.skip('ChatService', () => {
+describe('ChatService', () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    mockUserState.currentUser = buildUser()
-    mockNavigationState.selectedUser = null
-    mockNavigationState.selectedChannel = null
+
+    conversationsState.clear()
+
     navigationState.view = View.Private
-    mockConversationState.currentConversation = null
-    mockConversationState.messages = []
-    mockConversationState.isLoading = false
-    mockConversationState.hasMore = true
-    mockConversationState.isLoadingMore = false
-    mockUserListState.recentUsers = []
+    navigationState.selectedUser = null
+    navigationState.selectedChannel = null
+    navigationState.selectedMargin = null
+    navigationState.selectedSpace = null
+
+    sessionState.currentUser = buildUser({ id: 1 })
+
+    usersState.reset()
+
+    conversationInviteService.pendingInvites = []
   })
 
   describe('handleIncomingMessage', () => {
-    it('delegates to notificationService for every message', async () => {
-      const msg = buildMessage({ conversationType: 'CHANNEL', conversationId: 99 })
+    it('routes channel messages to channel handler and notifies', async () => {
+      const msg = buildMessage({
+        id: 200,
+        conversationType: 'CHANNEL',
+        conversationId: 99,
+        user: buildUser({ id: 2 })
+      })
 
       await chatService.handleIncomingMessage({
-        timestamp: 0,
         type: WebSocketMessageType.RECEIVE_MESSAGE,
+        timestamp: 0,
         payload: msg
       })
 
+      expect(conversationsState.messagesByConversationId.get(99)).toContainEqual(msg)
       expect(notificationService.handleIncomingMessage).toHaveBeenCalledWith(msg)
     })
 
-    it('appends channel message to conversationState when it matches selected channel', async () => {
-      const msg = buildMessage({ conversationType: 'CHANNEL', conversationId: 20 })
-      mockNavigationState.selectedChannel = { conversationId: 20 }
-      mockConversationState.messages = []
-
-      await chatService.handleIncomingMessage({
-        timestamp: 0,
-        type: WebSocketMessageType.RECEIVE_MESSAGE,
-        payload: msg
-      })
-
-      expect(mockConversationState.messages).toEqual([msg])
-    })
-
-    it('does not append channel message when it does not match selected channel', async () => {
-      const msg = buildMessage({ conversationType: 'CHANNEL', conversationId: 20 })
-      mockNavigationState.selectedChannel = { conversationId: 99 }
-      mockConversationState.messages = []
-
-      await chatService.handleIncomingMessage({
-        timestamp: 0,
-        type: WebSocketMessageType.RECEIVE_MESSAGE,
-        payload: msg
-      })
-
-      expect(mockConversationState.messages).toEqual([])
-    })
-
-    it('notifies when a DM arrives and window is blurred', async () => {
-      vi.spyOn(document, 'hasFocus').mockReturnValue(false)
-
+    it('routes direct messages to direct handler', async () => {
       const sender = buildUser({ id: 2 })
+      navigationState.selectedUser = sender
+      vi.mocked(encryptionService.decryptMessage).mockResolvedValue('hello')
+      mockApiPost({})
+      const msg = buildMessage({ id: 201, conversationType: 'DIRECT', user: sender })
+
+      await chatService.handleIncomingMessage({
+        type: WebSocketMessageType.RECEIVE_MESSAGE,
+        timestamp: 0,
+        payload: msg
+      })
+
+      expect(encryptionService.decryptMessage).toHaveBeenCalled()
+      expect(conversationsState.messagesByConversationId.get(10)).toBeDefined()
+    })
+  })
+
+  describe('handleIncomingChannelMessage', () => {
+    it('appends incoming channel message and marks unread when not active', async () => {
       const msg = buildMessage({
+        id: 1,
+        conversationType: 'CHANNEL',
+        conversationId: 99,
+        user: buildUser({ id: 2 })
+      })
+
+      await chatService.handleIncomingMessage({
+        type: WebSocketMessageType.RECEIVE_MESSAGE,
+        timestamp: 0,
+        payload: msg
+      })
+
+      expect(conversationsState.messagesByConversationId.get(99)).toEqual([msg])
+      expect(conversationsState.conversationMetaById.get(99)?.unread).toBe(true)
+    })
+
+    it('marks read when active and window focused', async () => {
+      vi.spyOn(document, 'hasFocus').mockReturnValue(true)
+      mockApiPost({})
+      navigationState.selectedChannel = buildChannel({ conversationId: 99 })
+      const msg = buildMessage({
+        id: 1,
+        conversationType: 'CHANNEL',
+        conversationId: 99,
+        user: buildUser({ id: 2 })
+      })
+
+      await chatService.handleIncomingMessage({
+        type: WebSocketMessageType.RECEIVE_MESSAGE,
+        timestamp: 0,
+        payload: msg
+      })
+
+      expect(api.authenticatedPost).toHaveBeenCalledWith(null, 'conversations/99/read')
+    })
+
+    it('replaces optimistic message instead of appending when from me', async () => {
+      const optimistic = buildMessage({
+        id: -123,
+        conversationType: 'CHANNEL',
+        conversationId: 99,
+        user: sessionState.currentUser!
+      })
+      conversationsState.messagesByConversationId.set(99, [optimistic])
+      const real = buildMessage({
+        id: 5,
+        conversationType: 'CHANNEL',
+        conversationId: 99,
+        user: sessionState.currentUser!,
+        content: 'real content'
+      })
+
+      await chatService.handleIncomingMessage({
+        type: WebSocketMessageType.RECEIVE_MESSAGE,
+        timestamp: 0,
+        payload: real
+      })
+
+      const messages = conversationsState.messagesByConversationId.get(99)!
+      expect(messages).toHaveLength(1)
+      expect(messages[0].id).toBe(5)
+      expect(messages[0].content).toBe('real content')
+    })
+  })
+
+  describe('handleIncomingDirectMessage', () => {
+    it('decrypts and appends when from another user in the active conversation', async () => {
+      const sender = buildUser({ id: 2 })
+      navigationState.selectedUser = sender
+      mockApiPost({})
+      vi.mocked(encryptionService.decryptMessage).mockResolvedValue('decrypted hi')
+      const msg = buildMessage({
+        id: 1,
+        conversationType: 'DIRECT',
+        conversationId: 10,
+        user: sender,
+        content: 'cipher'
+      })
+
+      await chatService.handleIncomingMessage({
+        type: WebSocketMessageType.RECEIVE_MESSAGE,
+        timestamp: 0,
+        payload: msg
+      })
+
+      expect(encryptionService.decryptMessage).toHaveBeenCalledWith('cipher', true)
+      expect(conversationsState.messagesByConversationId.get(10)?.[0].content).toBe('decrypted hi')
+    })
+
+    it('falls back to placeholder content when decryption throws', async () => {
+      const sender = buildUser({ id: 2 })
+      navigationState.selectedUser = sender
+      mockApiPost({})
+      vi.mocked(encryptionService.decryptMessage).mockRejectedValue(new Error('fail'))
+      const msg = buildMessage({
+        id: 1,
         conversationType: 'DIRECT',
         conversationId: 10,
         user: sender
       })
 
-      mockConversationState.currentConversation = buildDirectConversation({ id: 10 })
-      mockNavigationState.selectedUser = sender
-
       await chatService.handleIncomingMessage({
-        timestamp: 0,
         type: WebSocketMessageType.RECEIVE_MESSAGE,
+        timestamp: 0,
         payload: msg
       })
 
-      expect(notificationService.handleIncomingMessage).toHaveBeenCalledWith(msg)
-    })
-
-    it('decrypts and appends DM to active conversation', async () => {
-      const sender = buildUser({ id: 2, handle: 'kasper' })
-      const msg = buildMessage({
-        conversationType: 'DIRECT',
-        conversationId: 10,
-        user: sender,
-        content: 'encrypted'
-      })
-      mockConversationState.currentConversation = buildDirectConversation({ id: 10 })
-      mockConversationState.messages = []
-      mockNavigationState.selectedUser = sender
-      vi.mocked(encryptionService.decryptMessage).mockResolvedValue('decrypted')
-
-      await chatService.handleIncomingMessage({
-        timestamp: 0,
-        type: WebSocketMessageType.RECEIVE_MESSAGE,
-        payload: msg
-      })
-
-      expect(encryptionService.decryptMessage).toHaveBeenCalledWith('encrypted', true)
-      expect(mockConversationState.messages[0].content).toBe('decrypted')
-    })
-
-    it('updates sidebar preview for DM in background conversation', async () => {
-      const sender = buildUser({ id: 2, handle: 'kasper' })
-      const msg = buildMessage({
-        conversationType: 'DIRECT',
-        conversationId: 10,
-        user: sender,
-        content: 'encrypted'
-      })
-      mockConversationState.currentConversation = buildDirectConversation({ id: 99 })
-      mockNavigationState.selectedUser = sender
-      vi.mocked(encryptionService.decryptMessage).mockResolvedValue('preview text')
-
-      await chatService.handleIncomingMessage({
-        timestamp: 0,
-        type: WebSocketMessageType.RECEIVE_MESSAGE,
-        payload: msg
-      })
-
-      expect(mockUserListState.updateLastMessage).toHaveBeenCalledWith(
-        2,
-        'preview text',
-        true,
-        msg.createdAt
+      expect(conversationsState.messagesByConversationId.get(10)?.[0].content).toBe(
+        '[Decryption failed]'
       )
-      expect(mockConversationState.messages).toEqual([])
     })
 
-    it('adds unknown sender to recent users list', async () => {
-      const sender = buildUser({ id: 3, handle: 'unknown' })
-      const msg = buildMessage({
-        conversationType: 'DIRECT',
-        conversationId: 10,
-        user: sender,
-        content: 'encrypted'
-      })
-      mockConversationState.currentConversation = buildDirectConversation({ id: 99 })
-      mockNavigationState.selectedUser = sender
-      mockUserListState.recentUsers = []
-      vi.mocked(encryptionService.decryptMessage).mockResolvedValue('hello')
+    it('bails when own message echo arrives but no recipient is selected', async () => {
+      const msg = buildMessage({ id: 1, conversationType: 'DIRECT', user: sessionState.currentUser! })
 
       await chatService.handleIncomingMessage({
-        timestamp: 0,
         type: WebSocketMessageType.RECEIVE_MESSAGE,
+        timestamp: 0,
         payload: msg
       })
 
-      const expectedRecentUser: RecentChatUser = {
-        conversationId: 10,
-        user: sender,
-        lastMessage: 'hello',
-        lastMessageTime: msg.createdAt,
-        lastMessageIncoming: true
-      }
-      expect(mockUserListState.addUser).toHaveBeenCalledWith(expectedRecentUser)
+      expect(conversationsState.messagesByConversationId.get(10)).toBeUndefined()
     })
 
-    it('does not add user to recent list if already present', async () => {
-      const sender = buildUser({ id: 2, handle: 'kasper' })
-      const msg = buildMessage({
+    it('replaces optimistic when echo of own message arrives in active conversation', async () => {
+      const me = sessionState.currentUser!
+      const otherUser = buildUser({ id: 2 })
+      navigationState.selectedUser = otherUser
+      mockApiPost({})
+      vi.mocked(encryptionService.decryptMessage).mockResolvedValue('hello')
+      const optimistic = buildMessage({
+        id: -123,
         conversationType: 'DIRECT',
         conversationId: 10,
-        user: sender,
-        content: 'encrypted'
+        user: me
       })
-      mockConversationState.currentConversation = buildDirectConversation({ id: 99 })
-      mockNavigationState.selectedUser = sender
-      mockUserListState.recentUsers = [
-        {
-          conversationId: 10,
-          user: buildUser({ id: 2 }),
-          lastMessageIncoming: true
-        }
-      ]
-      vi.mocked(encryptionService.decryptMessage).mockResolvedValue('hello')
-
-      await chatService.handleIncomingMessage({
-        timestamp: 0,
-        type: WebSocketMessageType.RECEIVE_MESSAGE,
-        payload: msg
-      })
-
-      expect(mockUserListState.addUser).not.toHaveBeenCalled()
-    })
-
-    it('replaces optimistic message when server confirms own DM', async () => {
-      const me = buildUser({ id: 1 })
-      const msg = buildMessage({
-        id: 200,
+      conversationsState.messagesByConversationId.set(10, [optimistic])
+      const real = buildMessage({
+        id: 5,
         conversationType: 'DIRECT',
         conversationId: 10,
         user: me,
-        content: 'encrypted'
+        content: 'enc'
       })
-      const optimistic = buildMessage({ id: -1000, conversationId: 10, user: me, content: 'hello' })
-      mockConversationState.currentConversation = buildDirectConversation({ id: 10 })
-      mockConversationState.messages = [optimistic]
-      mockNavigationState.selectedUser = buildUser({ id: 2 })
-      vi.mocked(encryptionService.decryptMessage).mockResolvedValue('hello')
 
       await chatService.handleIncomingMessage({
-        timestamp: 0,
         type: WebSocketMessageType.RECEIVE_MESSAGE,
-        payload: msg
+        timestamp: 0,
+        payload: real
       })
 
-      expect(mockConversationState.messages[0].id).toBe(200)
-      expect(mockConversationState.messages).toHaveLength(1)
+      const messages = conversationsState.messagesByConversationId.get(10)!
+      expect(messages).toHaveLength(1)
+      expect(messages[0].id).toBe(5)
     })
 
-    it('sets content to [Decryption failed] when decryption throws', async () => {
-      const sender = buildUser({ id: 2, handle: 'kasper' })
-      const msg = buildMessage({
-        conversationType: 'DIRECT',
-        conversationId: 10,
-        user: sender,
-        content: 'bad-data'
-      })
-
-      mockConversationState.currentConversation = buildDirectConversation({ id: 10 })
-      mockConversationState.messages = []
-      mockNavigationState.selectedUser = sender
-
-      vi.mocked(encryptionService.decryptMessage).mockRejectedValue(new Error('decrypt failed'))
-
-      await chatService.handleIncomingMessage({
-        timestamp: 0,
-        type: WebSocketMessageType.RECEIVE_MESSAGE,
-        payload: msg
-      })
-
-      expect(mockConversationState.messages[0].content).toBe('[Decryption failed]')
-    })
-
-    it('marks conversation as read after appending DM to active conversation', async () => {
-      vi.spyOn(document, 'hasFocus').mockReturnValue(true)
-
+    it('notifies when DM arrives for non-active conversation', async () => {
       const sender = buildUser({ id: 2 })
-      const msg = buildMessage({
-        conversationType: 'DIRECT',
-        conversationId: 10,
-        user: sender
-      })
-
-      mockConversationState.currentConversation = buildDirectConversation({ id: 10 })
-      mockConversationState.messages = []
-      mockNavigationState.selectedUser = sender
-
-      vi.mocked(encryptionService.decryptMessage).mockResolvedValue('text')
-      mockApiPost({})
+      vi.mocked(encryptionService.decryptMessage).mockResolvedValue('hello')
+      const msg = buildMessage({ id: 1, conversationType: 'DIRECT', user: sender })
 
       await chatService.handleIncomingMessage({
-        timestamp: 0,
         type: WebSocketMessageType.RECEIVE_MESSAGE,
+        timestamp: 0,
         payload: msg
       })
 
-      expect(api.authenticatedPost).toHaveBeenCalledWith(null, 'conversations/10/read')
+      expect(notificationService.handleIncomingMessage).toHaveBeenCalledWith(msg)
     })
   })
 
   describe('loadConversationForUser', () => {
-    it('fetches and populates messages for a user', async () => {
-      const conv = buildDirectConversation({ id: 10, otherUserId: 2 })
-      const messages = [
-        buildMessage({ content: 'encrypted1' }),
-        buildMessage({ id: 101, content: 'encrypted2' })
-      ]
-      mockApiGet({ conversation: conv, messages })
-      vi.mocked(encryptionService.decryptMessage).mockResolvedValue('decrypted')
+    it('skips load when messages are already cached', async () => {
       mockApiPost({})
-
-      await chatService.loadConversationForUser(buildUser({ id: 2 }))
-
-      expect(api.authenticatedGet).toHaveBeenCalledWith('conversations/2/direct_messages?limit=30')
-      expect(mockConversationState.selectConversation).toHaveBeenCalledWith(conv)
-      expect(mockConversationState.messages).toHaveLength(2)
-      expect(mockConversationState.isLoading).toBe(false)
-    })
-
-    it('skips loading if already viewing conversation with same user', async () => {
-      mockConversationState.currentConversation = buildDirectConversation({
-        id: 10,
-        otherUserId: 2
-      })
+      const conv = buildDirectConversation({ id: 10, otherUserId: 2 })
+      conversationsState.byId.set(10, conv)
+      conversationsState.messagesByConversationId.set(10, [
+        buildMessage({ id: 1 }),
+        buildMessage({ id: 2 })
+      ])
 
       await chatService.loadConversationForUser(buildUser({ id: 2 }))
 
       expect(api.authenticatedGet).not.toHaveBeenCalled()
     })
 
-    it('clears state before loading', async () => {
-      mockConversationState.messages = [buildMessage()]
-      mockApiGet({ conversation: null as unknown as Conversation, messages: [] })
-
-      await chatService.loadConversationForUser(buildUser({ id: 2 }))
-
-      expect(mockConversationState.messages).toEqual([])
-    })
-
-    it('sets hasMore to false when fewer messages than PAGE_SIZE returned', async () => {
-      const conv = buildDirectConversation()
-      mockApiGet({ conversation: conv, messages: [buildMessage()] })
-      vi.mocked(encryptionService.decryptMessage).mockResolvedValue('text')
+    it('fetches messages when not cached', async () => {
+      vi.mocked(encryptionService.decryptMessage).mockImplementation(async (s) => s)
+      const conv = buildDirectConversation({ id: 10, otherUserId: 2 })
+      mockApiGet({ conversation: conv, messages: [buildMessage({ id: 1, content: 'hi' })] })
       mockApiPost({})
 
       await chatService.loadConversationForUser(buildUser({ id: 2 }))
 
-      expect(mockConversationState.hasMore).toBe(false)
+      expect(api.authenticatedGet).toHaveBeenCalledWith(
+        expect.stringContaining('conversations/2/direct_messages')
+      )
+      expect(conversationsState.byId.get(10)).toEqual(conv)
+      expect(conversationsState.messagesByConversationId.get(10)).toHaveLength(1)
     })
 
-    it('handles API failure gracefully', async () => {
-      mockApiGet({ conversation: null as unknown as Conversation, messages: [] }, false)
+    it('forces fetch when force=true even if messages cached', async () => {
+      vi.mocked(encryptionService.decryptMessage).mockImplementation(async (s) => s)
+      const conv = buildDirectConversation({ id: 10, otherUserId: 2 })
+      conversationsState.byId.set(10, conv)
+      conversationsState.messagesByConversationId.set(10, [buildMessage()])
+      mockApiGet({ conversation: conv, messages: [] })
+      mockApiPost({})
 
-      await chatService.loadConversationForUser(buildUser({ id: 2 }))
+      await chatService.loadConversationForUser(buildUser({ id: 2 }), true)
 
-      expect(mockConversationState.messages).toEqual([])
-      expect(mockConversationState.isLoading).toBe(false)
+      expect(api.authenticatedGet).toHaveBeenCalled()
     })
   })
 
   describe('loadConversationForChannel', () => {
-    it('fetches channel messages', async () => {
-      const conv = buildChannelConversation({ id: 20, channelId: 5 })
-      const messages = [buildMessage({ conversationType: 'CHANNEL' })]
-      mockApiGet({ conversation: conv, messages })
-      mockApiPost({})
+    it('skips load when messages cached', async () => {
+      const channel = buildChannel({ conversationId: 20 })
+      conversationsState.messagesByConversationId.set(20, [
+        buildMessage({ id: 1 }),
+        buildMessage({ id: 2 })
+      ])
 
-      await chatService.loadConversationForChannel(buildChannel({ id: 5, conversationId: 20 }))
-
-      expect(api.authenticatedGet).toHaveBeenCalledWith('conversations/5/channel_messages?limit=30')
-      expect(mockConversationState.selectConversation).toHaveBeenCalledWith(conv)
-    })
-
-    it('skips loading if already viewing same channel conversation', async () => {
-      mockConversationState.currentConversation = buildChannelConversation({ id: 20 })
-
-      await chatService.loadConversationForChannel(buildChannel({ id: 5, conversationId: 20 }))
+      await chatService.loadConversationForChannel(channel)
 
       expect(api.authenticatedGet).not.toHaveBeenCalled()
+    })
+
+    it('fetches when not cached', async () => {
+      const channel = buildChannel()
+      mockApiGet({ conversation: buildChannelConversation(), messages: [] })
+      mockApiPost({})
+
+      await chatService.loadConversationForChannel(channel)
+
+      expect(api.authenticatedGet).toHaveBeenCalledWith(expect.stringContaining('channel_messages'))
     })
   })
 
-  describe('loadMoreMessages', () => {
-    it('prepends older messages to existing messages', async () => {
-      const conv = buildDirectConversation({ id: 10, otherUserId: 2 })
-      mockConversationState.currentConversation = conv
-      const existing = buildMessage({ id: 100 })
-      mockConversationState.messages = [existing]
+  describe('loadMessages (via loadConversationForUser)', () => {
+    it('sets isLoading=false after load and hasMore=true when page is full', async () => {
+      vi.mocked(encryptionService.decryptMessage).mockImplementation(async (s) => s)
+      mockApiGet({
+        conversation: buildDirectConversation({ id: 10 }),
+        messages: Array.from({ length: 30 }, (_, i) => buildMessage({ id: i + 1 }))
+      })
+      mockApiPost({})
 
-      const olderMessages = Array.from({ length: 30 }, (_, i) =>
-        buildMessage({ id: i + 1, content: `enc-${i}` })
-      )
-      mockApiGet({ conversation: conv, messages: olderMessages })
-      vi.mocked(encryptionService.decryptMessage).mockResolvedValue('decrypted')
+      await chatService.loadConversationForUser(buildUser({ id: 2 }))
 
-      await chatService.loadMoreMessages()
-
-      expect(mockConversationState.messages).toHaveLength(31)
-      expect(mockConversationState.messages[30]).toBe(existing)
+      expect(conversationsState.conversationMetaById.get(10)?.hasMore).toBe(true)
+      expect(conversationsState.conversationMetaById.get(10)?.isLoading).toBe(false)
     })
 
-    it('sets hasMore to false when fewer than PAGE_SIZE returned', async () => {
-      mockConversationState.currentConversation = buildDirectConversation()
-      mockConversationState.messages = [buildMessage({ id: 100 })]
-      mockApiGet({ conversation: buildDirectConversation(), messages: [buildMessage({ id: 1 })] })
-      vi.mocked(encryptionService.decryptMessage).mockResolvedValue('text')
+    it('sets hasMore=false when fewer than PAGE_SIZE returned', async () => {
+      vi.mocked(encryptionService.decryptMessage).mockImplementation(async (s) => s)
+      mockApiGet({
+        conversation: buildDirectConversation({ id: 10 }),
+        messages: [buildMessage({ id: 1 })]
+      })
+      mockApiPost({})
 
-      await chatService.loadMoreMessages()
+      await chatService.loadConversationForUser(buildUser({ id: 2 }))
 
-      expect(mockConversationState.hasMore).toBe(false)
+      expect(conversationsState.conversationMetaById.get(10)?.hasMore).toBe(false)
     })
 
-    it('does not load when already loading more', async () => {
-      mockConversationState.currentConversation = buildDirectConversation()
-      mockConversationState.messages = [buildMessage()]
-      mockConversationState.isLoadingMore = true
+    it('does not throw on non-ok response', async () => {
+      mockApiGet({}, false)
 
-      await chatService.loadMoreMessages()
-
-      expect(api.authenticatedGet).not.toHaveBeenCalled()
-    })
-
-    it('does not load when hasMore is false', async () => {
-      mockConversationState.currentConversation = buildDirectConversation()
-      mockConversationState.messages = [buildMessage()]
-      mockConversationState.hasMore = false
-
-      await chatService.loadMoreMessages()
-
-      expect(api.authenticatedGet).not.toHaveBeenCalled()
-    })
-
-    it('does not load when no current conversation', async () => {
-      mockConversationState.currentConversation = null
-      mockConversationState.messages = [buildMessage()]
-
-      await chatService.loadMoreMessages()
-
-      expect(api.authenticatedGet).not.toHaveBeenCalled()
+      await expect(chatService.loadConversationForUser(buildUser({ id: 2 }))).resolves.not.toThrow()
     })
   })
 
   describe('sendMessage', () => {
-    it('encrypts and sends DM via WebSocket', async () => {
+    it('encrypts DM, sends via WebSocket, returns optimistic message', async () => {
+      vi.mocked(encryptionService.getPublicKey).mockResolvedValue('PK')
+      vi.mocked(encryptionService.encryptMessage).mockResolvedValue('cipher')
       const conv = buildDirectConversation({ id: 10, otherUserId: 2 })
-      vi.mocked(encryptionService.getPublicKey).mockResolvedValue('pub-key')
-      vi.mocked(encryptionService.encryptMessage).mockResolvedValue('encrypted-payload')
 
-      const result = await chatService.sendMessage(buildUser(), conv, 'hello')
+      const msg = await chatService.sendMessage(sessionState.currentUser!, conv, 'plain hello')
 
-      expect(encryptionService.encryptMessage).toHaveBeenCalledWith('hello', 'pub-key', 'pub-key')
+      expect(encryptionService.encryptMessage).toHaveBeenCalled()
       expect(webSocketService.send).toHaveBeenCalledWith({
         type: WebSocketMessageType.SEND_MESSAGE,
         recipientId: 10,
-        payload: 'encrypted-payload'
+        payload: 'cipher'
       })
-      expect(result.content).toBe('hello')
-      expect(result.id).toBeLessThan(0)
+      expect(msg.id).toBeLessThan(0)
+      expect(msg.content).toBe('plain hello')
     })
+  })
 
-    it('sends channel message without encryption', async () => {
-      const conv = buildChannelConversation({ id: 20 })
+  describe('sendChannelMessage', () => {
+    it('does not encrypt, sends via WebSocket, returns optimistic', async () => {
+      const channel = buildChannel({ conversationId: 20 })
 
-      const result = await chatService.sendMessage(buildUser(), conv, 'hello channel')
+      const msg = await chatService.sendChannelMessage(sessionState.currentUser!, channel, 'hi all')
 
       expect(encryptionService.encryptMessage).not.toHaveBeenCalled()
       expect(webSocketService.send).toHaveBeenCalledWith({
         type: WebSocketMessageType.SEND_MESSAGE,
         recipientId: 20,
-        payload: 'hello channel'
+        payload: 'hi all'
       })
-      expect(result.content).toBe('hello channel')
-    })
-  })
-
-  describe('sendChannelMessage', () => {
-    it('sends via WebSocket and returns optimistic message', async () => {
-      const channel = buildChannel({ id: 5, conversationId: 20 })
-
-      const result = await chatService.sendChannelMessage(buildUser(), channel, 'hey')
-
-      expect(webSocketService.send).toHaveBeenCalledWith({
-        type: WebSocketMessageType.SEND_MESSAGE,
-        recipientId: 20,
-        payload: 'hey'
-      })
-      expect(result.conversationType).toBe('CHANNEL')
-      expect(result.content).toBe('hey')
-      expect(result.id).toBeLessThan(0)
+      expect(msg.id).toBeLessThan(0)
+      expect(msg.conversationType).toBe('CHANNEL')
     })
   })
 
   describe('sendMessageAndStartConversation', () => {
-    it('creates conversation via API and returns optimistic message', async () => {
-      const conv = buildDirectConversation({ id: 10 })
-      vi.mocked(encryptionService.getPublicKey).mockResolvedValue('pub-key')
-      vi.mocked(encryptionService.encryptMessage).mockResolvedValue('encrypted')
-      mockApiPost(conv)
+    it('posts API and returns conversation + optimistic', async () => {
+      vi.mocked(encryptionService.getPublicKey).mockResolvedValue('PK')
+      vi.mocked(encryptionService.encryptMessage).mockResolvedValue('cipher')
+      const newConv = buildDirectConversation({ id: 99, otherUserId: 2 })
+      mockApiPost(newConv)
 
-      const result = await chatService.sendMessageAndStartConversation(buildUser(), 2, 'first msg')
+      const result = await chatService.sendMessageAndStartConversation(
+        sessionState.currentUser!,
+        2,
+        'hi'
+      )
 
       expect(api.authenticatedPost).toHaveBeenCalledWith(
-        { recipientUserId: 2, encryptedContent: 'encrypted' },
+        { recipientUserId: 2, encryptedContent: 'cipher' },
         'conversations/create_private'
       )
-      expect(result.conversation).toEqual(conv)
-      expect(result.message.content).toBe('first msg')
+      expect(result.conversation).toEqual(newConv)
       expect(result.message.id).toBeLessThan(0)
     })
   })
 
   describe('deleteMessage', () => {
-    it('sends delete via WebSocket and removes from state', async () => {
-      const msg = buildMessage({ id: 100, conversationId: 10 })
+    it('sends WebSocket delete message and removes it from state', async () => {
+      const msg = buildMessage({ id: 5, conversationId: 10 })
+      const otherMsg = buildMessage({ id: 6, conversationId: 10 })
+      conversationsState.messagesByConversationId.set(10, [msg, otherMsg])
 
       await chatService.deleteMessage(msg)
 
       expect(webSocketService.send).toHaveBeenCalledWith({
         type: WebSocketMessageType.SEND_DELETE_MESSAGE,
         recipientId: 10,
-        payload: '100'
+        payload: '5'
       })
-      expect(mockConversationState.deleteMessage).toHaveBeenCalledWith(100)
+      expect(conversationsState.messagesByConversationId.get(10)).toEqual([otherMsg])
     })
   })
 
   describe('editMessagePrivateMessage', () => {
-    it('encrypts and sends edit via WebSocket', async () => {
-      const msg = buildMessage({ id: 100, conversationId: 10 })
-      vi.mocked(encryptionService.getPublicKey).mockResolvedValue('pub-key')
-      vi.mocked(encryptionService.encryptMessage).mockResolvedValue('encrypted-edit')
+    it('encrypts new content and sends WebSocket edit', async () => {
+      vi.mocked(encryptionService.getPublicKey).mockResolvedValue('PK')
+      vi.mocked(encryptionService.encryptMessage).mockResolvedValue('cipher')
+      const msg = buildMessage({ id: 5, conversationId: 10 })
 
-      await chatService.editMessagePrivateMessage(msg, 'edited text', 2)
+      await chatService.editMessagePrivateMessage(msg, 'new content', 2)
 
       expect(webSocketService.send).toHaveBeenCalledWith({
         type: WebSocketMessageType.SEND_EDIT_MESSAGE,
         recipientId: 10,
-        payload: { messageId: 100, content: 'encrypted-edit' }
+        payload: { messageId: 5, content: 'cipher' }
       })
     })
   })
 
   describe('editChannelMessage', () => {
-    it('sends plaintext edit via WebSocket', async () => {
-      const msg = buildMessage({ id: 100, conversationId: 20 })
+    it('sends plaintext edit', async () => {
+      const msg = buildMessage({ id: 5, conversationId: 20 })
 
-      await chatService.editChannelMessage(msg, 'edited channel msg')
+      await chatService.editChannelMessage(msg, 'new content')
 
       expect(webSocketService.send).toHaveBeenCalledWith({
         type: WebSocketMessageType.SEND_EDIT_MESSAGE,
         recipientId: 20,
-        payload: { messageId: 100, content: 'edited channel msg' }
+        payload: { messageId: 5, content: 'new content' }
       })
     })
   })
 
+  describe('reactions', () => {
+    it('addReaction sends WS message', () => {
+      const msg = buildMessage({ id: 5, conversationId: 10 })
+
+      chatService.addReaction(msg, '👍')
+
+      expect(webSocketService.send).toHaveBeenCalledWith({
+        type: WebSocketMessageType.SEND_ADD_REACTION,
+        recipientId: 10,
+        payload: { messageId: 5, emoji: '👍' }
+      })
+    })
+
+    it('removeReaction sends WS message', () => {
+      const msg = buildMessage({ id: 5, conversationId: 10 })
+
+      chatService.removeReaction(msg, '👍')
+
+      expect(webSocketService.send).toHaveBeenCalledWith({
+        type: WebSocketMessageType.SEND_REMOVE_REACTION,
+        recipientId: 10,
+        payload: { messageId: 5, emoji: '👍' }
+      })
+    })
+
+    it('handleIncomingReactionAdded appends to message in current conversation', () => {
+      const conv = buildDirectConversation({ id: 10, otherUserId: 2 })
+      conversationsState.byId.set(10, conv)
+      const msg = buildMessage({ id: 100, conversationId: 10, reactions: [] })
+      conversationsState.messagesByConversationId.set(10, [msg])
+      navigationState.view = View.Private
+      navigationState.selectedUser = buildUser({ id: 2 })
+
+      chatService.handleIncomingReactionAdded(
+        buildReaction({ messageId: 100, userId: 3, emoji: '❤️' })
+      )
+
+      const stored = conversationsState.messagesByConversationId.get(10)![0]
+      expect(stored.reactions).toHaveLength(1)
+      expect(stored.reactions[0].emoji).toBe('❤️')
+    })
+
+    it('handleIncomingReactionAdded does not duplicate same user+emoji', () => {
+      const conv = buildDirectConversation({ id: 10, otherUserId: 2 })
+      conversationsState.byId.set(10, conv)
+      const existing = buildReaction({ messageId: 100, userId: 3, emoji: '❤️' })
+      const msg = buildMessage({ id: 100, conversationId: 10, reactions: [existing] })
+      conversationsState.messagesByConversationId.set(10, [msg])
+      navigationState.view = View.Private
+      navigationState.selectedUser = buildUser({ id: 2 })
+
+      chatService.handleIncomingReactionAdded(
+        buildReaction({ messageId: 100, userId: 3, emoji: '❤️' })
+      )
+
+      expect(conversationsState.messagesByConversationId.get(10)![0].reactions).toHaveLength(1)
+    })
+
+    it('handleIncomingReactionRemoved removes matching reaction', () => {
+      const conv = buildDirectConversation({ id: 10, otherUserId: 2 })
+      conversationsState.byId.set(10, conv)
+      const reaction = buildReaction({ messageId: 100, userId: 3, emoji: '❤️' })
+      const msg = buildMessage({ id: 100, conversationId: 10, reactions: [reaction] })
+      conversationsState.messagesByConversationId.set(10, [msg])
+      navigationState.view = View.Private
+      navigationState.selectedUser = buildUser({ id: 2 })
+
+      chatService.handleIncomingReactionRemoved(reaction)
+
+      expect(conversationsState.messagesByConversationId.get(10)![0].reactions).toHaveLength(0)
+    })
+  })
+
   describe('markConversationAsRead', () => {
-    it('posts to API and updates notification state', async () => {
+    it('posts API, marks read in state, dismisses OS notifications', async () => {
       mockApiPost({})
+      conversationsState.markUnread(10)
 
       await chatService.markConversationAsRead(10)
 
       expect(api.authenticatedPost).toHaveBeenCalledWith(null, 'conversations/10/read')
-      expect(notificationService.markConversationAsRead).toHaveBeenCalledWith(10)
+      expect(conversationsState.conversationMetaById.get(10)?.unread).toBe(false)
+      expect(notificationService.dismissNotificationsForConversation).toHaveBeenCalledWith(10)
     })
 
     it('does nothing for falsy conversationId', async () => {
@@ -741,161 +684,146 @@ describe.skip('ChatService', () => {
     })
   })
 
+  describe('invites', () => {
+    it('handleIncomingConversationInvite adds to pending', () => {
+      const invite = {
+        conversation: buildDirectConversation({ id: 50 }),
+        fromUser: buildUser({ id: 7 })
+      }
+
+      chatService.handleIncomingConversationInvite({
+        type: WebSocketMessageType.CONVERSATION_INVITE,
+        timestamp: 0,
+        payload: invite
+      })
+
+      expect(conversationInviteService.pendingInvites).toContainEqual(invite)
+    })
+
+    it('sendConversationInvite posts to API', async () => {
+      mockApiPost({})
+
+      await chatService.sendConversationInvite('alice')
+
+      expect(api.authenticatedPost).toHaveBeenCalledWith(
+        { handle: 'alice' },
+        'conversations/invite'
+      )
+    })
+
+    it('acceptConversationInvite removes invite, seeds user + conversation, marks accepted', async () => {
+      mockApiPost({})
+      const fromUser = buildUser({ id: 7 })
+      const conv = buildDirectConversation({ id: 50, otherUserId: 7, inviteStatus: 'PENDING' })
+      const invite = { conversation: conv, fromUser }
+      conversationInviteService.addPendingInvite(invite)
+
+      await chatService.acceptConversationInvite(invite)
+
+      expect(conversationInviteService.pendingInvites).toHaveLength(0)
+      expect(usersState.byId.get(7)).toEqual(fromUser)
+      const stored = conversationsState.byId.get(50) as DirectConversation
+      expect(stored.type).toBe('DIRECT')
+      expect(stored.inviteStatus).toBe('ACCEPTED')
+      expect(conversationsState.conversationMetaById.has(50)).toBe(true)
+    })
+
+    it('declineConversationInvite removes the invite', async () => {
+      mockApiPost({})
+      const invite = {
+        conversation: buildDirectConversation({ id: 50 }),
+        fromUser: buildUser({ id: 7 })
+      }
+      conversationInviteService.addPendingInvite(invite)
+
+      await chatService.declineConversationInvite(50)
+
+      expect(conversationInviteService.pendingInvites).toHaveLength(0)
+    })
+
+    it('loadPendingInvites fetches and adds each', async () => {
+      const invites = [
+        {
+          conversation: buildDirectConversation({ id: 50 }),
+          fromUser: buildUser({ id: 7 })
+        },
+        {
+          conversation: buildDirectConversation({ id: 51 }),
+          fromUser: buildUser({ id: 8 })
+        }
+      ]
+      mockApiGet(invites)
+
+      await chatService.loadPendingInvites()
+
+      expect(conversationInviteService.pendingInvites).toHaveLength(2)
+    })
+  })
+
   describe('selectContent', () => {
-    it('clears state and sets new content type', () => {
+    it('calls navigationService.setView with the new view', () => {
+      chatService.selectContent(View.Margin)
+
+      expect(navigationService.setView).toHaveBeenCalledWith(View.Margin)
+    })
+
+    it('clears selectedUser when changing views', () => {
       navigationState.view = View.Private
-      mockNavigationState.selectedUser = buildUser({ id: 2 })
+      navigationState.selectedUser = buildUser({ id: 2 })
 
       chatService.selectContent(View.Margin)
 
-      expect(mockNavigationState.selectedUser).toBeNull()
-      expect(mockConversationState.clear).toHaveBeenCalled()
-      expect(navigationState.view).toBe(View.Margin)
-      expect(mockNavigationState.selectedChannel).toBeNull()
+      expect(navigationState.selectedUser).toBeNull()
     })
 
-    it('does not clear state when selecting the same content type', () => {
+    it('does not clear selectedUser when selecting the same view', () => {
       navigationState.view = View.Private
+      const user = buildUser({ id: 2 })
+      navigationState.selectedUser = user
 
       chatService.selectContent(View.Private)
 
-      expect(mockConversationState.clear).not.toHaveBeenCalled()
-      expect(navigationState.view).toBe(View.Private)
+      expect(navigationState.selectedUser).toEqual(user)
+    })
+
+    it('always clears selected channel', () => {
+      chatService.selectContent(View.Margin)
+
+      expect(channelService.select).toHaveBeenCalledWith(null)
     })
   })
 
-  describe('addReaction', () => {
-    it('sends SEND_ADD_REACTION via WebSocket with correct payload', () => {
-      const msg = buildMessage({ id: 100, conversationId: 10 })
+  describe('setConversationReadAt', () => {
+    it('updates otherUserReadAt for matching DIRECT conversation when current', () => {
+      const conv = buildDirectConversation({ id: 10, otherUserId: 2, otherUserReadAt: 'old' })
+      conversationsState.byId.set(10, conv)
+      navigationState.view = View.Private
+      navigationState.selectedUser = buildUser({ id: 2 })
 
-      chatService.addReaction(msg, '👍')
+      chatService.setConversationReadAt(10, 'new')
 
-      expect(webSocketService.send).toHaveBeenCalledWith({
-        type: WebSocketMessageType.SEND_ADD_REACTION,
-        recipientId: 10,
-        payload: { messageId: 100, emoji: '👍' }
-      })
+      const stored = conversationsState.byId.get(10) as DirectConversation
+      expect(stored.otherUserReadAt).toBe('new')
     })
 
-    it('uses the message conversationId as recipientId', () => {
-      const msg = buildMessage({ id: 42, conversationId: 99 })
+    it('does nothing when conversation id does not match current', () => {
+      const conv = buildDirectConversation({ id: 10, otherUserId: 2, otherUserReadAt: 'old' })
+      conversationsState.byId.set(10, conv)
+      navigationState.view = View.Private
+      navigationState.selectedUser = buildUser({ id: 2 })
 
-      chatService.addReaction(msg, '❤️')
+      chatService.setConversationReadAt(99, 'new')
 
-      expect(webSocketService.send).toHaveBeenCalledWith(
-        expect.objectContaining({ recipientId: 99 })
-      )
-    })
-  })
-
-  describe('removeReaction', () => {
-    it('sends SEND_REMOVE_REACTION via WebSocket with correct payload', () => {
-      const msg = buildMessage({ id: 100, conversationId: 10 })
-
-      chatService.removeReaction(msg, '👍')
-
-      expect(webSocketService.send).toHaveBeenCalledWith({
-        type: WebSocketMessageType.SEND_REMOVE_REACTION,
-        recipientId: 10,
-        payload: { messageId: 100, emoji: '👍' }
-      })
-    })
-  })
-
-  describe('handleIncomingReactionAdded', () => {
-    it('appends reaction to the matching message', () => {
-      const msg = buildMessage({ id: 100, reactions: [] })
-      mockConversationState.messages = [msg]
-      const reaction = buildReaction({ messageId: 100, userId: 2, emoji: '👍' })
-
-      chatService.handleIncomingReactionAdded(reaction)
-
-      expect(mockConversationState.messages[0].reactions).toEqual([reaction])
+      const stored = conversationsState.byId.get(10) as DirectConversation
+      expect(stored.otherUserReadAt).toBe('old')
     })
 
-    it('does not add duplicate reaction from same user for same emoji', () => {
-      const reaction = buildReaction({ messageId: 100, userId: 2, emoji: '👍' })
-      const msg = buildMessage({ id: 100, reactions: [reaction] })
-      mockConversationState.messages = [msg]
+    it('does not throw when current conversation is a channel', () => {
+      const conv = buildChannelConversation({ id: 10 })
+      conversationsState.byId.set(10, conv)
+      navigationState.selectedChannel = buildChannel({ conversationId: 10 })
 
-      chatService.handleIncomingReactionAdded(reaction)
-
-      expect(mockConversationState.messages[0].reactions).toHaveLength(1)
-    })
-
-    it('allows same user to react with a different emoji', () => {
-      const existing = buildReaction({ messageId: 100, userId: 2, emoji: '👍' })
-      const msg = buildMessage({ id: 100, reactions: [existing] })
-      mockConversationState.messages = [msg]
-      const newReaction = buildReaction({ id: 2, messageId: 100, userId: 2, emoji: '❤️' })
-
-      chatService.handleIncomingReactionAdded(newReaction)
-
-      expect(mockConversationState.messages[0].reactions).toHaveLength(2)
-    })
-
-    it('allows different users to react with the same emoji', () => {
-      const existing = buildReaction({ messageId: 100, userId: 2, emoji: '👍' })
-      const msg = buildMessage({ id: 100, reactions: [existing] })
-      mockConversationState.messages = [msg]
-      const newReaction = buildReaction({ id: 2, messageId: 100, userId: 3, emoji: '👍' })
-
-      chatService.handleIncomingReactionAdded(newReaction)
-
-      expect(mockConversationState.messages[0].reactions).toHaveLength(2)
-    })
-
-    it('does nothing when the message is not in the current conversation', () => {
-      const msg = buildMessage({ id: 100, reactions: [] })
-      mockConversationState.messages = [msg]
-      const reaction = buildReaction({ messageId: 999, userId: 2, emoji: '👍' })
-
-      chatService.handleIncomingReactionAdded(reaction)
-
-      expect(mockConversationState.messages[0].reactions).toHaveLength(0)
-    })
-  })
-
-  describe('handleIncomingReactionRemoved', () => {
-    it('removes the matching reaction from the message', () => {
-      const reaction = buildReaction({ messageId: 100, userId: 2, emoji: '👍' })
-      const msg = buildMessage({ id: 100, reactions: [reaction] })
-      mockConversationState.messages = [msg]
-
-      chatService.handleIncomingReactionRemoved(reaction)
-
-      expect(mockConversationState.messages[0].reactions).toHaveLength(0)
-    })
-
-    it('only removes the reaction matching both userId and emoji', () => {
-      const keep = buildReaction({ id: 1, messageId: 100, userId: 2, emoji: '❤️' })
-      const remove = buildReaction({ id: 2, messageId: 100, userId: 2, emoji: '👍' })
-      const msg = buildMessage({ id: 100, reactions: [keep, remove] })
-      mockConversationState.messages = [msg]
-
-      chatService.handleIncomingReactionRemoved(remove)
-
-      expect(mockConversationState.messages[0].reactions).toEqual([keep])
-    })
-
-    it('does nothing when the message is not in the current conversation', () => {
-      const reaction = buildReaction({ messageId: 100, userId: 2, emoji: '👍' })
-      const msg = buildMessage({ id: 100, reactions: [reaction] })
-      mockConversationState.messages = [msg]
-      const foreignReaction = buildReaction({ messageId: 999 })
-
-      chatService.handleIncomingReactionRemoved(foreignReaction)
-
-      expect(mockConversationState.messages[0].reactions).toHaveLength(1)
-    })
-
-    it('is a no-op when the reaction does not exist on the message', () => {
-      const msg = buildMessage({ id: 100, reactions: [] })
-      mockConversationState.messages = [msg]
-
-      chatService.handleIncomingReactionRemoved(buildReaction({ messageId: 100 }))
-
-      expect(mockConversationState.messages[0].reactions).toHaveLength(0)
+      expect(() => chatService.setConversationReadAt(10, 'new')).not.toThrow()
     })
   })
 })

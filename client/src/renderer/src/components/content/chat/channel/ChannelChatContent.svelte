@@ -48,6 +48,14 @@
   }
 </script>
 
+<svelte:window
+  onfocus={() => {
+    if (activeConvId) {
+      chatService.markConversationAsRead(activeConvId)
+    }
+  }}
+/>
+
 <div class="chat">
   {#if navigationState.selectedChannel}
     <ChannelChatHeader

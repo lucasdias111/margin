@@ -4,6 +4,7 @@
   import ChatHeaderShell from '$src/components/common/chat/ChatHeaderShell.svelte'
   import UserAvatar from '$src/components/common/user/UserAvatar.svelte'
   import { navigationState } from '$src/states/NavigationState.svelte'
+  import { usersState } from '$src/states/UsersState.svelte'
 
   interface Props {
     handleStartCall(): void
@@ -15,7 +16,7 @@
 
   let { handleStartCall, handleStartVideoCall, isLoading = false }: Props = $props()
 
-  const isOnline = $derived(navigationState.selectedUser?.isOnline ?? false)
+  const isOnline = $derived(usersState.byId.get(navigationState.selectedUser.id).isOnline ?? false)
 </script>
 
 <ChatHeaderShell {isLoading}>

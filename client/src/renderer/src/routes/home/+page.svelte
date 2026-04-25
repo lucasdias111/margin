@@ -41,6 +41,7 @@
   import { marginState } from '$src/states/MarginState.svelte'
   import { spaceService } from '$src/services/SpaceService'
   import { sessionHandler } from '$src/handlers/SessionHandler'
+  import { conversationsState } from '$src/states/ConversationsState.svelte'
 
   let incomingCallPayload = $state<CallOfferPayload | null>(null)
   const ringtone = new Audio(NotificationSounds.INCOMING_CALL)
@@ -65,8 +66,8 @@
   $effect(() => {
     if (!isElectron()) return
     const total =
-      notificationState.getTotalUnreadDirectMessages() +
-      notificationState.getTotalUnreadChannelMessages()
+      notificationService.totalUnreadDirectMessages() +
+      notificationService.totalUnreadChannelMessages()
     window.api!.setBadgeCount(total)
   })
 
@@ -129,11 +130,25 @@
   }
 
   async function loadUnreadMessages(): Promise<void> {
-    notificationState.clearUnreadMessages()
     const response = await authenticatedGet('conversations/unread')
     const unread: UnreadConversations = await response.json()
-    notificationService.addIncomingDirectConversations(unread.directConversationIds)
-    notificationService.addIncomingChannelConversations(unread.channelUnreads)
+
+    for (const id of unread.directConversationIds) {
+      conversationsState.markUnread(id)
+    }
+
+    for (const ch of unread.channelUnreads) {
+      if (!conversationsState.byId.has(ch.conversationId)) {
+        conversationsState.byId.set(ch.conversationId, {
+          id: ch.conversationId,
+          type: 'CHANNEL',
+          channelId: -1,
+          name: '',
+          createdAt: new Date().toISOString()
+        })
+      }
+      conversationsState.markUnread(ch.conversationId)
+    }
   }
 
   async function loadRecentUsers(): Promise<void> {

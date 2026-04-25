@@ -92,19 +92,18 @@ class UsersService {
   loadRecentConversations(decryptedUsers: RecentChatUser[]): void {
     for (const recentUser of decryptedUsers) {
       usersState.add(recentUser.user)
-      conversationsState.byId.set(recentUser.conversation.id, recentUser.conversation)
+      const existing = conversationsState.conversationMetaById.get(recentUser.conversation.id)
       conversationsState.conversationMetaById.set(recentUser.conversation.id, {
         hasMore: true,
         isLoading: false,
         lastMessage: recentUser.lastMessage ?? '',
         lastMessageTime: recentUser.lastMessageTime ?? new Date().toISOString(),
         lastMessageIncoming: !!recentUser.lastMessageIncoming,
-        unread: false,
-        lastReadAt: null
+        unread: existing?.unread ?? false,
+        lastReadAt: existing?.lastReadAt ?? null
       })
+      conversationsState.byId.set(recentUser.conversation.id, recentUser.conversation)
     }
-    conversationsState.byId = new Map(conversationsState.byId)
-    conversationsState.conversationMetaById = new Map(conversationsState.conversationMetaById)
   }
 }
 

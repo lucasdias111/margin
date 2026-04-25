@@ -1,15 +1,15 @@
 import type { User } from '$src/interfaces/User'
+import { SvelteMap } from 'svelte/reactivity'
 
 class UsersState {
-  byId = $state<Map<number, User>>(new Map())
+  byId = new SvelteMap<number, User>()
 
   add(user: User): void {
     this.byId.set(user.id, user)
-    this.byId = new Map(this.byId)
   }
 
   reset(): void {
-    this.byId = new Map()
+    this.byId.clear()
   }
 }
 

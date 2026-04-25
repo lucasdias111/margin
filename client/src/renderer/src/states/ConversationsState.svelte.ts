@@ -2,6 +2,7 @@ import type { Message } from '$src/interfaces/Messages'
 import type { Conversation } from '$src/interfaces/Conversation'
 import { navigationState } from '$src/states/NavigationState.svelte'
 import { View } from '$src/interfaces/View'
+import { SvelteMap } from 'svelte/reactivity'
 
 export interface ConversationMeta {
   hasMore: boolean
@@ -24,68 +25,68 @@ export const defaultMeta = (): ConversationMeta => ({
 })
 
 class ConversationsState {
-  private _byId = $state<Map<number, Conversation>>(new Map())
-  private _messagesByConversationId = $state<Map<number, Message[]>>(new Map())
-  private _conversationMetaById = $state<Map<number, ConversationMeta>>(new Map())
+  private _byId = new SvelteMap<number, Conversation>()
+  private _messagesByConversationId = new SvelteMap<number, Message[]>()
+  private _conversationMetaById = new SvelteMap<number, ConversationMeta>()
 
-  get byId(): Map<number, Conversation> {
+  get byId(): SvelteMap<number, Conversation> {
     return this._byId
   }
 
-  set byId(value: Map<number, Conversation>) {
-    this._byId = value
-  }
-
-  get messagesByConversationId(): Map<number, Message[]> {
+  get messagesByConversationId(): SvelteMap<number, Message[]> {
     return this._messagesByConversationId
   }
 
-  set messagesByConversationId(value: Map<number, Message[]>) {
-    this._messagesByConversationId = value
-  }
-
-  get conversationMetaById(): Map<number, ConversationMeta> {
+  get conversationMetaById(): SvelteMap<number, ConversationMeta> {
     return this._conversationMetaById
-  }
-
-  set conversationMetaById(value: Map<number, ConversationMeta>) {
-    this._conversationMetaById = value
   }
 
   appendMessage(msg: Message, incoming: boolean): void {
     const convId = msg.conversationId
+
+    if (!this._byId.has(convId) && msg.conversationType === 'CHANNEL') {
+      this._byId.set(convId, {
+        id: convId,
+        type: 'CHANNEL',
+        channelId: -1,
+        name: '',
+        createdAt: msg.createdAt
+      })
+    }
+
     const existing = this._messagesByConversationId.get(convId) ?? []
     this._messagesByConversationId.set(convId, [...existing, msg])
-    this._messagesByConversationId = new Map(this._messagesByConversationId)
 
     const meta = this._conversationMetaById.get(convId) ?? defaultMeta()
     this._conversationMetaById.set(convId, {
       ...meta,
       lastMessage: msg.content,
       lastMessageTime: msg.createdAt,
-      lastMessageIncoming: incoming,
-      unread: incoming && this.currentConversation?.id !== convId
+      lastMessageIncoming: incoming
     })
-    this._conversationMetaById = new Map(this._conversationMetaById)
   }
 
   markUnread(convId: number): void {
-    const meta = this._conversationMetaById.get(convId)
-    if (!meta) return
+    const meta = this._conversationMetaById.get(convId) ?? defaultMeta()
     this._conversationMetaById.set(convId, { ...meta, unread: true })
-    this._conversationMetaById = new Map(this._conversationMetaById)
   }
 
   markRead(convId: number, lastReadAt: string): void {
     const meta = this._conversationMetaById.get(convId)
     if (!meta) return
+    if (meta.unread === false && meta.lastReadAt === lastReadAt) return
     this._conversationMetaById.set(convId, { ...meta, unread: false, lastReadAt })
-    this._conversationMetaById = new Map(this._conversationMetaById)
   }
 
   reset(conversationId: number): void {
     this._messagesByConversationId.set(conversationId, [])
     this._conversationMetaById.set(conversationId, defaultMeta())
+  }
+
+  clear(): void {
+    this._byId.clear()
+    this._messagesByConversationId.clear()
+    this._conversationMetaById.clear()
   }
 
   get currentConversation(): Conversation | undefined {
@@ -105,8 +106,12 @@ class ConversationsState {
   }
 
   deleteMessage(message: Message): void {
-    const messages = this.messagesByConversationId.get(message.conversationId)
-    messages.filter((message) => message.id !== message.id)
+    const messages = this._messagesByConversationId.get(message.conversationId)
+    if (!messages) return
+    this._messagesByConversationId.set(
+      message.conversationId,
+      messages.filter((m) => m.id !== message.id)
+    )
   }
 }
 

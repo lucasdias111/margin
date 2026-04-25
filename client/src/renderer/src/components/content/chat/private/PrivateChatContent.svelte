@@ -5,9 +5,9 @@
   import ChatInput from '$src/components/common/chat/ChatInput.svelte'
   import MessagesContainer from '$src/components/common/chat/MessagesContainer.svelte'
   import PrivateChatHeader from '$src/components/content/chat/private/PrivateChatHeader.svelte'
-  import { notificationState } from '$src/states/NotificationState.svelte'
   import { navigationState } from '$src/states/NavigationState.svelte'
   import { sessionState } from '$src/states/SessionState.svelte'
+  import { untrack } from 'svelte'
 
   let messageInput = $state('')
   let chatInputRef = $state<ChatInput | null>(null)
@@ -20,9 +20,17 @@
   )
 
   $effect(() => {
-    if (navigationState.selectedUser) {
-      chatService.loadConversationForUser(navigationState.selectedUser)
-      chatInputRef?.focus()
+    const user = navigationState.selectedUser
+    if (user) {
+      untrack(() => {
+        chatService.loadConversationForUser(user)
+      })
+    }
+  })
+
+  $effect(() => {
+    if (navigationState.selectedUser && chatInputRef) {
+      untrack(() => chatInputRef.focus())
     }
   })
 
@@ -72,7 +80,7 @@
 
 <svelte:window
   onfocus={() => {
-    if (activeConv && notificationState.hasUnread(activeConv.id)) {
+    if (activeConv) {
       chatService.markConversationAsRead(activeConv.id)
     }
   }}
