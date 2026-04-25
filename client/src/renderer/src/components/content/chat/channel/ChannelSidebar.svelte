@@ -2,9 +2,9 @@
   import type { Channel } from '$src/interfaces/Channel'
   import { channelCallService } from '$src/services/call/ChannelCallService'
   import { callState } from '$src/states/CallState.svelte.js'
-  import { userState } from '$src/states/UserState.svelte'
-  import { spaceState } from '$src/states/SpaceState.svelte'
   import Icon from '$src/components/common/icons/Icon.svelte'
+  import { navigationState } from '$src/states/NavigationState.svelte'
+  import { sessionState } from '$src/states/SessionState.svelte'
 
   let {
     channel,
@@ -52,7 +52,10 @@
 
       <div class="voice-participants">
         {#each voiceParticipants as participant (participant.id)}
-          <div class="voice-participant" class:is-me={participant.id === userState.currentUser?.id}>
+          <div
+            class="voice-participant"
+            class:is-me={participant.id === sessionState.currentUser?.id}
+          >
             <span class="voice-dot"></span>
             <p class="voice-participant-name">{participant.displayName}</p>
           </div>
@@ -77,7 +80,7 @@
         <span class="section-title">Members</span>
       </div>
       <div class="members-empty">
-        {#each spaceState.selectedSpace?.members ?? [] as member (member.user.id)}
+        {#each navigationState.selectedSpace?.members ?? [] as member (member.user.id)}
           <div class="member-entry">
             <span class="presence-dot" class:online={member.user.isOnline}></span>
             <p class="member-entry-text" class:offline={!member.user.isOnline}>

@@ -1,10 +1,10 @@
 <script lang="ts">
-  import { userState } from '$src/states/UserState.svelte.js'
   import { nameWithCapInitials } from '$src/utils/NamesUtils'
   import Icon from '$src/components/common/icons/Icon.svelte'
+  import { sessionState } from '$src/states/SessionState.svelte'
 
-  let email: string = $derived(userState.currentUser.email)
-  let handle: string = $derived(userState.currentUser.handle)
+  let email: string = $derived(sessionState.currentUser.email)
+  let handle: string = $derived(sessionState.currentUser.handle)
 </script>
 
 <div class="settings-panel">

@@ -1,29 +1,38 @@
 <script lang="ts">
-  import { chatState } from '$src/states/ChatState.svelte.js'
   import UnreadNotificationBadge from '$src/components/common/chat/UnreadNotificationBadge.svelte'
   import { notificationState } from '$src/states/NotificationState.svelte.js'
-  import type { RecentChatUser } from '$src/interfaces/RecentChatUser'
+  import type { Conversation } from '$src/interfaces/Conversation'
+  import type { User } from '$src/interfaces/User'
+  import type { ConversationMeta } from '$src/states/ConversationsState.svelte.js'
   import UserAvatar from '$src/components/common/user/UserAvatar.svelte'
   import { formatTime } from '$src/utils/DateUtils'
+  import { usersService } from '$src/services/UsersService'
+
+  interface RecentUserEntry {
+    conversation: Conversation
+    user: User
+    meta: ConversationMeta
+  }
 
   interface Props {
-    recentUser: RecentChatUser
+    recentUser: RecentUserEntry
     isSelected: boolean
     isOnline: boolean
   }
 
   let { recentUser, isSelected = false, isOnline }: Props = $props()
-  const { user: chatUser, lastMessage, lastMessageTime } = $derived(recentUser)
+  const chatUser = $derived(recentUser.user)
+  const meta = $derived(recentUser.meta)
 
   const unreadCount = $derived(
-    notificationState.isDirectConversationUnread(recentUser.conversationId) ? 1 : 0
+    notificationState.isDirectConversationUnread(recentUser.conversation.id) ? 1 : 0
   )
 </script>
 
 <button
   class="user-button"
   class:selected={isSelected}
-  onclick={() => chatState.selectUser(chatUser)}
+  onclick={() => usersService.select(chatUser)}
 >
   <div class="avatar">
     {#if chatUser.profilePictureUrl}
@@ -39,12 +48,12 @@
   <div class="user-info">
     <div class="top-row">
       <span class="handle">{chatUser.displayName}</span>
-      {#if lastMessageTime}
-        <span class="timestamp">{formatTime(lastMessageTime)}</span>
+      {#if meta.lastMessageTime}
+        <span class="timestamp">{formatTime(meta.lastMessageTime)}</span>
       {/if}
     </div>
     <div class="bottom-row">
-      <span class="last-message">{lastMessage}</span>
+      <span class="last-message">{meta.lastMessage}</span>
       {#if unreadCount > 0}
         <UnreadNotificationBadge shouldShow={true} count={1} variant="inline" />
       {/if}

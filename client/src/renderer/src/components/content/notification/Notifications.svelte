@@ -1,5 +1,4 @@
 <script lang="ts">
-  import { chatState } from '$src/states/ChatState.svelte.js'
   import { chatService } from '$src/services/ChatService'
   import type { Notification } from '$src/interfaces/Notification'
   import { NotificationType } from '$src/interfaces/Notification'
@@ -9,6 +8,9 @@
   import Icon from '$src/components/common/icons/Icon.svelte'
   import { marginInviteService } from '$src/services/MarginInviteService'
   import { notificationState } from '$src/states/NotificationState.svelte'
+  import { View } from '$src/interfaces/View'
+  import { usersService } from '$src/services/UsersService'
+  import { navigationService } from '$src/services/NavigationService'
 
   const notifications = $derived(notificationState.notifications)
   const isLoading = $derived(!notificationState.notificationsLoaded)
@@ -42,15 +44,15 @@
     }
 
     if (notification.type === NotificationType.ANNOUNCEMENT) {
-      chatState.selectMargin(await marginService.getMargin(notification.marginId))
-      chatState.currentlySelectedContent = 'margin'
+      marginService.select(await marginService.getMargin(notification.marginId))
+      navigationService.setView(View.Margin)
     } else if (notification.type === NotificationType.MISSED_CALL) {
       await chatService.loadConversationForUser(notification.sender)
-      chatState.selectUser(notification.sender)
-      chatState.currentlySelectedContent = 'private'
+      usersService.select(notification.sender)
+      navigationService.setView(View.Private)
     } else if (notification.type === NotificationType.ADDED_TO_MARGIN) {
-      chatState.selectMargin(await marginService.getMargin(notification.marginId))
-      chatState.currentlySelectedContent = 'margin'
+      marginService.select(await marginService.getMargin(notification.marginId))
+      navigationService.setView(View.Margin)
     }
   }
 
@@ -113,16 +115,14 @@
               <div class="notification-date">{formatTimestamp(notification.createdAt)}</div>
             </div>
             <div class="invite-actions">
-              <button
-                class="accept-btn"
-                onclick={() => handleAcceptFromNotification(notification)}>Accept
-              </button
-              >
+              <button class="accept-btn" onclick={() => handleAcceptFromNotification(notification)}
+              >Accept
+              </button>
               <button
                 class="decline-btn"
-                onclick={() => handleDeclineFromNotification(notification)}>Decline
-              </button
-              >
+                onclick={() => handleDeclineFromNotification(notification)}
+              >Decline
+              </button>
             </div>
           </div>
         {:else}

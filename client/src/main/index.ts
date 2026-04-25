@@ -1,13 +1,4 @@
-import {
-  app,
-  BrowserWindow,
-  desktopCapturer,
-  ipcMain,
-  nativeImage,
-  safeStorage,
-  session,
-  shell
-} from 'electron'
+import { app, BrowserWindow, desktopCapturer, ipcMain, nativeImage, safeStorage, session, shell } from 'electron'
 import { join } from 'path'
 import { electronApp, is, optimizer } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
@@ -37,7 +28,6 @@ ipcMain.on('set-badge-count', (_event, count: number) => {
     }
   }
 })
-
 
 function writeEncrypted(filePath: string, plaintext: string): void {
   const encrypted = safeStorage.encryptString(plaintext)
@@ -184,7 +174,6 @@ function createWindow(): void {
 // initialization and is ready to create browser windows.
 // Some APIs can only be used after this event occurs.
 app.whenReady().then(() => {
-  // Set app user model id for windows
   electronApp.setAppUserModelId('com.electron')
 
   // Default open or close DevTools by F12 in development

@@ -1,5 +1,4 @@
 <script lang="ts">
-  import { chatState } from '$src/states/ChatState.svelte.js'
   import type { CreateMargin, Margin } from '$src/interfaces/Margin'
   import CreateMarginModal from '$src/components/content/manage/margin/modals/CreateMarginModal.svelte'
   import { marginService } from '$src/services/MarginService'
@@ -9,6 +8,8 @@
   import Icon from '$src/components/common/icons/Icon.svelte'
   import { marginInviteService } from '$src/services/MarginInviteService'
   import Button from '$src/components/common/buttons/Button.svelte'
+  import { navigationState } from '$src/states/NavigationState.svelte'
+  import { marginState } from '$src/states/MarginState.svelte'
 
   let open = $state(false)
   let createMarginOpen = $state(false)
@@ -22,7 +23,6 @@
     joinError = null
     try {
       const margin = await marginInviteService.acceptLinkInvite(joinCode.trim())
-      chatState.selectMargin(margin)
       marginService.addNewMargin(margin)
       joinCode = ''
       open = false
@@ -34,7 +34,7 @@
   }
 
   function selectMargin(margin: Margin): void {
-    chatState.selectMargin(margin)
+    marginService.select(margin)
     open = false
   }
 
@@ -45,14 +45,13 @@
 
   async function createMargin(createRequest: CreateMargin): Promise<void> {
     const newMargin = await marginService.createMargin(createRequest)
-    chatState.selectMargin(newMargin)
     marginService.addNewMargin(newMargin)
     close()
   }
 
   const unreadPerMargin = $derived(
     new Map(
-      chatState.margins.map((m) => [
+      marginState.margins.map((m) => [
         m.marginId,
         notificationState.getTotalUnreadForMargin(m.marginId)
       ])
@@ -72,11 +71,11 @@
   {#if open}
     <div class="dropdown">
       <div class="margin-list">
-        {#each chatState.margins as margin (margin.marginId)}
+        {#each marginState.margins as margin (margin.marginId)}
           {@const unread = unreadPerMargin.get(margin.marginId) ?? 0}
           <button
             class="margin-item"
-            class:active={chatState.selectedMargin?.marginId === margin.marginId}
+            class:active={navigationState.selectedMargin?.marginId === margin.marginId}
             onclick={() => selectMargin(margin)}
           >
             <span class="margin-avatar">{margin.marginName?.[0]?.toUpperCase() ?? '?'}</span>

@@ -1,14 +1,14 @@
 <script lang="ts">
   import type { Message, MessageReaction } from '$src/interfaces/Messages'
   import { tick } from 'svelte'
-  import { userState } from '$src/states/UserState.svelte.js'
   import { useWebsocketSvelte } from '$src/composables/useWebsocket.svelte'
   import { WebSocketMessageType } from '$src/interfaces/WebSocketMessageType'
   import type { WebSocketMessage } from '$src/interfaces/WebSocketMessages'
   import { encryptionService } from '$src/services/EncryptionService'
   import MessageBubble from '$src/components/common/chat/MessageBubble.svelte'
   import { chatService } from '$src/services/ChatService'
-  import { conversationState } from '$src/states/ConversationState.svelte'
+  import { conversationsState, defaultMeta } from '$src/states/ConversationsState.svelte.js'
+  import { sessionState } from '$src/states/SessionState.svelte'
 
   let {
     messages,
@@ -28,16 +28,20 @@
   let isPrepending = $state(false)
   let isAtBottom = $state(true)
   let initialScrollDone = false
+  const activeMeta = $derived(
+    conversationsState.conversationMetaById.get(conversationsState.currentConversation?.id) ??
+    defaultMeta()
+  )
 
   async function handleIncomingEditedMessage(data: WebSocketMessage<Message>): Promise<void> {
     const edited = data.payload
     const existing = messages.find((m) => m?.id === edited.id)
     if (!existing) return
 
-    if (conversationState.currentConversation.type === 'DIRECT') {
+    if (conversationsState.currentConversation.type === 'DIRECT') {
       existing.content = await encryptionService.decryptMessage(
         edited.content,
-        edited.user.id !== userState.currentUser.id
+        edited.user.id !== sessionState.currentUser.id
       )
     } else {
       existing.content = edited.content
@@ -70,11 +74,11 @@
   }
 
   function onEditMessage(message: Message, editedContent: string): void {
-    if (conversationState.currentConversation.type === 'DIRECT') {
+    if (conversationsState.currentConversation.type === 'DIRECT') {
       chatService.editMessagePrivateMessage(
         message,
         editedContent,
-        conversationState.currentConversation.otherUserId
+        conversationsState.currentConversation.otherUserId
       )
     } else {
       chatService.editChannelMessage(message, editedContent)
@@ -86,12 +90,7 @@
     const { scrollTop, scrollHeight, clientHeight } = messagesContainer
     isAtBottom = scrollHeight - scrollTop - clientHeight < 60
 
-    if (
-      scrollTop < 20 &&
-      conversationState.hasMore &&
-      !conversationState.isLoadingMore &&
-      !isPrepending
-    ) {
+    if (scrollTop < 20 && activeMeta.hasMore && !activeMeta.isLoading) {
       void loadOlderMessages()
     }
   }
@@ -143,9 +142,9 @@
   }
 
   function isMessageRead(message: Message): boolean {
-    const conv = conversationState.currentConversation
+    const conv = conversationsState.currentConversation
     if (conv?.type !== 'DIRECT') return false
-    if (message.user.id !== userState.currentUser?.id) return false
+    if (message.user.id !== sessionState.currentUser?.id) return false
     if (conv.otherUserReadAt == null) return false
     return new Date(message.createdAt) <= new Date(conv.otherUserReadAt)
   }
@@ -173,7 +172,7 @@
             <div class="spinner small"></div>
             <span>Loading older messages…</span>
           </div>
-        {:else if !conversationState.hasMore}
+        {:else if !activeMeta.hasMore}
           <div class="top-status__start">
             <span>Beginning of conversation</span>
           </div>
@@ -190,7 +189,7 @@
 
           <div
             class="message-row"
-            class:sent={message.user.id === userState.currentUser?.id}
+            class:sent={message.user.id === sessionState.currentUser?.id}
             class:clumped={!showMeta}
           >
             <MessageBubble

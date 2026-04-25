@@ -1,7 +1,7 @@
-import { userState } from '$src/states/UserState.svelte'
+import { sessionState } from '$src/states/SessionState.svelte'
 
 export function nameWithCapInitials(): string {
-  const names = userState.currentUser.displayName.split(' ')
+  const names = sessionState.currentUser.displayName.split(' ')
 
   return names.map((word) => word[0].toUpperCase() + word.slice(1)).join(' ')
 }

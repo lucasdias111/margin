@@ -1,10 +1,10 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/svelte'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import Navigation from './Navigation.svelte'
-import { userState } from '$src/states/UserState.svelte.js'
 import { chatService } from '$src/services/ChatService'
 import { authenticationService } from '$src/services/AuthenticationService'
 import * as svelteRouter from 'svelte-spa-router'
+import { sessionState } from '$src/states/SessionState.svelte'
 
 vi.mock('$src/states/ChatState.svelte.js', () => ({
   chatState: {
@@ -73,7 +73,7 @@ vi.mock('$src/actions/clickOutside', () => ({
 describe('Navigation', () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    userState.currentUser = {
+    sessionState.currentUser = {
       id: 1,
       displayName: 'Lucas',
       profilePictureUrl: '/avatar.png'
@@ -120,7 +120,7 @@ describe('Navigation', () => {
   })
 
   it('does not render avatar button when no user is logged in', () => {
-    userState.currentUser = null as any
+    sessionState.currentUser = null as any
     render(Navigation)
 
     const avatarButton = document.querySelector('.avatar-btn')
@@ -169,7 +169,7 @@ describe('Navigation', () => {
   })
 
   it('does not log out when currentUser has no id', async () => {
-    userState.currentUser = { id: null } as any
+    sessionState.currentUser = { id: null } as any
     render(Navigation)
 
     await fireEvent.click(document.querySelector('.avatar-btn')!)

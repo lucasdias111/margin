@@ -1,9 +1,11 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { spaceState } from '../SpaceState.svelte'
-import { chatState } from '$src/states/ChatState.svelte'
 import type { User } from '$src/interfaces/User'
 import type { Space } from '$src/interfaces/Space'
 import type { Channel } from '$src/interfaces/Channel'
+import { channelService } from '$src/services/ChannelService'
+import { navigationState } from '$src/states/NavigationState.svelte'
+import { spaceService } from '$src/services/SpaceService'
 
 vi.mock('$src/states/ChatState.svelte', () => ({
   chatState: {
@@ -50,8 +52,8 @@ function buildSpace(overrides: Partial<Space> = {}): Space {
 describe('SpaceState', () => {
   beforeEach(() => {
     spaceState.setSpaces([])
-    spaceState.setSelectedSpace(null)
-    chatState.selectedChannel = null
+    navigationState.selectedSpace = null
+    navigationState.selectedChannel = null
   })
 
   describe('setSpaces', () => {
@@ -68,16 +70,16 @@ describe('SpaceState', () => {
     it('sets selected space', () => {
       const space = buildSpace({ spaceId: 1 })
 
-      spaceState.setSelectedSpace(space)
+      navigationState.selectedSpace = space
 
-      expect(spaceState.selectedSpace?.spaceId).toBe(1)
+      expect(navigationState.selectedSpace?.spaceId).toBe(1)
     })
 
     it('sets to null', () => {
-      spaceState.setSelectedSpace(buildSpace())
-      spaceState.setSelectedSpace(null)
+      navigationState.selectedSpace = buildSpace()
+      navigationState.selectedSpace = null
 
-      expect(spaceState.selectedSpace).toBeNull()
+      expect(navigationState.selectedSpace).toBeNull()
     })
   })
 
@@ -87,7 +89,7 @@ describe('SpaceState', () => {
       const channel = buildChannel({ id: 10, voiceParticipants: [] })
       spaceState.setSpaces([buildSpace({ channels: [channel] })])
 
-      spaceState.updateVoiceParticipant(10, user, true)
+      channelService.updateVoiceParticipant(10, user, true)
 
       const updated = spaceState.spaces[0].channels![0]
       expect(updated.voiceParticipants).toHaveLength(1)
@@ -99,7 +101,7 @@ describe('SpaceState', () => {
       const channel = buildChannel({ id: 10, voiceParticipants: [user] })
       spaceState.setSpaces([buildSpace({ channels: [channel] })])
 
-      spaceState.updateVoiceParticipant(10, user, false)
+      channelService.updateVoiceParticipant(10, user, false)
 
       const updated = spaceState.spaces[0].channels![0]
       expect(updated.voiceParticipants).toHaveLength(0)
@@ -111,39 +113,39 @@ describe('SpaceState', () => {
       spaceState.setSpaces([buildSpace({ channels: [channel] })])
 
       const updatedUser = buildUser({ id: 5, displayName: 'Updated' })
-      spaceState.updateVoiceParticipant(10, updatedUser, true)
+      channelService.updateVoiceParticipant(10, updatedUser, true)
 
       const updated = spaceState.spaces[0].channels![0]
       expect(updated.voiceParticipants).toHaveLength(1)
       expect(updated.voiceParticipants![0].displayName).toBe('Updated')
     })
 
-    it('syncs chatState.selectedChannel when it matches', () => {
+    it('syncs navigationState.selectedChannel when it matches', () => {
       const user = buildUser({ id: 5 })
       const channel = buildChannel({ id: 10, voiceParticipants: [] })
       spaceState.setSpaces([buildSpace({ channels: [channel] })])
-      chatState.selectedChannel = buildChannel({ id: 10, voiceParticipants: [] })
+      navigationState.selectedChannel = buildChannel({ id: 10, voiceParticipants: [] })
 
-      spaceState.updateVoiceParticipant(10, user, true)
+      channelService.updateVoiceParticipant(10, user, true)
 
-      expect(chatState.selectedChannel?.voiceParticipants).toHaveLength(1)
+      expect(navigationState.selectedChannel?.voiceParticipants).toHaveLength(1)
     })
 
-    it('does not sync chatState.selectedChannel when id does not match', () => {
+    it('does not sync navigationState.selectedChannel when id does not match', () => {
       const user = buildUser({ id: 5 })
       const channel = buildChannel({ id: 10, voiceParticipants: [] })
       spaceState.setSpaces([buildSpace({ channels: [channel] })])
-      chatState.selectedChannel = buildChannel({ id: 99, voiceParticipants: [] })
+      navigationState.selectedChannel = buildChannel({ id: 99, voiceParticipants: [] })
 
-      spaceState.updateVoiceParticipant(10, user, true)
+      channelService.updateVoiceParticipant(10, user, true)
 
-      expect(chatState.selectedChannel?.voiceParticipants).toHaveLength(0)
+      expect(navigationState.selectedChannel?.voiceParticipants).toHaveLength(0)
     })
 
     it('handles channel not found in any space', () => {
       spaceState.setSpaces([buildSpace({ channels: [buildChannel({ id: 10 })] })])
 
-      expect(() => spaceState.updateVoiceParticipant(999, buildUser(), true)).not.toThrow()
+      expect(() => channelService.updateVoiceParticipant(999, buildUser(), true)).not.toThrow()
     })
 
     it('handles undefined voiceParticipants on join', () => {
@@ -151,7 +153,7 @@ describe('SpaceState', () => {
       channel.voiceParticipants = undefined
       spaceState.setSpaces([buildSpace({ channels: [channel] })])
 
-      spaceState.updateVoiceParticipant(10, buildUser({ id: 5 }), true)
+      channelService.updateVoiceParticipant(10, buildUser({ id: 5 }), true)
 
       expect(spaceState.spaces[0].channels![0].voiceParticipants).toHaveLength(1)
     })
@@ -162,7 +164,7 @@ describe('SpaceState', () => {
       const user = buildUser({ id: 5 })
       spaceState.setSpaces([buildSpace({ spaceId: 1, members: [] })])
 
-      spaceState.addMemberToSpace(1, user)
+      spaceService.addMemberToSpace(1, user)
 
       expect(spaceState.spaces[0].members).toHaveLength(1)
       expect(spaceState.spaces[0].members[0].user.id).toBe(5)
@@ -174,7 +176,7 @@ describe('SpaceState', () => {
       const existingMember = { user, spaceId: 1, role: 'MEMBER', joinedAt: '2025-01-01T00:00:00Z' }
       spaceState.setSpaces([buildSpace({ spaceId: 1, members: [existingMember] })])
 
-      spaceState.addMemberToSpace(1, user)
+      spaceService.addMemberToSpace(1, user)
 
       expect(spaceState.spaces[0].members).toHaveLength(1)
     })
@@ -182,7 +184,7 @@ describe('SpaceState', () => {
     it('does nothing when space is not found', () => {
       spaceState.setSpaces([buildSpace({ spaceId: 1, members: [] })])
 
-      spaceState.addMemberToSpace(99, buildUser({ id: 5 }))
+      spaceService.addMemberToSpace(99, buildUser({ id: 5 }))
 
       expect(spaceState.spaces[0].members).toHaveLength(0)
     })
@@ -190,11 +192,11 @@ describe('SpaceState', () => {
     it('syncs selectedSpace when it matches', () => {
       const space = buildSpace({ spaceId: 1, members: [] })
       spaceState.setSpaces([space])
-      spaceState.setSelectedSpace(space)
+      navigationState.selectedSpace = space
 
-      spaceState.addMemberToSpace(1, buildUser({ id: 5 }))
+      spaceService.addMemberToSpace(1, buildUser({ id: 5 }))
 
-      expect(spaceState.selectedSpace?.members).toHaveLength(1)
+      expect(navigationState.selectedSpace?.members).toHaveLength(1)
     })
 
     it('does not sync selectedSpace when id does not match', () => {
@@ -202,11 +204,11 @@ describe('SpaceState', () => {
         buildSpace({ spaceId: 1, members: [] }),
         buildSpace({ spaceId: 2, members: [] })
       ])
-      spaceState.setSelectedSpace(buildSpace({ spaceId: 2, members: [] }))
+      navigationState.selectedSpace = buildSpace({ spaceId: 2, members: [] })
 
-      spaceState.addMemberToSpace(1, buildUser({ id: 5 }))
+      spaceService.addMemberToSpace(1, buildUser({ id: 5 }))
 
-      expect(spaceState.selectedSpace?.members).toHaveLength(0)
+      expect(navigationState.selectedSpace?.members).toHaveLength(0)
     })
   })
 })

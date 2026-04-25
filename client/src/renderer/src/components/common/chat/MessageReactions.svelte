@@ -1,6 +1,6 @@
 <script lang="ts">
   import type { Message } from '$src/interfaces/Messages'
-  import { userState } from '$src/states/UserState.svelte.js'
+  import { sessionState } from '$src/states/SessionState.svelte'
 
   interface Props {
     message: Message
@@ -27,7 +27,7 @@
 {#if grouped.length > 0}
   <div class="reactions">
     {#each grouped as [emoji, data] (emoji)}
-      {@const isMine = data.userIds.includes(userState.currentUser?.id ?? -1)}
+      {@const isMine = data.userIds.includes(sessionState.currentUser?.id ?? -1)}
       <button
         class="pill"
         class:mine={isMine}

@@ -1,14 +1,16 @@
 import { notificationState } from '$src/states/NotificationState.svelte'
-import { chatState } from '$src/states/ChatState.svelte'
-import { userState } from '$src/states/UserState.svelte'
+import { sessionState } from '$src/states/SessionState.svelte'
 import type { Message } from '$src/interfaces/Messages'
 import type { Notification } from '$src/interfaces/Notification'
 import { authenticatedGet, authenticatedPost } from '$src/services/api'
 import { NotificationSounds } from '$src/utils/NotificationSounds'
 import { marginService } from '$src/services/MarginService'
-import { conversationService } from '$src/services/ConversationService'
 import type { Channel } from '$src/interfaces/Channel'
-import { userService } from '$src/services/UserService'
+import { usersService } from '$src/services/UsersService'
+import { View } from '$src/interfaces/View'
+import { channelService } from '$src/services/ChannelService'
+import { navigationService } from '$src/services/NavigationService'
+import { navigationState } from '$src/states/NavigationState.svelte'
 
 class NotificationService {
   private sounds: Record<string, HTMLAudioElement> = {}
@@ -37,7 +39,7 @@ class NotificationService {
   }
 
   handleIncomingMessage = (message: Message): void => {
-    if (message.user.id === userState.currentUser.id) return
+    if (message.user.id === sessionState.currentUser?.id) return
 
     const isActive = this.isActiveConversation(message)
     const isWindowFocused = document.hasFocus()
@@ -106,13 +108,13 @@ class NotificationService {
       window.focus()
       this.clearNotificationsForConversation(conversationId)
       if (message.conversationType === 'CHANNEL') {
-        chatState.currentlySelectedContent = 'margin'
-        chatState.selectMargin(await marginService.getMargin(message.marginId))
-        const channel: Channel = await conversationService.getChannelById(message.conversationId)
-        chatState.selectChannel(channel)
+        navigationService.setView(View.Margin)
+        marginService.select(await marginService.getMargin(message.marginId))
+        const channel: Channel = await channelService.getChannelById(message.conversationId)
+        channelService.select(channel)
       } else {
-        chatState.currentlySelectedContent = 'private'
-        chatState.selectUser(await userService.getById(message.user.id))
+        navigationService.setView(View.Private)
+        usersService.select(await usersService.getById(message.user.id))
       }
     }
   }
@@ -128,10 +130,10 @@ class NotificationService {
   private isActiveConversation(message: Message): boolean {
     switch (message.conversationType) {
       case 'DIRECT':
-        return chatState.selectedUser?.id === message.user.id
+        return navigationState.selectedUser?.id === message.user.id
       case 'CHANNEL':
       case 'GROUP':
-        return chatState.selectedChannel?.conversationId === message.conversationId
+        return navigationState.selectedChannel?.conversationId === message.conversationId
       default:
         return false
     }

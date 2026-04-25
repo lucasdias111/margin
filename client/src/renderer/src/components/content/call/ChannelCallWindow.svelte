@@ -5,11 +5,11 @@
   import { cubicInOut } from 'svelte/easing'
   import { callState } from '$src/states/CallState.svelte'
   import { channelCallService } from '$src/services/call/ChannelCallService'
-  import { userState } from '$src/states/UserState.svelte'
-  import { chatState } from '$src/states/ChatState.svelte'
   import CallLayout from '$src/components/content/call/CallLayout.svelte'
   import CallPipWidget from '$src/components/content/call/CallPipWidget.svelte'
   import type { CallParticipant } from '$src/interfaces/Calls'
+  import { navigationState } from '$src/states/NavigationState.svelte'
+  import { sessionState } from '$src/states/SessionState.svelte'
 
   const localStream = $derived(callState.groupCallState?.session?.localStream ?? null)
 
@@ -20,9 +20,9 @@
   })
 
   const localParticipant = $derived<CallParticipant>({
-    id: userState.currentUser?.id ?? -1,
+    id: sessionState.currentUser?.id ?? -1,
     displayName: 'You',
-    profilePictureUrl: userState.currentUser?.profilePictureUrl ?? null,
+    profilePictureUrl: sessionState.currentUser?.profilePictureUrl ?? null,
     stream: localVideoStream ?? localStream,
     isVideoEnabled: callState.groupCallState?.isVideoEnabled ?? false,
     isScreenSharing: callState.groupCallState?.isScreenSharing ?? false,
@@ -53,7 +53,7 @@
       null
   )
 
-  const channelName = $derived(chatState.selectedChannel?.name ?? 'Voice channel')
+  const channelName = $derived(navigationState.selectedChannel?.name ?? 'Voice channel')
 
   onDestroy(() => channelCallService.endChannelCall())
 </script>

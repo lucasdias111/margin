@@ -1,9 +1,7 @@
 <script lang="ts">
-  import { chatState } from '$src/states/ChatState.svelte.js'
-  import type { ContentType } from '$src/interfaces/Content'
+  import { type ContentType, View } from '$src/interfaces/View'
   import UnreadNotificationBadge from '$src/components/common/chat/UnreadNotificationBadge.svelte'
   import { notificationState } from '$src/states/NotificationState.svelte.js'
-  import { userState } from '$src/states/UserState.svelte.js'
   import UserAvatar from '$src/components/common/user/UserAvatar.svelte'
   import { chatService } from '$src/services/ChatService'
   import { authenticationService } from '$src/services/AuthenticationService'
@@ -11,15 +9,17 @@
   import { clickOutside } from '$src/actions/clickOutside'
   import Icon from '$src/components/common/icons/Icon.svelte'
   import BugReportModal from '$src/components/common/modals/BugReportModal.svelte'
-  import { userService } from '$src/services/UserService'
+  import { usersService } from '$src/services/UsersService'
   import { isElectron } from '$src/utils/platformUtils'
+  import { navigationState } from '$src/states/NavigationState.svelte'
+  import { sessionState } from '$src/states/SessionState.svelte'
 
   function onContentSelected(selectedContent: ContentType): void {
     chatService.selectContent(selectedContent)
   }
 
   async function handleLogout(): Promise<void> {
-    if (!userState.currentUser?.id) return
+    if (!sessionState.currentUser?.id) return
     await authenticationService.logoutUser()
     await push('/')
   }
@@ -31,7 +31,7 @@
 </script>
 
 <div class="navigation">
-  {#if userState.currentUser}
+  {#if sessionState.currentUser}
     <div class="avatar-wrapper" use:clickOutside={() => (showDropdown = false)}>
       <button
         class="avatar-btn"
@@ -40,7 +40,7 @@
         }}
       >
         <UserAvatar
-          profilePictureUrl={userState.currentUser.profilePictureUrl}
+          profilePictureUrl={sessionState.currentUser.profilePictureUrl}
           width={40}
           height={40}
         />
@@ -48,7 +48,7 @@
       {#if showDropdown}
         <div class="dropdown">
           <div class="dropdown-header">
-            <span class="dropdown-displayname">{userState.currentUser.displayName}</span>
+            <span class="dropdown-displayname">{sessionState.currentUser.displayName}</span>
           </div>
           <div class="divider"></div>
           <button
@@ -57,7 +57,7 @@
               onContentSelected('settings')
               showDropdown = false
             }}
-            class:selected={chatState.currentlySelectedContent === 'settings'}
+            class:selected={navigationState.view === View.Settings}
             aria-label="Settings"
             title="Settings"
           >
@@ -104,7 +104,7 @@
         open={bugReportOpen}
         onClose={() => (bugReportOpen = false)}
         onSubmit={async (report) => {
-          await userService.reportBug(report.title, report.description)
+          await usersService.reportBug(report.title, report.description)
         }}
       />
     </div>
@@ -114,7 +114,7 @@
     <button
       class="nav-btn"
       onclick={() => onContentSelected('notifications')}
-      class:selected={chatState.currentlySelectedContent === 'notifications'}
+      class:selected={navigationState.view === View.Notifications}
       aria-label="Notifications"
       title="Notifications"
     >
@@ -125,7 +125,7 @@
     <button
       class="nav-btn"
       onclick={() => onContentSelected('private')}
-      class:selected={chatState.currentlySelectedContent === 'private'}
+      class:selected={navigationState.view === View.Private}
       aria-label="Private conversations"
       title="Private conversations"
     >
@@ -139,7 +139,7 @@
     <button
       class="nav-btn"
       onclick={() => onContentSelected('margin')}
-      class:selected={chatState.currentlySelectedContent === 'margin'}
+      class:selected={navigationState.view === View.Margin}
       aria-label="Spaces"
       title="Spaces"
     >

@@ -1,32 +1,48 @@
 <script lang="ts">
-  import { userListState } from '$src/states/UserListState.svelte.js'
-  import { chatState } from '$src/states/ChatState.svelte.js'
   import UserEntry from '$src/components/content/sidebar/sidebar_list/UserEntry.svelte'
   import UserAvatar from '$src/components/common/user/UserAvatar.svelte'
   import Icon from '$src/components/common/icons/Icon.svelte'
   import { chatService } from '$src/services/ChatService'
+  import { navigationState } from '$src/states/NavigationState.svelte'
+  import { conversationsState, defaultMeta } from '$src/states/ConversationsState.svelte.js'
+  import { isDirectConversation } from '$src/interfaces/Conversation'
+  import { usersState } from '$src/states/UsersState.svelte'
+  import { conversationInviteService } from '$src/states/UserListState.svelte'
 
   let { searchUser = '' }: { searchUser?: string } = $props()
 
-  let filteredUsers = $derived(
-    userListState.recentUsers.filter((recentUser) =>
-      recentUser.user.displayName.toLowerCase().includes((searchUser ?? '').toLowerCase())
-    )
+  const recentUsers = $derived(
+    [...conversationsState.byId.values()]
+      .filter(isDirectConversation)
+      .map((conv) => {
+        const user = usersState.byId.get(conv.otherUserId)
+        if (!user) return null
+        const meta = conversationsState.conversationMetaById.get(conv.id) ?? defaultMeta()
+        return { conversation: conv, user, meta }
+      })
+      .filter((x) => x !== null)
+      .sort((a, b) => {
+        if (!a!.meta.lastMessageTime) return 1
+        if (!b!.meta.lastMessageTime) return -1
+        return (
+          new Date(b!.meta.lastMessageTime).getTime() - new Date(a!.meta.lastMessageTime).getTime()
+        )
+      })
   )
 </script>
 
 <div class="chat_overview">
-  {#if userListState.pendingInvites.length > 0}
+  {#if conversationInviteService.pendingInvites.length > 0}
     <div class="section-label">Pending invites</div>
     <ul class="invite-list">
-      {#each userListState.pendingInvites as invite (invite.conversation.id)}
+      {#each conversationInviteService.pendingInvites as invite (invite.conversation.id)}
         <li class="invite-entry">
-          <UserAvatar profilePictureUrl={invite.fromUser.profilePictureUrl} size={30} />
+          <UserAvatar profilePictureUrl={invite.fromUser.profilePictureUrl} height={30} />
           <span class="invite-name">{invite.fromUser.displayName ?? invite.fromUser.handle}</span>
           <div class="invite-actions">
             <button
               class="accept-btn"
-              onclick={() => chatService.acceptConversationInvite(invite.conversation.id, invite.fromUser)}
+              onclick={() => chatService.acceptConversationInvite(invite)}
             >
               Accept
             </button>
@@ -43,17 +59,17 @@
     <div class="section-divider"></div>
   {/if}
 
-  {#if filteredUsers.length > 0}
+  {#if recentUsers.length > 0}
     <ul>
-      {#each filteredUsers as recentUser (recentUser.user.id)}
+      {#each recentUsers as recentUser (recentUser.user.id)}
         <UserEntry
-          {recentUser}
           isOnline={recentUser.user.isOnline}
-          isSelected={chatState.selectedUser?.id === recentUser.user.id}
+          isSelected={navigationState.selectedUser?.id === recentUser.user.id}
+          {recentUser}
         />
       {/each}
     </ul>
-  {:else if userListState.pendingInvites.length === 0}
+  {:else if conversationInviteService.pendingInvites.length === 0}
     <div class="empty-state">
       <Icon name="users" />
       <p class="empty-state-text">

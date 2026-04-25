@@ -1,21 +1,27 @@
 <script lang="ts">
-  import { chatState } from '$src/states/ChatState.svelte.js'
-  import { conversationState } from '$src/states/ConversationState.svelte.js'
+  import { conversationsState, defaultMeta } from '$src/states/ConversationsState.svelte.js'
   import { chatService } from '$src/services/ChatService'
   import { callService } from '$src/services/call/CallService'
-  import { userState } from '$src/states/UserState.svelte.js'
   import ChatInput from '$src/components/common/chat/ChatInput.svelte'
   import MessagesContainer from '$src/components/common/chat/MessagesContainer.svelte'
   import PrivateChatHeader from '$src/components/content/chat/private/PrivateChatHeader.svelte'
-  import Icon from '$src/components/common/icons/Icon.svelte'
   import { notificationState } from '$src/states/NotificationState.svelte'
+  import { navigationState } from '$src/states/NavigationState.svelte'
+  import { sessionState } from '$src/states/SessionState.svelte'
 
   let messageInput = $state('')
   let chatInputRef = $state<ChatInput | null>(null)
+  const activeConv = $derived(conversationsState.currentConversation)
+  const activeMessages = $derived(
+    conversationsState.messagesByConversationId.get(activeConv?.id) ?? []
+  )
+  const activeMeta = $derived(
+    conversationsState.conversationMetaById.get(activeConv?.id) ?? defaultMeta()
+  )
 
   $effect(() => {
-    if (chatState.selectedUser) {
-      chatService.loadConversationForUser(chatState.selectedUser)
+    if (navigationState.selectedUser) {
+      chatService.loadConversationForUser(navigationState.selectedUser)
       chatInputRef?.focus()
     }
   })
@@ -24,70 +30,65 @@
     event.preventDefault()
 
     if (
-      !chatState.selectedUser ||
+      !navigationState.selectedUser ||
       !messageInput.trim() ||
-      !userState.currentUser ||
-      conversationState.isLoading
+      !sessionState.currentUser ||
+      activeMeta.isLoading
     )
       return
 
     const messageContent = messageInput
     messageInput = ''
 
-    if (conversationState.currentConversation) {
+    if (activeConv) {
       const message = await chatService.sendMessage(
-        userState.currentUser,
-        conversationState.currentConversation,
+        sessionState.currentUser,
+        activeConv,
         messageContent
       )
-      conversationState.messages = [...conversationState.messages, message]
+      conversationsState.appendMessage(message, false)
     } else {
-      const { conversation, message } = await chatService.sendMessageAndStartConversation(
-        userState.currentUser,
-        chatState.selectedUser.id,
+      const { message } = await chatService.sendMessageAndStartConversation(
+        sessionState.currentUser,
+        navigationState.selectedUser.id,
         messageContent
       )
-      conversationState.selectConversation(conversation)
-      conversationState.messages = [message]
+      conversationsState.appendMessage(message, false)
     }
   }
 
   function startCall(): void {
-    if (chatState.selectedUser) {
-      callService.startCall(null, chatState.selectedUser, false, false)
+    if (navigationState.selectedUser) {
+      callService.startCall(null, navigationState.selectedUser, false, false)
     }
   }
 
   function handleVideoCall(): void {
-    if (chatState.selectedUser) {
-      callService.startCall(null, chatState.selectedUser, false, true)
+    if (navigationState.selectedUser) {
+      callService.startCall(null, navigationState.selectedUser, false, true)
     }
   }
 </script>
 
 <svelte:window
   onfocus={() => {
-    if (
-      chatState.selectedUser &&
-      conversationState.currentConversation &&
-      notificationState.hasUnread(conversationState.currentConversation.id)
-    ) {
-      chatService.markConversationAsRead(conversationState.currentConversation.id)
+    if (activeConv && notificationState.hasUnread(activeConv.id)) {
+      chatService.markConversationAsRead(activeConv.id)
     }
   }}
 />
 
 <div class="chat">
-  {#if chatState.selectedUser}
+  {#if navigationState.selectedUser}
     <PrivateChatHeader
       handleStartCall={startCall}
       handleStartVideoCall={handleVideoCall}
-      isLoading={conversationState.isLoading}
+      isLoading={activeMeta.isLoading}
     />
     <div class="chat-background">
       <MessagesContainer
-        messages={conversationState.messages}
-        isLoading={conversationState.isLoading}
+        messages={activeMessages}
+        isLoading={activeMeta.isLoading}
         isDirectMessage={true}
       />
     </div>
@@ -97,14 +98,7 @@
       bind:messageInput
       onSubmit={handleSubmitMessage}
     />
-  {:else}
-    <div class="empty-state">
-      <div class="empty-state-icon">
-        <Icon name="messages" size={40} />
-      </div>
-      <p class="empty-state-text">Select a conversation to start chatting</p>
-    </div>
-  {/if}
+  {:else}{/if}
 </div>
 
 <style>

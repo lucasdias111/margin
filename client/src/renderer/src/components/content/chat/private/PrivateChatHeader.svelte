@@ -1,9 +1,9 @@
 <script lang="ts">
   import voiceCallIcon from '$src/resources/voiceCall.png'
   import videoCallIcon from '$src/resources/videoCall.png'
-  import { chatState } from '$src/states/ChatState.svelte.js'
   import ChatHeaderShell from '$src/components/common/chat/ChatHeaderShell.svelte'
   import UserAvatar from '$src/components/common/user/UserAvatar.svelte'
+  import { navigationState } from '$src/states/NavigationState.svelte'
 
   interface Props {
     handleStartCall(): void
@@ -15,21 +15,21 @@
 
   let { handleStartCall, handleStartVideoCall, isLoading = false }: Props = $props()
 
-  const isOnline = $derived(chatState.selectedUser?.isOnline ?? false)
+  const isOnline = $derived(navigationState.selectedUser?.isOnline ?? false)
 </script>
 
 <ChatHeaderShell {isLoading}>
   {#snippet left()}
     <div class="avatar-wrapper">
       <UserAvatar
-        profilePictureUrl={chatState.selectedUser.profilePictureUrl}
+        profilePictureUrl={navigationState.selectedUser.profilePictureUrl}
         width={38}
         height={38}
       />
       <span class="presence-dot" class:online={isOnline}></span>
     </div>
     <div class="user-info">
-      <span class="handle">{chatState.selectedUser.displayName}</span>
+      <span class="handle">{navigationState.selectedUser.displayName}</span>
       <span class="status-label" class:online={isOnline}>
         {isOnline ? 'Online' : 'Offline'}
       </span>

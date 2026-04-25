@@ -1,11 +1,9 @@
 <script lang="ts">
-  import { type Margin, type MarginMember, MarginRole } from '$src/interfaces/Margin'
+  import { type Margin, type MarginMember, MarginRole, roleRank } from '$src/interfaces/Margin'
   import AddMarginMemberModal from '$src/components/content/manage/margin/modals/AddMarginMemberModal.svelte'
   import ListView from '$src/components/common/datatables/ListView.svelte'
   import { formatTimestamp } from '$src/utils/DateUtils'
   import type { User } from '$src/interfaces/User'
-  import { userState } from '$src/states/UserState.svelte'
-  import { roleRank } from '$src/interfaces/Margin'
   import { errorService } from '$src/services/ErrorService'
   import { marginInviteService } from '$src/services/MarginInviteService'
   import Button from '$src/components/common/buttons/Button.svelte'
@@ -44,7 +42,7 @@
     const value = (e.currentTarget as HTMLSelectElement).value as MarginRole
     if (
       roleRank[value] > roleRank[member.role] &&
-      member.user?.id === userState.currentUser?.id &&
+      member.user?.id === sessionState.currentUser?.id &&
       margin.members.filter((m) => m.role === 'ADMIN').length === 1
     )
       return errorService.reportError(`At least one admin is required.`)
