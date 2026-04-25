@@ -7,6 +7,7 @@
   import { navigationState } from '$src/states/NavigationState.svelte'
   import { sessionState } from '$src/states/SessionState.svelte'
   import { conversationsState, defaultMeta } from '$src/states/ConversationsState.svelte'
+  import { untrack } from 'svelte'
 
   let messageInput = $state('')
   let sidebarOpen = $state(true)
@@ -22,8 +23,11 @@
   )
 
   $effect(() => {
-    if (navigationState.selectedChannel) {
-      chatService.loadConversationForChannel(navigationState.selectedChannel)
+    const channel = navigationState.selectedChannel
+    if (channel) {
+      untrack(() => {
+        chatService.loadConversationForChannel(channel)
+      })
     }
   })
 

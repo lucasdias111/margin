@@ -110,6 +110,7 @@
   }
 
   $effect(() => {
+    if (isPrepending) return
     if (isLoading) {
       initialScrollDone = false
       return
