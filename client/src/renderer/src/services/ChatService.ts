@@ -1,8 +1,4 @@
-import type {
-  ConversationMessagesResponse,
-  Message,
-  MessageReaction
-} from '$src/interfaces/Messages'
+import type { ConversationMessagesResponse, Message, MessageReaction } from '$src/interfaces/Messages'
 import type { User } from '$src/interfaces/User'
 import {
   type Conversation,
@@ -51,9 +47,6 @@ class ChatService {
       return
     }
 
-    if (isActive && document.hasFocus()) {
-      conversationsState.markRead(msg.conversationId, new Date().toISOString())
-    }
     conversationsState.appendMessage(msg, !isFromMe)
 
     if (isFromMe) return
@@ -89,12 +82,7 @@ class ChatService {
       return
     }
 
-    if (isActive && document.hasFocus()) {
-      conversationsState.markRead(msg.conversationId, new Date().toISOString())
-    }
     conversationsState.appendMessage(msg, !isFromMe)
-
-    if (isFromMe) return
 
     if (isActive && document.hasFocus()) {
       await this.markConversationAsRead(msg.conversationId)
