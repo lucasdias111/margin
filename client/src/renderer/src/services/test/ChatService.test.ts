@@ -728,6 +728,26 @@ describe('ChatService', () => {
       expect(conversationsState.conversationMetaById.has(50)).toBe(true)
     })
 
+    // Regression: invite payload had otherUserId set to recipient (sender's perspective).
+    // After accept, UsersList looked up usersState.byId.get(otherUserId) and missed,
+    // filtering the conversation out until refresh. Pin otherUserId to fromUser.id.
+    it('acceptConversationInvite pins otherUserId to fromUser.id', async () => {
+      mockApiPost({})
+      const fromUser = buildUser({ id: 7 })
+      const conv = buildDirectConversation({
+        id: 50,
+        otherUserId: 1,
+        inviteStatus: 'PENDING'
+      })
+      const invite = { conversation: conv, fromUser }
+      conversationInviteService.addPendingInvite(invite)
+
+      await chatService.acceptConversationInvite(invite)
+
+      const stored = conversationsState.byId.get(50) as DirectConversation
+      expect(stored.otherUserId).toBe(7)
+    })
+
     it('declineConversationInvite removes the invite', async () => {
       mockApiPost({})
       const invite = {
@@ -824,6 +844,214 @@ describe('ChatService', () => {
       navigationState.selectedChannel = buildChannel({ conversationId: 10 })
 
       expect(() => chatService.setConversationReadAt(10, 'new')).not.toThrow()
+    })
+  })
+
+  describe('regression: optimistic-replace does not POST /read when nothing is unread', () => {
+    // When user A sends a DM, the WebSocket echoes the message back. The handler
+    // used to unconditionally call markConversationAsRead in the active+focused
+    // case, which POSTed /read to the server, which then broadcast CONVERSATION_READ
+    // to user B. B's setConversationReadAt cleared their unread badge for the
+    // message they just received. We now skip the POST when meta.unread is false.
+    it('skips POST /read on own DM echo when nothing is unread locally', async () => {
+      const me = sessionState.currentUser!
+      const otherUser = buildUser({ id: 2 })
+      navigationState.selectedUser = otherUser
+      vi.spyOn(document, 'hasFocus').mockReturnValue(true)
+      vi.mocked(encryptionService.decryptMessage).mockResolvedValue('hello')
+      const optimistic = buildMessage({
+        id: -123,
+        conversationType: 'DIRECT',
+        conversationId: 10,
+        user: me
+      })
+      conversationsState.messagesByConversationId.set(10, [optimistic])
+      const real = buildMessage({ id: 5, conversationType: 'DIRECT', conversationId: 10, user: me })
+
+      await chatService.handleIncomingMessage({
+        type: WebSocketMessageType.RECEIVE_MESSAGE,
+        timestamp: 0,
+        payload: real
+      })
+
+      expect(api.authenticatedPost).not.toHaveBeenCalled()
+    })
+
+    it('still POSTs /read on own DM echo if there were unread messages locally', async () => {
+      const me = sessionState.currentUser!
+      const otherUser = buildUser({ id: 2 })
+      navigationState.selectedUser = otherUser
+      vi.spyOn(document, 'hasFocus').mockReturnValue(true)
+      vi.mocked(encryptionService.decryptMessage).mockResolvedValue('hello')
+      mockApiPost({})
+      conversationsState.markUnread(10)
+      const optimistic = buildMessage({
+        id: -123,
+        conversationType: 'DIRECT',
+        conversationId: 10,
+        user: me
+      })
+      conversationsState.messagesByConversationId.set(10, [optimistic])
+      const real = buildMessage({ id: 5, conversationType: 'DIRECT', conversationId: 10, user: me })
+
+      await chatService.handleIncomingMessage({
+        type: WebSocketMessageType.RECEIVE_MESSAGE,
+        timestamp: 0,
+        payload: real
+      })
+
+      expect(api.authenticatedPost).toHaveBeenCalledWith(null, 'conversations/10/read')
+    })
+
+    it('skips POST /read on own channel echo when nothing is unread locally', async () => {
+      const me = sessionState.currentUser!
+      navigationState.selectedChannel = buildChannel({ conversationId: 99 })
+      vi.spyOn(document, 'hasFocus').mockReturnValue(true)
+      const optimistic = buildMessage({
+        id: -123,
+        conversationType: 'CHANNEL',
+        conversationId: 99,
+        user: me
+      })
+      conversationsState.messagesByConversationId.set(99, [optimistic])
+      const real = buildMessage({
+        id: 5,
+        conversationType: 'CHANNEL',
+        conversationId: 99,
+        user: me
+      })
+
+      await chatService.handleIncomingMessage({
+        type: WebSocketMessageType.RECEIVE_MESSAGE,
+        timestamp: 0,
+        payload: real
+      })
+
+      expect(api.authenticatedPost).not.toHaveBeenCalled()
+    })
+  })
+
+  describe('regression: focus check on conversation load', () => {
+    // Race: user opens a DM (window focused), then alt-tabs. Message arrives during
+    // load -> markUnread -> badge=1. Then loadMessages finishes and onLoaded used to
+    // mark the conversation read regardless of focus, clobbering the unread.
+    it('loadConversationForUser does not mark read on cached path when window unfocused', async () => {
+      vi.spyOn(document, 'hasFocus').mockReturnValue(false)
+      const conv = buildDirectConversation({ id: 10, otherUserId: 2 })
+      conversationsState.byId.set(10, conv)
+      conversationsState.messagesByConversationId.set(10, [
+        buildMessage({ id: 1 }),
+        buildMessage({ id: 2 })
+      ])
+
+      await chatService.loadConversationForUser(buildUser({ id: 2 }))
+
+      expect(api.authenticatedPost).not.toHaveBeenCalled()
+    })
+
+    it('loadConversationForUser does not mark read after fetch when window unfocused', async () => {
+      vi.spyOn(document, 'hasFocus').mockReturnValue(false)
+      vi.mocked(encryptionService.decryptMessage).mockImplementation(async (s) => s)
+      const conv = buildDirectConversation({ id: 10, otherUserId: 2 })
+      mockApiGet({ conversation: conv, messages: [buildMessage({ id: 1 })] })
+
+      await chatService.loadConversationForUser(buildUser({ id: 2 }))
+
+      expect(api.authenticatedPost).not.toHaveBeenCalled()
+    })
+
+    it('loadConversationForChannel does not mark read on cached path when window unfocused', async () => {
+      vi.spyOn(document, 'hasFocus').mockReturnValue(false)
+      const channel = buildChannel({ conversationId: 20 })
+      conversationsState.messagesByConversationId.set(20, [
+        buildMessage({ id: 1 }),
+        buildMessage({ id: 2 })
+      ])
+
+      await chatService.loadConversationForChannel(channel)
+
+      expect(api.authenticatedPost).not.toHaveBeenCalled()
+    })
+
+    it('loadConversationForChannel does not mark read after fetch when window unfocused', async () => {
+      vi.spyOn(document, 'hasFocus').mockReturnValue(false)
+      const channel = buildChannel({ conversationId: 20 })
+      mockApiGet({
+        conversation: buildChannelConversation({ id: 20 }),
+        messages: [buildMessage({ id: 1 })]
+      })
+
+      await chatService.loadConversationForChannel(channel)
+
+      expect(api.authenticatedPost).not.toHaveBeenCalled()
+    })
+  })
+
+  describe('regression: loadMessages preserves unread set during async gap', () => {
+    // The original loadMessages captured `meta` once before setting isLoading:true,
+    // then spread that snapshot after the async decryption finished — clobbering any
+    // unread:true set in the meantime. We now read fresh meta each time.
+    it('does not clobber unread:true that arrived during decryption', async () => {
+      vi.mocked(encryptionService.decryptMessage).mockImplementation(async (content) => {
+        // Simulate an unread mark landing while we're decrypting.
+        conversationsState.markUnread(10)
+        return content
+      })
+      mockApiGet({
+        conversation: buildDirectConversation({ id: 10 }),
+        messages: [buildMessage({ id: 1, content: 'hi' })]
+      })
+      mockApiPost({})
+
+      await chatService.loadConversationForUser(buildUser({ id: 2 }))
+
+      expect(conversationsState.conversationMetaById.get(10)?.unread).toBe(true)
+    })
+  })
+
+  describe('fetchMessagesBefore', () => {
+    it('returns messages and hasMore=true when full page returned', async () => {
+      vi.mocked(encryptionService.decryptMessage).mockImplementation(async (s) => s)
+      const conv = buildDirectConversation({ id: 10, otherUserId: 2 })
+      const fullPage = Array.from({ length: 30 }, (_, i) => buildMessage({ id: i + 100 }))
+      mockApiGet({ conversation: conv, messages: fullPage })
+
+      const result = await chatService.fetchMessagesBefore(conv, 200)
+
+      expect(result.messages).toHaveLength(30)
+      expect(result.hasMore).toBe(true)
+    })
+
+    it('returns hasMore=false when fewer than PAGE_SIZE returned', async () => {
+      vi.mocked(encryptionService.decryptMessage).mockImplementation(async (s) => s)
+      const conv = buildDirectConversation({ id: 10, otherUserId: 2 })
+      mockApiGet({ conversation: conv, messages: [buildMessage({ id: 1 })] })
+
+      const result = await chatService.fetchMessagesBefore(conv, 200)
+
+      expect(result.hasMore).toBe(false)
+    })
+
+    it('does not mutate conversationsState.messagesByConversationId', async () => {
+      vi.mocked(encryptionService.decryptMessage).mockImplementation(async (s) => s)
+      const conv = buildDirectConversation({ id: 10, otherUserId: 2 })
+      const existing = [buildMessage({ id: 200 })]
+      conversationsState.messagesByConversationId.set(10, existing)
+      mockApiGet({ conversation: conv, messages: [buildMessage({ id: 1, content: 'older' })] })
+
+      await chatService.fetchMessagesBefore(conv, 200)
+
+      expect(conversationsState.messagesByConversationId.get(10)).toEqual(existing)
+    })
+
+    it('returns empty result on non-ok response', async () => {
+      const conv = buildDirectConversation({ id: 10, otherUserId: 2 })
+      mockApiGet({}, false)
+
+      const result = await chatService.fetchMessagesBefore(conv, 200)
+
+      expect(result.messages).toEqual([])
+      expect(result.hasMore).toBe(false)
     })
   })
 })

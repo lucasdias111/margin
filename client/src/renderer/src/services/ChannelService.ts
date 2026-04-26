@@ -3,6 +3,7 @@ import type { User } from '$src/interfaces/User'
 import { spaceState } from '$src/states/SpaceState.svelte'
 import { authenticatedGet } from '$src/services/api'
 import { navigationState } from '$src/states/NavigationState.svelte'
+import { usersState } from '$src/states/UsersState.svelte'
 
 class ChannelService {
   select(channel: Channel | null): void {
@@ -15,6 +16,7 @@ class ChannelService {
   }
 
   updateVoiceParticipant(channelId: number, user: User, joined: boolean): void {
+    if (joined) usersState.add(user)
     for (const space of spaceState.spaces) {
       const channel = space.channels?.find((c) => c.id === channelId)
       if (channel) {

@@ -103,7 +103,9 @@
     ) => {
       chatService.setConversationReadAt(msg.payload.conversationId, msg.payload.readAt)
     },
-    [WebSocketMessageType.CONVERSATION_INVITE]: chatService.handleIncomingConversationInvite
+    [WebSocketMessageType.CONVERSATION_INVITE]: chatService.handleIncomingConversationInvite,
+    [WebSocketMessageType.CONVERSATION_INVITE_ACCEPTED]:
+    chatService.handleConversationInviteAccepted
   })
 
   async function setup(): Promise<void> {

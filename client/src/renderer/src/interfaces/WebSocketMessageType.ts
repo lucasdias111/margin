@@ -38,6 +38,7 @@ export enum WebSocketMessageType {
 
   // Conversation invites
   CONVERSATION_INVITE = 'CONVERSATION_INVITE',
+  CONVERSATION_INVITE_ACCEPTED = 'CONVERSATION_INVITE_ACCEPTED',
 
   // Notifications
   NOTIFICATION = 'NOTIFICATION',

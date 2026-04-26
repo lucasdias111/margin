@@ -28,10 +28,24 @@
   let isPrepending = $state(false)
   let isAtBottom = $state(true)
   let initialScrollDone = false
+  let prependedMessages = $state<Message[]>([])
+  let localHasMore = $state(true)
+  let lastConvId: number | undefined = undefined
   const activeMeta = $derived(
     conversationsState.conversationMetaById.get(conversationsState.currentConversation?.id) ??
     defaultMeta()
   )
+  const allMessages = $derived<(Message | undefined)[]>([...prependedMessages, ...messages])
+  const hasMore = $derived(prependedMessages.length > 0 ? localHasMore : activeMeta.hasMore)
+
+  $effect.pre(() => {
+    const id = conversationsState.currentConversation?.id
+    if (lastConvId !== id) {
+      prependedMessages = []
+      localHasMore = true
+      lastConvId = id
+    }
+  })
 
   async function handleIncomingEditedMessage(data: WebSocketMessage<Message>): Promise<void> {
     const edited = data.payload
@@ -90,19 +104,27 @@
     const { scrollTop, scrollHeight, clientHeight } = messagesContainer
     isAtBottom = scrollHeight - scrollTop - clientHeight < 60
 
-    if (scrollTop < 20 && activeMeta.hasMore && !activeMeta.isLoading) {
+    if (scrollTop < 20 && hasMore && !activeMeta.isLoading) {
       void loadOlderMessages()
     }
   }
 
   async function loadOlderMessages(): Promise<void> {
-    if (!messagesContainer) return
+    if (!messagesContainer || isPrepending) return
+
+    const conv = conversationsState.currentConversation
+    if (!conv) return
+
+    const oldestId = allMessages[0]?.id
+    if (!oldestId) return
 
     isPrepending = true
     scrollHeightBeforePrepend = messagesContainer.scrollHeight
 
     await tick()
-    await chatService.loadMoreMessages()
+    const result = await chatService.fetchMessagesBefore(conv, oldestId)
+    prependedMessages = [...result.messages, ...prependedMessages]
+    localHasMore = result.hasMore
     await tick()
 
     messagesContainer.scrollTop = messagesContainer.scrollHeight - scrollHeightBeforePrepend
@@ -173,17 +195,17 @@
             <div class="spinner small"></div>
             <span>Loading older messages…</span>
           </div>
-        {:else if !activeMeta.hasMore}
+        {:else if !hasMore}
           <div class="top-status__start">
             <span>Beginning of conversation</span>
           </div>
         {/if}
       </div>
 
-      {#each messages as message, i (message?.id)}
+      {#each allMessages as message, i (message?.id)}
         {#if message}
-          {@const prev = messages[i - 1]}
-          {@const next = messages[i + 1]}
+          {@const prev = allMessages[i - 1]}
+          {@const next = allMessages[i + 1]}
           {@const showMeta = shouldShowMeta(message, next)}
           {@const showDisplayName = isFirstInClump(message, prev)}
           {@const isRead = isMessageRead(message)}

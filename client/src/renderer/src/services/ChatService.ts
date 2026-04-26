@@ -1,4 +1,8 @@
-import type { ConversationMessagesResponse, Message, MessageReaction } from '$src/interfaces/Messages'
+import type {
+  ConversationMessagesResponse,
+  Message,
+  MessageReaction
+} from '$src/interfaces/Messages'
 import type { User } from '$src/interfaces/User'
 import {
   type Conversation,
@@ -194,42 +198,24 @@ class ChatService {
     }
   }
 
-  async loadMoreMessages(): Promise<void> {
-    const conv = conversationsState.currentConversation
-    if (!conv) return
-
-    const meta = conversationsState.conversationMetaById.get(conv.id) ?? defaultMeta()
-    const currentMessages = conversationsState.messagesByConversationId.get(conv.id) ?? []
-
-    if (meta.isLoading || !meta.hasMore) return
-
-    const oldestId = currentMessages[0]?.id
-    if (!oldestId) return
-
-    conversationsState.conversationMetaById.set(conv.id, { ...meta, isLoading: true })
+  async fetchMessagesBefore(
+    conv: Conversation,
+    beforeId: number
+  ): Promise<{ messages: Message[]; hasMore: boolean }> {
+    const url = this.buildPaginationUrl(conv, beforeId)
+    if (!url) return { messages: [], hasMore: false }
 
     try {
-      const url = this.buildPaginationUrl(conv, oldestId)
-      if (!url) return
-
       const response = await authenticatedGet(url)
-      if (!response.ok) return
+      if (!response.ok) return { messages: [], hasMore: false }
 
       const messageResponse: ConversationMessagesResponse = await response.json()
-
-      const newMessages = await this.decryptIfDirect(messageResponse.messages, conv)
-      const hasMore = newMessages.length === ChatService.PAGE_SIZE
-
-      conversationsState.messagesByConversationId.set(conv.id, [...newMessages, ...currentMessages])
-
-      conversationsState.conversationMetaById.set(conv.id, {
-        ...meta,
-        isLoading: false,
-        hasMore
-      })
+      const messages = await this.decryptIfDirect(messageResponse.messages, conv)
+      const hasMore = messages.length === ChatService.PAGE_SIZE
+      return { messages, hasMore }
     } catch (error) {
-      console.error('Error loading more messages:', error)
-      conversationsState.conversationMetaById.set(conv.id, { ...meta, isLoading: false })
+      console.error('Error fetching messages:', error)
+      return { messages: [], hasMore: false }
     }
   }
 
@@ -421,6 +407,25 @@ class ChatService {
     conversationInviteService.addPendingInvite(data.payload)
   }
 
+  handleConversationInviteAccepted = (
+    data: WebSocketMessage<{ conversation: DirectConversation; acceptedBy: User }>
+  ): void => {
+    const { conversation, acceptedBy } = data.payload
+
+    usersState.add(acceptedBy)
+
+    const accepted: DirectConversation = {
+      ...conversation,
+      otherUserId: acceptedBy.id,
+      inviteStatus: 'ACCEPTED'
+    }
+    conversationsState.byId.set(accepted.id, accepted)
+
+    if (!conversationsState.conversationMetaById.has(accepted.id)) {
+      conversationsState.conversationMetaById.set(accepted.id, defaultMeta())
+    }
+  }
+
   async sendConversationInvite(handle: string): Promise<void> {
     await authenticatedPost({ handle }, 'conversations/invite')
   }
@@ -434,6 +439,7 @@ class ChatService {
 
     const accepted: DirectConversation = {
       ...invite.conversation,
+      otherUserId: invite.fromUser.id,
       inviteStatus: 'ACCEPTED'
     }
     conversationsState.byId.set(accepted.id, accepted)

@@ -1,10 +1,12 @@
 <script lang="ts">
   import type { Channel } from '$src/interfaces/Channel'
+  import type { User } from '$src/interfaces/User'
   import { channelCallService } from '$src/services/call/ChannelCallService'
   import { callState } from '$src/states/CallState.svelte.js'
   import Icon from '$src/components/common/icons/Icon.svelte'
   import { navigationState } from '$src/states/NavigationState.svelte'
   import { sessionState } from '$src/states/SessionState.svelte'
+  import { usersState } from '$src/states/UsersState.svelte'
 
   let {
     channel,
@@ -17,7 +19,16 @@
   let isInChannelCall = $derived(
     callState.isGroupCall && callState.groupCallState?.channelId === channel.id
   )
-  let voiceParticipants = $derived(channel?.voiceParticipants ?? [])
+  let voiceParticipants = $derived<User[]>(
+    (channel?.voiceParticipants ?? [])
+      .map((p) => usersState.byId.get(p.id))
+      .filter((u): u is User => u !== undefined)
+  )
+  let spaceMembers = $derived<User[]>(
+    (navigationState.selectedSpace?.members ?? [])
+      .map((member) => usersState.byId.get(member.user.id))
+      .filter((u) => u !== undefined)
+  )
 
   function onJoinChannel(): void {
     if (isInChannelCall) {
@@ -80,11 +91,11 @@
         <span class="section-title">Members</span>
       </div>
       <div class="members-empty">
-        {#each navigationState.selectedSpace?.members ?? [] as member (member.user.id)}
+        {#each spaceMembers ?? [] as member (member.id)}
           <div class="member-entry">
-            <span class="presence-dot" class:online={member.user.isOnline}></span>
-            <p class="member-entry-text" class:offline={!member.user.isOnline}>
-              {member.user.displayName}
+            <span class="presence-dot" class:online={member.isOnline}></span>
+            <p class="member-entry-text" class:offline={!member.isOnline}>
+              {member.displayName}
             </p>
           </div>
         {/each}
