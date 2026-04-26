@@ -358,26 +358,43 @@ class ChatService {
   }
 
   handleIncomingReactionAdded = (reaction: MessageReaction): void => {
-    const message = conversationsState.messagesByConversationId
-      .get(conversationsState.currentConversation.id)
-      .find((m) => m?.id === reaction.messageId)
-    if (!message) return
-    const already = message.reactions.some(
+    const convId = conversationsState.currentConversation.id
+    const messages = conversationsState.messagesByConversationId.get(convId)
+    if (!messages) return
+
+    const index = messages.findIndex((m) => m.id === reaction.messageId)
+    if (index === -1) return
+
+    const updatedMessage = { ...messages[index] }
+
+    const already = updatedMessage.reactions.some(
       (r) => r.userId === reaction.userId && r.emoji === reaction.emoji
     )
+
     if (!already) {
-      message.reactions = [...message.reactions, reaction]
+      updatedMessage.reactions = [...updatedMessage.reactions, reaction]
+      const updatedMessages = [...messages]
+      updatedMessages[index] = updatedMessage
+      conversationsState.messagesByConversationId.set(convId, updatedMessages)
     }
   }
 
   handleIncomingReactionRemoved = (reaction: MessageReaction): void => {
-    const message = conversationsState.messagesByConversationId
-      .get(conversationsState.currentConversation.id)
-      .find((m) => m?.id === reaction.messageId)
-    if (!message) return
-    message.reactions = message.reactions.filter(
+    const convId = conversationsState.currentConversation.id
+    const messages = conversationsState.messagesByConversationId.get(convId)
+    if (!messages) return
+
+    const index = messages.findIndex((m) => m.id === reaction.messageId)
+    if (index === -1) return
+
+    const updatedMessage = { ...messages[index] }
+    updatedMessage.reactions = updatedMessage.reactions.filter(
       (r) => !(r.userId === reaction.userId && r.emoji === reaction.emoji)
     )
+
+    const updatedMessages = [...messages]
+    updatedMessages[index] = updatedMessage
+    conversationsState.messagesByConversationId.set(convId, updatedMessages)
   }
 
   async markConversationAsRead(conversationId: number): Promise<void> {

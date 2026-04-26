@@ -1,6 +1,7 @@
 <script lang="ts">
   import type { Message } from '$src/interfaces/Messages'
   import { sessionState } from '$src/states/SessionState.svelte'
+  import { conversationsState } from '$src/states/ConversationsState.svelte.ts'
 
   interface Props {
     message: Message
@@ -9,19 +10,26 @@
 
   let { message, onToggleReaction }: Props = $props()
 
-  let grouped = $derived(
-    Object.entries(
-      (message.reactions ?? []).reduce<
-        Record<string, { count: number; userIds: number[]; names: string[] }>
-      >((acc, r) => {
-        if (!acc[r.emoji]) acc[r.emoji] = { count: 0, userIds: [], names: [] }
-        acc[r.emoji].count++
-        acc[r.emoji].userIds.push(r.userId)
-        acc[r.emoji].names.push(r.displayName)
-        return acc
-      }, {})
+  let grouped = $derived.by(() => {
+    const msg = conversationsState.messagesByConversationId
+      .get(message.conversationId)
+      ?.find((m) => m.id === message.id)
+
+    const reactions = msg?.reactions ?? []
+
+    return Object.entries(
+      reactions.reduce<Record<string, { count: number; userIds: number[]; names: string[] }>>(
+        (acc, r) => {
+          if (!acc[r.emoji]) acc[r.emoji] = { count: 0, userIds: [], names: [] }
+          acc[r.emoji].count++
+          acc[r.emoji].userIds.push(r.userId)
+          acc[r.emoji].names.push(r.displayName)
+          return acc
+        },
+        {}
+      )
     )
-  )
+  })
 </script>
 
 {#if grouped.length > 0}

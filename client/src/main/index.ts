@@ -69,11 +69,19 @@ function checkForUpdates(): void {
   })
 
   ipcMain.on('update-install', () => {
-    console.log('update-install received, calling quitAndInstall')
-    try {
+    console.log('update-install received')
+
+    if (process.platform === 'darwin') {
+      app.removeAllListeners('window-all-closed')
+
+      BrowserWindow.getAllWindows().forEach((w) => w.destroy())
+
+      setTimeout(() => {
+        autoUpdater.quitAndInstall(false, true)
+        setTimeout(() => app.exit(0), 2000)
+      }, 100)
+    } else {
       autoUpdater.quitAndInstall(false, true)
-    } catch (err) {
-      console.error('quitAndInstall failed:', err)
     }
   })
 }
