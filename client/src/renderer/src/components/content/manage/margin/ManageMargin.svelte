@@ -1,6 +1,5 @@
 <script lang="ts">
   import { onMount } from 'svelte'
-  import { chatState } from '$src/states/ChatState.svelte.js'
   import { type Margin, type MarginMember, type UpdateMargin } from '$src/interfaces/Margin'
   import ManageMarginInformation from '$src/components/content/manage/margin/ManageMarginInformation.svelte'
   import ManageMarginMembers from '$src/components/content/manage/margin/ManageMarginMembers.svelte'
@@ -8,6 +7,7 @@
   import type { User } from '$src/interfaces/User'
   import { marginInviteService } from '$src/services/MarginInviteService'
   import ConfirmationModal from '$src/components/common/modals/ConfirmationModal.svelte'
+  import { navigationState } from '$src/states/NavigationState.svelte'
 
   let margin = $state<Margin | null>(null)
   let isLoading = $state(true)
@@ -15,7 +15,7 @@
 
   onMount(async () => {
     try {
-      margin = await marginService.getMargin(chatState.selectedMargin.marginId)
+      margin = await marginService.getMargin(navigationState.selectedMargin.marginId)
     } catch (e) {
       console.error('Failed to load margin:', e)
     } finally {
@@ -26,7 +26,7 @@
   async function onSaveInfo(updated: UpdateMargin): Promise<void> {
     try {
       margin = await marginService.updateMargin(updated)
-      chatState.updateMarginDetails(
+      marginService.updateMarginDetails(
         margin.marginId,
         margin.marginName,
         margin.marginDescription,
@@ -39,15 +39,7 @@
 
   async function onDeleteMargin(): Promise<void> {
     try {
-      await marginService.deleteMargin(margin.marginId)
-      chatState.margins = chatState.margins.filter((m) => m.marginId !== margin.marginId)
-
-      if (chatState.margins.length > 0) {
-        chatState.selectMargin(chatState.margins[0])
-      } else {
-        chatState.hasMargin = false
-      }
-      chatState.currentlySelectedContent = 'margin'
+      await marginService.deleteMargin(margin)
     } catch (e) {
       console.error('Failed to delete margin:', e)
     }

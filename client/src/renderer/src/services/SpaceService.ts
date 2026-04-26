@@ -1,9 +1,16 @@
 import type { CreateSpace, Space, SpaceMember } from '$src/interfaces/Space'
-import { authenticatedGet, authenticatedPost, authenticatedDelete } from '$src/services/api'
+import { authenticatedDelete, authenticatedGet, authenticatedPost } from '$src/services/api'
 import type { Channel, CreateChannel } from '$src/interfaces/Channel'
 import { spaceState } from '$src/states/SpaceState.svelte'
+import type { User } from '$src/interfaces/User'
+import { navigationState } from '$src/states/NavigationState.svelte'
+import { usersState } from '$src/states/UsersState.svelte'
 
-class SpacesService {
+class SpaceService {
+  select(space: Space): void {
+    navigationState.selectedSpace = space
+  }
+
   async getAllSpacesForMargin(marginId: number): Promise<Space[]> {
     const response = await authenticatedGet(`spaces/get_all_spaces_for_margin/${marginId}`)
     return response.json()
@@ -11,7 +18,18 @@ class SpacesService {
 
   async getAllSpacesForUser(marginId: number): Promise<void> {
     const response = await authenticatedGet(`spaces/get_all_spaces_for_user/${marginId}`)
-    spaceState.setSpaces(await response.json())
+    const spaces: Space[] = await response.json()
+    this.hydrateUsers(spaces)
+    spaceState.setSpaces(spaces)
+  }
+
+  private hydrateUsers(spaces: Space[]): void {
+    for (const space of spaces) {
+      for (const member of space.members) usersState.add(member.user)
+      for (const channel of space.channels ?? []) {
+        for (const user of channel.voiceParticipants ?? []) usersState.add(user)
+      }
+    }
   }
 
   async createSpace(space: CreateSpace): Promise<Space | null> {
@@ -62,7 +80,9 @@ class SpacesService {
     await Promise.all(
       space.channels.map(async (c) => {
         const res = await authenticatedGet(`sfu/voice_participants/${c.id}`)
-        c.voiceParticipants = res.ok ? await res.json() : []
+        const participants: User[] = res.ok ? await res.json() : []
+        for (const user of participants) usersState.add(user)
+        c.voiceParticipants = participants
       })
     )
   }
@@ -70,6 +90,25 @@ class SpacesService {
   async removeSpaceMember(member: SpaceMember): Promise<void> {
     await authenticatedDelete(member, 'spaces/remove_space_member')
   }
+
+  addMemberToSpace(spaceId: number, user: User): void {
+    usersState.add(user)
+    const space = spaceState.spaces.find((s) => s.spaceId === spaceId)
+    if (!space) return
+    const alreadyExists = space.members.some((m) => m.user.id === user.id)
+    if (alreadyExists) return
+    const newMember: SpaceMember = {
+      user,
+      spaceId,
+      role: 'MEMBER',
+      joinedAt: new Date().toISOString()
+    }
+    space.members = [...space.members, newMember]
+    spaceState.spaces = [...spaceState.spaces]
+    if (navigationState.selectedSpace?.spaceId === spaceId) {
+      navigationState.selectedSpace = { ...space, members: space.members }
+    }
+  }
 }
 
-export const spacesService = new SpacesService()
+export const spaceService = new SpaceService()

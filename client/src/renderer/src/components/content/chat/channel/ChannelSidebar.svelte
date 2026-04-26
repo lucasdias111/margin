@@ -1,10 +1,12 @@
 <script lang="ts">
   import type { Channel } from '$src/interfaces/Channel'
+  import type { User } from '$src/interfaces/User'
   import { channelCallService } from '$src/services/call/ChannelCallService'
   import { callState } from '$src/states/CallState.svelte.js'
-  import { userState } from '$src/states/UserState.svelte'
-  import { spaceState } from '$src/states/SpaceState.svelte'
   import Icon from '$src/components/common/icons/Icon.svelte'
+  import { navigationState } from '$src/states/NavigationState.svelte'
+  import { sessionState } from '$src/states/SessionState.svelte'
+  import { usersState } from '$src/states/UsersState.svelte'
 
   let {
     channel,
@@ -17,7 +19,16 @@
   let isInChannelCall = $derived(
     callState.isGroupCall && callState.groupCallState?.channelId === channel.id
   )
-  let voiceParticipants = $derived(channel?.voiceParticipants ?? [])
+  let voiceParticipants = $derived<User[]>(
+    (channel?.voiceParticipants ?? [])
+      .map((p) => usersState.byId.get(p.id))
+      .filter((u): u is User => u !== undefined)
+  )
+  let spaceMembers = $derived<User[]>(
+    (navigationState.selectedSpace?.members ?? [])
+      .map((member) => usersState.byId.get(member.user.id))
+      .filter((u) => u !== undefined)
+  )
 
   function onJoinChannel(): void {
     if (isInChannelCall) {
@@ -52,7 +63,10 @@
 
       <div class="voice-participants">
         {#each voiceParticipants as participant (participant.id)}
-          <div class="voice-participant" class:is-me={participant.id === userState.currentUser?.id}>
+          <div
+            class="voice-participant"
+            class:is-me={participant.id === sessionState.currentUser?.id}
+          >
             <span class="voice-dot"></span>
             <p class="voice-participant-name">{participant.displayName}</p>
           </div>
@@ -77,11 +91,11 @@
         <span class="section-title">Members</span>
       </div>
       <div class="members-empty">
-        {#each spaceState.selectedSpace?.members ?? [] as member (member.user.id)}
+        {#each spaceMembers ?? [] as member (member.id)}
           <div class="member-entry">
-            <span class="presence-dot" class:online={member.user.isOnline}></span>
-            <p class="member-entry-text" class:offline={!member.user.isOnline}>
-              {member.user.displayName}
+            <span class="presence-dot" class:online={member.isOnline}></span>
+            <p class="member-entry-text" class:offline={!member.isOnline}>
+              {member.displayName}
             </p>
           </div>
         {/each}

@@ -1,6 +1,7 @@
 <script lang="ts">
   import { errorState } from '$src/states/ErrorState.svelte'
   import Icon from '$src/components/common/icons/Icon.svelte'
+  import { errorService } from '$src/services/ErrorService'
 </script>
 
 {#if errorState.hasError}
@@ -12,7 +13,7 @@
       <span class="toast-title">Something went wrong</span>
       <span class="toast-msg">{errorState.errorMessage}</span>
     </div>
-    <button class="toast-close" aria-label="Dismiss" onclick={() => (errorState.hasError = false)}>
+    <button class="toast-close" aria-label="Dismiss" onclick={() => errorService.clearError()}>
       <Icon name="x" size={12} strokeWidth={2.5} />
     </button>
     <div class="toast-progress"></div>

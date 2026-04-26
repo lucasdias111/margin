@@ -1,5 +1,6 @@
 <script lang="ts">
-  import { chatState } from '$src/states/ChatState.svelte.js'
+  import { navigationService } from '$src/services/NavigationService'
+  import { View } from '$src/interfaces/View'
 
   interface Props {
     activeTab: string
@@ -15,7 +16,7 @@
   <button
     class="back-btn"
     onclick={() => {
-      chatState.currentlySelectedContent = 'margin'
+      navigationService.setView(View.Margin)
     }}
   >
     &#8592;

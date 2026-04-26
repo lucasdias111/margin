@@ -1,36 +1,37 @@
 <script lang="ts">
-  import { chatState } from '$src/states/ChatState.svelte.js'
   import { spaceState } from '$src/states/SpaceState.svelte.js'
   import type { Space } from '$src/interfaces/Space'
   import { onDestroy } from 'svelte'
-  import { spacesService } from '$src/services/SpacesService'
+  import { spaceService } from '$src/services/SpaceService'
   import ChannelEntry from '$src/components/content/sidebar/sidebar_list/ChannelEntry.svelte'
-  import { notificationState } from '$src/states/NotificationState.svelte.js'
+  import { notificationService } from '$src/services/NotificationService'
   import UnreadNotificationBadge from '$src/components/common/chat/UnreadNotificationBadge.svelte'
   import Icon from '$src/components/common/icons/Icon.svelte'
+  import { channelService } from '$src/services/ChannelService'
+  import { navigationState } from '$src/states/NavigationState.svelte'
 
   const spaces = $derived(spaceState.spaces)
   let expandedSpaceId = $state<number | null>(null)
-  let selectedChannelId = $derived(chatState.selectedChannel?.id)
+  let selectedChannelId = $derived(navigationState.selectedChannel?.id)
 
   $effect(() => {
-    const marginId = chatState.selectedMargin?.marginId
+    const marginId = navigationState.selectedMargin?.marginId
     if (marginId) {
-      spacesService.getAllSpacesForUser(marginId)
+      spaceService.getAllSpacesForUser(marginId)
     }
   })
 
   onDestroy(() => {
-    spaceState.setSelectedSpace(null)
-    chatState.selectChannel(null)
+    spaceService.select(null)
+    channelService.select(null)
   })
 
   async function toggleSpace(space: Space): Promise<void> {
-    spaceState.setSelectedSpace(space)
+    spaceService.select(space)
     expandedSpaceId = expandedSpaceId === space.spaceId ? null : space.spaceId
 
     if (expandedSpaceId === space.spaceId) {
-      await spacesService.fetchVoiceParticipantsForSpace(space)
+      await spaceService.fetchVoiceParticipantsForSpace(space)
     }
   }
 
@@ -65,7 +66,7 @@
     {#each spaces as space (space.spaceId)}
       {@const color = spaceColor(space.spaceId)}
       {@const isOpen = expandedSpaceId === space.spaceId}
-      {@const unreadCount = notificationState.getTotalUnreadMessagesForSpace(space)}
+      {@const unreadCount = notificationService.totalUnreadMessagesForSpace(space)}
 
       <div
         class="space-card"

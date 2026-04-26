@@ -1,34 +1,50 @@
 <script lang="ts">
-  import { chatState } from '$src/states/ChatState.svelte.js'
-  import { conversationState } from '$src/states/ConversationState.svelte.js'
   import ChatInput from '$src/components/common/chat/ChatInput.svelte'
   import MessagesContainer from '$src/components/common/chat/MessagesContainer.svelte'
   import { chatService } from '$src/services/ChatService'
-  import { userState } from '$src/states/UserState.svelte.js'
   import ChannelSidebar from '$src/components/content/chat/channel/ChannelSidebar.svelte'
   import ChannelChatHeader from '$src/components/content/chat/channel/ChannelChatHeader.svelte'
+  import { navigationState } from '$src/states/NavigationState.svelte'
+  import { sessionState } from '$src/states/SessionState.svelte'
+  import { conversationsState, defaultMeta } from '$src/states/ConversationsState.svelte'
+  import { untrack } from 'svelte'
 
   let messageInput = $state('')
   let sidebarOpen = $state(true)
 
+  const activeConvId = $derived(navigationState.selectedChannel?.conversationId)
+  const activeMessages = $derived(
+    activeConvId ? (conversationsState.messagesByConversationId.get(activeConvId) ?? []) : []
+  )
+  const activeMeta = $derived(
+    activeConvId
+      ? (conversationsState.conversationMetaById.get(activeConvId) ?? defaultMeta())
+      : defaultMeta()
+  )
+
   $effect(() => {
-    if (chatState.selectedChannel) {
-      chatService.loadConversationForChannel(chatState.selectedChannel)
+    const channel = navigationState.selectedChannel
+    if (channel) {
+      untrack(() => {
+        chatService.loadConversationForChannel(channel)
+      })
     }
   })
 
   async function handleSubmit(event?: Event): Promise<void> {
     if (event) event.preventDefault()
-    if (!messageInput.trim()) return
+    if (!messageInput.trim() || !navigationState.selectedChannel) return
 
     const messageContent = messageInput
     messageInput = ''
 
-    await chatService.sendChannelMessage(
-      userState.currentUser,
-      chatState.selectedChannel,
+    const message = await chatService.sendChannelMessage(
+      sessionState.currentUser,
+      navigationState.selectedChannel,
       messageContent
     )
+
+    conversationsState.appendMessage(message, false)
   }
 
   function onToggleSidebar(): void {
@@ -36,11 +52,19 @@
   }
 </script>
 
+<svelte:window
+  onfocus={() => {
+    if (activeConvId) {
+      chatService.markConversationAsRead(activeConvId)
+    }
+  }}
+/>
+
 <div class="chat">
-  {#if chatState.selectedChannel}
+  {#if navigationState.selectedChannel}
     <ChannelChatHeader
-      name={chatState.selectedChannel.name}
-      description={chatState.selectedChannel.description}
+      name={navigationState.selectedChannel.name}
+      description={navigationState.selectedChannel.description}
       {onToggleSidebar}
       {sidebarOpen}
     />
@@ -48,16 +72,13 @@
 
   <div class="chat-body">
     <div class="chat-background">
-      <MessagesContainer
-        messages={conversationState.messages}
-        isLoading={conversationState.isLoading}
-      />
+      <MessagesContainer messages={activeMessages} isLoading={activeMeta.isLoading} />
     </div>
-    <ChannelSidebar channel={chatState.selectedChannel} bind:isOpen={sidebarOpen} />
+    <ChannelSidebar channel={navigationState.selectedChannel} bind:isOpen={sidebarOpen} />
   </div>
 
   <ChatInput
-    selectedContent={!!chatState.selectedChannel}
+    selectedContent={!!navigationState.selectedChannel}
     bind:messageInput
     onSubmit={handleSubmit}
   />

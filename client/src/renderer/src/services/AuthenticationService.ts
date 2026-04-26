@@ -1,15 +1,14 @@
 import { authenticatedPost, unauthenticatedPost } from './api'
 import { encryptionService } from './EncryptionService'
-import { userState } from '$src/states/UserState.svelte'
-import { chatState } from '$src/states/ChatState.svelte'
+import { usersState } from '$src/states/UsersState.svelte.js'
 import { callState } from '$src/states/CallState.svelte'
 import { API_CONFIG } from '$src/shared/config'
 import type { AuthResponse } from '$src/interfaces/AuthResponse'
 import { errorService } from '$src/services/ErrorService'
 import { webSocketService } from '$src/services/WebSocketService'
 import { push } from 'svelte-spa-router'
-import { conversationState } from '$src/states/ConversationState.svelte'
 import { isElectron } from '$src/utils/platformUtils'
+import { navigationService } from '$src/services/NavigationService'
 
 class AuthenticationService {
   async login(email: string, password: string, keepLoggedIn: boolean = false): Promise<void> {
@@ -149,9 +148,8 @@ class AuthenticationService {
 
   public async clear(): Promise<void> {
     webSocketService.disconnect()
-    userState.reset()
-    chatState.reset()
-    conversationState.reset()
+    usersState.reset()
+    navigationService.reset()
     callState.endCall()
 
     await this.clearSession()
