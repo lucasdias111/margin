@@ -1,69 +1,86 @@
 import { API_CONFIG } from '$src/shared/config'
 import { errorService } from '$src/services/ErrorService'
 
-export async function authenticatedGet(url: string): Promise<Response> {
-  const token = sessionStorage.getItem('authToken')
+let unauthenticatedHandler: (() => Promise<void>) | null = null
+let unauthenticatedInFlight: Promise<void> | null = null
 
-  if (!token) {
-    errorService.reportError('Token is required')
-  }
+export function setUnauthenticatedHandler(handler: () => Promise<void>): void {
+  unauthenticatedHandler = handler
+}
 
-  return fetchGet(url, {
-    'Content-Type': 'application/json',
-    Authorization: `Bearer ${token}`
+async function handleUnauthenticated(): Promise<void> {
+  if (unauthenticatedInFlight) return unauthenticatedInFlight
+  if (!unauthenticatedHandler) return
+  unauthenticatedInFlight = unauthenticatedHandler().finally(() => {
+    unauthenticatedInFlight = null
   })
+  return unauthenticatedInFlight
+}
+
+async function getAuthHeaders(extra: Record<string, string> = {}): Promise<Record<string, string>> {
+  const token = sessionStorage.getItem('authToken')
+  if (!token || isJwtExpired(token)) {
+    await handleUnauthenticated()
+    errorService.reportError('Session expired - logging out')
+  }
+  return {
+    Authorization: `Bearer ${token}`,
+    ...extra
+  }
+}
+
+function isJwtExpired(token: string): boolean {
+  try {
+    const payload = JSON.parse(atob(token.split('.')[1]))
+    return typeof payload.exp === 'number' && payload.exp * 1000 < Date.now()
+  } catch {
+    return true
+  }
+}
+
+export async function authenticatedGet(url: string): Promise<Response> {
+  const headers = await getAuthHeaders({ 'Content-Type': 'application/json' })
+  return fetchGet(url, headers)
 }
 
 export async function authenticatedPost<T>(body: T, url: string): Promise<Response> {
-  const token = sessionStorage.getItem('authToken')
-
-  if (!token) {
-    errorService.reportError('Token is required')
-  }
-  return fetchPost(url, body, {
-    'Content-Type': 'application/json',
-    Authorization: `Bearer ${token}`
-  })
+  const headers = await getAuthHeaders({ 'Content-Type': 'application/json' })
+  return fetchPost(url, body, headers)
 }
 
 export async function authenticatedPostForm(formData: FormData, url: string): Promise<Response> {
-  const token = sessionStorage.getItem('authToken')
-
-  if (!token) {
-    errorService.reportError('No token found')
-  }
-  return fetchPost(url, formData, {
-    Authorization: `Bearer ${token}`
-  })
+  const headers = await getAuthHeaders()
+  return fetchPost(url, formData, headers)
 }
 
 export async function authenticatedPatchForm(formData: FormData, url: string): Promise<Response> {
-  const token = sessionStorage.getItem('authToken')
-
-  if (!token) {
-    errorService.reportError('No token found')
-  }
-  return fetchPatch(url, formData, {
-    Authorization: `Bearer ${token}`
-  })
+  const headers = await getAuthHeaders()
+  return fetchPatch(url, formData, headers)
 }
 
 export async function authenticatedPatch<T>(body: T, url: string): Promise<Response> {
-  const token = sessionStorage.getItem('authToken')
+  const headers = await getAuthHeaders({ 'Content-Type': 'application/json' })
+  return fetchPatch(url, body, headers)
+}
 
-  if (!token) {
-    errorService.reportError('No token found')
-  }
-  return fetchPatch(url, body, {
-    Authorization: `Bearer ${token}`,
-    'Content-Type': 'application/json'
-  })
+export async function authenticatedDelete<T>(body: T, url: string): Promise<Response> {
+  const headers = await getAuthHeaders({ 'Content-Type': 'application/json' })
+  return fetchDelete(url, body, headers)
 }
 
 export async function unauthenticatedPost<T>(body: T, url: string): Promise<Response> {
   return fetchPost(url, body, {
     'Content-Type': 'application/json'
   })
+}
+
+async function isResponseUnauthenticated(response: Response): Promise<boolean> {
+  if (response.status === 401) {
+    await handleUnauthenticated()
+    errorService.reportError('Session expired - logging out')
+    return true
+  }
+  return false
 }
 
 async function fetchPost<T>(url: string, body: T, headers: HeadersInit): Promise<Response> {
@@ -77,6 +94,10 @@ async function fetchPost<T>(url: string, body: T, headers: HeadersInit): Promise
   } catch (error) {
     errorService.reportError('Network error — could not reach server')
     throw error
+  }
+
+  if (await isResponseUnauthenticated(response)) {
+    return response
   }
 
   if (!response.ok) {
@@ -101,6 +122,10 @@ async function fetchPatch<T>(url: string, body: T, headers: HeadersInit): Promis
     throw error
   }
 
+  if (await isResponseUnauthenticated(response)) {
+    return response
+  }
+
   if (!response.ok) {
     const message = await extractErrorMessage(response)
     errorService.reportError(message)
@@ -108,19 +133,6 @@ async function fetchPatch<T>(url: string, body: T, headers: HeadersInit): Promis
   }
 
   return response
-}
-
-export async function authenticatedDelete<T>(body: T, url: string): Promise<Response> {
-  const token = sessionStorage.getItem('authToken')
-
-  if (!token) {
-    errorService.reportError('Token is required')
-  }
-
-  return fetchDelete(url, body, {
-    'Content-Type': 'application/json',
-    Authorization: `Bearer ${token}`
-  })
 }
 
 async function fetchDelete<T>(url: string, body: T, headers: HeadersInit): Promise<Response> {
@@ -134,6 +146,10 @@ async function fetchDelete<T>(url: string, body: T, headers: HeadersInit): Promi
   } catch (error) {
     errorService.reportError('Network error — could not reach server')
     throw error
+  }
+
+  if (await isResponseUnauthenticated(response)) {
+    return response
   }
 
   if (!response.ok) {
@@ -155,6 +171,10 @@ async function fetchGet(url: string, headers: HeadersInit): Promise<Response> {
   } catch (error) {
     errorService.reportError('Network error — could not reach server')
     throw error
+  }
+
+  if (await isResponseUnauthenticated(response)) {
+    return response
   }
 
   if (!response.ok) {

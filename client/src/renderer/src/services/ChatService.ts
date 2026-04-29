@@ -1,4 +1,8 @@
-import type { ConversationMessagesResponse, Message, MessageReaction } from '$src/interfaces/Messages'
+import type {
+  ConversationMessagesResponse,
+  Message,
+  MessageReaction
+} from '$src/interfaces/Messages'
 import type { User } from '$src/interfaces/User'
 import {
   type Conversation,
@@ -153,37 +157,38 @@ class ChatService {
     url: string,
     onLoaded: (conv: Conversation) => Promise<void>
   ): Promise<void> {
+    const response = await authenticatedGet(url)
+    if (!response.ok) return
+
+    const messageResponse: ConversationMessagesResponse = await response.json()
+    const conv = messageResponse.conversation
+    if (!conv) return
+
+    const convId = conv.id
+
+    conversationsState.byId.set(convId, conv)
+
+    conversationsState.conversationMetaById.set(convId, {
+      ...(conversationsState.conversationMetaById.get(convId) ?? defaultMeta()),
+      isLoading: true
+    })
+
+    let decryptedMessages: Message[] = []
     try {
-      const response = await authenticatedGet(url)
-      if (!response.ok) return
-
-      const messageResponse: ConversationMessagesResponse = await response.json()
-      const conv = messageResponse.conversation
-      if (!conv) return
-
-      const convId = conv.id
-
-      conversationsState.byId.set(convId, conv)
-
-      conversationsState.conversationMetaById.set(convId, {
-        ...(conversationsState.conversationMetaById.get(convId) ?? defaultMeta()),
-        isLoading: true
-      })
-
-      const decryptedMessages = await this.decryptIfDirect(messageResponse.messages, conv)
-
-      conversationsState.messagesByConversationId.set(convId, decryptedMessages)
-      conversationsState.conversationMetaById.set(convId, {
-        ...(conversationsState.conversationMetaById.get(convId) ?? defaultMeta()),
-        isLoading: false,
-        hasMore: messageResponse.messages.length >= ChatService.PAGE_SIZE,
-        lastMessage: decryptedMessages[decryptedMessages.length - 1]?.content ?? null
-      })
-
-      await onLoaded(conv)
+      decryptedMessages = await this.decryptIfDirect(messageResponse.messages, conv)
     } catch (error) {
       console.error('Error loading messages:', error)
     }
+
+    conversationsState.messagesByConversationId.set(convId, decryptedMessages)
+    conversationsState.conversationMetaById.set(convId, {
+      ...(conversationsState.conversationMetaById.get(convId) ?? defaultMeta()),
+      isLoading: false,
+      hasMore: messageResponse.messages.length >= ChatService.PAGE_SIZE,
+      lastMessage: decryptedMessages[decryptedMessages.length - 1]?.content ?? null
+    })
+
+    await onLoaded(conv)
   }
 
   async fetchMessagesBefore(
@@ -325,6 +330,7 @@ class ChatService {
     newContent: string,
     toUserId: number
   ): Promise<void> {
+    if (!sessionState.currentUser) return
     const encrypted = await this.encryptForUser(newContent, toUserId, sessionState.currentUser.id)
     webSocketService.send({
       type: WebSocketMessageType.SEND_EDIT_MESSAGE,

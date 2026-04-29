@@ -1,12 +1,6 @@
 import { authenticatedPost } from '$src/services/api'
 import { Device } from 'mediasoup-client'
-import type {
-  Producer,
-  RtpCapabilities,
-  RtpParameters,
-  Transport,
-  TransportOptions
-} from 'mediasoup-client/types'
+import type { Producer, RtpCapabilities, RtpParameters, Transport, TransportOptions } from 'mediasoup-client/types'
 import { callState } from '$src/states/CallState.svelte.js'
 import { errorService } from '$src/services/ErrorService'
 import { deviceService } from '$src/services/DeviceService'
@@ -53,10 +47,12 @@ class ChannelCallService {
     channelId: number,
     roomToken: string
   ): Promise<RtpCapabilities> {
+    const user = sessionState.currentUser
+    if (!user) throw new Error('Cannot start call: not authenticated')
     this.sendMessage(ws, 'getRouterRtpCapabilities', {
       roomId: String(channelId),
-      peerId: sessionState.currentUser.id,
-      displayName: sessionState.currentUser.displayName,
+      peerId: user.id,
+      displayName: user.displayName,
       token: roomToken
     })
 
@@ -137,7 +133,7 @@ class ChannelCallService {
       }
 
       if (msg.type !== 'newProducer') return
-      if (String(msg.peerId) === String(sessionState.currentUser.id)) return
+      if (msg.peerId === sessionState.currentUser?.id) return
 
       this.sendMessage(ws, 'consume', {
         transportId: recvTransport.id,

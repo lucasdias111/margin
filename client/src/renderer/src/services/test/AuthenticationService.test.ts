@@ -50,6 +50,7 @@ vi.mock('$src/states/CallState.svelte', () => ({
 
 vi.mock('$src/services/api', () => ({
   authenticatedPost: vi.fn(),
+  setUnauthenticatedHandler: vi.fn(),
   unauthenticatedPost: vi.fn()
 }))
 

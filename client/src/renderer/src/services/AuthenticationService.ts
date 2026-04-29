@@ -1,4 +1,4 @@
-import { authenticatedPost, unauthenticatedPost } from './api'
+import { authenticatedPost, setUnauthenticatedHandler, unauthenticatedPost } from './api'
 import { encryptionService } from './EncryptionService'
 import { usersState } from '$src/states/UsersState.svelte.js'
 import { callState } from '$src/states/CallState.svelte'
@@ -158,3 +158,5 @@ class AuthenticationService {
   }
 }
 export const authenticationService = new AuthenticationService()
+
+setUnauthenticatedHandler(() => authenticationService.clear())

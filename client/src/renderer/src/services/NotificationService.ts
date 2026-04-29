@@ -104,8 +104,12 @@ class NotificationService {
       if (message.conversationType === 'CHANNEL') {
         navigationService.setView(View.Margin)
         marginService.select(await marginService.getMargin(message.marginId))
-        const channel: Channel = await channelService.getChannelById(message.conversationId)
-        channelService.select(channel)
+        try {
+          const channel: Channel = await channelService.getChannelById(message.conversationId)
+          channelService.select(channel)
+        } catch {
+          // Channel was deleted — leave the user on the margin view.
+        }
       } else {
         navigationService.setView(View.Private)
         usersService.select(await usersService.getById(message.user.id))

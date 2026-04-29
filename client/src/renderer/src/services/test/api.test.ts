@@ -1,13 +1,30 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import {
+  authenticatedDelete,
   authenticatedGet,
+  authenticatedPatchForm,
   authenticatedPost,
   authenticatedPostForm,
-  authenticatedPatchForm,
-  authenticatedDelete,
+  setUnauthenticatedHandler,
   unauthenticatedPost
 } from '../api'
 import { errorService } from '$src/services/ErrorService'
+
+function makeJwt(payload: Record<string, unknown>): string {
+  const encode = (obj: unknown): string =>
+    btoa(JSON.stringify(obj)).replace(/=/g, '').replace(/\+/g, '-').replace(/\//g, '_')
+  return `${encode({ alg: 'HS256' })}.${encode(payload)}.fakesignature`
+}
+
+function validJwt(): string {
+  return makeJwt({ sub: 'a', exp: Math.floor(Date.now() / 1000) + 3600 })
+}
+
+function expiredJwt(): string {
+  return makeJwt({ sub: 'a', exp: Math.floor(Date.now() / 1000) - 100 })
+}
+
+let unauthenticatedHandler: ReturnType<typeof vi.fn<() => Promise<void>>>
 
 vi.mock('$src/services/ErrorService', () => ({
   errorService: {
@@ -49,6 +66,8 @@ describe('API helpers', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     sessionStorage.clear()
+    unauthenticatedHandler = vi.fn<() => Promise<void>>().mockResolvedValue(undefined)
+    setUnauthenticatedHandler(unauthenticatedHandler)
   })
 
   describe('authenticatedGet', () => {
@@ -65,14 +84,6 @@ describe('API helpers', () => {
           Authorization: 'Bearer my-token'
         }
       })
-    })
-
-    it('reports error when no token is present', async () => {
-      mockFetchOk()
-
-      await authenticatedGet('users/1')
-
-      expect(errorService.reportError).toHaveBeenCalledWith('Token is required')
     })
 
     it('reports error with detail from response on non-ok', async () => {
@@ -141,14 +152,6 @@ describe('API helpers', () => {
         body: JSON.stringify({ name: 'test' })
       })
     })
-
-    it('reports error when no token is present', async () => {
-      mockFetchOk()
-
-      await authenticatedPost({}, 'test')
-
-      expect(errorService.reportError).toHaveBeenCalledWith('Token is required')
-    })
   })
 
   describe('authenticatedPostForm', () => {
@@ -168,14 +171,6 @@ describe('API helpers', () => {
         },
         body: formData
       })
-    })
-
-    it('reports error when no token is present', async () => {
-      mockFetchOk()
-
-      await authenticatedPostForm(new FormData(), 'upload')
-
-      expect(errorService.reportError).toHaveBeenCalledWith('No token found')
     })
   })
 
@@ -278,6 +273,116 @@ describe('API helpers', () => {
 
       const callHeaders = fetchSpy.mock.calls[0][1]?.headers as Record<string, string>
       expect(callHeaders).not.toHaveProperty('Authorization')
+    })
+  })
+
+  describe('auth failure handling', () => {
+    it('does not call the unauthenticated handler when the token is valid and unexpired', async () => {
+      sessionStorage.setItem('authToken', validJwt())
+      mockFetchOk()
+
+      await authenticatedGet('users/me')
+
+      expect(unauthenticatedHandler).not.toHaveBeenCalled()
+    })
+
+    it('calls the unauthenticated handler when the token is missing', async () => {
+      mockFetchOk()
+
+      await authenticatedGet('users/me')
+
+      expect(unauthenticatedHandler).toHaveBeenCalledTimes(1)
+      expect(errorService.reportError).toHaveBeenCalledWith('Session expired - logging out')
+    })
+
+    it('calls the unauthenticated handler when the JWT is expired', async () => {
+      sessionStorage.setItem('authToken', expiredJwt())
+      mockFetchOk()
+
+      await authenticatedGet('users/me')
+
+      expect(unauthenticatedHandler).toHaveBeenCalledTimes(1)
+    })
+
+    it('calls the unauthenticated handler when the token is malformed (no periods)', async () => {
+      sessionStorage.setItem('authToken', 'not-a-jwt')
+      mockFetchOk()
+
+      await authenticatedGet('users/me')
+
+      expect(unauthenticatedHandler).toHaveBeenCalledTimes(1)
+    })
+
+    it('calls the unauthenticated handler when the server responds 401', async () => {
+      sessionStorage.setItem('authToken', validJwt())
+      mockFetchError(401, { detail: 'Token rejected' })
+
+      const response = await authenticatedGet('users/me')
+
+      expect(response.status).toBe(401)
+      expect(unauthenticatedHandler).toHaveBeenCalledTimes(1)
+      expect(errorService.reportError).toHaveBeenCalledWith('Session expired - logging out')
+    })
+
+    it('does NOT call the unauthenticated handler on 403 (authenticated but forbidden)', async () => {
+      sessionStorage.setItem('authToken', validJwt())
+      mockFetchError(403, { detail: 'Forbidden' })
+
+      await expect(authenticatedGet('users/me')).rejects.toThrow('Forbidden')
+
+      expect(unauthenticatedHandler).not.toHaveBeenCalled()
+    })
+
+    it('deduplicates the handler across concurrent 401 responses', async () => {
+      sessionStorage.setItem('authToken', validJwt())
+      mockFetchError(401, {})
+
+      let resolveHandler: () => void = () => {}
+      unauthenticatedHandler.mockImplementation(
+        () =>
+          new Promise<void>((resolve) => {
+            resolveHandler = resolve
+          })
+      )
+
+      const calls = [
+        authenticatedGet('a').catch(() => {}),
+        authenticatedGet('b').catch(() => {}),
+        authenticatedGet('c').catch(() => {})
+      ]
+
+      await new Promise((r) => setTimeout(r, 0))
+      resolveHandler()
+      await Promise.all(calls)
+
+      expect(unauthenticatedHandler).toHaveBeenCalledTimes(1)
+    })
+
+    it('triggers the handler exactly once for concurrent missing-token requests', async () => {
+      mockFetchOk()
+
+      let resolveHandler: () => void = () => {}
+      unauthenticatedHandler.mockImplementation(
+        () =>
+          new Promise<void>((resolve) => {
+            resolveHandler = resolve
+          })
+      )
+
+      const calls = [authenticatedGet('a'), authenticatedGet('b'), authenticatedGet('c')]
+
+      await new Promise((r) => setTimeout(r, 0))
+      resolveHandler()
+      await Promise.all(calls)
+
+      expect(unauthenticatedHandler).toHaveBeenCalledTimes(1)
+    })
+
+    it('is a no-op when no handler is registered', async () => {
+      setUnauthenticatedHandler(undefined as unknown as () => Promise<void>)
+      mockFetchOk()
+
+      await expect(authenticatedGet('users/me')).resolves.toBeDefined()
     })
   })
 })
