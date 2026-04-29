@@ -2,7 +2,6 @@
   import CreateMarginModal from '$src/components/content/manage/margin/modals/CreateMarginModal.svelte'
   import type { CreateMargin } from '$src/interfaces/Margin'
   import { marginService } from '$src/services/MarginService'
-  import { chatState } from '$src/states/ChatState.svelte'
   import Icon from '$src/components/common/icons/Icon.svelte'
   import { marginInviteService } from '$src/services/MarginInviteService'
   import Button from '$src/components/common/buttons/Button.svelte'
@@ -13,9 +12,7 @@
   let joinError = $state<string | null>(null)
 
   async function onCreate(createRequest: CreateMargin): Promise<void> {
-    const newMargin = await marginService.createMargin(createRequest)
-    chatState.selectMargin(newMargin)
-    marginService.addNewMargin(newMargin)
+    await marginService.createMargin(createRequest)
     modalOpen = false
   }
 
@@ -25,7 +22,6 @@
     joinError = null
     try {
       const margin = await marginInviteService.acceptLinkInvite(joinCode.trim())
-      chatState.selectMargin(margin)
       marginService.addNewMargin(margin)
       joinCode = ''
     } catch (e) {

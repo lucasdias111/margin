@@ -34,7 +34,7 @@ class WebSocketService {
 
     const token = this.resolveToken()
     if (token === 'restoring') return
-    if (!token) {
+    if (!token || token == '') {
       this.terminateSession()
       return
     }

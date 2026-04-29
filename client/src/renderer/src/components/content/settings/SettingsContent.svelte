@@ -1,15 +1,15 @@
 <script lang="ts">
   import UserAvatar from '$src/components/common/user/UserAvatar.svelte'
-  import { userState } from '$src/states/UserState.svelte.js'
   import UploadImageButton from '$src/components/common/buttons/UploadImageButton.svelte'
-  import { userService } from '$src/services/UserService'
+  import { usersService } from '$src/services/UsersService'
   import ConfirmationModal from '$src/components/common/modals/ConfirmationModal.svelte'
   import Button from '$src/components/common/buttons/Button.svelte'
+  import { sessionState } from '$src/states/SessionState.svelte'
 
   let newProfilePicture = $state<File | null>(null)
-  let previewUrl = $state<string | null>(userState.currentUser.profilePictureUrl)
-  let displayName = $state(userState.currentUser.displayName)
-  let email = $state(userState.currentUser.email)
+  let previewUrl = $state<string | null>(sessionState.currentUser.profilePictureUrl)
+  let displayName = $state(sessionState.currentUser.displayName)
+  let email = $state(sessionState.currentUser.email)
   let editingField = $state<'displayName' | 'email' | null>(null)
   let showDeleteConfirm = $state(false)
 
@@ -21,8 +21,8 @@
   let passwordLoading = $state(false)
 
   const hasChanges = $derived(
-    displayName !== userState.currentUser.displayName ||
-      email !== userState.currentUser.email ||
+    displayName !== sessionState.currentUser.displayName ||
+    email !== sessionState.currentUser.email ||
       newProfilePicture !== null
   )
 
@@ -41,16 +41,16 @@
   function handleKeydown(e: KeyboardEvent): void {
     if (e.key === 'Enter') editingField = null
     if (e.key === 'Escape') {
-      displayName = userState.currentUser.displayName
-      email = userState.currentUser.email
+      displayName = sessionState.currentUser.displayName
+      email = sessionState.currentUser.email
       editingField = null
     }
   }
 
   function discardChanges(): void {
-    displayName = userState.currentUser.displayName
-    email = userState.currentUser.email
-    previewUrl = userState.currentUser.profilePictureUrl
+    displayName = sessionState.currentUser.displayName
+    email = sessionState.currentUser.email
+    previewUrl = sessionState.currentUser.profilePictureUrl
     newProfilePicture = null
     editingField = null
   }
@@ -58,15 +58,15 @@
   async function onSave(): Promise<void> {
     try {
       const formData = new FormData()
-      if (displayName !== userState.currentUser.displayName)
+      if (displayName !== sessionState.currentUser.displayName)
         formData.append('displayName', displayName)
-      if (email !== userState.currentUser.email) formData.append('email', email)
+      if (email !== sessionState.currentUser.email) formData.append('email', email)
       if (newProfilePicture) formData.append('file', newProfilePicture)
-      await userService.updateUserInfo(formData)
+      await usersService.updateUserInfo(formData)
 
-      displayName = userState.currentUser.displayName
-      email = userState.currentUser.email
-      previewUrl = userState.currentUser.profilePictureUrl
+      displayName = sessionState.currentUser.displayName
+      email = sessionState.currentUser.email
+      previewUrl = sessionState.currentUser.profilePictureUrl
       newProfilePicture = null
       editingField = null
     } catch {
@@ -89,7 +89,7 @@
 
     passwordLoading = true
     try {
-      await userService.changePassword(currentPassword, newPassword)
+      await usersService.changePassword(currentPassword, newPassword)
       passwordSuccess = true
       currentPassword = ''
       newPassword = ''
@@ -103,7 +103,7 @@
 
   async function onDeleteAccount(): Promise<void> {
     try {
-      await userService.deleteAccount()
+      await usersService.deleteAccount()
     } catch (e) {
       console.error('Failed to delete account:', e)
     }

@@ -1,4 +1,3 @@
-import type { RecentChatUser } from '$src/interfaces/RecentChatUser'
 import type { DirectConversation } from '$src/interfaces/Conversation'
 import type { User } from '$src/interfaces/User'
 
@@ -7,27 +6,8 @@ export interface PendingInvite {
   fromUser: User
 }
 
-class UserListState {
-  recentUsers = $state<RecentChatUser[]>([])
+class ConversationInviteService {
   pendingInvites = $state<PendingInvite[]>([])
-
-  private sortByRecent(): void {
-    this.recentUsers = [...this.recentUsers].sort((a, b) => {
-      if (!a.lastMessageTime) return 1
-      if (!b.lastMessageTime) return -1
-      return new Date(b.lastMessageTime).getTime() - new Date(a.lastMessageTime).getTime()
-    })
-  }
-
-  setUsers(users: RecentChatUser[]): void {
-    this.recentUsers = users
-    this.sortByRecent()
-  }
-
-  addUser(user: RecentChatUser): void {
-    this.recentUsers = [...this.recentUsers, user]
-    this.sortByRecent()
-  }
 
   addPendingInvite(invite: PendingInvite): void {
     const exists = this.pendingInvites.find((i) => i.conversation.id === invite.conversation.id)
@@ -39,16 +19,6 @@ class UserListState {
   removePendingInvite(conversationId: number): void {
     this.pendingInvites = this.pendingInvites.filter((i) => i.conversation.id !== conversationId)
   }
-
-  updateLastMessage(userId: number, message: string, incoming: boolean, time: string): void {
-    const entry = this.recentUsers.find((u) => u.user.id === userId)
-    if (entry) {
-      entry.lastMessage = message
-      entry.lastMessageIncoming = incoming
-      entry.lastMessageTime = time
-      this.sortByRecent()
-    }
-  }
 }
 
-export const userListState = new UserListState()
+export const conversationInviteService = new ConversationInviteService()

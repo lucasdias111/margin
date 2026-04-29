@@ -6,12 +6,25 @@ import {
   authenticatedPost
 } from '$src/services/api'
 import type { RecentChatUser } from '$src/interfaces/RecentChatUser'
-import { userState } from '$src/states/UserState.svelte'
 import { authenticationService } from '$src/services/AuthenticationService'
 import type { User } from '$src/interfaces/User'
 import { encryptionService } from '$src/services/EncryptionService'
+import { navigationState } from '$src/states/NavigationState.svelte'
+import { sessionState } from '$src/states/SessionState.svelte'
+import { usersState } from '$src/states/UsersState.svelte.js'
+import { conversationsState } from '$src/states/ConversationsState.svelte.js'
 
-class UserService {
+class UsersService {
+  select(user: User): void {
+    navigationState.selectedUser = user
+  }
+
+  setOnline(userId: number): void {
+    const existing = usersState.byId.get(userId)
+    if (!existing) return
+    usersState.byId.set(userId, { ...existing, isOnline: true })
+  }
+
   async getRecentChatUsers(): Promise<RecentChatUser[]> {
     const response = await authenticatedGet(`users/recent_chat_users`)
 
@@ -27,9 +40,9 @@ class UserService {
     if (!response.ok) throw new Error('Update failed')
 
     const data = await response.json()
-    userState.currentUser.profilePictureUrl = data.profilePictureUrl
-    userState.currentUser.displayName = data.displayName
-    userState.currentUser.email = data.email
+    sessionState.currentUser.profilePictureUrl = data.profilePictureUrl
+    sessionState.currentUser.displayName = data.displayName
+    sessionState.currentUser.email = data.email
   }
 
   async deleteAccount(): Promise<void> {
@@ -75,6 +88,23 @@ class UserService {
       throw new Error('Bug report failed')
     }
   }
+
+  loadRecentConversations(decryptedUsers: RecentChatUser[]): void {
+    for (const recentUser of decryptedUsers) {
+      usersState.add(recentUser.user)
+      const existing = conversationsState.conversationMetaById.get(recentUser.conversation.id)
+      conversationsState.conversationMetaById.set(recentUser.conversation.id, {
+        hasMore: true,
+        isLoading: false,
+        lastMessage: recentUser.lastMessage ?? '',
+        lastMessageTime: recentUser.lastMessageTime ?? new Date().toISOString(),
+        lastMessageIncoming: !!recentUser.lastMessageIncoming,
+        unread: existing?.unread ?? false,
+        lastReadAt: existing?.lastReadAt ?? null
+      })
+      conversationsState.byId.set(recentUser.conversation.id, recentUser.conversation)
+    }
+  }
 }
 
-export const userService = new UserService()
+export const usersService = new UsersService()

@@ -1,9 +1,9 @@
 <script lang="ts">
   import ChannelChatContent from '$src/components/content/chat/channel/ChannelChatContent.svelte'
-  import { chatState } from '$src/states/ChatState.svelte.js'
   import MarginHome from '$src/components/content/margin/MarginHome.svelte'
+  import { navigationState } from '$src/states/NavigationState.svelte'
 
-  let hasSelectedChannel = $derived(!!chatState.selectedChannel)
+  let hasSelectedChannel = $derived(!!navigationState.selectedChannel)
 </script>
 
 <div class="margin-main">

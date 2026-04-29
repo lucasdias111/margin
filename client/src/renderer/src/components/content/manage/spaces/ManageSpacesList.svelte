@@ -1,8 +1,8 @@
 <script lang="ts">
   import type { CreateSpace, Space } from '$src/interfaces/Space'
   import AddSpaceModal from '$src/components/content/manage/spaces/modals/AddSpaceModal.svelte'
-  import { chatState } from '$src/states/ChatState.svelte.js'
   import Button from '$src/components/common/buttons/Button.svelte'
+  import { navigationState } from '$src/states/NavigationState.svelte'
 
   interface Props {
     spaces: Space[]
@@ -11,7 +11,7 @@
     onAddSpace: (name: CreateSpace) => void
   }
 
-  let { spaces, selectedSpace, onSelectSpace, onAddSpace }: Props = $props()
+  let { spaces, onSelectSpace, onAddSpace }: Props = $props()
 
   let addSpaceOpen = $state(false)
 
@@ -56,7 +56,7 @@
 </div>
 
 <AddSpaceModal
-  marginId={chatState.selectedMargin.marginId}
+  marginId={navigationState.selectedMargin.marginId}
   open={addSpaceOpen}
   onClose={() => (addSpaceOpen = false)}
   {onAddSpace}

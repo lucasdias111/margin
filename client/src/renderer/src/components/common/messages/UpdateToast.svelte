@@ -1,14 +1,15 @@
 <script lang="ts">
   import { updateState } from '$src/states/UpdateState.svelte'
   import Icon from '$src/components/common/icons/Icon.svelte'
+  import { updateService } from '$src/services/UpdateService'
 
   function accept(): void {
-    updateState.downloading = true
+    updateService.setIsDownloading(true)
     window.updater?.acceptUpdate()
   }
 
   function dismiss(): void {
-    updateState.updateAvailable = false
+    updateService.setUpdateAvailable(false)
   }
 
   function install(): void {

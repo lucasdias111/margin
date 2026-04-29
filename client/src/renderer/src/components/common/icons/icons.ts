@@ -136,7 +136,11 @@ export const icons = {
   smile: `<circle cx="12" cy="12" r="9"/>
           <circle cx="9" cy="10" r="1" fill="currentColor" stroke="none"/>
           <circle cx="15" cy="10" r="1" fill="currentColor" stroke="none"/>
-          <path d="M8.5 14.5 Q12 17.5 15.5 14.5"/>`
+          <path d="M8.5 14.5 Q12 17.5 15.5 14.5"/>`,
+
+  download: `<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+             <polyline points="7 10 12 15 17 10" />
+             <line x1="12" y1="15" x2="12" y2="3" />`
 } as const
 
 export type IconName = keyof typeof icons

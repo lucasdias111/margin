@@ -1,11 +1,8 @@
-import type {
-  ConversationMessagesResponse,
-  Message,
-  MessageReaction
-} from '$src/interfaces/Messages'
+import type { ConversationMessagesResponse, Message, MessageReaction } from '$src/interfaces/Messages'
 import type { User } from '$src/interfaces/User'
 import {
   type Conversation,
+  type DirectConversation,
   isChannelConversation,
   isDirectConversation
 } from '$src/interfaces/Conversation'
@@ -16,11 +13,14 @@ import type { Channel } from '$src/interfaces/Channel'
 import { authenticatedGet, authenticatedPost } from '$src/services/api'
 import { notificationService } from '$src/services/NotificationService'
 import type { WebSocketMessage } from '$src/interfaces/WebSocketMessages'
-import { userState } from '$src/states/UserState.svelte'
-import { chatState } from '$src/states/ChatState.svelte'
-import { conversationState } from '$src/states/ConversationState.svelte'
-import { type PendingInvite, userListState } from '$src/states/UserListState.svelte'
-import type { ContentType } from '$src/interfaces/Content'
+import type { View } from '$src/interfaces/View'
+import { navigationState } from '$src/states/NavigationState.svelte'
+import { navigationService } from '$src/services/NavigationService'
+import { channelService } from '$src/services/ChannelService'
+import { sessionState } from '$src/states/SessionState.svelte'
+import { conversationsState, defaultMeta } from '$src/states/ConversationsState.svelte.js'
+import { conversationInviteService, type PendingInvite } from '$src/states/UserListState.svelte'
+import { usersState } from '$src/states/UsersState.svelte'
 
 class ChatService {
   private static readonly PAGE_SIZE = 30
@@ -36,15 +36,34 @@ class ChatService {
   }
 
   private handleIncomingChannelMessage = async (msg: Message): Promise<void> => {
-    if (msg.conversationId === chatState.selectedChannel?.conversationId) {
-      conversationState.messages = [...conversationState.messages, msg]
+    const isFromMe = msg.user.id === sessionState.currentUser?.id
+    const isActive = msg.conversationId === navigationState.selectedChannel?.conversationId
+
+    if (isFromMe && this.replaceOptimisticIfPresent(msg)) {
+      if (isActive && document.hasFocus()) {
+        const meta = conversationsState.conversationMetaById.get(msg.conversationId)
+        if (meta?.unread) await this.markConversationAsRead(msg.conversationId)
+      }
+      return
+    }
+
+    conversationsState.appendMessage(msg, !isFromMe)
+
+    if (isFromMe) return
+
+    if (isActive && document.hasFocus()) {
+      await this.markConversationAsRead(msg.conversationId)
+    } else {
+      conversationsState.markUnread(msg.conversationId)
+      if (!isActive) notificationService.handleIncomingMessage(msg)
     }
   }
 
   private handleIncomingDirectMessage = async (msg: Message): Promise<void> => {
-    const isFromMe = msg.user.id === userState.currentUser?.id
-    const otherUser = isFromMe ? chatState.selectedUser : msg.user
+    const isFromMe = msg.user.id === sessionState.currentUser?.id
+    const otherUser = isFromMe ? navigationState.selectedUser : msg.user
     const otherUserId = otherUser?.id
+
     if (!otherUser || !otherUserId) return
 
     try {
@@ -53,73 +72,80 @@ class ChatService {
       msg.content = '[Decryption failed]'
     }
 
-    await this.ensureUserInRecentList(otherUser, msg.content, msg, isFromMe)
+    const isActive = navigationState.selectedUser?.id === otherUserId
 
-    const isActiveConversation = conversationState.currentConversation?.id === msg.conversationId
-    if (!isActiveConversation) {
-      userListState.updateLastMessage(otherUserId, msg.content, !isFromMe, msg.createdAt)
-      notificationService.handleIncomingMessage(msg)
+    if (isFromMe && this.replaceOptimisticIfPresent(msg)) {
+      if (document.hasFocus() && isActive) {
+        const meta = conversationsState.conversationMetaById.get(msg.conversationId)
+        if (meta?.unread) await this.markConversationAsRead(msg.conversationId)
+      }
       return
     }
 
-    if (isFromMe) {
-      const optimisticIndex = conversationState.messages.findIndex((m) => m.id < 0)
-      if (optimisticIndex !== -1) {
-        conversationState.messages[optimisticIndex] = msg
-        userListState.updateLastMessage(otherUserId, msg.content, !isFromMe, msg.createdAt)
-        await this.markConversationAsRead(conversationState.currentConversation!.id)
-        return
-      }
-    }
+    conversationsState.appendMessage(msg, !isFromMe)
 
-    conversationState.messages = [...conversationState.messages, msg]
-    userListState.updateLastMessage(otherUserId, msg.content, !isFromMe, msg.createdAt)
-
-    if (document.hasFocus()) {
-      await this.markConversationAsRead(conversationState.currentConversation!.id)
+    if (isActive && document.hasFocus()) {
+      await this.markConversationAsRead(msg.conversationId)
     } else {
-      notificationService.handleIncomingMessage(msg)
+      conversationsState.markUnread(msg.conversationId)
+      if (!isActive) notificationService.handleIncomingMessage(msg)
     }
   }
 
-  private ensureUserInRecentList = async (
-    user: User,
-    preview: string,
-    msg: Message,
-    isFromMe: boolean
-  ): Promise<void> => {
-    const alreadyInList = userListState.recentUsers.find((u) => u.user.id === user.id)
-    if (alreadyInList) return
-    userListState.addUser({
-      conversationId: msg.conversationId,
-      user,
-      lastMessage: preview,
+  private replaceOptimisticIfPresent(msg: Message): boolean {
+    const messages = conversationsState.messagesByConversationId.get(msg.conversationId) ?? []
+    const optimisticIndex = messages.findIndex((m) => m.id < 0)
+    if (optimisticIndex === -1) return false
+
+    const updated = [...messages]
+    updated[optimisticIndex] = msg
+    conversationsState.messagesByConversationId.set(msg.conversationId, updated)
+    const meta = conversationsState.conversationMetaById.get(msg.conversationId) ?? defaultMeta()
+    conversationsState.conversationMetaById.set(msg.conversationId, {
+      ...meta,
+      lastMessage: msg.content,
       lastMessageTime: msg.createdAt,
-      lastMessageIncoming: !isFromMe
+      lastMessageIncoming: false
     })
+
+    return true
   }
 
   async loadConversationForUser(user: User, force = false): Promise<void> {
-    if (
-      !force &&
-      conversationState.currentConversation &&
-      isDirectConversation(conversationState.currentConversation) &&
-      conversationState.currentConversation.otherUserId === user.id
-    )
-      return
+    if (!force) {
+      for (const [convId, conv] of conversationsState.byId) {
+        if (conv.type === 'DIRECT' && conv.otherUserId === user.id) {
+          const messages = conversationsState.messagesByConversationId.get(convId)
+          const meta = conversationsState.conversationMetaById.get(convId)
+          if (messages && messages.length > 1 && !meta?.isLoading) {
+            if (document.hasFocus()) await this.markConversationAsRead(convId)
+            return
+          }
+          break
+        }
+      }
+    }
 
     await this.loadMessages(
       `conversations/${user.id}/direct_messages?limit=${ChatService.PAGE_SIZE}`,
-      (conv) => this.markConversationAsRead(conv.id)
+      (conv) => (document.hasFocus() ? this.markConversationAsRead(conv.id) : Promise.resolve())
     )
   }
 
   async loadConversationForChannel(channel: Channel, force = false): Promise<void> {
-    if (!force && conversationState.currentConversation?.id === channel.conversationId) return
+    const conversationId = channel.conversationId
+    if (!force) {
+      const existing = conversationsState.messagesByConversationId.get(conversationId)
+      const meta = conversationsState.conversationMetaById.get(conversationId)
+      if (existing && existing.length > 1 && !meta?.isLoading) {
+        if (document.hasFocus()) await this.markConversationAsRead(conversationId)
+        return
+      }
+    }
 
     await this.loadMessages(
       `conversations/${channel.id}/channel_messages?limit=${ChatService.PAGE_SIZE}`,
-      () => this.markConversationAsRead(channel.conversationId)
+      () => (document.hasFocus() ? this.markConversationAsRead(conversationId) : Promise.resolve())
     )
   }
 
@@ -127,72 +153,57 @@ class ChatService {
     url: string,
     onLoaded: (conv: Conversation) => Promise<void>
   ): Promise<void> {
-    conversationState.currentConversation = null
-    conversationState.messages = []
-    conversationState.hasMore = true
-    conversationState.isLoading = true
-
     try {
       const response = await authenticatedGet(url)
       if (!response.ok) return
 
       const messageResponse: ConversationMessagesResponse = await response.json()
-      if (messageResponse.conversation == null) return
+      const conv = messageResponse.conversation
+      if (!conv) return
 
-      conversationState.selectConversation(messageResponse.conversation)
-      conversationState.messages = await this.decryptIfDirect(
-        messageResponse.messages,
-        messageResponse.conversation
-      )
+      const convId = conv.id
 
-      conversationState.hasMore = messageResponse.messages.length >= ChatService.PAGE_SIZE
+      conversationsState.byId.set(convId, conv)
 
-      await onLoaded(messageResponse.conversation)
+      conversationsState.conversationMetaById.set(convId, {
+        ...(conversationsState.conversationMetaById.get(convId) ?? defaultMeta()),
+        isLoading: true
+      })
+
+      const decryptedMessages = await this.decryptIfDirect(messageResponse.messages, conv)
+
+      conversationsState.messagesByConversationId.set(convId, decryptedMessages)
+      conversationsState.conversationMetaById.set(convId, {
+        ...(conversationsState.conversationMetaById.get(convId) ?? defaultMeta()),
+        isLoading: false,
+        hasMore: messageResponse.messages.length >= ChatService.PAGE_SIZE,
+        lastMessage: decryptedMessages[decryptedMessages.length - 1]?.content ?? null
+      })
+
+      await onLoaded(conv)
     } catch (error) {
       console.error('Error loading messages:', error)
-      conversationState.messages = []
-    } finally {
-      conversationState.isLoading = false
     }
   }
 
-  async loadMoreMessages(): Promise<void> {
-    if (
-      conversationState.isLoadingMore ||
-      !conversationState.hasMore ||
-      !conversationState.currentConversation
-    )
-      return
-
-    const oldestId = conversationState.messages[0]?.id
-    if (!oldestId) return
-
-    conversationState.isLoadingMore = true
+  async fetchMessagesBefore(
+    conv: Conversation,
+    beforeId: number
+  ): Promise<{ messages: Message[]; hasMore: boolean }> {
+    const url = this.buildPaginationUrl(conv, beforeId)
+    if (!url) return { messages: [], hasMore: false }
 
     try {
-      const url = this.buildPaginationUrl(conversationState.currentConversation, oldestId)
-      if (!url) return
-
       const response = await authenticatedGet(url)
-      if (!response.ok) return
+      if (!response.ok) return { messages: [], hasMore: false }
 
       const messageResponse: ConversationMessagesResponse = await response.json()
-      if (messageResponse.messages.length === 0) {
-        conversationState.hasMore = false
-        return
-      }
-
-      if (messageResponse.messages.length < ChatService.PAGE_SIZE) {
-        conversationState.hasMore = false
-      }
-
-      const messages = await this.decryptIfDirect(
-        messageResponse.messages,
-        conversationState.currentConversation
-      )
-      conversationState.messages = [...messages, ...conversationState.messages]
-    } finally {
-      conversationState.isLoadingMore = false
+      const messages = await this.decryptIfDirect(messageResponse.messages, conv)
+      const hasMore = messages.length === ChatService.PAGE_SIZE
+      return { messages, hasMore }
+    } catch (error) {
+      console.error('Error fetching messages:', error)
+      return { messages: [], hasMore: false }
     }
   }
 
@@ -215,7 +226,7 @@ class ChatService {
     return Promise.all(
       messages.map(async (message) => {
         try {
-          const isRecipient = message.user.id !== userState.currentUser.id
+          const isRecipient = message.user.id !== sessionState.currentUser.id
           message.content = await encryptionService.decryptMessage(message.content, isRecipient)
           return message
         } catch {
@@ -306,7 +317,7 @@ class ChatService {
       recipientId: message.conversationId,
       payload: message.id.toString()
     })
-    conversationState.deleteMessage(message.id)
+    conversationsState.deleteMessage(message)
   }
 
   async editMessagePrivateMessage(
@@ -314,7 +325,7 @@ class ChatService {
     newContent: string,
     toUserId: number
   ): Promise<void> {
-    const encrypted = await this.encryptForUser(newContent, toUserId, userState.currentUser.id)
+    const encrypted = await this.encryptForUser(newContent, toUserId, sessionState.currentUser.id)
     webSocketService.send({
       type: WebSocketMessageType.SEND_EDIT_MESSAGE,
       recipientId: message.conversationId,
@@ -347,56 +358,105 @@ class ChatService {
   }
 
   handleIncomingReactionAdded = (reaction: MessageReaction): void => {
-    const message = conversationState.messages.find((m) => m?.id === reaction.messageId)
-    if (!message) return
-    const already = message.reactions.some(
+    const convId = conversationsState.currentConversation.id
+    const messages = conversationsState.messagesByConversationId.get(convId)
+    if (!messages) return
+
+    const index = messages.findIndex((m) => m.id === reaction.messageId)
+    if (index === -1) return
+
+    const updatedMessage = { ...messages[index] }
+
+    const already = updatedMessage.reactions.some(
       (r) => r.userId === reaction.userId && r.emoji === reaction.emoji
     )
+
     if (!already) {
-      message.reactions = [...message.reactions, reaction]
+      updatedMessage.reactions = [...updatedMessage.reactions, reaction]
+      const updatedMessages = [...messages]
+      updatedMessages[index] = updatedMessage
+      conversationsState.messagesByConversationId.set(convId, updatedMessages)
     }
   }
 
   handleIncomingReactionRemoved = (reaction: MessageReaction): void => {
-    const message = conversationState.messages.find((m) => m?.id === reaction.messageId)
-    if (!message) return
-    message.reactions = message.reactions.filter(
+    const convId = conversationsState.currentConversation.id
+    const messages = conversationsState.messagesByConversationId.get(convId)
+    if (!messages) return
+
+    const index = messages.findIndex((m) => m.id === reaction.messageId)
+    if (index === -1) return
+
+    const updatedMessage = { ...messages[index] }
+    updatedMessage.reactions = updatedMessage.reactions.filter(
       (r) => !(r.userId === reaction.userId && r.emoji === reaction.emoji)
     )
+
+    const updatedMessages = [...messages]
+    updatedMessages[index] = updatedMessage
+    conversationsState.messagesByConversationId.set(convId, updatedMessages)
   }
 
   async markConversationAsRead(conversationId: number): Promise<void> {
     if (!conversationId) return
+    conversationsState.markRead(conversationId, new Date().toISOString())
+    notificationService.dismissNotificationsForConversation(conversationId)
     try {
       await authenticatedPost(null, `conversations/${conversationId}/read`)
-      notificationService.markConversationAsRead(conversationId)
     } catch (error) {
       console.error('Failed to mark conversation as read:', error)
     }
   }
 
   handleIncomingConversationInvite = (data: WebSocketMessage<PendingInvite>): void => {
-    userListState.addPendingInvite(data.payload)
+    conversationInviteService.addPendingInvite(data.payload)
+  }
+
+  handleConversationInviteAccepted = (
+    data: WebSocketMessage<{ conversation: DirectConversation; acceptedBy: User }>
+  ): void => {
+    const { conversation, acceptedBy } = data.payload
+
+    usersState.add(acceptedBy)
+
+    const accepted: DirectConversation = {
+      ...conversation,
+      otherUserId: acceptedBy.id,
+      inviteStatus: 'ACCEPTED'
+    }
+    conversationsState.byId.set(accepted.id, accepted)
+
+    if (!conversationsState.conversationMetaById.has(accepted.id)) {
+      conversationsState.conversationMetaById.set(accepted.id, defaultMeta())
+    }
   }
 
   async sendConversationInvite(handle: string): Promise<void> {
     await authenticatedPost({ handle }, 'conversations/invite')
   }
 
-  async acceptConversationInvite(conversationId: number, fromUser: User): Promise<void> {
-    await authenticatedPost(null, `conversations/${conversationId}/invite/accept`)
-    userListState.removePendingInvite(conversationId)
-    userListState.addUser({
-      conversationId,
-      user: fromUser,
-      lastMessageTime: new Date().toISOString(),
-      lastMessageIncoming: true
-    })
+  async acceptConversationInvite(invite: PendingInvite): Promise<void> {
+    await authenticatedPost(null, `conversations/${invite.conversation.id}/invite/accept`)
+
+    conversationInviteService.removePendingInvite(invite.conversation.id)
+
+    usersState.add(invite.fromUser)
+
+    const accepted: DirectConversation = {
+      ...invite.conversation,
+      otherUserId: invite.fromUser.id,
+      inviteStatus: 'ACCEPTED'
+    }
+    conversationsState.byId.set(accepted.id, accepted)
+
+    if (!conversationsState.conversationMetaById.has(accepted.id)) {
+      conversationsState.conversationMetaById.set(accepted.id, defaultMeta())
+    }
   }
 
   async declineConversationInvite(conversationId: number): Promise<void> {
     await authenticatedPost(null, `conversations/${conversationId}/invite/decline`)
-    userListState.removePendingInvite(conversationId)
+    conversationInviteService.removePendingInvite(conversationId)
   }
 
   async loadPendingInvites(): Promise<void> {
@@ -404,25 +464,39 @@ class ChatService {
       const response = await authenticatedGet('conversations/pending_invites')
       if (!response.ok) return
       const invites: PendingInvite[] = await response.json()
-      invites.forEach((invite) => userListState.addPendingInvite(invite))
+      invites.forEach((invite) => conversationInviteService.addPendingInvite(invite))
     } catch (error) {
       console.error('Failed to load pending invites:', error)
     }
   }
 
-  selectContent(content: ContentType): void {
-    if (chatState.currentlySelectedContent !== content) {
-      chatState.selectedUser = null
-      conversationState.clear()
+  selectContent(content: View): void {
+    if (navigationState.view !== content) {
+      navigationState.selectedUser = null
+      // conversationsState.clear()
     }
-    chatState.currentlySelectedContent = content
-    chatState.selectedChannel = null
+    navigationService.setView(content)
+    channelService.select(null)
   }
 
   setConversationReadAt(conversationId: number, readAt: string): void {
-    const conv = conversationState.currentConversation
-    if (conv?.type !== 'DIRECT' || conv.id !== conversationId) return
-    conv.otherUserReadAt = readAt
+    const conv = conversationsState.byId.get(conversationId)
+    if (!conv) return
+    if (conv.type === 'DIRECT') {
+      conversationsState.byId.set(conversationId, {
+        ...conv,
+        otherUserReadAt: readAt
+      })
+    }
+
+    const meta = conversationsState.conversationMetaById.get(conversationId)
+    if (meta) {
+      conversationsState.conversationMetaById.set(conversationId, {
+        ...meta,
+        lastReadAt: readAt,
+        unread: false
+      })
+    }
   }
 }
 

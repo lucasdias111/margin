@@ -1,10 +1,10 @@
 <script lang="ts">
   import PrivateChatContent from '$src/components/content/chat/private/PrivateChatContent.svelte'
   import MarginContent from '$src/components/content/margin/MarginContent.svelte'
-  import { chatState } from '$src/states/ChatState.svelte'
   import SettingsContent from '$src/components/content/settings/SettingsContent.svelte'
+  import { navigationState } from '$src/states/NavigationState.svelte'
 
-  let selectedContent = $derived(chatState.currentlySelectedContent)
+  let selectedContent = $derived(navigationState.view)
 </script>
 
 <div class="content">

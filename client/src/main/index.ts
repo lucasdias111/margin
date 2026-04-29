@@ -1,7 +1,8 @@
-import { app, BrowserWindow, desktopCapturer, ipcMain, safeStorage, session, shell } from 'electron'
+import { app, BrowserWindow, desktopCapturer, ipcMain, nativeImage, safeStorage, session, shell } from 'electron'
 import { join } from 'path'
 import { electronApp, is, optimizer } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
+import notificationBadge from '../../resources/notification-badge.png?asset'
 import { API_CONFIG } from '../renderer/src/shared/config'
 import { existsSync, readFileSync, unlinkSync, writeFileSync } from 'fs'
 import pkg from 'electron-updater'
@@ -9,6 +10,24 @@ import pkg from 'electron-updater'
 const { autoUpdater } = pkg
 const SECURE_FILE = join(app.getPath('userData'), 'secure.bin')
 const TOKEN_FILE = join(app.getPath('userData'), 'session.bin')
+
+const badgeImage = nativeImage.createFromPath(notificationBadge)
+
+ipcMain.on('set-badge-count', (_event, count: number) => {
+  if (process.platform === 'darwin') {
+    app.dock?.setBadge(count > 0 ? String(count) : '')
+  } else if (process.platform === 'linux') {
+    app.setBadgeCount(count)
+  } else if (process.platform === 'win32') {
+    const win = BrowserWindow.getAllWindows()[0]
+    if (!win) return
+    if (count > 0) {
+      win.setOverlayIcon(badgeImage, `${count} unread messages`)
+    } else {
+      win.setOverlayIcon(null, '')
+    }
+  }
+})
 
 function writeEncrypted(filePath: string, plaintext: string): void {
   const encrypted = safeStorage.encryptString(plaintext)
@@ -45,8 +64,25 @@ function checkForUpdates(): void {
     BrowserWindow.getAllWindows()[0]?.webContents.send('update-downloaded')
   })
 
+  autoUpdater.on('error', (err) => {
+    console.error('AutoUpdater error:', err)
+  })
+
   ipcMain.on('update-install', () => {
-    autoUpdater.quitAndInstall()
+    console.log('update-install received')
+
+    if (process.platform === 'darwin') {
+      app.removeAllListeners('window-all-closed')
+
+      BrowserWindow.getAllWindows().forEach((w) => w.destroy())
+
+      setTimeout(() => {
+        autoUpdater.quitAndInstall(false, true)
+        setTimeout(() => app.exit(0), 2000)
+      }, 100)
+    } else {
+      autoUpdater.quitAndInstall(false, true)
+    }
   })
 }
 
@@ -146,7 +182,6 @@ function createWindow(): void {
 // initialization and is ready to create browser windows.
 // Some APIs can only be used after this event occurs.
 app.whenReady().then(() => {
-  // Set app user model id for windows
   electronApp.setAppUserModelId('com.electron')
 
   // Default open or close DevTools by F12 in development

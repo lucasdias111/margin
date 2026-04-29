@@ -2,27 +2,31 @@
   import UsersList from './sidebar_list/UsersList.svelte'
   import SpacesList from './sidebar_list/SpacesList.svelte'
   import UserSearchBar from '$src/components/common/user/UserSearchBar.svelte'
-  import { chatState } from '$src/states/ChatState.svelte.js'
   import type { User } from '$src/interfaces/User'
-  import type { ContentType } from '$src/interfaces/Content'
+  import { View } from '$src/interfaces/View'
   import MarginNavigationItem from '$src/components/content/sidebar/sidebar_list/MarginNavigationItem.svelte'
   import MarginSwitcher from '$src/components/content/sidebar/sidebar_list/MarginSwitcher.svelte'
   import Settings from '$src/components/content/settings/Settings.svelte'
   import Icon from '$src/components/common/icons/Icon.svelte'
   import NewConversationModal from '$src/components/content/chat/private/NewConversationModal.svelte'
   import Button from '$src/components/common/buttons/Button.svelte'
+  import { usersService } from '$src/services/UsersService'
+  import { channelService } from '$src/services/ChannelService'
+  import { navigationState } from '$src/states/NavigationState.svelte'
+  import { navigationService } from '$src/services/NavigationService'
+  import { marginState } from '$src/states/MarginState.svelte'
 
-  let selectedContent = $derived<ContentType>(chatState.currentlySelectedContent)
+  let selectedContent = $derived<View>(navigationState.view)
   let newConversationOpen = $state(false)
-  let isHome = $derived(!chatState.selectedChannel)
+  let isHome = $derived(!navigationState.selectedChannel)
 
   function onSelectUser(user: User): void {
-    chatState.selectUser(user)
-    chatState.selectPrivateChatContent()
+    usersService.select(user)
+    navigationService.setView(View.Private)
   }
 
   function goHome(): void {
-    chatState.selectChannel(null)
+    channelService.select(null)
   }
 </script>
 
@@ -49,7 +53,7 @@
         <UsersList />
       </div>
     </div>
-  {:else if selectedContent === 'margin' && chatState.hasMargin}
+  {:else if selectedContent === 'margin' && marginState.isMemberOfAnyMargins}
     <div class="panel">
       <div class="panel-divider"></div>
 

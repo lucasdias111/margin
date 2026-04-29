@@ -1,14 +1,14 @@
 <script lang="ts">
   import type { Message, MessageReaction } from '$src/interfaces/Messages'
   import { tick } from 'svelte'
-  import { userState } from '$src/states/UserState.svelte.js'
   import { useWebsocketSvelte } from '$src/composables/useWebsocket.svelte'
   import { WebSocketMessageType } from '$src/interfaces/WebSocketMessageType'
   import type { WebSocketMessage } from '$src/interfaces/WebSocketMessages'
   import { encryptionService } from '$src/services/EncryptionService'
   import MessageBubble from '$src/components/common/chat/MessageBubble.svelte'
   import { chatService } from '$src/services/ChatService'
-  import { conversationState } from '$src/states/ConversationState.svelte'
+  import { conversationsState, defaultMeta } from '$src/states/ConversationsState.svelte.js'
+  import { sessionState } from '$src/states/SessionState.svelte'
 
   let {
     messages,
@@ -28,16 +28,34 @@
   let isPrepending = $state(false)
   let isAtBottom = $state(true)
   let initialScrollDone = false
+  let prependedMessages = $state<Message[]>([])
+  let localHasMore = $state(true)
+  let lastConvId: number | undefined = undefined
+  const activeMeta = $derived(
+    conversationsState.conversationMetaById.get(conversationsState.currentConversation?.id) ??
+    defaultMeta()
+  )
+  const allMessages = $derived<(Message | undefined)[]>([...prependedMessages, ...messages])
+  const hasMore = $derived(prependedMessages.length > 0 ? localHasMore : activeMeta.hasMore)
+
+  $effect.pre(() => {
+    const id = conversationsState.currentConversation?.id
+    if (lastConvId !== id) {
+      prependedMessages = []
+      localHasMore = true
+      lastConvId = id
+    }
+  })
 
   async function handleIncomingEditedMessage(data: WebSocketMessage<Message>): Promise<void> {
     const edited = data.payload
     const existing = messages.find((m) => m?.id === edited.id)
     if (!existing) return
 
-    if (conversationState.currentConversation.type === 'DIRECT') {
+    if (conversationsState.currentConversation.type === 'DIRECT') {
       existing.content = await encryptionService.decryptMessage(
         edited.content,
-        edited.user.id !== userState.currentUser.id
+        edited.user.id !== sessionState.currentUser.id
       )
     } else {
       existing.content = edited.content
@@ -70,11 +88,11 @@
   }
 
   function onEditMessage(message: Message, editedContent: string): void {
-    if (conversationState.currentConversation.type === 'DIRECT') {
+    if (conversationsState.currentConversation.type === 'DIRECT') {
       chatService.editMessagePrivateMessage(
         message,
         editedContent,
-        conversationState.currentConversation.otherUserId
+        conversationsState.currentConversation.otherUserId
       )
     } else {
       chatService.editChannelMessage(message, editedContent)
@@ -86,24 +104,27 @@
     const { scrollTop, scrollHeight, clientHeight } = messagesContainer
     isAtBottom = scrollHeight - scrollTop - clientHeight < 60
 
-    if (
-      scrollTop < 20 &&
-      conversationState.hasMore &&
-      !conversationState.isLoadingMore &&
-      !isPrepending
-    ) {
+    if (scrollTop < 20 && hasMore && !activeMeta.isLoading) {
       void loadOlderMessages()
     }
   }
 
   async function loadOlderMessages(): Promise<void> {
-    if (!messagesContainer) return
+    if (!messagesContainer || isPrepending) return
+
+    const conv = conversationsState.currentConversation
+    if (!conv) return
+
+    const oldestId = allMessages[0]?.id
+    if (!oldestId) return
 
     isPrepending = true
     scrollHeightBeforePrepend = messagesContainer.scrollHeight
 
     await tick()
-    await chatService.loadMoreMessages()
+    const result = await chatService.fetchMessagesBefore(conv, oldestId)
+    prependedMessages = [...result.messages, ...prependedMessages]
+    localHasMore = result.hasMore
     await tick()
 
     messagesContainer.scrollTop = messagesContainer.scrollHeight - scrollHeightBeforePrepend
@@ -111,6 +132,7 @@
   }
 
   $effect(() => {
+    if (isPrepending) return
     if (isLoading) {
       initialScrollDone = false
       return
@@ -143,9 +165,9 @@
   }
 
   function isMessageRead(message: Message): boolean {
-    const conv = conversationState.currentConversation
+    const conv = conversationsState.currentConversation
     if (conv?.type !== 'DIRECT') return false
-    if (message.user.id !== userState.currentUser?.id) return false
+    if (message.user.id !== sessionState.currentUser?.id) return false
     if (conv.otherUserReadAt == null) return false
     return new Date(message.createdAt) <= new Date(conv.otherUserReadAt)
   }
@@ -173,24 +195,24 @@
             <div class="spinner small"></div>
             <span>Loading older messages…</span>
           </div>
-        {:else if !conversationState.hasMore}
+        {:else if !hasMore}
           <div class="top-status__start">
             <span>Beginning of conversation</span>
           </div>
         {/if}
       </div>
 
-      {#each messages as message, i (message?.id)}
+      {#each allMessages as message, i (message?.id)}
         {#if message}
-          {@const prev = messages[i - 1]}
-          {@const next = messages[i + 1]}
+          {@const prev = allMessages[i - 1]}
+          {@const next = allMessages[i + 1]}
           {@const showMeta = shouldShowMeta(message, next)}
           {@const showDisplayName = isFirstInClump(message, prev)}
           {@const isRead = isMessageRead(message)}
 
           <div
             class="message-row"
-            class:sent={message.user.id === userState.currentUser?.id}
+            class:sent={message.user.id === sessionState.currentUser?.id}
             class:clumped={!showMeta}
           >
             <MessageBubble

@@ -21,6 +21,8 @@ nsis:
   uninstallDisplayName: ${productName}
   createDesktopShortcut: always
 mac:
+  target:
+    - zip
   icon: build/icons/mac/icon.icns
   entitlementsInherit: build/entitlements.mac.plist
   extendInfo:

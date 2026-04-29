@@ -1,5 +1,4 @@
 import { authenticatedPost } from '$src/services/api'
-import { userState } from '$src/states/UserState.svelte.js'
 import { Device } from 'mediasoup-client'
 import type {
   Producer,
@@ -12,6 +11,7 @@ import { callState } from '$src/states/CallState.svelte.js'
 import { errorService } from '$src/services/ErrorService'
 import { deviceService } from '$src/services/DeviceService'
 import { ICE_SERVERS } from '$src/services/call/iceServers'
+import { sessionState } from '$src/states/SessionState.svelte'
 
 class ChannelCallService {
   private async connectToWebSocket(wsUrl: string): Promise<WebSocket> {
@@ -55,8 +55,8 @@ class ChannelCallService {
   ): Promise<RtpCapabilities> {
     this.sendMessage(ws, 'getRouterRtpCapabilities', {
       roomId: String(channelId),
-      peerId: userState.currentUser.id,
-      displayName: userState.currentUser.displayName,
+      peerId: sessionState.currentUser.id,
+      displayName: sessionState.currentUser.displayName,
       token: roomToken
     })
 
@@ -137,7 +137,7 @@ class ChannelCallService {
       }
 
       if (msg.type !== 'newProducer') return
-      if (String(msg.peerId) === String(userState.currentUser.id)) return
+      if (String(msg.peerId) === String(sessionState.currentUser.id)) return
 
       this.sendMessage(ws, 'consume', {
         transportId: recvTransport.id,
@@ -215,7 +215,10 @@ class ChannelCallService {
       })
 
       const audioTrack = localStream.getAudioTracks()[0]
-      await sendTransport.produce({ track: audioTrack, appData: { source: 'mic' } })
+      const audioProducer = await sendTransport.produce({
+        track: audioTrack,
+        appData: { source: 'mic' }
+      })
 
       this.sendMessage(sfuWs, 'getProducers', { roomId: String(channelId) })
 
@@ -227,6 +230,7 @@ class ChannelCallService {
         sendTransport,
         receiveTransport,
         localStream,
+        audioProducer,
         videoProducer: null
       })
       callState.setStatus('connected')

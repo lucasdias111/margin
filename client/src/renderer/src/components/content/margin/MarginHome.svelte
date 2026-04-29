@@ -1,17 +1,22 @@
 <script lang="ts">
-  import { chatState } from '$src/states/ChatState.svelte.js'
   import { MarginRole } from '$src/interfaces/Margin'
-  import { userState } from '$src/states/UserState.svelte.js'
   import { announcementService } from '$src/services/AnnouncementService.js'
   import type { Announcement } from '$src/interfaces/Announcement'
-  import CreateOrEditAnnouncementModal from '$src/components/content/margin/announcement/modals/CreateOrEditAnnouncementModal.svelte'
+  import CreateOrEditAnnouncementModal
+    from '$src/components/content/margin/announcement/modals/CreateOrEditAnnouncementModal.svelte'
   import AnnouncementCard from '$src/components/content/margin/announcement/AnnouncementCard.svelte'
   import MarginIcon from '$src/components/content/margin/MarginIcon.svelte'
   import Icon from '$src/components/common/icons/Icon.svelte'
   import Button from '$src/components/common/buttons/Button.svelte'
+  import ConfirmationModal from '$src/components/common/modals/ConfirmationModal.svelte'
+  import { marginService } from '$src/services/MarginService'
+  import { navigationService } from '$src/services/NavigationService'
+  import { View } from '$src/interfaces/View'
+  import { navigationState } from '$src/states/NavigationState.svelte'
+  import { sessionState } from '$src/states/SessionState.svelte'
 
   const currentUserRole = $derived(
-    chatState.selectedMargin?.members.find((m) => m.user.id === userState.currentUser?.id)?.role
+    navigationState.selectedMargin?.members.find((m) => m.user.id === sessionState.currentUser?.id)?.role
   )
   const canManage = $derived(
     currentUserRole === MarginRole.ADMIN || currentUserRole === MarginRole.OWNER
@@ -21,9 +26,10 @@
   let modalOpen = $state(false)
   let editTarget = $state<Announcement | undefined>(undefined)
   let editModalOpen = $state(false)
+  let leaveModalOpen = $state(false)
 
   $effect(() => {
-    const marginId = chatState.selectedMargin?.marginId
+    const marginId = navigationState.selectedMargin?.marginId
     if (!marginId) return
     announcementService.getAnnouncements(marginId).then((result) => {
       announcements = result
@@ -31,7 +37,7 @@
   })
 
   async function handleCreateAnnouncement(title: string, content: string): Promise<void> {
-    const marginId = chatState.selectedMargin?.marginId
+    const marginId = navigationState.selectedMargin?.marginId
     if (!marginId) return
     const created = await announcementService.createAnnouncement(marginId, title, content)
     announcements = [created, ...announcements]
@@ -43,7 +49,7 @@
   }
 
   async function handleDelete(announcementId: number): Promise<void> {
-    await announcementService.deleteAnnouncement(announcementId, chatState.selectedMargin?.marginId)
+    await announcementService.deleteAnnouncement(announcementId, navigationState.selectedMargin?.marginId)
     announcements = announcements.filter((a) => a.announcementId !== announcementId)
   }
 
@@ -54,28 +60,44 @@
       a.announcementId === updated.announcementId ? updated : a
     )
   }
+
+  async function confirmLeaveMargin(marginId: number): Promise<void> {
+    if (!marginId) return
+    await marginService.removeMarginMember(marginId, sessionState.currentUser?.id)
+    marginService.removeMargin(marginId)
+  }
+
+  async function handleLeaveMargin(): Promise<void> {
+    leaveModalOpen = true
+  }
 </script>
 
 <div class="margin-home">
   <div class="welcome-card">
     <div class="welcome-row">
       <div class="margin-icon">
-        <MarginIcon marginIcon={chatState.selectedMargin?.marginIconUrl} width={75} height={75} />
+        <MarginIcon marginIcon={navigationState.selectedMargin?.marginIconUrl} width={75} height={75} />
       </div>
       <div class="welcome-info">
-        <h1 class="margin-name">{chatState.selectedMargin?.marginName}</h1>
-        {#if chatState.selectedMargin?.marginDescription}
-          <p class="margin-description">{chatState.selectedMargin.marginDescription}</p>
+        <h1 class="margin-name">{navigationState.selectedMargin?.marginName}</h1>
+        {#if navigationState.selectedMargin?.marginDescription}
+          <p class="margin-description">{navigationState.selectedMargin.marginDescription}</p>
         {/if}
       </div>
       {#if canManage}
         <Button
           buttonType="primary"
           size="small"
-          onClick={() => (chatState.currentlySelectedContent = 'manage')}
+          onClick={() => navigationService.setView(View.Manage)}
           text="Manage"
         />
       {/if}
+      <Button
+        buttonType="danger"
+        size="small"
+        onClick={() => handleLeaveMargin()}
+        text="Leave margin"
+      />
     </div>
   </div>
 
@@ -120,6 +142,16 @@
     editTarget = undefined
   }}
   onSubmit={handleUpdateAnnouncement}
+/>
+
+<ConfirmationModal
+  open={leaveModalOpen}
+  title="Remove member"
+  message="Are you sure you want to leave this margin? You will lose access to all spaces and channels."
+  confirmLabel="Remove"
+  variant="delete"
+  onConfirm={() => confirmLeaveMargin(navigationState.selectedMargin.marginId)}
+  onClose={() => (leaveModalOpen = false)}
 />
 
 <style>

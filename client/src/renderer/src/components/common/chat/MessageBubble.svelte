@@ -1,5 +1,4 @@
 <script lang="ts">
-  import { userState } from '$src/states/UserState.svelte.js'
   import { formatTimestamp } from '$src/utils/DateUtils'
   import UserAvatar from '$src/components/common/user/UserAvatar.svelte'
   import type { Message } from '$src/interfaces/Messages'
@@ -9,6 +8,7 @@
   import { openExternalLink, parseLinks } from '$src/utils/LinksUtils'
   import MessageActions from '$src/components/common/chat/MessageActions.svelte'
   import MessageReactions from '$src/components/common/chat/MessageReactions.svelte'
+  import { sessionState } from '$src/states/SessionState.svelte'
 
   interface Props {
     message: Message
@@ -33,7 +33,7 @@
   let isEditing = $state(false)
   let showActions = $state(false)
 
-  let isSent = $derived(message.user.id === userState.currentUser?.id)
+  let isSent = $derived(message.user.id === sessionState.currentUser?.id)
   let checkmarkIcon: IconName = $derived(isRead ? 'checkmarkFilled' : 'checkmark')
 
   function handleSaveEdit(): void {
@@ -43,7 +43,7 @@
 
   function onToggleReaction(emoji: string): void {
     const alreadyReacted = (message.reactions ?? []).some(
-      (r) => r.emoji === emoji && r.userId === userState.currentUser?.id
+      (r) => r.emoji === emoji && r.userId === sessionState.currentUser?.id
     )
     if (alreadyReacted) {
       chatService.removeReaction(message, emoji)
@@ -75,7 +75,7 @@
       <MessageActions
         {message}
         {isSent}
-        currentUserId={userState.currentUser?.id}
+        currentUserId={sessionState.currentUser?.id}
         onStartEdit={() => (isEditing = true)}
         {onToggleReaction}
       />
@@ -83,7 +83,7 @@
   {/if}
 
   <div class="message-column" class:sent={isSent}>
-    {#if showDisplayName && message.conversationType === 'CHANNEL' && message.user.id !== userState.currentUser?.id}
+    {#if showDisplayName && message.conversationType === 'CHANNEL' && message.user.id !== sessionState.currentUser?.id}
       <span class="handle">{message.user.displayName}</span>
     {/if}
 
@@ -107,20 +107,21 @@
           {/each}
         </p>
       {/if}
-      {#if showMeta}
-        <div class="meta">
-          {#if message.isEdited}
-            <span class="edited">edited</span>
-          {/if}
-          <span class="timestamp">{formatTimestamp(message.createdAt)}</span>
-          {#if isSent && showReadStatus}
-            <Icon name={checkmarkIcon} size={12} />
-          {/if}
-        </div>
-      {/if}
     </div>
 
     <MessageReactions {message} {onToggleReaction} />
+
+    {#if showMeta}
+      <div class="meta" class:sent={isSent}>
+        {#if message.isEdited}
+          <span class="edited">edited</span>
+        {/if}
+        <span class="timestamp">{formatTimestamp(message.createdAt)}</span>
+        {#if isSent && showReadStatus}
+          <Icon name={checkmarkIcon} size={12} />
+        {/if}
+      </div>
+    {/if}
   </div>
 </div>
 
@@ -247,14 +248,15 @@
     display: flex;
     align-items: center;
     gap: 4px;
-    margin-top: 4px;
+    margin-top: 2px;
     font-size: 10px;
     font-weight: 500;
     color: rgba(0, 0, 0, 0.35);
+    align-self: flex-start;
   }
 
-  .bubble.sent .meta {
-    justify-content: flex-end;
+  .meta.sent {
+    align-self: flex-end;
   }
 
   .edited {

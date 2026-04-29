@@ -3,13 +3,12 @@ import { authenticationService } from '../AuthenticationService'
 import { encryptionService } from '$src/services/EncryptionService'
 import { errorService } from '$src/services/ErrorService'
 import { webSocketService } from '$src/services/WebSocketService'
-import { userState } from '$src/states/UserState.svelte'
-import { chatState } from '$src/states/ChatState.svelte'
-import { conversationState } from '$src/states/ConversationState.svelte'
+import { usersState } from '$src/states/UsersState.svelte.js'
 import { callState } from '$src/states/CallState.svelte'
 import * as api from '$src/services/api'
 import * as svelteRouter from 'svelte-spa-router'
 import type { AuthResponse } from '$src/interfaces/AuthResponse'
+import { navigationService } from '$src/services/NavigationService'
 
 vi.mock('$src/services/EncryptionService', () => ({
   encryptionService: {
@@ -31,20 +30,14 @@ vi.mock('$src/services/WebSocketService', () => ({
   }
 }))
 
-vi.mock('$src/states/UserState.svelte', () => ({
-  userState: {
+vi.mock('$src/states/UsersState.svelte.js', () => ({
+  usersState: {
     reset: vi.fn()
   }
 }))
 
-vi.mock('$src/states/ChatState.svelte', () => ({
-  chatState: {
-    reset: vi.fn()
-  }
-}))
-
-vi.mock('$src/states/ConversationState.svelte', () => ({
-  conversationState: {
+vi.mock('$src/services/NavigationService', () => ({
+  navigationService: {
     reset: vi.fn()
   }
 }))
@@ -336,9 +329,8 @@ describe('AuthenticationService', () => {
 
       expect(webSocketService.disconnect).toHaveBeenCalled()
       expect(api.authenticatedPost).toHaveBeenCalledWith({}, 'auth/logout')
-      expect(userState.reset).toHaveBeenCalled()
-      expect(chatState.reset).toHaveBeenCalled()
-      expect(conversationState.reset).toHaveBeenCalled()
+      expect(usersState.reset).toHaveBeenCalled()
+      expect(navigationService.reset).toHaveBeenCalled()
       expect(callState.endCall).toHaveBeenCalled()
       expect(secureStorage.clearSession).toHaveBeenCalled()
       expect(svelteRouter.push).toHaveBeenCalledWith('/')
@@ -350,7 +342,7 @@ describe('AuthenticationService', () => {
       await authenticationService.logoutUser()
 
       expect(errorService.reportError).toHaveBeenCalledWith('Failed to log out.')
-      expect(userState.reset).toHaveBeenCalled()
+      expect(usersState.reset).toHaveBeenCalled()
     })
   })
 

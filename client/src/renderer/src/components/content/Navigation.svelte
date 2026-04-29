@@ -1,24 +1,26 @@
 <script lang="ts">
-  import { chatState } from '$src/states/ChatState.svelte.js'
-  import type { ContentType } from '$src/interfaces/Content'
+  import { View } from '$src/interfaces/View'
   import UnreadNotificationBadge from '$src/components/common/chat/UnreadNotificationBadge.svelte'
   import { notificationState } from '$src/states/NotificationState.svelte.js'
-  import { userState } from '$src/states/UserState.svelte.js'
   import UserAvatar from '$src/components/common/user/UserAvatar.svelte'
-  import { chatService } from '$src/services/ChatService'
   import { authenticationService } from '$src/services/AuthenticationService'
   import { push } from 'svelte-spa-router'
   import { clickOutside } from '$src/actions/clickOutside'
   import Icon from '$src/components/common/icons/Icon.svelte'
   import BugReportModal from '$src/components/common/modals/BugReportModal.svelte'
-  import { userService } from '$src/services/UserService'
+  import { usersService } from '$src/services/UsersService'
+  import { isElectron } from '$src/utils/platformUtils'
+  import { navigationState } from '$src/states/NavigationState.svelte'
+  import { sessionState } from '$src/states/SessionState.svelte'
+  import { notificationService } from '$src/services/NotificationService'
+  import { navigationService } from '$src/services/NavigationService'
 
-  function onContentSelected(selectedContent: ContentType): void {
-    chatService.selectContent(selectedContent)
+  function onContentSelected(selectedContent: View): void {
+    navigationService.setView(selectedContent)
   }
 
   async function handleLogout(): Promise<void> {
-    if (!userState.currentUser?.id) return
+    if (!sessionState.currentUser?.id) return
     await authenticationService.logoutUser()
     await push('/')
   }
@@ -27,10 +29,12 @@
   let bugReportOpen = $state(false)
 
   const totalAnnouncements = $derived(notificationState.getTotalUnseenNotifications())
+  const directUnread = $derived(notificationService.totalUnreadDirectMessages())
+  const channelUnread = $derived(notificationService.totalUnreadChannelMessages())
 </script>
 
 <div class="navigation">
-  {#if userState.currentUser}
+  {#if sessionState.currentUser}
     <div class="avatar-wrapper" use:clickOutside={() => (showDropdown = false)}>
       <button
         class="avatar-btn"
@@ -39,7 +43,7 @@
         }}
       >
         <UserAvatar
-          profilePictureUrl={userState.currentUser.profilePictureUrl}
+          profilePictureUrl={sessionState.currentUser.profilePictureUrl}
           width={40}
           height={40}
         />
@@ -47,16 +51,16 @@
       {#if showDropdown}
         <div class="dropdown">
           <div class="dropdown-header">
-            <span class="dropdown-displayname">{userState.currentUser.displayName}</span>
+            <span class="dropdown-displayname">{sessionState.currentUser.displayName}</span>
           </div>
           <div class="divider"></div>
           <button
             class="dropdown-item"
             onclick={() => {
-              onContentSelected('settings')
+              onContentSelected(View.Settings)
               showDropdown = false
             }}
-            class:selected={chatState.currentlySelectedContent === 'settings'}
+            class:selected={navigationState.view === View.Settings}
             aria-label="Settings"
             title="Settings"
           >
@@ -64,6 +68,18 @@
             <Icon name="settings"></Icon>
           </button>
 
+          {#if !isElectron()}
+            <a
+              class="dropdown-item"
+              href="https://margin.chat/download"
+              target="_blank"
+              rel="noopener noreferrer"
+              onclick={() => (showDropdown = false)}
+            >
+              <span class="item-label">Download desktop app</span>
+              <Icon name="download" size={16} />
+            </a>
+          {/if}
           <div class="divider"></div>
           <button
             class="dropdown-item"
@@ -91,7 +107,7 @@
         open={bugReportOpen}
         onClose={() => (bugReportOpen = false)}
         onSubmit={async (report) => {
-          await userService.reportBug(report.title, report.description)
+          await usersService.reportBug(report.title, report.description)
         }}
       />
     </div>
@@ -100,8 +116,8 @@
   <div class="button-group">
     <button
       class="nav-btn"
-      onclick={() => onContentSelected('notifications')}
-      class:selected={chatState.currentlySelectedContent === 'notifications'}
+      onclick={() => onContentSelected(View.Notifications)}
+      class:selected={navigationState.view === View.Notifications}
       aria-label="Notifications"
       title="Notifications"
     >
@@ -111,30 +127,24 @@
     </button>
     <button
       class="nav-btn"
-      onclick={() => onContentSelected('private')}
-      class:selected={chatState.currentlySelectedContent === 'private'}
+      onclick={() => onContentSelected(View.Private)}
+      class:selected={navigationState.view === View.Private}
       aria-label="Private conversations"
       title="Private conversations"
     >
       <Icon name="messages" size={28} />
-      <UnreadNotificationBadge
-        shouldShow={notificationState.getTotalUnreadDirectMessages() > 0}
-        count={notificationState.getTotalUnreadDirectMessages()}
-      />
+      <UnreadNotificationBadge shouldShow={directUnread > 0} count={directUnread} />
       <span class="nav-label">Private Chats</span>
     </button>
     <button
       class="nav-btn"
-      onclick={() => onContentSelected('margin')}
-      class:selected={chatState.currentlySelectedContent === 'margin'}
+      onclick={() => onContentSelected(View.Margin)}
+      class:selected={navigationState.view === View.Margin}
       aria-label="Spaces"
       title="Spaces"
     >
       <Icon name="users" size={28} />
-      <UnreadNotificationBadge
-        shouldShow={notificationState.getTotalUnreadChannelMessages() > 0}
-        count={notificationState.getTotalUnreadChannelMessages()}
-      />
+      <UnreadNotificationBadge shouldShow={channelUnread > 0} count={channelUnread} />
       <span class="nav-label">Margins</span>
     </button>
   </div>
@@ -194,7 +204,7 @@
     border: 1px solid rgba(255, 255, 255, 0.07);
     border-radius: 12px;
     padding: 6px;
-    min-width: 180px;
+    min-width: 200px;
     box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
     z-index: 100;
     animation: dropdownIn 0.15s ease-out;
@@ -229,6 +239,7 @@
     cursor: pointer;
     width: 100%;
     box-sizing: border-box;
+    text-decoration: none;
   }
 
   .dropdown-item:hover {
