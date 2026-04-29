@@ -8,19 +8,26 @@
   import { navigationState } from '$src/states/NavigationState.svelte'
   import { sessionState } from '$src/states/SessionState.svelte'
   import { untrack } from 'svelte'
+  import { usersState } from '$src/states/UsersState.svelte'
+  import type { User } from '$src/interfaces/User'
 
   let messageInput = $state('')
   let chatInputRef = $state<ChatInput | null>(null)
-  const activeConv = $derived(conversationsState.currentConversation)
+  const activeConversation = $derived(
+    conversationsState.byId.get(conversationsState.currentConversation.id)
+  )
+  const selectedUser: User | null = $derived(
+    navigationState.selectedUser?.id ? usersState.byId.get(navigationState.selectedUser.id) : null
+  )
   const activeMessages = $derived(
-    conversationsState.messagesByConversationId.get(activeConv?.id) ?? []
+    conversationsState.messagesByConversationId.get(activeConversation?.id) ?? []
   )
   const activeMeta = $derived(
-    conversationsState.conversationMetaById.get(activeConv?.id) ?? defaultMeta()
+    conversationsState.conversationMetaById.get(activeConversation?.id) ?? defaultMeta()
   )
 
   $effect(() => {
-    const user = navigationState.selectedUser
+    const user = selectedUser
     if (user) {
       untrack(() => {
         chatService.loadConversationForUser(user)
@@ -28,37 +35,36 @@
     }
   })
 
+  function focusInput(): void {
+    untrack(() => chatInputRef.focus())
+  }
+
   $effect(() => {
-    if (navigationState.selectedUser && chatInputRef) {
-      untrack(() => chatInputRef.focus())
+    if (selectedUser && chatInputRef) {
+      focusInput()
     }
   })
 
   async function handleSubmitMessage(event: SubmitEvent): Promise<void> {
     event.preventDefault()
 
-    if (
-      !navigationState.selectedUser ||
-      !messageInput.trim() ||
-      !sessionState.currentUser ||
-      activeMeta.isLoading
-    )
+    if (!selectedUser || !messageInput.trim() || !sessionState.currentUser || activeMeta.isLoading)
       return
 
     const messageContent = messageInput
     messageInput = ''
 
-    if (activeConv) {
+    if (activeConversation) {
       const message = await chatService.sendMessage(
         sessionState.currentUser,
-        activeConv,
+        activeConversation,
         messageContent
       )
       conversationsState.appendMessage(message, false)
     } else {
       const { message } = await chatService.sendMessageAndStartConversation(
         sessionState.currentUser,
-        navigationState.selectedUser.id,
+        selectedUser.id,
         messageContent
       )
       conversationsState.appendMessage(message, false)
@@ -66,28 +72,29 @@
   }
 
   function startCall(): void {
-    if (navigationState.selectedUser) {
-      callService.startCall(null, navigationState.selectedUser, false, false)
+    if (selectedUser) {
+      callService.startCall(null, selectedUser, false, false)
     }
   }
 
   function handleVideoCall(): void {
-    if (navigationState.selectedUser) {
-      callService.startCall(null, navigationState.selectedUser, false, true)
+    if (selectedUser) {
+      callService.startCall(null, selectedUser, false, true)
     }
   }
 </script>
 
 <svelte:window
   onfocus={() => {
-    if (activeConv) {
-      chatService.markConversationAsRead(activeConv.id)
+    if (activeConversation) {
+      chatService.markConversationAsRead(activeConversation.id)
+      focusInput()
     }
   }}
 />
 
 <div class="chat">
-  {#if navigationState.selectedUser}
+  {#if selectedUser}
     <PrivateChatHeader
       handleStartCall={startCall}
       handleStartVideoCall={handleVideoCall}
@@ -128,25 +135,5 @@
     z-index: 1;
     display: flex;
     flex-direction: column;
-  }
-
-  .empty-state {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 16px;
-  }
-
-  .empty-state-icon {
-    color: #b0b0b0;
-  }
-
-  .empty-state-text {
-    color: #888;
-    font-size: 15px;
-    font-family: inherit;
-    margin: 0;
   }
 </style>

@@ -8,7 +8,6 @@
 
   interface Props {
     handleStartCall(): void
-
     handleStartVideoCall(): void
 
     isLoading?: boolean
@@ -17,20 +16,17 @@
   let { handleStartCall, handleStartVideoCall, isLoading = false }: Props = $props()
 
   const isOnline = $derived(usersState.byId.get(navigationState.selectedUser.id).isOnline ?? false)
+  const selectedUser = $derived(usersState.byId.get(navigationState.selectedUser.id))
 </script>
 
 <ChatHeaderShell {isLoading}>
   {#snippet left()}
     <div class="avatar-wrapper">
-      <UserAvatar
-        profilePictureUrl={navigationState.selectedUser.profilePictureUrl}
-        width={38}
-        height={38}
-      />
+      <UserAvatar profilePictureUrl={selectedUser.profilePictureUrl} width={38} height={38} />
       <span class="presence-dot" class:online={isOnline}></span>
     </div>
     <div class="user-info">
-      <span class="handle">{navigationState.selectedUser.displayName}</span>
+      <span class="handle">{selectedUser.displayName}</span>
       <span class="status-label" class:online={isOnline}>
         {isOnline ? 'Online' : 'Offline'}
       </span>

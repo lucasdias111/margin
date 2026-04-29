@@ -1,6 +1,6 @@
 <script lang="ts">
   import type { Message, MessageReaction } from '$src/interfaces/Messages'
-  import { tick } from 'svelte'
+  import { tick, untrack } from 'svelte'
   import { useWebsocketSvelte } from '$src/composables/useWebsocket.svelte'
   import { WebSocketMessageType } from '$src/interfaces/WebSocketMessageType'
   import type { WebSocketMessage } from '$src/interfaces/WebSocketMessages'
@@ -27,44 +27,44 @@
   let scrollHeightBeforePrepend = 0
   let isPrepending = $state(false)
   let isAtBottom = $state(true)
-  let initialScrollDone = false
-  let prependedMessages = $state<Message[]>([])
-  let localHasMore = $state(true)
-  let lastConvId: number | undefined = undefined
+  let lastConversationId = $state<number | undefined>(undefined)
+  let initialScrollDone = $state(false)
+
   const activeMeta = $derived(
     conversationsState.conversationMetaById.get(conversationsState.currentConversation?.id) ??
     defaultMeta()
   )
-  const allMessages = $derived<(Message | undefined)[]>([...prependedMessages, ...messages])
-  const hasMore = $derived(prependedMessages.length > 0 ? localHasMore : activeMeta.hasMore)
-
-  $effect.pre(() => {
-    const id = conversationsState.currentConversation?.id
-    if (lastConvId !== id) {
-      prependedMessages = []
-      localHasMore = true
-      lastConvId = id
-    }
-  })
 
   async function handleIncomingEditedMessage(data: WebSocketMessage<Message>): Promise<void> {
     const edited = data.payload
-    const existing = messages.find((m) => m?.id === edited.id)
-    if (!existing) return
+    const convId = edited.conversationId
 
-    if (conversationsState.currentConversation.type === 'DIRECT') {
-      existing.content = await encryptionService.decryptMessage(
+    const currentMessages = conversationsState.messagesByConversationId.get(convId)
+    if (!currentMessages) return
+
+    const index = currentMessages.findIndex((m) => m?.id === edited.id)
+    if (index === -1) return
+
+    let newContent = edited.content
+    if (conversationsState.currentConversation?.type === 'DIRECT') {
+      newContent = await encryptionService.decryptMessage(
         edited.content,
-        edited.user.id !== sessionState.currentUser.id
+        edited.user.id !== sessionState.currentUser?.id
       )
-    } else {
-      existing.content = edited.content
     }
-    existing.isEdited = true
+
+    const updatedMessages = [...currentMessages]
+    updatedMessages[index] = {
+      ...currentMessages[index],
+      content: newContent,
+      isEdited: true
+    }
+
+    conversationsState.messagesByConversationId.set(convId, updatedMessages)
   }
 
   async function handleIncomingDeletedMessage(data: WebSocketMessage<Message>): Promise<void> {
-    messages = messages.filter((m) => m?.id !== data.payload.id)
+    conversationsState.deleteMessage(data.payload)
   }
 
   useWebsocketSvelte({
@@ -88,12 +88,10 @@
   }
 
   function onEditMessage(message: Message, editedContent: string): void {
-    if (conversationsState.currentConversation.type === 'DIRECT') {
-      chatService.editMessagePrivateMessage(
-        message,
-        editedContent,
-        conversationsState.currentConversation.otherUserId
-      )
+    const conv = conversationsState.currentConversation
+    if (!conv) return
+    if (conv.type === 'DIRECT') {
+      chatService.editMessagePrivateMessage(message, editedContent, conv.otherUserId)
     } else {
       chatService.editChannelMessage(message, editedContent)
     }
@@ -104,7 +102,7 @@
     const { scrollTop, scrollHeight, clientHeight } = messagesContainer
     isAtBottom = scrollHeight - scrollTop - clientHeight < 60
 
-    if (scrollTop < 20 && hasMore && !activeMeta.isLoading) {
+    if (scrollTop < 20 && activeMeta.hasMore && !activeMeta.isLoading) {
       void loadOlderMessages()
     }
   }
@@ -115,7 +113,7 @@
     const conv = conversationsState.currentConversation
     if (!conv) return
 
-    const oldestId = allMessages[0]?.id
+    const oldestId = messages[0]?.id
     if (!oldestId) return
 
     isPrepending = true
@@ -123,8 +121,19 @@
 
     await tick()
     const result = await chatService.fetchMessagesBefore(conv, oldestId)
-    prependedMessages = [...result.messages, ...prependedMessages]
-    localHasMore = result.hasMore
+
+    const existingMessages = conversationsState.messagesByConversationId.get(conv.id) ?? []
+    conversationsState.messagesByConversationId.set(conv.id, [
+      ...result.messages,
+      ...existingMessages
+    ])
+
+    const currentMeta = conversationsState.conversationMetaById.get(conv.id) ?? defaultMeta()
+    conversationsState.conversationMetaById.set(conv.id, {
+      ...currentMeta,
+      hasMore: result.hasMore
+    })
+
     await tick()
 
     messagesContainer.scrollTop = messagesContainer.scrollHeight - scrollHeightBeforePrepend
@@ -132,16 +141,26 @@
   }
 
   $effect(() => {
-    if (isPrepending) return
-    if (isLoading) {
+    const currentId = conversationsState.currentConversation?.id
+
+    if (currentId !== lastConversationId) {
+      lastConversationId = currentId
       initialScrollDone = false
       return
     }
-    if (!initialScrollDone && messages.length > 0) {
-      tick().then(() => {
-        requestAnimationFrame(() => {
-          scrollToBottom('instant')
-          initialScrollDone = true
+
+    const hasMessages = messages.length > 0
+    const ready = !isLoading && !isPrepending
+
+    if (ready && hasMessages && !initialScrollDone) {
+      untrack(() => {
+        tick().then(() => {
+          requestAnimationFrame(() => {
+            if (messagesContainer) {
+              scrollToBottom('instant')
+              initialScrollDone = true
+            }
+          })
         })
       })
     }
@@ -151,7 +170,9 @@
     void messages.length
     if (!initialScrollDone || isPrepending || isLoading) return
     if (isAtBottom) {
-      tick().then(() => scrollToBottom('smooth'))
+      untrack(() => {
+        tick().then(() => scrollToBottom('smooth'))
+      })
     }
   })
 
@@ -195,17 +216,17 @@
             <div class="spinner small"></div>
             <span>Loading older messages…</span>
           </div>
-        {:else if !hasMore}
+        {:else if !activeMeta.hasMore}
           <div class="top-status__start">
             <span>Beginning of conversation</span>
           </div>
         {/if}
       </div>
 
-      {#each allMessages as message, i (message?.id)}
+      {#each messages as message, i (message?.id)}
         {#if message}
-          {@const prev = allMessages[i - 1]}
-          {@const next = allMessages[i + 1]}
+          {@const prev = messages[i - 1]}
+          {@const next = messages[i + 1]}
           {@const showMeta = shouldShowMeta(message, next)}
           {@const showDisplayName = isFirstInClump(message, prev)}
           {@const isRead = isMessageRead(message)}

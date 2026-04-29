@@ -40,10 +40,7 @@
           <UserAvatar profilePictureUrl={invite.fromUser.profilePictureUrl} height={30} />
           <span class="invite-name">{invite.fromUser.displayName ?? invite.fromUser.handle}</span>
           <div class="invite-actions">
-            <button
-              class="accept-btn"
-              onclick={() => chatService.acceptConversationInvite(invite)}
-            >
+            <button class="accept-btn" onclick={() => chatService.acceptConversationInvite(invite)}>
               Accept
             </button>
             <button

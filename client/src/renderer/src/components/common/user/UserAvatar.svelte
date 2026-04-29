@@ -12,20 +12,23 @@
   let blobUrl = $state('')
 
   $effect(() => {
-    if (!profilePictureUrl) return () => {}
-    if (!profilePictureUrl.includes('/api/')) {
+    let cancelled = false
+
+    if (!profilePictureUrl) {
+      blobUrl = ''
+    } else if (!profilePictureUrl.includes('/api/')) {
       blobUrl = profilePictureUrl
-      return () => {}
+    } else {
+      imageService.getAuthenticatedImageUrl(profilePictureUrl).then((url) => {
+        if (!cancelled) blobUrl = url
+      })
     }
 
-    let cancelled = false
-    imageService.getAuthenticatedImageUrl(profilePictureUrl).then(url => {
-      if (!cancelled) blobUrl = url
-    })
     return () => {
       cancelled = true
     }
   })
+
 </script>
 
 {#if blobUrl}
