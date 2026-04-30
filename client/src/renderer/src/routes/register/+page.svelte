@@ -29,6 +29,9 @@
   let policyModalTitle = $state('')
   let policyModalContent = $state('')
 
+  let registrationComplete = $state(false)
+  let registeredEmail = $state('')
+
   let handleError = $derived(deriveHandleError(handle))
   let passwordError = $derived(derivePasswordError(password))
   let repeatPasswordError = $derived(deriveRepeatPasswordError(password, repeatPassword))
@@ -124,7 +127,8 @@
         return
       }
 
-      await push('/')
+      registeredEmail = email
+      registrationComplete = true
     } catch (e) {
       errorService.reportError('Failed to connect to server.')
     } finally {
@@ -146,6 +150,30 @@
 </script>
 
 <div class="page">
+  {#if registrationComplete}
+    <div class="card success-card">
+      <img src={marginLogo} alt="margin" class="logo" />
+      <div class="mail-icon" aria-hidden="true">
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
+          <polyline points="22,6 12,13 2,6" />
+        </svg>
+      </div>
+      <h1 class="success-title">Check your email</h1>
+      <p class="success-body">
+        We've sent an activation link to <strong>{registeredEmail}</strong>.
+        Click the link in the email to activate your account before signing in.
+      </p>
+      <p class="success-hint">Didn't get it? Check your spam folder.</p>
+      <Button
+        buttonType="primary"
+        size="medium"
+        text="Back to sign in"
+        fullWidth
+        onClick={goBack}
+      />
+    </div>
+  {:else}
   <div class="card">
     <img src={marginLogo} alt="margin" class="logo" />
 
@@ -315,6 +343,7 @@
       onClick={goBack}
     />
   </div>
+  {/if}
 </div>
 
 <PolicyModal
@@ -561,5 +590,50 @@
     flex: 1;
     height: 1px;
     background: #ece8e0;
+  }
+
+  .success-card {
+    align-items: center;
+    text-align: center;
+    gap: 16px;
+  }
+
+  .mail-icon {
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background: #fdf0e8;
+    color: #e8712a;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-top: 4px;
+  }
+
+  .success-title {
+    font-size: 20px;
+    font-weight: 600;
+    color: #1a1a1a;
+    margin: 0;
+    letter-spacing: -0.2px;
+  }
+
+  .success-body {
+    font-size: 14px;
+    line-height: 1.55;
+    color: #555250;
+    margin: 0;
+  }
+
+  .success-body strong {
+    color: #1a1a1a;
+    font-weight: 600;
+    word-break: break-all;
+  }
+
+  .success-hint {
+    font-size: 12px;
+    color: #888480;
+    margin: -4px 0 4px 0;
   }
 </style>

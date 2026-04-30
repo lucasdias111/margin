@@ -147,17 +147,21 @@ describe('RegisterPage', () => {
     )
   })
 
-  it('navigates to / on successful registration', async () => {
+  it('shows email confirmation card on successful registration', async () => {
     vi.mocked(authenticationService.register).mockResolvedValue({ ok: true } as Response)
     render(RegisterPage)
 
+    const { values } = fillForm()
     await fillForm().fill()
     await acceptPolicies()
     await submitForm()
 
     await waitFor(() => {
-      expect(svelteRouter.push).toHaveBeenCalledWith('/')
+      expect(screen.getByText('Check your email')).toBeInTheDocument()
     })
+    expect(screen.getByText(values.email)).toBeInTheDocument()
+    expect(screen.queryByLabelText('Beta key')).not.toBeInTheDocument()
+    expect(svelteRouter.push).not.toHaveBeenCalled()
   })
 
   it('reports error when server returns non-ok response', async () => {

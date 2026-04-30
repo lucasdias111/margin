@@ -36,9 +36,15 @@
     try {
       await authenticationService.login(email, password, keepLoggedIn)
       await push('/home')
-    } catch (e) {
+    } catch (e: unknown) {
       hasError = true
-      loginResponse = 'Invalid email or password'
+      const message = e instanceof Error ? e.message : ''
+      if (/not yet activated/i.test(message)) {
+        loginResponse =
+          'Please activate your account first — we sent an activation link to your email.'
+      } else {
+        loginResponse = 'Invalid email or password'
+      }
     } finally {
       isLoading = false
     }

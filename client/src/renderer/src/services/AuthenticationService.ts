@@ -15,8 +15,12 @@ class AuthenticationService {
     const response = await unauthenticatedPost({ email, password }, 'auth/login')
     const authResponse: AuthResponse = await response.json()
     if (!authResponse.success) {
-      errorService.reportError('Error login: ' + authResponse.message)
-      throw new Error(authResponse.message)
+      const message = authResponse.message ?? ''
+      const isNotActivated = /not yet activated/i.test(message)
+      if (!isNotActivated) {
+        errorService.reportError('Error login: ' + message)
+      }
+      throw new Error(message)
     }
 
     sessionStorage.setItem('authToken', authResponse.token)
