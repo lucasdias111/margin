@@ -57,9 +57,9 @@ export const icons = {
   notifications: `<path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
          <path d="M13.73 21a2 2 0 0 1-3.46 0" />`,
 
-  logout: `<path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" stroke="#f47e3a" />
-         <polyline points="16 17 21 12 16 7" stroke="#f47e3a" />
-         <line x1="21" y1="12" x2="9" y2="12" stroke="#f47e3a" />`,
+  logout: `<path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" stroke="#ff843c" />
+         <polyline points="16 17 21 12 16 7" stroke="#ff843c" />
+         <line x1="21" y1="12" x2="9" y2="12" stroke="#ff843c" />`,
 
   edit: `<path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
          <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />`,
@@ -85,6 +85,9 @@ export const icons = {
 
   x: `<line x1="18" y1="6" x2="6" y2="18" />
       <line x1="6" y1="6" x2="18" y2="18" />`,
+
+  close: `<line x1="18" y1="6" x2="6" y2="18" />
+          <line x1="6" y1="6" x2="18" y2="18" />`,
 
   grid: `<rect x="3" y="3" width="7" height="7" rx="1.5" />
          <rect x="14" y="3" width="7" height="7" rx="1.5" />
@@ -112,14 +115,14 @@ export const icons = {
   checkmark: `<circle cx="12" cy="12" r="10" />
              <polyline points="16 9 10.5 14.5 8 12" />`,
 
-  bug: `<ellipse cx="12" cy="14" rx="5" ry="6" stroke="#f47e3a" />
-      <path d="M9 8.5a3 3 0 0 1 6 0" stroke="#f47e3a" />
-      <line x1="7" y1="11" x2="4" y2="9" stroke="#f47e3a" />
-      <line x1="7" y1="14" x2="4" y2="14" stroke="#f47e3a" />
-      <line x1="7" y1="17" x2="4" y2="19" stroke="#f47e3a" />
-      <line x1="17" y1="11" x2="20" y2="9" stroke="#f47e3a" />
-      <line x1="17" y1="14" x2="20" y2="14" stroke="#f47e3a"/>
-      <line x1="17" y1="17" x2="20" y2="19" stroke="#f47e3a" />`,
+  bug: `<ellipse cx="12" cy="14" rx="5" ry="6" stroke="#ff843c" />
+      <path d="M9 8.5a3 3 0 0 1 6 0" stroke="#ff843c" />
+      <line x1="7" y1="11" x2="4" y2="9" stroke="#ff843c" />
+      <line x1="7" y1="14" x2="4" y2="14" stroke="#ff843c" />
+      <line x1="7" y1="17" x2="4" y2="19" stroke="#ff843c" />
+      <line x1="17" y1="11" x2="20" y2="9" stroke="#ff843c" />
+      <line x1="17" y1="14" x2="20" y2="14" stroke="#ff843c"/>
+      <line x1="17" y1="17" x2="20" y2="19" stroke="#ff843c" />`,
 
   checkmarkFilled: `<path style="fill: currentColor; stroke: none" d="M12 2.25c-5.385 0-9.75 4.365-9.75 9.75s4.365 9.75 9.75 9.75 9.75-4.365 9.75-9.75-4.365-9.75-9.75-9.75zM17.444 9.23l-7.115 7.114c-0.179 0.178-0.467 0.178-0.646 0l-0.143-0.143-3.914-3.942c-0.179-0.179-0.179-0.468 0-0.647l0.971-0.97c0.178-0.178 0.468-0.178 0.646 0l2.767 2.787 5.817-5.817c0.179-0.179 0.468-0.179 0.647 0l0.97 0.971c0.179 0.178 0.179 0.467 0 0.647z" />`,
 
