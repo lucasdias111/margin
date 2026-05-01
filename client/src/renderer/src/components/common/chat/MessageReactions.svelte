@@ -80,7 +80,7 @@
 
   .pill.mine {
     background: #fde8d8;
-    border-color: #f47e3a;
+    border-color: #ff843c;
   }
 
   .count {

@@ -65,7 +65,7 @@
   }
 
   .but.primary {
-    background-color: #f47e3a;
+    background-color: #ff843c;
     color: white;
     border: none;
   }
@@ -77,18 +77,18 @@
 
   .but.secondary {
     background-color: white;
-    color: #f47e3a;
+    color: #ff843c;
     border: rgba(244, 126, 58, 0.43) solid 1px;
   }
 
   .but.secondary:hover:not(:disabled) {
     background-color: rgba(244, 126, 58, 0.06);
-    border-color: #f47e3a;
+    border-color: #ff843c;
   }
 
   .but.ternary {
     background-color: #312f2f;
-    color: #f47e3a;
+    color: #ff843c;
     border: none;
   }
 

@@ -260,7 +260,7 @@
 
   .dropdown-item:hover .item-label,
   .dropdown-item:hover .logout-label {
-    color: #f47e3a;
+    color: #ff843c;
   }
 
   .dropdown-item :global(svg) {
@@ -270,7 +270,7 @@
   }
 
   .dropdown-item:hover :global(svg) {
-    color: #f47e3a;
+    color: #ff843c;
   }
 
   .button-group {
@@ -299,7 +299,7 @@
 
   .nav-btn:hover .nav-label,
   .nav-btn.selected .nav-label {
-    color: #f47e3a;
+    color: #ff843c;
   }
 
   button :global(svg) {
@@ -310,7 +310,7 @@
 
   button:hover :global(svg),
   button.selected :global(svg) {
-    color: #f47e3a;
+    color: #ff843c;
   }
 
   button {

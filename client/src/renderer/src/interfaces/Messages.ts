@@ -21,6 +21,7 @@ export interface Message {
   marginId?: number
   channelName?: string
   reactions: MessageReaction[]
+  imageAddress?: string | null
 }
 
 export interface ConversationMessagesResponse {

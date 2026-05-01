@@ -48,7 +48,7 @@
     gap: 8px;
     font-size: 0.95rem;
     font-weight: 600;
-    color: #f47e3a;
+    color: #ff843c;
     padding: 8px 10px;
     background: rgba(228, 113, 42, 0.08);
     border-radius: 8px;

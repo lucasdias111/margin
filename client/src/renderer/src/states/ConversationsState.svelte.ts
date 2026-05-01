@@ -12,6 +12,7 @@ export interface ConversationMeta {
   lastMessageIncoming: boolean
   unread: boolean
   lastReadAt: string | null
+  initialFetchCompleted: boolean
 }
 
 export const defaultMeta = (): ConversationMeta => ({
@@ -21,7 +22,8 @@ export const defaultMeta = (): ConversationMeta => ({
   lastMessageTime: null,
   lastMessageIncoming: false,
   unread: false,
-  lastReadAt: null
+  lastReadAt: null,
+  initialFetchCompleted: false
 })
 
 class ConversationsState {

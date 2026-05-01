@@ -120,7 +120,7 @@
     height: 38px;
     border-radius: 50%;
     border: none;
-    background: #f47e3a;
+    background: #ff843c;
     cursor: pointer;
     transition:
       background 0.2s ease,

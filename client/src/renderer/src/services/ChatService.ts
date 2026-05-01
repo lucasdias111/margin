@@ -14,7 +14,7 @@ import { encryptionService } from './EncryptionService'
 import { webSocketService } from './WebSocketService'
 import { WebSocketMessageType } from '$src/interfaces/WebSocketMessageType'
 import type { Channel } from '$src/interfaces/Channel'
-import { authenticatedGet, authenticatedPost } from '$src/services/api'
+import { authenticatedGet, authenticatedPost, authenticatedPostForm } from '$src/services/api'
 import { notificationService } from '$src/services/NotificationService'
 import type { WebSocketMessage } from '$src/interfaces/WebSocketMessages'
 import type { View } from '$src/interfaces/View'
@@ -119,9 +119,8 @@ class ChatService {
     if (!force) {
       for (const [convId, conv] of conversationsState.byId) {
         if (conv.type === 'DIRECT' && conv.otherUserId === user.id) {
-          const messages = conversationsState.messagesByConversationId.get(convId)
           const meta = conversationsState.conversationMetaById.get(convId)
-          if (messages && messages.length > 1 && !meta?.isLoading) {
+          if (meta?.initialFetchCompleted && !meta?.isLoading) {
             if (document.hasFocus()) await this.markConversationAsRead(convId)
             return
           }
@@ -139,9 +138,8 @@ class ChatService {
   async loadConversationForChannel(channel: Channel, force = false): Promise<void> {
     const conversationId = channel.conversationId
     if (!force) {
-      const existing = conversationsState.messagesByConversationId.get(conversationId)
       const meta = conversationsState.conversationMetaById.get(conversationId)
-      if (existing && existing.length > 1 && !meta?.isLoading) {
+      if (meta?.initialFetchCompleted && !meta?.isLoading) {
         if (document.hasFocus()) await this.markConversationAsRead(conversationId)
         return
       }
@@ -185,7 +183,8 @@ class ChatService {
       ...(conversationsState.conversationMetaById.get(convId) ?? defaultMeta()),
       isLoading: false,
       hasMore: messageResponse.messages.length >= ChatService.PAGE_SIZE,
-      lastMessage: decryptedMessages[decryptedMessages.length - 1]?.content ?? null
+      lastMessage: decryptedMessages[decryptedMessages.length - 1]?.content ?? null,
+      initialFetchCompleted: true
     })
 
     await onLoaded(conv)
@@ -245,11 +244,12 @@ class ChatService {
   async sendMessageAndStartConversation(
     currentUser: User,
     toUserId: number,
-    messageText: string
+    messageText: string,
+    attachedFile?: File
   ): Promise<{ conversation: Conversation; message: Message }> {
     const content = await this.encryptForUser(messageText, toUserId, currentUser.id)
     const response = await authenticatedPost(
-      { recipientUserId: toUserId, encryptedContent: content },
+      { recipientUserId: toUserId, encryptedContent: content, attachedFile },
       'conversations/create_private'
     )
     const conversation: Conversation = await response.json()
@@ -261,16 +261,19 @@ class ChatService {
   async sendMessage(
     currentUser: User,
     conversation: Conversation,
-    messageText: string
+    messageText: string,
+    attachedFile?: File
   ): Promise<Message> {
     let content = messageText
     if (isDirectConversation(conversation)) {
       content = await this.encryptForUser(messageText, conversation.otherUserId, currentUser.id)
     }
-    webSocketService.send<string>({
+    const conversationId = conversation.id
+    const imageAddress = await this.uploadConversationImage(attachedFile, conversationId)
+    webSocketService.send<{ content: string; imageAddress: string | null }>({
       type: WebSocketMessageType.SEND_MESSAGE,
       recipientId: conversation.id,
-      payload: content
+      payload: { content, imageAddress }
     })
     return this.buildOptimisticMessage(currentUser, conversation.id, messageText, 'DIRECT')
   }
@@ -278,12 +281,14 @@ class ChatService {
   async sendChannelMessage(
     currentUser: User,
     channel: Channel,
-    messageText: string
+    messageText: string,
+    attachedFile?: File
   ): Promise<Message> {
-    webSocketService.send<string>({
+    const imageAddress = await this.uploadConversationImage(attachedFile, channel.conversationId)
+    webSocketService.send<{ content: string; imageAddress: string | null }>({
       type: WebSocketMessageType.SEND_MESSAGE,
       recipientId: channel.conversationId,
-      payload: messageText
+      payload: { content: messageText, imageAddress }
     })
     return this.buildOptimisticMessage(currentUser, channel.conversationId, messageText, 'CHANNEL')
   }
@@ -503,6 +508,18 @@ class ChatService {
         unread: false
       })
     }
+  }
+
+  async uploadConversationImage(attachedFile: File, conversationId: number): Promise<string> {
+    let imageAddress: string | null = null
+    if (attachedFile) {
+      const formData = new FormData()
+      formData.append('attachedFile', attachedFile)
+      formData.append('conversationId', conversationId.toString())
+      const response = await authenticatedPostForm(formData, 'files/upload_to_conversation')
+      imageAddress = await response.text()
+    }
+    return imageAddress
   }
 }
 

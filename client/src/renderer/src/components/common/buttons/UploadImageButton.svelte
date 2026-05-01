@@ -55,6 +55,6 @@
     font-size: 14px;
     cursor: pointer;
     background-color: rgb(255, 255, 255);
-    color: #f47e3a;
+    color: #ff843c;
   }
 </style>

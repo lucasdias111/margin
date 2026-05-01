@@ -95,6 +95,9 @@
         </div>
         <input class="editinput" bind:value={editedContent} />
       {:else}
+        {#if message.imageAddress}
+          <img class="attachment" src={message.imageAddress} alt="" />
+        {/if}
         <p class="text">
           {#each parsedContent as part, i (`${i}-${part.content}`)}
             {#if part.type === 'link'}
@@ -171,6 +174,7 @@
     word-break: break-word;
     line-height: 1.5;
     font-size: 14px;
+    margin-top: 2px;
   }
 
   .bubble:not(.sent) {
@@ -180,7 +184,7 @@
   }
 
   .bubble.sent {
-    background: #f47e3a;
+    background: #ff843c;
     color: #2d2d2d;
     border-bottom-right-radius: 4px;
   }
@@ -188,7 +192,7 @@
   .handle {
     font-size: 11px;
     font-weight: 600;
-    color: #f47e3a;
+    color: #ff843c;
     letter-spacing: 0.02em;
     margin-bottom: 2px;
     padding-left: 6px;
@@ -210,7 +214,7 @@
   }
 
   .bubble:not(.sent) .chat-link {
-    color: #f47e3a;
+    color: #ff843c;
   }
 
   .editactions {
@@ -261,5 +265,18 @@
 
   .edited {
     font-style: italic;
+  }
+
+  .attachment {
+    display: block;
+    width: 100%;
+    max-height: 320px;
+    object-fit: cover;
+    border-radius: 12px;
+    margin: -2px 0 8px;
+  }
+
+  .bubble:has(.attachment) .text:empty {
+    display: none;
   }
 </style>

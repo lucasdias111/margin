@@ -356,7 +356,7 @@
     outline: none;
     background: transparent;
     padding: 0;
-    border-bottom: 1.5px solid #f47e3a;
+    border-bottom: 1.5px solid #ff843c;
     font-family: inherit;
   }
 
@@ -391,7 +391,7 @@
   }
 
   .field-input-standalone:focus {
-    border-color: #f47e3a;
+    border-color: #ff843c;
     background: white;
   }
 

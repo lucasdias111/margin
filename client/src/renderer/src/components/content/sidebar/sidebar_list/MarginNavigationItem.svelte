@@ -1,5 +1,6 @@
 <script lang="ts">
   import type { Snippet } from 'svelte'
+
   interface Props {
     label: string
     active?: boolean
@@ -40,7 +41,7 @@
 
   .nav-item.active {
     background: rgba(228, 113, 42, 0.1);
-    color: #f47e3a;
+    color: #ff843c;
   }
 
   .nav-item :global(svg) {

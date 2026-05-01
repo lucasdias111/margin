@@ -31,9 +31,14 @@
     }
   })
 
-  async function handleSubmit(event?: Event): Promise<void> {
-    if (event) event.preventDefault()
-    if (!messageInput.trim() || !navigationState.selectedChannel) return
+  async function handleSubmit(event: SubmitEvent, attachedFile?: File): Promise<void> {
+    event.preventDefault()
+    if (
+      !navigationState.selectedChannel ||
+      (!messageInput.trim() && attachedFile == null) ||
+      !sessionState.currentUser
+    )
+      return
 
     const messageContent = messageInput
     messageInput = ''
@@ -41,7 +46,8 @@
     const message = await chatService.sendChannelMessage(
       sessionState.currentUser,
       navigationState.selectedChannel,
-      messageContent
+      messageContent,
+      attachedFile
     )
 
     conversationsState.appendMessage(message, false)
