@@ -79,7 +79,7 @@
     background: white;
     border: 1px solid #e4cbb2;
     border-radius: 12px;
-    box-shadow: rgb(38, 57, 77) 0px 20px 30px -10px;
+    box-shadow: rgb(38, 57, 77) 0 20px 30px -10px;
     display: flex;
     flex-direction: column;
     overflow: hidden;

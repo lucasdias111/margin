@@ -68,8 +68,8 @@ class NotificationService {
   }
 
   private createNotification(message: Message): void {
-    let title: string = ''
-    let content: string = ''
+    let title: string
+    let content: string
     if (message.conversationType === 'DIRECT') {
       title = message.user.displayName
       content = message.content
