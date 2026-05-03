@@ -120,7 +120,7 @@ services:
     build: /opt/margin-landing
     restart: unless-stopped
     environment:
-      - MARGIN_API_URL=http://margin.chat:8080
+      - MARGIN_API_URL=http://margin-server:8080
     networks:
       - margin-net
 
