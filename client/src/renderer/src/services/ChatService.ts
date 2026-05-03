@@ -245,11 +245,12 @@ class ChatService {
     currentUser: User,
     toUserId: number,
     messageText: string,
-    attachedFile?: File
+    attachedFile?: File,
+    imageUrl?: string
   ): Promise<{ conversation: Conversation; message: Message }> {
     const content = await this.encryptForUser(messageText, toUserId, currentUser.id)
     const response = await authenticatedPost(
-      { recipientUserId: toUserId, encryptedContent: content, attachedFile },
+      { recipientUserId: toUserId, encryptedContent: content, attachedFile, imageUrl },
       'conversations/create_private'
     )
     const conversation: Conversation = await response.json()
@@ -262,14 +263,16 @@ class ChatService {
     currentUser: User,
     conversation: Conversation,
     messageText: string,
-    attachedFile?: File
+    attachedFile?: File,
+    imageUrl?: string
   ): Promise<Message> {
     let content = messageText
     if (isDirectConversation(conversation)) {
       content = await this.encryptForUser(messageText, conversation.otherUserId, currentUser.id)
     }
     const conversationId = conversation.id
-    const imageAddress = await this.uploadConversationImage(attachedFile, conversationId)
+    const imageAddress =
+      imageUrl ?? (await this.uploadConversationImage(attachedFile, conversationId))
     webSocketService.send<{ content: string; imageAddress: string | null }>({
       type: WebSocketMessageType.SEND_MESSAGE,
       recipientId: conversation.id,
@@ -282,9 +285,11 @@ class ChatService {
     currentUser: User,
     channel: Channel,
     messageText: string,
-    attachedFile?: File
+    attachedFile?: File,
+    imageUrl?: string
   ): Promise<Message> {
-    const imageAddress = await this.uploadConversationImage(attachedFile, channel.conversationId)
+    const imageAddress =
+      imageUrl ?? (await this.uploadConversationImage(attachedFile, channel.conversationId))
     webSocketService.send<{ content: string; imageAddress: string | null }>({
       type: WebSocketMessageType.SEND_MESSAGE,
       recipientId: channel.conversationId,

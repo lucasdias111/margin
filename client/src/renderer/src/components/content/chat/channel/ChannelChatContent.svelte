@@ -31,11 +31,15 @@
     }
   })
 
-  async function handleSubmit(event: SubmitEvent, attachedFile?: File): Promise<void> {
+  async function handleSubmit(
+    event: SubmitEvent,
+    attachedFile: File | null,
+    imageUrl: string | null
+  ): Promise<void> {
     event.preventDefault()
     if (
       !navigationState.selectedChannel ||
-      (!messageInput.trim() && attachedFile == null) ||
+      (!messageInput.trim() && attachedFile == null && imageUrl == null) ||
       !sessionState.currentUser
     )
       return
@@ -47,7 +51,8 @@
       sessionState.currentUser,
       navigationState.selectedChannel,
       messageContent,
-      attachedFile
+      attachedFile ?? undefined,
+      imageUrl ?? undefined
     )
 
     conversationsState.appendMessage(message, false)

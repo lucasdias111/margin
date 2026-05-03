@@ -47,12 +47,16 @@
     }
   })
 
-  async function handleSubmitMessage(event: SubmitEvent, attachedFile?: File): Promise<void> {
+  async function handleSubmitMessage(
+    event: SubmitEvent,
+    attachedFile: File | null,
+    imageUrl: string | null
+  ): Promise<void> {
     event.preventDefault()
 
     if (
       !selectedUser ||
-      (!messageInput.trim() && attachedFile == null) ||
+      (!messageInput.trim() && attachedFile == null && imageUrl == null) ||
       !sessionState.currentUser ||
       activeMeta.isLoading
     )
@@ -66,7 +70,8 @@
         sessionState.currentUser,
         activeConversation,
         messageContent,
-        attachedFile
+        attachedFile ?? undefined,
+        imageUrl ?? undefined
       )
       conversationsState.appendMessage(message, false)
     } else {
@@ -74,7 +79,8 @@
         sessionState.currentUser,
         selectedUser.id,
         messageContent,
-        attachedFile
+        attachedFile ?? undefined,
+        imageUrl ?? undefined
       )
       conversationsState.appendMessage(message, false)
     }

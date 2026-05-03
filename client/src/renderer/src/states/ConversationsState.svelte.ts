@@ -30,6 +30,7 @@ class ConversationsState {
   private _byId = new SvelteMap<number, Conversation>()
   private _messagesByConversationId = new SvelteMap<number, Message[]>()
   private _conversationMetaById = new SvelteMap<number, ConversationMeta>()
+  private _marginIdByConversationId = new SvelteMap<number, number>()
 
   get byId(): SvelteMap<number, Conversation> {
     return this._byId
@@ -41,6 +42,14 @@ class ConversationsState {
 
   get conversationMetaById(): SvelteMap<number, ConversationMeta> {
     return this._conversationMetaById
+  }
+
+  get marginIdByConversationId(): SvelteMap<number, number> {
+    return this._marginIdByConversationId
+  }
+
+  setMarginForConversation(conversationId: number, marginId: number): void {
+    this._marginIdByConversationId.set(conversationId, marginId)
   }
 
   appendMessage(msg: Message, incoming: boolean): void {
@@ -89,6 +98,7 @@ class ConversationsState {
     this._byId.clear()
     this._messagesByConversationId.clear()
     this._conversationMetaById.clear()
+    this._marginIdByConversationId.clear()
   }
 
   get currentConversation(): Conversation | undefined {

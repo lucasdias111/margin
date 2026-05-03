@@ -5,6 +5,8 @@
   import { replaceEmoticons } from '$src/utils/EmoticonUtils'
   import { compressImage } from '$src/utils/ImageUtils'
   import Icon from '$src/components/common/icons/Icon.svelte'
+  import GifPicker from '$src/components/common/chat/GifPicker.svelte'
+  import type { Gif } from '$src/services/GifService'
 
   let {
     selectedContent,
@@ -13,12 +15,14 @@
   }: {
     selectedContent: boolean
     messageInput: string
-    onSubmit: (event: SubmitEvent, file: File | null) => void
+    onSubmit: (event: SubmitEvent, file: File | null, imageUrl: string | null) => void
   } = $props()
 
   let showPicker = $state(false)
+  let showGifPicker = $state(false)
   let inputRef = $state<HTMLTextAreaElement | null>(null)
   let attachedFile = $state<File | null>(null)
+  let attachedGifUrl = $state<string | null>(null)
   let previewUrl = $state<string | null>(null)
 
   function handleKeydown(event: KeyboardEvent): void {
@@ -49,21 +53,33 @@
   }
 
   function setAttachment(file: File): void {
-    if (previewUrl) URL.revokeObjectURL(previewUrl)
+    if (previewUrl && attachedFile) URL.revokeObjectURL(previewUrl)
 
     attachedFile = file
+    attachedGifUrl = null
     previewUrl = URL.createObjectURL(file)
   }
 
-  function removeAttachment(): void {
-    if (previewUrl) URL.revokeObjectURL(previewUrl)
+  function setGifAttachment(gif: Gif): void {
+    if (previewUrl && attachedFile) URL.revokeObjectURL(previewUrl)
+
     attachedFile = null
+    attachedGifUrl = gif.gifUrl
+    previewUrl = gif.gifUrl
+    showGifPicker = false
+    inputRef?.focus()
+  }
+
+  function removeAttachment(): void {
+    if (previewUrl && attachedFile) URL.revokeObjectURL(previewUrl)
+    attachedFile = null
+    attachedGifUrl = null
     previewUrl = null
   }
 
   function handleFormSubmit(e: SubmitEvent): void {
     e.preventDefault()
-    onSubmit(e, attachedFile)
+    onSubmit(e, attachedFile, attachedGifUrl)
 
     messageInput = ''
     removeAttachment()
@@ -79,6 +95,7 @@
       onEmojiSelect: (emoji: any) => {
         messageInput += emoji.native
         showPicker = false
+        inputRef?.focus()
       }
     })
     node.appendChild(picker as unknown as Node)
@@ -120,6 +137,23 @@
         rows="1"
       ></textarea>
 
+      <div class="emoji-wrapper" use:clickOutside={() => (showGifPicker = false)}>
+        <div class="picker-container" class:visible={showGifPicker}>
+          {#if showGifPicker}
+            <GifPicker onSelect={setGifAttachment} />
+          {/if}
+        </div>
+        <button
+          class="secondary-button gif-button"
+          type="button"
+          onclick={() => (showGifPicker = !showGifPicker)}
+          aria-label="Insert GIF"
+          title="Insert GIF"
+        >
+          GIF
+        </button>
+      </div>
+
       <div class="emoji-wrapper" use:clickOutside={() => (showPicker = false)}>
         <div class="picker-container" class:visible={showPicker} use:emojiPicker></div>
         <button class="secondary-button" type="button" onclick={() => (showPicker = !showPicker)}>
@@ -130,7 +164,7 @@
       <button
         class="sendbut"
         type="submit"
-        disabled={!selectedContent || (!messageInput.trim() && !attachedFile)}
+        disabled={!selectedContent || (!messageInput.trim() && !attachedFile && !attachedGifUrl)}
         aria-label="Send"
         title="Send"
       >
@@ -252,6 +286,13 @@
 
   .emoji-wrapper .secondary-button {
     font-size: 20px;
+  }
+
+  .gif-button {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    color: #f47e3a;
   }
 
   .sendbut {

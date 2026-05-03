@@ -33,6 +33,13 @@
   let isEditing = $state(false)
   let showActions = $state(false)
 
+  const EMOJI_ONLY = /^(\p{Extended_Pictographic}|‍|️|[\u{1F3FB}-\u{1F3FF}]|\s)+$/u
+  let isEmojiOnly = $derived(
+    !message.imageAddress &&
+      message.content.trim().length > 0 &&
+      EMOJI_ONLY.test(message.content)
+  )
+
   let isSent = $derived(message.user.id === sessionState.currentUser?.id)
   let checkmarkIcon: IconName = $derived(isRead ? 'checkmarkFilled' : 'checkmark')
 
@@ -98,7 +105,7 @@
         {#if message.imageAddress}
           <img class="attachment" src={message.imageAddress} alt="" />
         {/if}
-        <p class="text">
+        <p class="text" class:jumbo={isEmojiOnly}>
           {#each parsedContent as part, i (`${i}-${part.content}`)}
             {#if part.type === 'link'}
               <a href={part.href} class="chat-link" onclick={(e) => openExternalLink(e, part.href)}>
@@ -201,6 +208,11 @@
   .text {
     margin: 0;
     white-space: pre-wrap;
+  }
+
+  .text.jumbo {
+    font-size: 40px;
+    line-height: 1.1;
   }
 
   .chat-link {
