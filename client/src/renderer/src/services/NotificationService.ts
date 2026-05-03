@@ -12,7 +12,6 @@ import { channelService } from '$src/services/ChannelService'
 import { navigationService } from '$src/services/NavigationService'
 import { navigationState } from '$src/states/NavigationState.svelte'
 import { conversationsState } from '$src/states/ConversationsState.svelte'
-import { spaceState } from '$src/states/SpaceState.svelte'
 import { isChannelConversation, isDirectConversation } from '$src/interfaces/Conversation'
 import type { Space } from '$src/interfaces/Space'
 
@@ -171,11 +170,9 @@ class NotificationService {
 
   totalUnreadForMargin(marginId: number): number {
     let count = 0
-    for (const space of spaceState.spaces) {
-      if (space.marginId !== marginId) continue
-      for (const ch of space.channels) {
-        if (this.isUnread(ch.conversationId)) count++
-      }
+    for (const [conversationId, meta] of conversationsState.conversationMetaById) {
+      if (!meta.unread) continue
+      if (conversationsState.marginIdByConversationId.get(conversationId) === marginId) count++
     }
     return count
   }

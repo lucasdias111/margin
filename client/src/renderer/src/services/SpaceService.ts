@@ -5,6 +5,7 @@ import { spaceState } from '$src/states/SpaceState.svelte'
 import type { User } from '$src/interfaces/User'
 import { navigationState } from '$src/states/NavigationState.svelte'
 import { usersState } from '$src/states/UsersState.svelte'
+import { conversationsState } from '$src/states/ConversationsState.svelte'
 
 class SpaceService {
   select(space: Space): void {
@@ -20,6 +21,7 @@ class SpaceService {
     const response = await authenticatedGet(`spaces/get_all_spaces_for_user/${marginId}`)
     const spaces: Space[] = await response.json()
     this.hydrateUsers(spaces)
+    this.indexChannelMargins(spaces, marginId)
     spaceState.setSpaces(spaces)
   }
 
@@ -28,6 +30,14 @@ class SpaceService {
       for (const member of space.members) usersState.add(member.user)
       for (const channel of space.channels ?? []) {
         for (const user of channel.voiceParticipants ?? []) usersState.add(user)
+      }
+    }
+  }
+
+  private indexChannelMargins(spaces: Space[], marginId: number): void {
+    for (const space of spaces) {
+      for (const channel of space.channels ?? []) {
+        conversationsState.setMarginForConversation(channel.conversationId, marginId)
       }
     }
   }

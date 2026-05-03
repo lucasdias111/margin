@@ -51,7 +51,10 @@
 
   const unreadPerMargin = $derived(
     new Map(
-      marginState.margins.map((m) => [m.marginId, notificationService.totalUnreadForMargin(m.marginId)])
+      marginState.margins.map((m) => [
+        m.marginId,
+        notificationService.totalUnreadForMargin(m.marginId)
+      ])
     )
   )
 </script>
