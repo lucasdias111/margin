@@ -9,3 +9,8 @@ export const API_CONFIG = {
   wsUrl: `${WS_ADDRESS}/ws`,
   sfuUrl: isProd ? `${SFU_ADDRESS}/sfu` : SFU_ADDRESS
 }
+
+export const CONFIG = {
+  apiKey: 'muiEMxF9FWTbqfYBdzOwOAG6ncFwFFMNRD6VPhezdrqyG620Q6IAJIYQLnjd1ZFJ',
+  clientKey: 'margin'
+}

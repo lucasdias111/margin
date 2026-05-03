@@ -14,4 +14,7 @@ interface Window {
     installUpdate: () => void
     notifyReady: () => void
   }
+  electronAPI?: {
+    onUserStatusChange: (callback: (status: 'active' | 'away') => void) => void
+  }
 }

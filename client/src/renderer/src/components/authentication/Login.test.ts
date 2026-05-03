@@ -107,6 +107,24 @@ describe('LoginComponent', () => {
     expect(svelteRouter.push).not.toHaveBeenCalled()
   })
 
+  it('shows activation reminder when login is rejected because account is not activated', async () => {
+    vi.mocked(authenticationService.login).mockRejectedValue(
+      new Error('User is not yet activated')
+    )
+    render(LoginComponent)
+
+    await fireEvent.input(screen.getByLabelText('Email'), { target: { value: 'john@test.com' } })
+    await fireEvent.input(screen.getByLabelText('Password'), { target: { value: 'secret123' } })
+    await submitForm()
+
+    await waitFor(() => {
+      expect(screen.getByText(/please activate your account first/i)).toBeInTheDocument()
+    })
+
+    expect(screen.queryByText('Invalid email or password')).not.toBeInTheDocument()
+    expect(svelteRouter.push).not.toHaveBeenCalled()
+  })
+
   it('saves email to localStorage when remember email is checked', async () => {
     vi.mocked(authenticationService.login).mockResolvedValue(undefined)
     render(LoginComponent)

@@ -14,7 +14,9 @@
   let messageInput = $state('')
   let chatInputRef = $state<ChatInput | null>(null)
   const activeConversation = $derived(
-    conversationsState.byId.get(conversationsState.currentConversation.id)
+    conversationsState.currentConversation
+      ? conversationsState.byId.get(conversationsState.currentConversation.id)
+      : undefined
   )
   const selectedUser: User | null = $derived(
     navigationState.selectedUser?.id ? usersState.byId.get(navigationState.selectedUser.id) : null
@@ -45,10 +47,19 @@
     }
   })
 
-  async function handleSubmitMessage(event: SubmitEvent): Promise<void> {
+  async function handleSubmitMessage(
+    event: SubmitEvent,
+    attachedFile: File | null,
+    imageUrl: string | null
+  ): Promise<void> {
     event.preventDefault()
 
-    if (!selectedUser || !messageInput.trim() || !sessionState.currentUser || activeMeta.isLoading)
+    if (
+      !selectedUser ||
+      (!messageInput.trim() && attachedFile == null && imageUrl == null) ||
+      !sessionState.currentUser ||
+      activeMeta.isLoading
+    )
       return
 
     const messageContent = messageInput
@@ -58,14 +69,18 @@
       const message = await chatService.sendMessage(
         sessionState.currentUser,
         activeConversation,
-        messageContent
+        messageContent,
+        attachedFile ?? undefined,
+        imageUrl ?? undefined
       )
       conversationsState.appendMessage(message, false)
     } else {
       const { message } = await chatService.sendMessageAndStartConversation(
         sessionState.currentUser,
         selectedUser.id,
-        messageContent
+        messageContent,
+        attachedFile ?? undefined,
+        imageUrl ?? undefined
       )
       conversationsState.appendMessage(message, false)
     }

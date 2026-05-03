@@ -36,6 +36,10 @@ if (process.contextIsolated) {
     contextBridge.exposeInMainWorld('shell', {
       openExternal: (url) => shell.openExternal(url)
     })
+    contextBridge.exposeInMainWorld('electronAPI', {
+      onUserStatusChange: (callback: (status: 'active' | 'idle' | 'away') => void) =>
+        ipcRenderer.on('user-status', (_event, status) => callback(status))
+    })
   } catch (error) {
     console.error(error)
   }

@@ -1,4 +1,13 @@
-import { app, BrowserWindow, desktopCapturer, ipcMain, nativeImage, safeStorage, session, shell } from 'electron'
+import {
+  app,
+  BrowserWindow,
+  desktopCapturer,
+  ipcMain,
+  nativeImage,
+  safeStorage,
+  session,
+  shell
+} from 'electron'
 import { join } from 'path'
 import { electronApp, is, optimizer } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
@@ -6,6 +15,7 @@ import notificationBadge from '../../resources/notification-badge.png?asset'
 import { API_CONFIG } from '../renderer/src/shared/config'
 import { existsSync, readFileSync, unlinkSync, writeFileSync } from 'fs'
 import pkg from 'electron-updater'
+import { setupPresence } from './presence'
 
 const { autoUpdater } = pkg
 const SECURE_FILE = join(app.getPath('userData'), 'secure.bin')
@@ -117,16 +127,19 @@ function createWindow(): void {
     ...(process.platform === 'linux' ? { icon } : {}),
     webPreferences: {
       preload: join(__dirname, '../preload/index.cjs'),
-      sandbox: false
+      sandbox: false,
+      nodeIntegration: true
     }
   })
+
+  setupPresence(mainWindow)
 
   mainWindow.webContents.session.webRequest.onHeadersReceived((details, callback) => {
     callback({
       responseHeaders: {
         ...details.responseHeaders,
         'Content-Security-Policy': [
-          `default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: ${API_CONFIG.baseUrl} https://hel1.your-objectstorage.com; connect-src 'self' ${API_CONFIG.baseUrl} ${API_CONFIG.wsUrl} ${API_CONFIG.sfuUrl}`
+          `default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: ${API_CONFIG.baseUrl} https://hel1.your-objectstorage.com https://static.klipy.com; connect-src 'self' ${API_CONFIG.baseUrl} ${API_CONFIG.wsUrl} ${API_CONFIG.sfuUrl} https://api.klipy.com`
         ]
       }
     })

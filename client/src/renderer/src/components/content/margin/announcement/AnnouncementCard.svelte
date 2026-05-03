@@ -54,7 +54,7 @@
     display: flex;
     flex-direction: column;
     gap: 10px;
-    border: 1px solid #f47e3a;
+    border: 1px solid #ff843c;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
     transition: box-shadow 0.15s;
   }

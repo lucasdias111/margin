@@ -51,7 +51,10 @@
 
   const unreadPerMargin = $derived(
     new Map(
-      marginState.margins.map((m) => [m.marginId, notificationService.totalUnreadForMargin(m.marginId)])
+      marginState.margins.map((m) => [
+        m.marginId,
+        notificationService.totalUnreadForMargin(m.marginId)
+      ])
     )
   )
 </script>
@@ -200,7 +203,7 @@
 
   .margin-item.active {
     background: rgba(228, 113, 42, 0.08);
-    color: #f47e3a;
+    color: #ff843c;
   }
 
   .margin-avatar {
@@ -208,7 +211,7 @@
     height: 26px;
     border-radius: 7px;
     background: rgba(228, 113, 42, 0.12);
-    color: #f47e3a;
+    color: #ff843c;
     font-size: 12px;
     font-weight: 700;
     display: flex;
@@ -272,7 +275,7 @@
   }
 
   .join-input:focus {
-    border-color: #f47e3a;
+    border-color: #ff843c;
     background: white;
   }
 

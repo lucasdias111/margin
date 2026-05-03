@@ -5,7 +5,7 @@ import { webSocketService } from '$src/services/WebSocketService'
 import { notificationService } from '$src/services/NotificationService'
 import { navigationService } from '$src/services/NavigationService'
 import { channelService } from '$src/services/ChannelService'
-import { conversationsState } from '$src/states/ConversationsState.svelte'
+import { conversationsState, defaultMeta } from '$src/states/ConversationsState.svelte'
 import { navigationState } from '$src/states/NavigationState.svelte'
 import { sessionState } from '$src/states/SessionState.svelte'
 import { usersState } from '$src/states/UsersState.svelte'
@@ -13,17 +13,9 @@ import { conversationInviteService } from '$src/states/UserListState.svelte'
 import { WebSocketMessageType } from '$src/interfaces/WebSocketMessageType'
 import * as api from '$src/services/api'
 import { View } from '$src/interfaces/View'
-import type {
-  ConversationMessagesResponse,
-  Message,
-  MessageReaction
-} from '$src/interfaces/Messages'
+import type { ConversationMessagesResponse, Message, MessageReaction } from '$src/interfaces/Messages'
 import type { User } from '$src/interfaces/User'
-import type {
-  ChannelConversation,
-  Conversation,
-  DirectConversation
-} from '$src/interfaces/Conversation'
+import type { ChannelConversation, Conversation, DirectConversation } from '$src/interfaces/Conversation'
 import type { Channel } from '$src/interfaces/Channel'
 
 vi.mock('$src/services/EncryptionService', () => ({
@@ -326,7 +318,11 @@ describe('ChatService', () => {
     })
 
     it('bails when own message echo arrives but no recipient is selected', async () => {
-      const msg = buildMessage({ id: 1, conversationType: 'DIRECT', user: sessionState.currentUser! })
+      const msg = buildMessage({
+        id: 1,
+        conversationType: 'DIRECT',
+        user: sessionState.currentUser!
+      })
 
       await chatService.handleIncomingMessage({
         type: WebSocketMessageType.RECEIVE_MESSAGE,
@@ -394,6 +390,11 @@ describe('ChatService', () => {
         buildMessage({ id: 2 })
       ])
 
+      conversationsState.conversationMetaById.set(conv.id, {
+        ...(conversationsState.conversationMetaById.get(conv.id) ?? defaultMeta()),
+        initialFetchCompleted: true
+      })
+
       await chatService.loadConversationForUser(buildUser({ id: 2 }))
 
       expect(api.authenticatedGet).not.toHaveBeenCalled()
@@ -435,6 +436,11 @@ describe('ChatService', () => {
         buildMessage({ id: 1 }),
         buildMessage({ id: 2 })
       ])
+
+      conversationsState.conversationMetaById.set(channel.conversationId, {
+        ...(conversationsState.conversationMetaById.get(channel.conversationId) ?? defaultMeta()),
+        initialFetchCompleted: true
+      })
 
       await chatService.loadConversationForChannel(channel)
 
@@ -499,7 +505,7 @@ describe('ChatService', () => {
       expect(webSocketService.send).toHaveBeenCalledWith({
         type: WebSocketMessageType.SEND_MESSAGE,
         recipientId: 10,
-        payload: 'cipher'
+        payload: { content: 'cipher', imageAddress: null }
       })
       expect(msg.id).toBeLessThan(0)
       expect(msg.content).toBe('plain hello')
@@ -516,7 +522,7 @@ describe('ChatService', () => {
       expect(webSocketService.send).toHaveBeenCalledWith({
         type: WebSocketMessageType.SEND_MESSAGE,
         recipientId: 20,
-        payload: 'hi all'
+        payload: { content: 'hi all', imageAddress: null }
       })
       expect(msg.id).toBeLessThan(0)
       expect(msg.conversationType).toBe('CHANNEL')

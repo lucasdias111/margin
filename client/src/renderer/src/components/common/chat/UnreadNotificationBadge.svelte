@@ -12,7 +12,7 @@
 
 <style>
   .badge {
-    background-color: #f47e3a;
+    background-color: #ff843c;
     color: white;
     border-radius: 999px;
     font-size: 10px;

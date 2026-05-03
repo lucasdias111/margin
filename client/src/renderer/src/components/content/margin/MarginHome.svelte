@@ -210,7 +210,7 @@
   .new-announcement-btn {
     font-size: 11px;
     font-weight: 700;
-    color: #f47e3a;
+    color: #ff843c;
     background: none;
     border: none;
     cursor: pointer;

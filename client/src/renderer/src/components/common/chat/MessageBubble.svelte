@@ -33,6 +33,13 @@
   let isEditing = $state(false)
   let showActions = $state(false)
 
+  const EMOJI_ONLY = /^(\p{Extended_Pictographic}|‍|️|[\u{1F3FB}-\u{1F3FF}]|\s)+$/u
+  let isEmojiOnly = $derived(
+    !message.imageAddress &&
+      message.content.trim().length > 0 &&
+      EMOJI_ONLY.test(message.content)
+  )
+
   let isSent = $derived(message.user.id === sessionState.currentUser?.id)
   let checkmarkIcon: IconName = $derived(isRead ? 'checkmarkFilled' : 'checkmark')
 
@@ -95,7 +102,10 @@
         </div>
         <input class="editinput" bind:value={editedContent} />
       {:else}
-        <p class="text">
+        {#if message.imageAddress}
+          <img class="attachment" src={message.imageAddress} alt="" />
+        {/if}
+        <p class="text" class:jumbo={isEmojiOnly}>
           {#each parsedContent as part, i (`${i}-${part.content}`)}
             {#if part.type === 'link'}
               <a href={part.href} class="chat-link" onclick={(e) => openExternalLink(e, part.href)}>
@@ -171,6 +181,7 @@
     word-break: break-word;
     line-height: 1.5;
     font-size: 14px;
+    margin-top: 2px;
   }
 
   .bubble:not(.sent) {
@@ -180,7 +191,7 @@
   }
 
   .bubble.sent {
-    background: #f47e3a;
+    background: #ff843c;
     color: #2d2d2d;
     border-bottom-right-radius: 4px;
   }
@@ -188,7 +199,7 @@
   .handle {
     font-size: 11px;
     font-weight: 600;
-    color: #f47e3a;
+    color: #ff843c;
     letter-spacing: 0.02em;
     margin-bottom: 2px;
     padding-left: 6px;
@@ -197,6 +208,11 @@
   .text {
     margin: 0;
     white-space: pre-wrap;
+  }
+
+  .text.jumbo {
+    font-size: 40px;
+    line-height: 1.1;
   }
 
   .chat-link {
@@ -210,7 +226,7 @@
   }
 
   .bubble:not(.sent) .chat-link {
-    color: #f47e3a;
+    color: #ff843c;
   }
 
   .editactions {
@@ -261,5 +277,18 @@
 
   .edited {
     font-style: italic;
+  }
+
+  .attachment {
+    display: block;
+    width: 100%;
+    max-height: 320px;
+    object-fit: cover;
+    border-radius: 12px;
+    margin: -2px 0 8px;
+  }
+
+  .bubble:has(.attachment) .text:empty {
+    display: none;
   }
 </style>

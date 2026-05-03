@@ -161,7 +161,7 @@
   }
 
   .join-input:focus {
-    border-color: #f47e3a;
+    border-color: #ff843c;
     background: white;
   }
 

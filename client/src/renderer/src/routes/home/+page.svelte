@@ -51,6 +51,12 @@
     setup()
     webSocketService.connect()
     webSocketService.onReconnect(resync)
+
+    if (isElectron()) {
+      window.electronAPI?.onUserStatusChange((status) => {
+        if (status === 'active') resync()
+      })
+    }
   })
 
   $effect(() => {
@@ -150,6 +156,7 @@
         })
       }
       conversationsState.markUnread(ch.conversationId)
+      conversationsState.setMarginForConversation(ch.conversationId, ch.marginId)
     }
   }
 
@@ -188,7 +195,14 @@
     callService.endCall(true)
   }
 
+  const RESYNC_COOLDOWN_MS = 2000
+  let lastResyncAt = 0
+
   async function resync(): Promise<void> {
+    const now = Date.now()
+    if (now - lastResyncAt < RESYNC_COOLDOWN_MS) return
+    lastResyncAt = now
+
     await loadUnreadMessages()
     await loadRecentUsers()
 

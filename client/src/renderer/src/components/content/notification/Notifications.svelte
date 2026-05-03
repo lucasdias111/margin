@@ -189,7 +189,7 @@
     font-size: 11px;
     font-weight: 700;
     color: white;
-    background: #f47e3a;
+    background: #ff843c;
     border-radius: 999px;
     padding: 3px 10px;
     letter-spacing: 0.03em;
@@ -265,7 +265,7 @@
     width: 8px;
     height: 8px;
     border-radius: 999px;
-    background: #f47e3a;
+    background: #ff843c;
     flex-shrink: 0;
   }
 
