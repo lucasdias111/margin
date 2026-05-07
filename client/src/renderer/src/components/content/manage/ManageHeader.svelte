@@ -1,15 +1,16 @@
 <script lang="ts">
   import { navigationService } from '$src/services/NavigationService'
   import { View } from '$src/interfaces/View'
+  import type { ManageTab } from '$src/states/NavigationState.svelte'
 
   interface Props {
-    activeTab: string
-    onTabChange: (tab: string) => void
+    activeTab: ManageTab
+    onTabChange: (tab: ManageTab) => void
   }
 
   let { activeTab, onTabChange }: Props = $props()
 
-  const tabs = ['Margin', 'Spaces']
+  const tabs: ManageTab[] = ['Margin', 'Spaces', 'Subscription']
 </script>
 
 <div class="manage-header">

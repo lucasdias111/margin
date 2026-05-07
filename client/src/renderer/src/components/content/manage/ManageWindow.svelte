@@ -2,18 +2,22 @@
   import ManageHeader from '$src/components/content/manage/ManageHeader.svelte'
   import ManageSpaces from '$src/components/content/manage/spaces/ManageSpaces.svelte'
   import ManageMargin from '$src/components/content/manage/margin/ManageMargin.svelte'
-
-  let activeTab = $state('Margin')
-
+  import ManageSubscription from '$src/components/content/manage/subscription/ManageSubscription.svelte'
+  import { navigationState } from '$src/states/NavigationState.svelte'
 </script>
 
 <div class="manage-window">
-  <ManageHeader {activeTab} onTabChange={(tab) => (activeTab = tab)} />
+  <ManageHeader
+    activeTab={navigationState.manageTab}
+    onTabChange={(tab) => (navigationState.manageTab = tab)}
+  />
 
-  {#if activeTab === 'Spaces'}
+  {#if navigationState.manageTab === 'Spaces'}
     <ManageSpaces />
-  {:else if activeTab === 'Margin'}
+  {:else if navigationState.manageTab === 'Margin'}
     <ManageMargin />
+  {:else if navigationState.manageTab === 'Subscription'}
+    <ManageSubscription />
   {/if}
 </div>
 

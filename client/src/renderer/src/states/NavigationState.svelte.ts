@@ -4,12 +4,15 @@ import type { Margin } from '$src/interfaces/Margin'
 import type { Channel } from '$src/interfaces/Channel'
 import type { Space } from '$src/interfaces/Space'
 
+export type ManageTab = 'Margin' | 'Spaces' | 'Subscription'
+
 class NavigationState {
   private _view = $state<View | null>(View.Private)
   private _selectedUser = $state<User | null>(null)
   private _selectedMargin = $state<Margin | null>(null)
   private _selectedSpace = $state<Space | null>(null)
   private _selectedChannel = $state<Channel | null>(null)
+  private _manageTab = $state<ManageTab>('Margin')
 
   get view(): View {
     return this._view
@@ -49,6 +52,14 @@ class NavigationState {
 
   set selectedChannel(value: Channel) {
     this._selectedChannel = value
+  }
+
+  get manageTab(): ManageTab {
+    return this._manageTab
+  }
+
+  set manageTab(value: ManageTab) {
+    this._manageTab = value
   }
 }
 
