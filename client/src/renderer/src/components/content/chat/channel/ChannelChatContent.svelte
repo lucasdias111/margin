@@ -56,7 +56,7 @@
       imageUrl ?? undefined
     )
 
-    conversationsState.appendMessage(message, false)
+    if (message) conversationsState.appendMessage(message, false)
   }
 
   function onToggleSidebar(): void {

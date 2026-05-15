@@ -10,6 +10,7 @@ import { navigationState } from '$src/states/NavigationState.svelte'
 import { sessionState } from '$src/states/SessionState.svelte'
 import { usersState } from '$src/states/UsersState.svelte'
 import { conversationInviteService } from '$src/states/UserListState.svelte'
+import { connectionState } from '$src/states/ConnectionState.svelte'
 import { WebSocketMessageType } from '$src/interfaces/WebSocketMessageType'
 import * as api from '$src/services/api'
 import { View } from '$src/interfaces/View'
@@ -163,6 +164,8 @@ describe('ChatService', () => {
     usersState.reset()
 
     conversationInviteService.pendingInvites = []
+
+    connectionState.connectionStatus = 'connected'
   })
 
   describe('handleIncomingMessage', () => {
@@ -507,8 +510,20 @@ describe('ChatService', () => {
         recipientId: 10,
         payload: { content: 'cipher', imageAddress: null }
       })
-      expect(msg.id).toBeLessThan(0)
-      expect(msg.content).toBe('plain hello')
+      expect(msg).not.toBeNull()
+      expect(msg!.id).toBeLessThan(0)
+      expect(msg!.content).toBe('plain hello')
+    })
+
+    it('returns null and skips encrypt/send when not connected', async () => {
+      connectionState.connectionStatus = 'disconnected'
+      const conv = buildDirectConversation({ id: 10, otherUserId: 2 })
+
+      const msg = await chatService.sendMessage(sessionState.currentUser!, conv, 'plain hello')
+
+      expect(msg).toBeNull()
+      expect(encryptionService.encryptMessage).not.toHaveBeenCalled()
+      expect(webSocketService.send).not.toHaveBeenCalled()
     })
   })
 
@@ -524,8 +539,19 @@ describe('ChatService', () => {
         recipientId: 20,
         payload: { content: 'hi all', imageAddress: null }
       })
-      expect(msg.id).toBeLessThan(0)
-      expect(msg.conversationType).toBe('CHANNEL')
+      expect(msg).not.toBeNull()
+      expect(msg!.id).toBeLessThan(0)
+      expect(msg!.conversationType).toBe('CHANNEL')
+    })
+
+    it('returns null and skips send when not connected', async () => {
+      connectionState.connectionStatus = 'reconnecting'
+      const channel = buildChannel({ conversationId: 20 })
+
+      const msg = await chatService.sendChannelMessage(sessionState.currentUser!, channel, 'hi')
+
+      expect(msg).toBeNull()
+      expect(webSocketService.send).not.toHaveBeenCalled()
     })
   })
 
