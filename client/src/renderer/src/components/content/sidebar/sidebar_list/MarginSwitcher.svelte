@@ -44,8 +44,7 @@
   }
 
   async function createMargin(createRequest: CreateMargin): Promise<void> {
-    const newMargin = await marginService.createMargin(createRequest)
-    marginService.addNewMargin(newMargin)
+    await marginService.createMargin(createRequest)
     close()
   }
 

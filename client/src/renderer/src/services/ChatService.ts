@@ -1,8 +1,4 @@
-import type {
-  ConversationMessagesResponse,
-  Message,
-  MessageReaction
-} from '$src/interfaces/Messages'
+import type { ConversationMessagesResponse, Message, MessageReaction } from '$src/interfaces/Messages'
 import type { User } from '$src/interfaces/User'
 import {
   type Conversation,
@@ -33,7 +29,6 @@ class ChatService {
     const msg = data.payload
     if (msg.conversationType === 'CHANNEL') {
       await this.handleIncomingChannelMessage(msg)
-      notificationService.handleIncomingMessage(msg)
     } else {
       await this.handleIncomingDirectMessage(msg)
     }
@@ -59,7 +54,7 @@ class ChatService {
       await this.markConversationAsRead(msg.conversationId)
     } else {
       conversationsState.markUnread(msg.conversationId)
-      if (!isActive) notificationService.handleIncomingMessage(msg)
+      notificationService.handleIncomingMessage(msg)
     }
   }
 
@@ -92,7 +87,7 @@ class ChatService {
       await this.markConversationAsRead(msg.conversationId)
     } else {
       conversationsState.markUnread(msg.conversationId)
-      if (!isActive) notificationService.handleIncomingMessage(msg)
+      notificationService.handleIncomingMessage(msg)
     }
   }
 

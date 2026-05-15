@@ -14,4 +14,16 @@ export interface Subscription {
   currentMembers: number
   trialEndsAt: string | null
   currentPeriodEnd: string | null
+  hasPendingPayment: boolean
+  pendingTier: SubscriptionTier | null
+}
+
+export interface TierPrice {
+  tier: SubscriptionTier
+  price: number
+  currency: string
+}
+
+export interface CheckoutResponse {
+  checkoutUrl: string
 }
