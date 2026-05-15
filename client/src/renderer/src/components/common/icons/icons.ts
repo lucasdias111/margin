@@ -96,6 +96,8 @@ export const icons = {
 
   chevronRight: `<polyline points="9 18 15 12 9 6" />`,
 
+  chevronLeft: `<polyline points="15 18 9 12 15 6" />`,
+
   chevronDown: `<polyline points="6 9 12 15 18 9" />`,
 
   layout: `<rect x="3" y="3" width="18" height="18" rx="3" />

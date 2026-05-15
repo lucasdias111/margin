@@ -151,4 +151,14 @@
     display: flex;
     flex-direction: column;
   }
+
+  @media (max-width: 768px) {
+    .chat {
+      gap: 0;
+    }
+
+    .chat-background {
+      border-radius: 0;
+    }
+  }
 </style>

@@ -6,15 +6,42 @@
     isLoading?: boolean
     onToggleSidebar?(): void
     sidebarOpen?: boolean
+
+    onBack?(): void
     left: Snippet
     right?: Snippet
   }
 
-  let { isLoading = false, onToggleSidebar, sidebarOpen = true, left, right }: Props = $props()
+  let {
+    isLoading = false,
+    onToggleSidebar,
+    sidebarOpen = true,
+    onBack,
+    left,
+    right
+  }: Props = $props()
 </script>
 
 <div class="chat-header">
   <div class="header-left">
+    {#if onBack}
+      <div
+        class="back-btn"
+        onclick={onBack}
+        onkeydown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault()
+            onBack?.()
+          }
+        }}
+        role="button"
+        tabindex="0"
+        title="Back"
+        aria-label="Back to list"
+      >
+        <Icon name="chevronLeft" size={22} color="#1a1a1a" strokeWidth={2.5} />
+      </div>
+    {/if}
     {#if isLoading}
       <div class="skeleton avatar"></div>
       <div class="skeleton-info">
@@ -57,6 +84,14 @@
     border-radius: 15px;
   }
 
+  @media (max-width: 768px) {
+    .chat-header {
+      height: 56px;
+      border-radius: 0;
+      border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+    }
+  }
+
   .header-left {
     display: flex;
     align-items: center;
@@ -81,6 +116,36 @@
     transition:
       background 0.15s ease,
       color 0.15s ease;
+  }
+
+  .back-btn {
+    display: none;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    color: #555;
+    margin-right: 2px;
+    flex-shrink: 0;
+  }
+
+  .back-btn:hover {
+    background: #f6f3ee;
+    color: #1a1a1a;
+  }
+
+  .back-btn :global(svg) {
+    display: block;
+  }
+
+  @media (max-width: 768px) {
+    .back-btn {
+      display: flex;
+    }
   }
 
   .icon-btn:hover {

@@ -49,6 +49,14 @@
   const ringtone = new Audio(NotificationSounds.INCOMING_CALL)
   ringtone.loop = true
 
+  const hasSelection = $derived(
+    navigationState.view === View.Private
+      ? !!navigationState.selectedUser
+      : navigationState.view === View.Margin
+        ? !!navigationState.selectedChannel
+        : false
+  )
+
   onMount(() => {
     setup()
     webSocketService.connect()
@@ -239,8 +247,12 @@
   {:else if navigationState.view === View.Notifications}
     <Notifications />
   {:else}
-    <Sidebar />
-    <ContentWindow />
+    <div class="sidebar-pane" class:mobile-hidden={hasSelection}>
+      <Sidebar />
+    </div>
+    <div class="content-pane" class:mobile-hidden={!hasSelection}>
+      <ContentWindow />
+    </div>
   {/if}
   <IncomingCallModal payload={incomingCallPayload} onAccept={acceptCall} onDecline={declineCall} />
 </div>
@@ -254,6 +266,11 @@
     box-sizing: border-box;
     gap: 10px;
     background-color: #f2eee8;
+  }
+
+  .sidebar-pane,
+  .content-pane {
+    display: contents;
   }
 
   .call-overlay {
@@ -272,5 +289,17 @@
   .call-overlay.minimized {
     background: transparent;
     pointer-events: none;
+  }
+
+  @media (max-width: 768px) {
+    .window {
+      flex-direction: column;
+      gap: 0;
+      padding: 0 0 64px;
+    }
+
+    .mobile-hidden {
+      display: none !important;
+    }
   }
 </style>
