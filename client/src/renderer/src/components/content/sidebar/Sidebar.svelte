@@ -89,6 +89,18 @@
     gap: 10px;
   }
 
+  @media (max-width: 768px) {
+    .sidebar {
+      width: 100%;
+      height: 100%;
+      gap: 0;
+    }
+
+    .panel {
+      border-radius: 0;
+    }
+  }
+
   .panel {
     display: flex;
     flex-direction: column;

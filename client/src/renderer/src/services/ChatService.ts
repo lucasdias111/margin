@@ -21,6 +21,8 @@ import { sessionState } from '$src/states/SessionState.svelte'
 import { conversationsState, defaultMeta } from '$src/states/ConversationsState.svelte.js'
 import { conversationInviteService, type PendingInvite } from '$src/states/UserListState.svelte'
 import { usersState } from '$src/states/UsersState.svelte'
+import { connectionState } from '$src/states/ConnectionState.svelte'
+import { errorService } from '$src/services/ErrorService'
 
 class ChatService {
   private static readonly PAGE_SIZE = 30
@@ -260,7 +262,8 @@ class ChatService {
     messageText: string,
     attachedFile?: File,
     imageUrl?: string
-  ): Promise<Message> {
+  ): Promise<Message | null> {
+    if (!this.guardConnected()) return null
     let content = messageText
     if (isDirectConversation(conversation)) {
       content = await this.encryptForUser(messageText, conversation.otherUserId, currentUser.id)
@@ -282,7 +285,8 @@ class ChatService {
     messageText: string,
     attachedFile?: File,
     imageUrl?: string
-  ): Promise<Message> {
+  ): Promise<Message | null> {
+    if (!this.guardConnected()) return null
     const imageAddress =
       imageUrl ?? (await this.uploadConversationImage(attachedFile, channel.conversationId))
     webSocketService.send<{ content: string; imageAddress: string | null }>({
@@ -291,6 +295,12 @@ class ChatService {
       payload: { content: messageText, imageAddress }
     })
     return this.buildOptimisticMessage(currentUser, channel.conversationId, messageText, 'CHANNEL')
+  }
+
+  private guardConnected(): boolean {
+    if (connectionState.connectionStatus === 'connected') return true
+    errorService.reportError('Not connected — message not sent')
+    return false
   }
 
   private async encryptForUser(

@@ -4,6 +4,7 @@
   import { chatService } from '$src/services/ChatService'
   import ChannelSidebar from '$src/components/content/chat/channel/ChannelSidebar.svelte'
   import ChannelChatHeader from '$src/components/content/chat/channel/ChannelChatHeader.svelte'
+  import { channelService } from '$src/services/ChannelService'
   import { navigationState } from '$src/states/NavigationState.svelte'
   import { sessionState } from '$src/states/SessionState.svelte'
   import { conversationsState, defaultMeta } from '$src/states/ConversationsState.svelte'
@@ -55,7 +56,7 @@
       imageUrl ?? undefined
     )
 
-    conversationsState.appendMessage(message, false)
+    if (message) conversationsState.appendMessage(message, false)
   }
 
   function onToggleSidebar(): void {
@@ -78,6 +79,7 @@
       description={navigationState.selectedChannel.description}
       {onToggleSidebar}
       {sidebarOpen}
+      onBack={() => channelService.select(null)}
     />
   {/if}
 
@@ -124,5 +126,19 @@
     display: flex;
     flex-direction: column;
     overflow: hidden;
+  }
+
+  @media (max-width: 768px) {
+    .chat {
+      gap: 0;
+    }
+
+    .chat-body {
+      gap: 0;
+    }
+
+    .chat-background {
+      border-radius: 0;
+    }
   }
 </style>

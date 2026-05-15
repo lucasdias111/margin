@@ -15,11 +15,15 @@
 
   let { handleStartCall, handleStartVideoCall, isLoading = false }: Props = $props()
 
+  function handleBack(): void {
+    navigationState.selectedUser = null
+  }
+
   const isOnline = $derived(usersState.byId.get(navigationState.selectedUser.id).isOnline ?? false)
   const selectedUser = $derived(usersState.byId.get(navigationState.selectedUser.id))
 </script>
 
-<ChatHeaderShell {isLoading}>
+<ChatHeaderShell {isLoading} onBack={handleBack}>
   {#snippet left()}
     <div class="avatar-wrapper">
       <UserAvatar profilePictureUrl={selectedUser.profilePictureUrl} width={38} height={38} />

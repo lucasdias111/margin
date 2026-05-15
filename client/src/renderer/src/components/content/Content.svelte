@@ -27,4 +27,10 @@
     box-sizing: border-box;
     gap: 10px;
   }
+
+  @media (max-width: 768px) {
+    .content {
+      gap: 0;
+    }
+  }
 </style>

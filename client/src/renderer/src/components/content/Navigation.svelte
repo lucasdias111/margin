@@ -166,6 +166,46 @@
     overflow: visible;
   }
 
+  @media (max-width: 768px) {
+    .navigation {
+      position: fixed;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      width: 100%;
+      height: 64px;
+      flex-direction: row;
+      padding: 0 12px;
+      border-radius: 0;
+      z-index: 50;
+      justify-content: space-between;
+    }
+
+    .navigation .button-group {
+      flex-direction: row;
+      gap: 1.5rem;
+      flex: 1;
+      justify-content: center;
+    }
+
+    .navigation .avatar-space {
+      display: block;
+      width: 40px;
+      height: 40px;
+    }
+
+    .navigation .dropdown {
+      left: 0;
+      top: auto;
+      bottom: calc(100% + 8px);
+      transform-origin: bottom left;
+    }
+
+    .navigation .nav-label {
+      font-size: 8px;
+    }
+  }
+
   .avatar-btn {
     background: none;
     padding: 0;

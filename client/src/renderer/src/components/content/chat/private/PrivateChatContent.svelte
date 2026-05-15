@@ -73,7 +73,7 @@
         attachedFile ?? undefined,
         imageUrl ?? undefined
       )
-      conversationsState.appendMessage(message, false)
+      if (message) conversationsState.appendMessage(message, false)
     } else {
       const { message } = await chatService.sendMessageAndStartConversation(
         sessionState.currentUser,
@@ -150,5 +150,15 @@
     z-index: 1;
     display: flex;
     flex-direction: column;
+  }
+
+  @media (max-width: 768px) {
+    .chat {
+      gap: 0;
+    }
+
+    .chat-background {
+      border-radius: 0;
+    }
   }
 </style>

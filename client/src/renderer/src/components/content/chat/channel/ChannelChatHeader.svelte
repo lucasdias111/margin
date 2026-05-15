@@ -6,6 +6,7 @@
     description?: string
     onToggleSidebar?(): void
     sidebarOpen?: boolean
+    onBack?(): void
     isLoading?: boolean
   }
 
@@ -14,11 +15,12 @@
     description,
     onToggleSidebar,
     sidebarOpen = true,
+    onBack,
     isLoading = false
   }: Props = $props()
 </script>
 
-<ChatHeaderShell {isLoading} {onToggleSidebar} {sidebarOpen}>
+<ChatHeaderShell {isLoading} {onToggleSidebar} {sidebarOpen} {onBack}>
   {#snippet left()}
     <div class="channel-info">
       <span class="channel-name">{name}</span>
