@@ -251,8 +251,7 @@ describe('AuthenticationService', () => {
         'johndoe',
         'John Doe',
         'secret123',
-        'john@test.com',
-        'MARGIN-BETA-KEY'
+        'john@test.com'
       )
 
       expect(encryptionService.generateKeyPairFromPassword).toHaveBeenCalledWith('secret123')
@@ -290,7 +289,7 @@ describe('AuthenticationService', () => {
 
       const file = new File(['avatar'], 'avatar.png', { type: 'image/png' })
 
-      await authenticationService.register('johndoe', 'John', 'pass1234', 'j@t.com', 'KEY', file)
+      await authenticationService.register('johndoe', 'John', 'pass1234', 'j@t.com', file)
 
       expect(capturedBody?.get('profilePicture')).toBe(file)
 
@@ -313,7 +312,7 @@ describe('AuthenticationService', () => {
         json: async () => ({ message: 'Email taken' })
       } as Response)
 
-      await authenticationService.register('johndoe', 'John', 'pass1234', 'j@t.com', 'KEY')
+      await authenticationService.register('johndoe', 'John', 'pass1234', 'j@t.com')
 
       expect(sessionStorage.getItem('publicKey')).toBeNull()
       expect(sessionStorage.getItem('privateKey')).toBeNull()

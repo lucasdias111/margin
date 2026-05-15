@@ -11,6 +11,7 @@
   import { View } from '$src/interfaces/View'
   import { usersService } from '$src/services/UsersService'
   import { navigationService } from '$src/services/NavigationService'
+  import { navigationState } from '$src/states/NavigationState.svelte'
 
   const notifications = $derived(notificationState.notifications)
   const isLoading = $derived(!notificationState.notificationsLoaded)
@@ -53,6 +54,14 @@
     } else if (notification.type === NotificationType.ADDED_TO_MARGIN) {
       marginService.select(await marginService.getMargin(notification.marginId))
       navigationService.setView(View.Margin)
+    } else if (
+      notification.type === NotificationType.SUBSCRIPTION_UPGRADED ||
+      notification.type === NotificationType.SUBSCRIPTION_PAYMENT_FAILED ||
+      notification.type === NotificationType.SUBSCRIPTION_LIMIT_WARNING
+    ) {
+      marginService.select(await marginService.getMargin(notification.marginId))
+      navigationState.manageTab = 'Subscription'
+      navigationService.setView(View.Manage)
     }
   }
 
@@ -66,6 +75,12 @@
         return '👥'
       case NotificationType.INVITED_TO_MARGIN:
         return '✉️'
+      case NotificationType.SUBSCRIPTION_UPGRADED:
+        return '✨'
+      case NotificationType.SUBSCRIPTION_PAYMENT_FAILED:
+        return '⚠️'
+      case NotificationType.SUBSCRIPTION_LIMIT_WARNING:
+        return '📊'
       default:
         return '🔔'
     }
@@ -81,6 +96,12 @@
         return `${notification.sender?.displayName ?? 'Someone'} added you to a margin`
       case NotificationType.INVITED_TO_MARGIN:
         return `${notification.sender?.displayName ?? 'Someone'} invited you to join a margin`
+      case NotificationType.SUBSCRIPTION_UPGRADED:
+        return 'Your workspace plan was upgraded'
+      case NotificationType.SUBSCRIPTION_PAYMENT_FAILED:
+        return 'Payment for your workspace plan didn\'t go through'
+      case NotificationType.SUBSCRIPTION_LIMIT_WARNING:
+        return 'Your workspace is approaching its member limit'
       default:
         return 'New notification'
     }

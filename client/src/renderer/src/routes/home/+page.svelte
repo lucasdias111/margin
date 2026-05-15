@@ -42,6 +42,8 @@
   import { spaceService } from '$src/services/SpaceService'
   import { sessionHandler } from '$src/handlers/SessionHandler'
   import { conversationsState } from '$src/states/ConversationsState.svelte'
+  import { subscriptionState } from '$src/states/SubscriptionState.svelte'
+  import type { Subscription } from '$src/interfaces/Subscription'
 
   let incomingCallPayload = $state<CallOfferPayload | null>(null)
   const ringtone = new Audio(NotificationSounds.INCOMING_CALL)
@@ -111,7 +113,10 @@
     },
     [WebSocketMessageType.CONVERSATION_INVITE]: chatService.handleIncomingConversationInvite,
     [WebSocketMessageType.CONVERSATION_INVITE_ACCEPTED]:
-    chatService.handleConversationInviteAccepted
+      chatService.handleConversationInviteAccepted,
+    [WebSocketMessageType.SUBSCRIPTION_UPDATED]: (msg: WebSocketMessage<Subscription>) => {
+      subscriptionState.set(msg.payload)
+    }
   })
 
   async function setup(): Promise<void> {

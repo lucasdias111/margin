@@ -2,18 +2,37 @@
   import ManageHeader from '$src/components/content/manage/ManageHeader.svelte'
   import ManageSpaces from '$src/components/content/manage/spaces/ManageSpaces.svelte'
   import ManageMargin from '$src/components/content/manage/margin/ManageMargin.svelte'
+  import ManageSubscription from '$src/components/content/manage/subscription/ManageSubscription.svelte'
+  import { navigationState } from '$src/states/NavigationState.svelte'
+  import { sessionState } from '$src/states/SessionState.svelte'
+  import { MarginRole } from '$src/interfaces/Margin'
 
-  let activeTab = $state('Margin')
+  const isOwner = $derived(
+    navigationState.selectedMargin?.members.find(
+      (m) => m.user.id === sessionState.currentUser?.id
+    )?.role === MarginRole.OWNER
+  )
 
+  $effect(() => {
+    if (!isOwner && navigationState.manageTab === 'Subscription') {
+      navigationState.manageTab = 'Margin'
+    }
+  })
 </script>
 
 <div class="manage-window">
-  <ManageHeader {activeTab} onTabChange={(tab) => (activeTab = tab)} />
+  <ManageHeader
+    activeTab={navigationState.manageTab}
+    onTabChange={(tab) => (navigationState.manageTab = tab)}
+    {isOwner}
+  />
 
-  {#if activeTab === 'Spaces'}
+  {#if navigationState.manageTab === 'Spaces'}
     <ManageSpaces />
-  {:else if activeTab === 'Margin'}
+  {:else if navigationState.manageTab === 'Margin'}
     <ManageMargin />
+  {:else if navigationState.manageTab === 'Subscription' && isOwner}
+    <ManageSubscription />
   {/if}
 </div>
 

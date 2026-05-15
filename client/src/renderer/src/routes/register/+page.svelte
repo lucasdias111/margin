@@ -20,7 +20,6 @@
   let profilePicture = $state<File | null>(null)
   let isLoading = $state(false)
   let previewUrl = $state<string | null>(avatar)
-  let betaKey = $state('')
 
   let acceptedTerms = $state(false)
   let acceptedPrivacy = $state(false)
@@ -117,7 +116,6 @@
         displayName,
         password,
         email,
-        betaKey,
         profilePicture || undefined
       )
 
@@ -154,15 +152,24 @@
     <div class="card success-card">
       <img src={marginLogo} alt="margin" class="logo" />
       <div class="mail-icon" aria-hidden="true">
-        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <svg
+          width="28"
+          height="28"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        >
           <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
           <polyline points="22,6 12,13 2,6" />
         </svg>
       </div>
       <h1 class="success-title">Check your email</h1>
       <p class="success-body">
-        We've sent an activation link to <strong>{registeredEmail}</strong>.
-        Click the link in the email to activate your account before signing in.
+        We've sent an activation link to <strong>{registeredEmail}</strong>. Click the link in the
+        email to activate your account before signing in.
       </p>
       <p class="success-hint">Didn't get it? Check your spam folder.</p>
       <Button
@@ -174,175 +181,160 @@
       />
     </div>
   {:else}
-  <div class="card">
-    <img src={marginLogo} alt="margin" class="logo" />
+    <div class="card">
+      <img src={marginLogo} alt="margin" class="logo" />
 
-    <div class="avatar-row">
-      {#if previewUrl}
-        <UserAvatar profilePictureUrl={previewUrl} width={72} height={72} />
-      {/if}
-      <div class="avatar-meta">
-        <p class="avatar-label">Profile picture</p>
-        <UploadImageButton {onFileChange} {onPreviewUrlChange} />
-      </div>
-    </div>
-
-    <form class="form" onsubmit={handleRegistration}>
-      <div class="field">
-        <label class="label" for="beta-key">Beta key</label>
-        <input
-          id="beta-key"
-          class="input"
-          type="text"
-          name="betaKey"
-          placeholder="MARGIN-BETA-XXXXXXXXXXXX"
-          bind:value={betaKey}
-          required
-          autocomplete="off"
-          style="font-family: monospace; letter-spacing: 0.5px;"
-        />
+      <div class="avatar-row">
+        {#if previewUrl}
+          <UserAvatar profilePictureUrl={previewUrl} width={72} height={72} />
+        {/if}
+        <div class="avatar-meta">
+          <p class="avatar-label">Profile picture</p>
+          <UploadImageButton {onFileChange} {onPreviewUrlChange} />
+        </div>
       </div>
 
-      <div class="field">
-        <label class="label" for="display-name">Display name</label>
-        <input
-          id="display-name"
-          class="input"
-          type="text"
-          name="displayName"
-          placeholder="Your Name"
-          bind:value={displayName}
-          required
-          autocomplete="name"
-        />
-      </div>
-
-      <div class="field">
-        <label class="label" for="handle">Handle</label>
-        <div class="input-with-badge" class:input-error={handleTouched && handleError}>
-          <span class="input-badge">@</span>
+      <form class="form" onsubmit={handleRegistration}>
+        <div class="field">
+          <label class="label" for="display-name">Display name</label>
           <input
-            id="handle"
-            class="input input-badged"
+            id="display-name"
+            class="input"
             type="text"
-            name="handle"
-            placeholder="Handle"
-            bind:value={handle}
-            oninput={sanitizeHandle}
-            onblur={() => (handleTouched = true)}
+            name="displayName"
+            placeholder="Your Name"
+            bind:value={displayName}
             required
-            autocomplete="handle"
+            autocomplete="name"
           />
         </div>
-        {#if handleTouched && handleError}
-          <span class="error-text">{handleError}</span>
-        {/if}
-      </div>
 
-      <div class="field">
-        <label class="label" for="email">Email</label>
-        <input
-          id="email"
-          class="input"
-          type="email"
-          name="email"
-          placeholder="you@example.com"
-          bind:value={email}
-          required
-          autocomplete="email"
+        <div class="field">
+          <label class="label" for="handle">Handle</label>
+          <div class="input-with-badge" class:input-error={handleTouched && handleError}>
+            <span class="input-badge">@</span>
+            <input
+              id="handle"
+              class="input input-badged"
+              type="text"
+              name="handle"
+              placeholder="Handle"
+              bind:value={handle}
+              oninput={sanitizeHandle}
+              onblur={() => (handleTouched = true)}
+              required
+              autocomplete="handle"
+            />
+          </div>
+          {#if handleTouched && handleError}
+            <span class="error-text">{handleError}</span>
+          {/if}
+        </div>
+
+        <div class="field">
+          <label class="label" for="email">Email</label>
+          <input
+            id="email"
+            class="input"
+            type="email"
+            name="email"
+            placeholder="you@example.com"
+            bind:value={email}
+            required
+            autocomplete="email"
+          />
+        </div>
+
+        <div class="field">
+          <label class="label" for="password">Password</label>
+          <input
+            id="password"
+            class="input"
+            class:input-error={passwordTouched && passwordError}
+            type="password"
+            name="password"
+            placeholder="••••••••"
+            bind:value={password}
+            onblur={() => (passwordTouched = true)}
+            required
+            autocomplete="new-password"
+          />
+          {#if passwordTouched && passwordError}
+            <span class="error-text">{passwordError}</span>
+          {/if}
+        </div>
+
+        <div class="field">
+          <label class="label" for="repeatPassword">Confirm password</label>
+          <input
+            id="repeatPassword"
+            class="input"
+            class:input-error={repeatPasswordTouched && repeatPasswordError}
+            type="password"
+            name="repeatPassword"
+            placeholder="••••••••"
+            bind:value={repeatPassword}
+            onblur={() => (repeatPasswordTouched = true)}
+            required
+            autocomplete="new-password"
+          />
+          {#if repeatPasswordTouched && repeatPasswordError}
+            <span class="error-text">{repeatPasswordError}</span>
+          {/if}
+        </div>
+
+        <div class="legal-checkboxes">
+          <label class="checkbox-row">
+            <input type="checkbox" bind:checked={acceptedTerms} />
+            <span>
+              I agree to the
+              <button type="button" class="link" onclick={() => openPolicy('terms')}>
+                Terms of Service
+              </button>
+            </span>
+          </label>
+          {#if termsError}
+            <span class="error-text">{termsError}</span>
+          {/if}
+
+          <label class="checkbox-row">
+            <input type="checkbox" bind:checked={acceptedPrivacy} />
+            <span>
+              I agree to the
+              <button type="button" class="link" onclick={() => openPolicy('privacy')}>
+                Privacy Policy
+              </button>
+            </span>
+          </label>
+          {#if privacyError}
+            <span class="error-text">{privacyError}</span>
+          {/if}
+        </div>
+
+        <Button
+          buttonType="primary"
+          size="medium"
+          text="Create account"
+          fullWidth
+          onClick={handleRegistration}
         />
-      </div>
-
-      <div class="field">
-        <label class="label" for="password">Password</label>
-        <input
-          id="password"
-          class="input"
-          class:input-error={passwordTouched && passwordError}
-          type="password"
-          name="password"
-          placeholder="••••••••"
-          bind:value={password}
-          onblur={() => (passwordTouched = true)}
-          required
-          autocomplete="new-password"
-        />
-        {#if passwordTouched && passwordError}
-          <span class="error-text">{passwordError}</span>
+        {#if isLoading}
+          <span class="spinner"></span>
         {/if}
-      </div>
+      </form>
 
-      <div class="field">
-        <label class="label" for="repeatPassword">Confirm password</label>
-        <input
-          id="repeatPassword"
-          class="input"
-          class:input-error={repeatPasswordTouched && repeatPasswordError}
-          type="password"
-          name="repeatPassword"
-          placeholder="••••••••"
-          bind:value={repeatPassword}
-          onblur={() => (repeatPasswordTouched = true)}
-          required
-          autocomplete="new-password"
-        />
-        {#if repeatPasswordTouched && repeatPasswordError}
-          <span class="error-text">{repeatPasswordError}</span>
-        {/if}
-      </div>
-
-      <div class="legal-checkboxes">
-        <label class="checkbox-row">
-          <input type="checkbox" bind:checked={acceptedTerms} />
-          <span>
-            I agree to the
-            <button type="button" class="link" onclick={() => openPolicy('terms')}>
-              Terms of Service
-            </button>
-          </span>
-        </label>
-        {#if termsError}
-          <span class="error-text">{termsError}</span>
-        {/if}
-
-        <label class="checkbox-row">
-          <input type="checkbox" bind:checked={acceptedPrivacy} />
-          <span>
-            I agree to the
-            <button type="button" class="link" onclick={() => openPolicy('privacy')}>
-              Privacy Policy
-            </button>
-          </span>
-        </label>
-        {#if privacyError}
-          <span class="error-text">{privacyError}</span>
-        {/if}
+      <div class="divider">
+        <span>or</span>
       </div>
 
       <Button
-        buttonType="primary"
+        buttonType="secondary"
         size="medium"
-        text="Create account"
+        text="Back to sign in"
         fullWidth
-        onClick={handleRegistration}
+        onClick={goBack}
       />
-      {#if isLoading}
-        <span class="spinner"></span>
-      {/if}
-    </form>
-
-    <div class="divider">
-      <span>or</span>
     </div>
-
-    <Button
-      buttonType="secondary"
-      size="medium"
-      text="Back to sign in"
-      fullWidth
-      onClick={goBack}
-    />
-  </div>
   {/if}
 </div>
 

@@ -1,15 +1,19 @@
 <script lang="ts">
   import { navigationService } from '$src/services/NavigationService'
   import { View } from '$src/interfaces/View'
+  import type { ManageTab } from '$src/states/NavigationState.svelte'
 
   interface Props {
-    activeTab: string
-    onTabChange: (tab: string) => void
+    activeTab: ManageTab
+    onTabChange: (tab: ManageTab) => void
+    isOwner: boolean
   }
 
-  let { activeTab, onTabChange }: Props = $props()
+  let { activeTab, onTabChange, isOwner }: Props = $props()
 
-  const tabs = ['Margin', 'Spaces']
+  const tabs = $derived<ManageTab[]>(
+    isOwner ? ['Margin', 'Spaces', 'Subscription'] : ['Margin', 'Spaces']
+  )
 </script>
 
 <div class="manage-header">

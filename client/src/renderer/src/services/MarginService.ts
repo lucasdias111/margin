@@ -101,6 +101,7 @@ class MarginService {
 
   addNewMargin(newMargin: Margin): void {
     this.select(newMargin)
+    if (marginState.margins.some((m) => m.marginId === newMargin.marginId)) return
     marginState.margins = [...marginState.margins, newMargin]
   }
 

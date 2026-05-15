@@ -50,7 +50,6 @@ vi.mock('$src/assets/legal/terms-of-service', () => ({
 
 function fillForm(
   overrides: Partial<{
-    betaKey: string
     displayName: string
     handle: string
     email: string
@@ -60,7 +59,6 @@ function fillForm(
 ): {
   fill: () => Promise<void>
   values: {
-    betaKey: string
     displayName: string
     handle: string
     email: string
@@ -69,7 +67,6 @@ function fillForm(
   }
 } {
   const defaults = {
-    betaKey: 'MARGIN-ABCDEF123456',
     displayName: 'John Doe',
     handle: 'johndoe',
     email: 'john@test.com',
@@ -80,9 +77,6 @@ function fillForm(
 
   return {
     fill: async () => {
-      await fireEvent.input(screen.getByLabelText('Beta key'), {
-        target: { value: defaults.betaKey }
-      })
       await fireEvent.input(screen.getByLabelText('Display name'), {
         target: { value: defaults.displayName }
       })
@@ -121,7 +115,6 @@ describe('RegisterPage', () => {
   it('renders all form fields', () => {
     render(RegisterPage)
 
-    expect(screen.getByLabelText('Beta key')).toBeInTheDocument()
     expect(screen.getByLabelText('Display name')).toBeInTheDocument()
     expect(screen.getByLabelText('Handle')).toBeInTheDocument()
     expect(screen.getByLabelText('Email')).toBeInTheDocument()
@@ -142,7 +135,6 @@ describe('RegisterPage', () => {
       'John Doe',
       'secret123',
       'john@test.com',
-      'MARGIN-ABCDEF123456',
       undefined
     )
   })
@@ -160,7 +152,7 @@ describe('RegisterPage', () => {
       expect(screen.getByText('Check your email')).toBeInTheDocument()
     })
     expect(screen.getByText(values.email)).toBeInTheDocument()
-    expect(screen.queryByLabelText('Beta key')).not.toBeInTheDocument()
+    expect(screen.queryByLabelText('Display name')).not.toBeInTheDocument()
     expect(svelteRouter.push).not.toHaveBeenCalled()
   })
 

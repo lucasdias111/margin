@@ -88,7 +88,6 @@ class AuthenticationService {
     displayName: string,
     password: string,
     email: string,
-    betaKey: string,
     profilePicture?: File
   ): Promise<Response> {
     const { publicKey, privateKey } = await encryptionService.generateKeyPairFromPassword(password)
@@ -105,7 +104,6 @@ class AuthenticationService {
       displayName,
       password,
       email,
-      betaKey,
       publicKey,
       encryptedPrivateKey: encryptedKey,
       salt,
