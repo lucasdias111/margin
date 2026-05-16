@@ -47,12 +47,14 @@
     </Button>
   {/each}
 
-  <Button
-    buttonType="secondary"
-    size="small"
-    onClick={() => (addSpaceOpen = true)}
-    text="Add space"
-  />
+  <div class="add-row">
+    <Button
+      buttonType="secondary"
+      size="small"
+      onClick={() => (addSpaceOpen = true)}
+      text="Add space"
+    />
+  </div>
 </div>
 
 <AddSpaceModal
@@ -72,6 +74,12 @@
     flex-direction: column;
     gap: 4px;
     overflow-y: auto;
+  }
+
+  .add-row {
+    display: flex;
+    justify-content: center;
+    margin-top: 8px;
   }
 
   :global(.space-avatar) {

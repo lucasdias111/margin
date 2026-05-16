@@ -56,7 +56,7 @@
   }
 </script>
 
-<div class="spaces-list">
+<div class="spaces-list" data-tour="margin-spaces">
   <div class="spaces-header">
     <span class="header-label">Spaces</span>
     <span class="header-count">{spaces.length}</span>

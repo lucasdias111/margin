@@ -85,7 +85,7 @@
   }
 </script>
 
-<div class="manage-margin-window">
+<div class="manage-margin-window" data-tour="manage-tab-content-margin">
   {#if isLoading}
     <div class="loading">Loading margin...</div>
   {:else if margin}

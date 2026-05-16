@@ -26,3 +26,28 @@ export function formatDuration(seconds: number): string {
   const secs = seconds % 60
   return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`
 }
+
+export function formatLastSeen(date: Date | string | null | undefined): string {
+  if (!date) return 'Last seen a while ago'
+
+  const seen = parseDate(date)
+  const now = new Date()
+  const diffMs = now.getTime() - seen.getTime()
+  const diffMin = Math.floor(diffMs / 60_000)
+
+  if (diffMin < 1) return 'Last seen just now'
+  if (diffMin < 60) return `Last seen ${diffMin} min ago`
+
+  const diffHours = Math.floor(diffMin / 60)
+  if (diffHours < 24 && seen.getDate() === now.getDate()) {
+    return `Last seen ${diffHours}h ago`
+  }
+
+  const yesterday = new Date(now)
+  yesterday.setDate(yesterday.getDate() - 1)
+  if (seen.toDateString() === yesterday.toDateString()) {
+    return `Last seen yesterday at ${formatTime(seen)}`
+  }
+
+  return `Last seen ${seen.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}`
+}

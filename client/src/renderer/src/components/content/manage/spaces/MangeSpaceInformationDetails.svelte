@@ -70,11 +70,6 @@
         placeholder={selectedSpace.spaceDescription}
       ></textarea>
     </div>
-    <div class="info-picture">
-      <span class="picture-label">Margin picture</span>
-      <div class="picture-circle"></div>
-      <button class="upload-btn">Upload</button>
-    </div>
   </div>
 
   <VisibilityToggle bind:value={editedVisibility} />
@@ -150,36 +145,6 @@
   input[type='text']:focus,
   textarea:focus {
     border-color: #f5a623;
-  }
-
-  .info-picture {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 10px;
-    flex-shrink: 0;
-  }
-
-  .picture-label {
-    font-size: 0.78rem;
-    color: #888;
-  }
-
-  .picture-circle {
-    width: 80px;
-    height: 80px;
-    border-radius: 50%;
-    background: #d9d9d9;
-  }
-
-  .upload-btn {
-    background: #2d2d2d;
-    color: #fff;
-    border: none;
-    border-radius: 6px;
-    padding: 7px 16px;
-    font-size: 0.85rem;
-    cursor: pointer;
   }
 
   .danger-zone {

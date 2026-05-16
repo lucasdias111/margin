@@ -38,6 +38,7 @@
     <div class="avatar-wrapper" use:clickOutside={() => (showDropdown = false)}>
       <button
         class="avatar-btn"
+        data-tour="avatar-btn"
         onclick={() => {
           showDropdown = !showDropdown
         }}
@@ -127,6 +128,7 @@
     </button>
     <button
       class="nav-btn"
+      data-tour="nav-private"
       onclick={() => onContentSelected(View.Private)}
       class:selected={navigationState.view === View.Private}
       aria-label="Private conversations"
@@ -138,6 +140,7 @@
     </button>
     <button
       class="nav-btn"
+      data-tour="nav-margin"
       onclick={() => onContentSelected(View.Margin)}
       class:selected={navigationState.view === View.Margin}
       aria-label="Spaces"

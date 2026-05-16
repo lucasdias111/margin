@@ -5,5 +5,6 @@ export interface User {
   email: string
   createdAt: string
   profilePictureUrl: string | null
+  lastSeenAt: string | null
   isOnline: boolean
 }

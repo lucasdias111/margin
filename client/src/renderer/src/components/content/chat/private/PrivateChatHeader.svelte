@@ -5,6 +5,7 @@
   import UserAvatar from '$src/components/common/user/UserAvatar.svelte'
   import { navigationState } from '$src/states/NavigationState.svelte'
   import { usersState } from '$src/states/UsersState.svelte'
+  import { formatLastSeen } from '$src/utils/DateUtils'
 
   interface Props {
     handleStartCall(): void
@@ -32,7 +33,7 @@
     <div class="user-info">
       <span class="handle">{selectedUser.displayName}</span>
       <span class="status-label" class:online={isOnline}>
-        {isOnline ? 'Online' : 'Offline'}
+        {isOnline ? 'Online' : formatLastSeen(selectedUser.lastSeenAt)}
       </span>
     </div>
   {/snippet}

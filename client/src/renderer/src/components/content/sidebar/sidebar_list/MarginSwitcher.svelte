@@ -58,7 +58,7 @@
   )
 </script>
 
-<div class="switcher-wrapper" use:clickOutside={() => (open = false)}>
+<div class="switcher-wrapper" data-tour="margin-switcher" use:clickOutside={() => (open = false)}>
   <button class="switcher-btn" onclick={() => (open = !open)}>
     <Icon name="grid" size={14} />
     Switch margin

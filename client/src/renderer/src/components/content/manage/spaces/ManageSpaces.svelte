@@ -15,6 +15,7 @@
 
   onMount(async () => {
     spaces = await spaceService.getAllSpacesForMargin(navigationState.selectedMargin.marginId)
+    if (!selectedSpace && spaces.length > 0) selectedSpace = spaces[0]
   })
 
   function onSelectSpace(space: Space): void {
@@ -85,7 +86,7 @@
   }
 </script>
 
-<div class="manage-spaces-window">
+<div class="manage-spaces-window" data-tour="manage-tab-content-spaces">
   <ManageSpacesList {spaces} {selectedSpace} {onSelectSpace} {onAddSpace} />
   <ManageSpaceInformation
     {selectedSpace}

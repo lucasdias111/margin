@@ -132,7 +132,7 @@
   }
 </script>
 
-<div class="manage-subscription">
+<div class="manage-subscription" data-tour="manage-tab-content-subscription">
   {#if isLoading}
     <div class="loading">Loading subscription...</div>
   {:else if subscription}

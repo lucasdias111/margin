@@ -44,6 +44,16 @@
   import { conversationsState } from '$src/states/ConversationsState.svelte'
   import { subscriptionState } from '$src/states/SubscriptionState.svelte'
   import type { Subscription } from '$src/interfaces/Subscription'
+  import OnboardingOverlay from '$src/components/content/onboarding/OnboardingOverlay.svelte'
+  import { onboardingState } from '$src/states/OnboardingState.svelte'
+  import { sessionState } from '$src/states/SessionState.svelte'
+
+  const MOBILE_BREAKPOINT = 768
+  let onboardingReady = $state(false)
+  let viewportWidth = $state(typeof window !== 'undefined' ? window.innerWidth : 1024)
+  const showOnboarding = $derived(
+    onboardingReady && (isElectron() || viewportWidth > MOBILE_BREAKPOINT)
+  )
 
   let incomingCallPayload = $state<CallOfferPayload | null>(null)
   const ringtone = new Audio(NotificationSounds.INCOMING_CALL)
@@ -58,15 +68,26 @@
   )
 
   onMount(() => {
-    setup()
+    setup().then(() => {
+      const userId = sessionState.currentUser?.id
+      if (userId !== undefined) onboardingState.loadForUser(userId)
+      onboardingReady = true
+    })
     webSocketService.connect()
     webSocketService.onReconnect(resync)
+
+    const onViewportResize = (): void => {
+      viewportWidth = window.innerWidth
+    }
+    window.addEventListener('resize', onViewportResize)
 
     if (isElectron()) {
       window.electronAPI?.onUserStatusChange((status) => {
         if (status === 'active') resync()
       })
     }
+
+    return () => window.removeEventListener('resize', onViewportResize)
   })
 
   $effect(() => {
@@ -255,6 +276,9 @@
     </div>
   {/if}
   <IncomingCallModal payload={incomingCallPayload} onAccept={acceptCall} onDecline={declineCall} />
+  {#if showOnboarding}
+    <OnboardingOverlay />
+  {/if}
 </div>
 
 <style>

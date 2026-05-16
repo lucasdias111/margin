@@ -38,12 +38,14 @@
   </div>
   <h2>No margin yet</h2>
   <p>Create a margin to get started with spaces, channels, and team communication.</p>
-  <Button
-    buttonType="primary"
-    size="medium"
-    text="Create margin"
-    onClick={() => (modalOpen = true)}
-  />
+  <div data-tour="margin-empty-create">
+    <Button
+      buttonType="primary"
+      size="medium"
+      text="Create margin"
+      onClick={() => (modalOpen = true)}
+    />
+  </div>
 
   <div class="divider">
     <span>or</span>

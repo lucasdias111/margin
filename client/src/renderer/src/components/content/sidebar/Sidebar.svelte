@@ -32,11 +32,8 @@
 
 <div class="sidebar">
   {#if selectedContent === 'private'}
-    <div class="panel">
+    <div class="panel" data-tour="private-sidebar">
       <div class="panel-header">
-        <div class="section-heading">
-          <span class="header-label">Direct messages</span>
-        </div>
         <div class="search-row">
           <UserSearchBar {onSelectUser} showSharedMargins={true} />
           <Button
@@ -116,21 +113,6 @@
     gap: 10px;
     padding: 16px 10px 8px;
     flex-shrink: 0;
-  }
-
-  .section-heading {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    padding: 0 8px;
-  }
-
-  .header-label {
-    font-size: 14px;
-    font-weight: 600;
-    color: #e8712a;
-    letter-spacing: 0.09em;
-    text-transform: uppercase;
   }
 
   .panel-nav {
