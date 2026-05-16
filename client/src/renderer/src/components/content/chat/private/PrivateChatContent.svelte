@@ -115,7 +115,7 @@
       handleStartVideoCall={handleVideoCall}
       isLoading={activeMeta.isLoading}
     />
-    <div class="chat-background">
+    <div class="pane chat-background">
       <MessagesContainer
         messages={activeMessages}
         isLoading={activeMeta.isLoading}
@@ -144,7 +144,6 @@
   .chat-background {
     flex: 1;
     min-height: 0;
-    background-color: white;
     border-radius: 15px;
     overflow: hidden;
     z-index: 1;
@@ -159,6 +158,7 @@
 
     .chat-background {
       border-radius: 0;
+      border: none;
     }
   }
 </style>

@@ -14,6 +14,9 @@
   import { View } from '$src/interfaces/View'
   import { navigationState } from '$src/states/NavigationState.svelte'
   import { sessionState } from '$src/states/SessionState.svelte'
+  import { fileStorageService } from '$src/services/FileStorageService'
+  import type { StoredFile } from '$src/interfaces/StoredFile'
+  import FileRow from '$src/components/common/files/FileRow.svelte'
 
   const currentUserRole = $derived(
     navigationState.selectedMargin?.members.find((m) => m.user.id === sessionState.currentUser?.id)?.role
@@ -28,13 +31,65 @@
   let editModalOpen = $state(false)
   let leaveModalOpen = $state(false)
 
+  let marginFiles = $state<StoredFile[]>([])
+  let fileInputRef = $state<HTMLInputElement | null>(null)
+  let isDraggingFile = $state(false)
+
   $effect(() => {
     const marginId = navigationState.selectedMargin?.marginId
     if (!marginId) return
     announcementService.getAnnouncements(marginId).then((result) => {
       announcements = result
     })
+    fileStorageService.getMarginFiles(marginId).then((result) => {
+      marginFiles = result
+    })
   })
+
+  async function handleFileSelect(event: Event): Promise<void> {
+    const input = event.target as HTMLInputElement
+    const files = input.files
+    if (!files || files.length === 0) return
+    await uploadFiles(Array.from(files))
+    input.value = ''
+  }
+
+  async function uploadFiles(files: File[]): Promise<void> {
+    const marginId = navigationState.selectedMargin?.marginId
+    if (!marginId) return
+    for (const file of files) {
+      const uploaded = await fileStorageService.uploadMarginFile(marginId, file)
+      if (uploaded) marginFiles = [uploaded, ...marginFiles]
+    }
+  }
+
+  async function handleDeleteFile(file: StoredFile): Promise<void> {
+    await fileStorageService.deleteFile(file.fileId)
+    marginFiles = marginFiles.filter((f) => f.fileId !== file.fileId)
+  }
+
+  async function handleDownloadFile(file: StoredFile): Promise<void> {
+    await fileStorageService.downloadFile(file.fileId)
+  }
+
+  function handleDragOver(event: DragEvent): void {
+    if (!canManage) return
+    event.preventDefault()
+    isDraggingFile = true
+  }
+
+  function handleDragLeave(): void {
+    isDraggingFile = false
+  }
+
+  async function handleDrop(event: DragEvent): Promise<void> {
+    event.preventDefault()
+    isDraggingFile = false
+    if (!canManage) return
+    const dropped = event.dataTransfer?.files
+    if (!dropped || dropped.length === 0) return
+    await uploadFiles(Array.from(dropped))
+  }
 
   async function handleCreateAnnouncement(title: string, content: string): Promise<void> {
     const marginId = navigationState.selectedMargin?.marginId
@@ -72,7 +127,7 @@
   }
 </script>
 
-<div class="margin-home">
+<div class="pane margin-home">
   <div class="welcome-card">
     <div class="welcome-row">
       <div class="margin-icon">
@@ -125,6 +180,60 @@
       </div>
     {/if}
   </div>
+
+  <div
+    class="files-section"
+    class:drag-over={isDraggingFile}
+    ondragover={handleDragOver}
+    ondragleave={handleDragLeave}
+    ondrop={handleDrop}
+    role="region"
+    aria-label="Margin files"
+  >
+    <div class="card-header">
+      <Icon name="file" size={12} strokeWidth={2.5} />
+      <span class="card-title">Files</span>
+      {#if canManage}
+        <button class="new-file-btn" onclick={() => fileInputRef?.click()}>+ Upload</button>
+        <input
+          bind:this={fileInputRef}
+          type="file"
+          multiple
+          hidden
+          onchange={handleFileSelect}
+        />
+      {/if}
+    </div>
+
+    {#if !canManage}
+      <p class="files-hint">Only admins and owners can share files with the whole margin.</p>
+    {/if}
+
+    {#if marginFiles.length === 0}
+      <div class="card-empty">
+        {#if canManage}
+          No files shared yet — drop a file here or click upload.
+        {:else}
+          No files shared yet.
+        {/if}
+      </div>
+    {:else}
+      <div class="file-list">
+        {#each marginFiles as file (file.fileId)}
+          <FileRow
+            {file}
+            canDelete={canManage}
+            onDownload={handleDownloadFile}
+            onDelete={handleDeleteFile}
+          />
+        {/each}
+      </div>
+    {/if}
+
+    {#if isDraggingFile && canManage}
+      <div class="drop-overlay">Drop to upload</div>
+    {/if}
+  </div>
 </div>
 
 <CreateOrEditAnnouncementModal
@@ -162,7 +271,6 @@
     gap: 20px;
     padding: 28px;
     overflow-y: auto;
-    background: white;
     border-radius: 15px;
     min-height: 0;
   }
@@ -188,6 +296,66 @@
     display: flex;
     flex-direction: column;
     gap: 12px;
+  }
+
+  .files-section {
+    position: relative;
+    background: #f7f7fa;
+    border-radius: 14px;
+    padding: 16px 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    border: 1px dashed transparent;
+    transition: border-color 0.15s, background 0.15s;
+  }
+
+  .files-section.drag-over {
+    border-color: #ff843c;
+    background: rgba(255, 132, 60, 0.04);
+  }
+
+  .files-hint {
+    margin: 0;
+    font-size: 12px;
+    color: #aaa;
+  }
+
+  .new-file-btn {
+    font-size: 11px;
+    font-weight: 700;
+    color: #ff843c;
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0;
+    letter-spacing: 0.02em;
+    transition: color 0.15s;
+  }
+
+  .new-file-btn:hover {
+    color: #e06b28;
+  }
+
+  .file-list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .drop-overlay {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255, 132, 60, 0.08);
+    border-radius: 14px;
+    color: #ff843c;
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    pointer-events: none;
   }
 
   .card-header {

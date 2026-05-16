@@ -110,7 +110,7 @@
   }
 </script>
 
-<div class="content">
+<div class="pane content">
   <div class="content-inner">
     <h2 class="page-title">Profile</h2>
 
@@ -270,8 +270,6 @@
     padding: 40px;
     box-sizing: border-box;
     overflow-y: auto;
-    background: white;
-    border-radius: 20px;
   }
 
   .content-inner {

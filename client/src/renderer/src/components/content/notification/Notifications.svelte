@@ -108,7 +108,7 @@
   }
 </script>
 
-<div class="notifications-page">
+<div class="pane notifications-page">
   <div class="notifications-header">
     <h1 class="page-title">Notifications</h1>
     {#if unread > 0}
@@ -174,7 +174,6 @@
     flex: 1;
     display: flex;
     flex-direction: column;
-    background: white;
     border-radius: 15px;
     padding: 28px;
     overflow-y: auto;

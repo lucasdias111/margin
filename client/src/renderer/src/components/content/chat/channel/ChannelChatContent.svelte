@@ -8,6 +8,7 @@
   import { navigationState } from '$src/states/NavigationState.svelte'
   import { sessionState } from '$src/states/SessionState.svelte'
   import { conversationsState, defaultMeta } from '$src/states/ConversationsState.svelte'
+  import { fileStorageService } from '$src/services/FileStorageService'
   import { untrack } from 'svelte'
 
   let messageInput = $state('')
@@ -62,6 +63,14 @@
   function onToggleSidebar(): void {
     sidebarOpen = !sidebarOpen
   }
+
+  async function handleAttachFiles(files: File[]): Promise<void> {
+    const channelId = navigationState.selectedChannel?.id
+    if (!channelId) return
+    for (const file of files) {
+      await fileStorageService.uploadChannelFile(channelId, file)
+    }
+  }
 </script>
 
 <svelte:window
@@ -94,6 +103,7 @@
     selectedContent={!!navigationState.selectedChannel}
     bind:messageInput
     onSubmit={handleSubmit}
+    onAttachFiles={handleAttachFiles}
   />
 </div>
 

@@ -7,6 +7,9 @@
   import { navigationState } from '$src/states/NavigationState.svelte'
   import { sessionState } from '$src/states/SessionState.svelte'
   import { usersState } from '$src/states/UsersState.svelte'
+  import { fileStorageService } from '$src/services/FileStorageService'
+  import type { StoredFile } from '$src/interfaces/StoredFile'
+  import FileRow from '$src/components/common/files/FileRow.svelte'
 
   let {
     channel,
@@ -30,6 +33,19 @@
       .filter((u) => u !== undefined)
   )
 
+  let channelFiles = $state<StoredFile[]>([])
+
+  $effect(() => {
+    const channelId = channel?.id
+    if (!channelId) {
+      channelFiles = []
+      return
+    }
+    fileStorageService.getChannelFiles(channelId).then((result) => {
+      channelFiles = result
+    })
+  })
+
   function onJoinChannel(): void {
     if (isInChannelCall) {
       channelCallService.endChannelCall()
@@ -40,6 +56,19 @@
 
   function onLeaveChannel(): void {
     channelCallService.endChannelCall()
+  }
+
+  async function handleDownloadFile(file: StoredFile): Promise<void> {
+    await fileStorageService.downloadFile(file.fileId)
+  }
+
+  async function handleDeleteFile(file: StoredFile): Promise<void> {
+    await fileStorageService.deleteFile(file.fileId)
+    channelFiles = channelFiles.filter((f) => f.fileId !== file.fileId)
+  }
+
+  function canDeleteFile(file: StoredFile): boolean {
+    return file.uploadedBy.id === sessionState.currentUser?.id
   }
 </script>
 
@@ -100,6 +129,31 @@
           </div>
         {/each}
       </div>
+    </section>
+
+    <section class="sidebar-section">
+      <div class="section-header">
+        <Icon name="file" size={12} strokeWidth={2.5} />
+        <span class="section-title">Files</span>
+        {#if channelFiles.length > 0}
+          <span class="file-count">{channelFiles.length}</span>
+        {/if}
+      </div>
+      {#if channelFiles.length === 0}
+        <p class="files-empty">No files shared yet</p>
+      {:else}
+        <div class="files-list">
+          {#each channelFiles as file (file.fileId)}
+            <FileRow
+              {file}
+              compact
+              canDelete={canDeleteFile(file)}
+              onDownload={handleDownloadFile}
+              onDelete={handleDeleteFile}
+            />
+          {/each}
+        </div>
+      {/if}
     </section>
   </div>
 </aside>
@@ -300,6 +354,29 @@
     background: rgba(61, 214, 140, 0.12);
     border-radius: 999px;
     padding: 1px 7px;
+  }
+
+  .file-count {
+    margin-left: auto;
+    font-size: 11px;
+    font-weight: 600;
+    color: #ff843c;
+    background: rgba(255, 132, 60, 0.12);
+    border-radius: 999px;
+    padding: 1px 7px;
+  }
+
+  .files-empty {
+    margin: 0;
+    padding: 2px 4px;
+    font-size: 12px;
+    color: #bbb;
+  }
+
+  .files-list {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
   }
 
   .voice-participants {

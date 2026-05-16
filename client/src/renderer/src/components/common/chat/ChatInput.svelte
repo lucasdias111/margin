@@ -4,6 +4,7 @@
   import { clickOutside } from '$src/actions/clickOutside'
   import { replaceEmoticons } from '$src/utils/EmoticonUtils'
   import { compressImage } from '$src/utils/ImageUtils'
+  import { formatFileSize } from '$src/utils/FileSizeUtils'
   import Icon from '$src/components/common/icons/Icon.svelte'
   import GifPicker from '$src/components/common/chat/GifPicker.svelte'
   import type { Gif } from '$src/services/GifService'
@@ -11,11 +12,13 @@
   let {
     selectedContent,
     messageInput = $bindable(''),
-    onSubmit
+    onSubmit,
+    onAttachFiles
   }: {
     selectedContent: boolean
     messageInput: string
     onSubmit: (event: SubmitEvent, file: File | null, imageUrl: string | null) => void
+    onAttachFiles?: (files: File[]) => void
   } = $props()
 
   let showPicker = $state(false)
@@ -24,6 +27,10 @@
   let attachedFile = $state<File | null>(null)
   let attachedGifUrl = $state<string | null>(null)
   let previewUrl = $state<string | null>(null)
+  let fileInputRef = $state<HTMLInputElement | null>(null)
+  let isDraggingFile = $state(false)
+  let dragCounter = 0
+  let pendingFiles = $state<File[]>([])
 
   function handleKeydown(event: KeyboardEvent): void {
     if (event.key === ' ') {
@@ -81,12 +88,73 @@
     e.preventDefault()
     onSubmit(e, attachedFile, attachedGifUrl)
 
+    if (pendingFiles.length > 0) {
+      onAttachFiles?.(pendingFiles)
+      pendingFiles = []
+    }
+
     messageInput = ''
     removeAttachment()
   }
 
+  function queuePendingFiles(files: File[]): void {
+    if (files.length === 0) return
+    pendingFiles = [...pendingFiles, ...files]
+  }
+
+  function removePendingFile(index: number): void {
+    pendingFiles = pendingFiles.filter((_, i) => i !== index)
+  }
+
   export function focus(): void {
     inputRef?.focus()
+  }
+
+  function handleAttachClick(): void {
+    fileInputRef?.click()
+  }
+
+  function handleAttachChange(event: Event): void {
+    const input = event.target as HTMLInputElement
+    const files = input.files
+    if (files && files.length > 0) {
+      queuePendingFiles(Array.from(files))
+    }
+    input.value = ''
+  }
+
+  function handleDragEnter(event: DragEvent): void {
+    if (!onAttachFiles || !selectedContent) return
+    if (!event.dataTransfer?.types?.includes('Files')) return
+    event.preventDefault()
+    dragCounter++
+    isDraggingFile = true
+  }
+
+  function handleDragOver(event: DragEvent): void {
+    if (!onAttachFiles || !selectedContent) return
+    if (!event.dataTransfer?.types?.includes('Files')) return
+    event.preventDefault()
+  }
+
+  function handleDragLeave(event: DragEvent): void {
+    if (!onAttachFiles || !selectedContent) return
+    event.preventDefault()
+    dragCounter = Math.max(0, dragCounter - 1)
+    if (dragCounter === 0) {
+      isDraggingFile = false
+    }
+  }
+
+  function handleDrop(event: DragEvent): void {
+    if (!onAttachFiles || !selectedContent) return
+    event.preventDefault()
+    dragCounter = 0
+    isDraggingFile = false
+    const files = event.dataTransfer?.files
+    if (files && files.length > 0) {
+      queuePendingFiles(Array.from(files))
+    }
   }
 
   function emojiPicker(node: HTMLElement): { destroy(): void } {
@@ -108,25 +176,80 @@
   }
 </script>
 
-<div class="chat-page">
+<div
+  class="pane chat-page"
+  class:drag-over={isDraggingFile}
+  role="group"
+  aria-label="Message composer"
+  ondragenter={handleDragEnter}
+  ondragover={handleDragOver}
+  ondragleave={handleDragLeave}
+  ondrop={handleDrop}
+>
+  {#if isDraggingFile}
+    <div class="drag-overlay">Drop to share with this channel</div>
+  {/if}
   <form class="input-container" onsubmit={handleFormSubmit}>
-    {#if previewUrl}
+    {#if previewUrl || pendingFiles.length > 0}
       <div class="preview-bar">
-        <div class="preview-card">
-          <img src={previewUrl} alt="Paste preview" />
-          <button
-            type="button"
-            class="remove-preview"
-            onclick={removeAttachment}
-            title="Remove image"
-          >
-            <Icon name="close" size={14} color="white" />
-          </button>
-        </div>
+        {#if previewUrl}
+          <div class="preview-card">
+            <img src={previewUrl} alt="Paste preview" />
+            <button
+              type="button"
+              class="remove-preview"
+              onclick={removeAttachment}
+              title="Remove image"
+            >
+              <Icon name="close" size={14} color="white" />
+            </button>
+          </div>
+        {/if}
+
+        {#each pendingFiles as file, i (i + '-' + file.name + '-' + file.size)}
+          <div class="file-chip" title={file.name}>
+            <div class="file-chip-icon">
+              <Icon name="file" size={14} strokeWidth={1.8} />
+            </div>
+            <div class="file-chip-meta">
+              <span class="file-chip-name">{file.name}</span>
+              <span class="file-chip-size">{formatFileSize(file.size)}</span>
+            </div>
+            <button
+              type="button"
+              class="remove-preview file-chip-remove"
+              onclick={() => removePendingFile(i)}
+              title="Remove file"
+              aria-label="Remove file"
+            >
+              <Icon name="close" size={12} color="white" />
+            </button>
+          </div>
+        {/each}
       </div>
     {/if}
 
     <div class="input-area">
+      {#if onAttachFiles}
+        <button
+          class="secondary-button attach-button"
+          type="button"
+          onclick={handleAttachClick}
+          disabled={!selectedContent}
+          aria-label="Attach file"
+          title="Attach file"
+        >
+          <Icon name="paperclip" size={16} strokeWidth={2} color="#f47e3a" />
+        </button>
+        <input
+          bind:this={fileInputRef}
+          type="file"
+          multiple
+          hidden
+          onchange={handleAttachChange}
+        />
+      {/if}
+
       <textarea
         bind:this={inputRef}
         bind:value={messageInput}
@@ -164,7 +287,8 @@
       <button
         class="sendbut"
         type="submit"
-        disabled={!selectedContent || (!messageInput.trim() && !attachedFile && !attachedGifUrl)}
+        disabled={!selectedContent ||
+          (!messageInput.trim() && !attachedFile && !attachedGifUrl && pendingFiles.length === 0)}
         aria-label="Send"
         title="Send"
       >
@@ -176,11 +300,34 @@
 
 <style>
   .chat-page {
+    position: relative;
     flex-shrink: 0;
-    background-color: white;
+  }
+
+  .chat-page.drag-over {
+    border-color: #ff843c;
+    background-color: rgba(255, 132, 60, 0.04);
+  }
+
+  .drag-overlay {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255, 132, 60, 0.08);
     border-radius: 20px;
-    outline: none;
-    border: 1px solid #e4cbb2;
+    color: #ff843c;
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    pointer-events: none;
+    z-index: 50;
+  }
+
+  .attach-button {
+    width: 38px;
+    height: 38px;
   }
 
   .input-container {
@@ -191,7 +338,69 @@
   .preview-bar {
     padding: 12px 18px 0 18px;
     display: flex;
+    flex-wrap: wrap;
+    align-items: center;
     gap: 8px;
+  }
+
+  .file-chip {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    height: 40px;
+    padding: 0 28px 0 8px;
+    background: #ffffff;
+    border: 1px solid #e4cbb2;
+    border-radius: 10px;
+    max-width: 240px;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+  }
+
+  .file-chip-icon {
+    flex-shrink: 0;
+    width: 26px;
+    height: 26px;
+    border-radius: 7px;
+    background: rgba(255, 132, 60, 0.12);
+    color: #ff843c;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .file-chip-meta {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    line-height: 1.1;
+  }
+
+  .file-chip-name {
+    font-size: 12px;
+    font-weight: 600;
+    color: #2a2a2a;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 160px;
+  }
+
+  .file-chip-size {
+    font-size: 10px;
+    color: #aaa;
+  }
+
+  .file-chip-remove {
+    top: 50%;
+    right: 4px;
+    transform: translateY(-50%);
+    width: 18px;
+    height: 18px;
+  }
+
+  .file-chip-remove:hover {
+    transform: translateY(-50%);
   }
 
   .preview-card {
