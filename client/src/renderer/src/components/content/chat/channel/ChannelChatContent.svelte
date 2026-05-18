@@ -1,18 +1,22 @@
 <script lang="ts">
-  import ChatInput from '$src/components/common/chat/ChatInput.svelte'
+  import ChatInput from '$src/components/common/chat/input/ChatInput.svelte'
   import MessagesContainer from '$src/components/common/chat/MessagesContainer.svelte'
   import { chatService } from '$src/services/ChatService'
-  import ChannelSidebar from '$src/components/content/chat/channel/ChannelSidebar.svelte'
+  import ChannelSidebar from '$src/components/content/chat/channel/sidebar/ChannelSidebar.svelte'
   import ChannelChatHeader from '$src/components/content/chat/channel/ChannelChatHeader.svelte'
   import { channelService } from '$src/services/ChannelService'
   import { navigationState } from '$src/states/NavigationState.svelte'
   import { sessionState } from '$src/states/SessionState.svelte'
   import { conversationsState, defaultMeta } from '$src/states/ConversationsState.svelte'
-  import { fileStorageService } from '$src/services/FileStorageService'
+  import { subscriptionState } from '$src/states/SubscriptionState.svelte'
   import { untrack } from 'svelte'
 
   let messageInput = $state('')
   let sidebarOpen = $state(true)
+
+  const canUploadFiles = $derived(
+    (subscriptionState.subscription?.limits.maxStorageGb ?? 1) > 0
+  )
 
   const activeConvId = $derived(navigationState.selectedChannel?.conversationId)
   const activeMessages = $derived(
@@ -35,26 +39,27 @@
 
   async function handleSubmit(
     event: SubmitEvent,
-    attachedFile: File | null,
-    imageUrl: string | null
+    files: File[],
+    inlineFiles: File[],
+    gifUrl: string | null
   ): Promise<void> {
     event.preventDefault()
     if (
       !navigationState.selectedChannel ||
-      (!messageInput.trim() && attachedFile == null && imageUrl == null) ||
+      (!messageInput.trim() && files.length === 0 && inlineFiles.length === 0 && gifUrl == null) ||
       !sessionState.currentUser
     )
       return
 
-    const messageContent = messageInput
+    const messageContent = gifUrl ? `${messageInput}\n${gifUrl}`.trim() : messageInput
     messageInput = ''
 
     const message = await chatService.sendChannelMessage(
       sessionState.currentUser,
       navigationState.selectedChannel,
       messageContent,
-      attachedFile ?? undefined,
-      imageUrl ?? undefined
+      files,
+      inlineFiles
     )
 
     if (message) conversationsState.appendMessage(message, false)
@@ -62,14 +67,6 @@
 
   function onToggleSidebar(): void {
     sidebarOpen = !sidebarOpen
-  }
-
-  async function handleAttachFiles(files: File[]): Promise<void> {
-    const channelId = navigationState.selectedChannel?.id
-    if (!channelId) return
-    for (const file of files) {
-      await fileStorageService.uploadChannelFile(channelId, file)
-    }
   }
 </script>
 
@@ -93,7 +90,7 @@
   {/if}
 
   <div class="chat-body">
-    <div class="chat-background">
+    <div class="pane chat-background">
       <MessagesContainer messages={activeMessages} isLoading={activeMeta.isLoading} />
     </div>
     <ChannelSidebar channel={navigationState.selectedChannel} bind:isOpen={sidebarOpen} />
@@ -103,7 +100,7 @@
     selectedContent={!!navigationState.selectedChannel}
     bind:messageInput
     onSubmit={handleSubmit}
-    onAttachFiles={handleAttachFiles}
+    fileUploadEnabled={canUploadFiles}
   />
 </div>
 
@@ -129,8 +126,6 @@
   .chat-background {
     flex: 1;
     z-index: 1;
-    background-color: white;
-    border-radius: 15px;
     min-width: 0;
     min-height: 0;
     display: flex;

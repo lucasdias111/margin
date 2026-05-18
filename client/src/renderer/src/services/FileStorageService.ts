@@ -2,6 +2,7 @@ import type { StoredFile } from '$src/interfaces/StoredFile'
 import {
   authenticatedDelete,
   authenticatedGet,
+  authenticatedPatch,
   authenticatedPostForm
 } from '$src/services/api'
 
@@ -26,16 +27,23 @@ class FileStorageService {
     return (await response.json()) as StoredFile
   }
 
-  async uploadChannelFile(channelId: number, file: File): Promise<StoredFile | null> {
+  async uploadChannelFile(channelId: number, file: File, inline = false): Promise<StoredFile | null> {
     const form = new FormData()
     form.append('file', file)
-    const response = await authenticatedPostForm(form, `files/channels/${channelId}/stored-files`)
+    const path = `files/channels/${channelId}/stored-files${inline ? '?inline=true' : ''}`
+    const response = await authenticatedPostForm(form, path)
     if (!response.ok) return null
     return (await response.json()) as StoredFile
   }
 
   async deleteFile(fileId: number): Promise<void> {
     await authenticatedDelete(null, `files/stored-files/${fileId}`)
+  }
+
+  async renameFile(fileId: number, newName: string): Promise<StoredFile | null> {
+    const response = await authenticatedPatch({ fileName: newName }, `files/stored-files/${fileId}`)
+    if (!response.ok) return null
+    return (await response.json()) as StoredFile
   }
 
   async downloadFile(fileId: number): Promise<Blob | null> {

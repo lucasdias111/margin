@@ -2,12 +2,16 @@
   import { formatTimestamp } from '$src/utils/DateUtils'
   import UserAvatar from '$src/components/common/user/UserAvatar.svelte'
   import type { Message } from '$src/interfaces/Messages'
+  import type { StoredFile } from '$src/interfaces/StoredFile'
   import { chatService } from '$src/services/ChatService'
+  import { fileStorageService } from '$src/services/FileStorageService'
+  import { imageService } from '$src/services/ImageService'
   import Icon from '$src/components/common/icons/Icon.svelte'
   import type { IconName } from '$src/components/common/icons/icons'
   import { openExternalLink, parseLinks } from '$src/utils/LinksUtils'
   import MessageActions from '$src/components/common/chat/MessageActions.svelte'
   import MessageReactions from '$src/components/common/chat/MessageReactions.svelte'
+  import ImagePreviewModal from '$src/components/common/modals/ImagePreviewModal.svelte'
   import { sessionState } from '$src/states/SessionState.svelte'
 
   interface Props {
@@ -32,13 +36,40 @@
   let editedContent = $derived(message.content)
   let isEditing = $state(false)
   let showActions = $state(false)
+  let attachments = $derived(message.attachments ?? [])
+  let hasAttachments = $derived(attachments.length > 0)
 
   const EMOJI_ONLY = /^(\p{Extended_Pictographic}|‍|️|[\u{1F3FB}-\u{1F3FF}]|\s)+$/u
   let isEmojiOnly = $derived(
-    !message.imageAddress &&
+    !hasAttachments &&
       message.content.trim().length > 0 &&
       EMOJI_ONLY.test(message.content)
   )
+
+  function isImage(file: StoredFile): boolean {
+    return file.contentType?.startsWith('image/') ?? false
+  }
+
+  function formatBytes(n: number): string {
+    if (n < 1024) return `${n} B`
+    if (n < 1024 * 1024) return `${Math.round(n / 1024)} KB`
+    return `${(n / (1024 * 1024)).toFixed(1)} MB`
+  }
+
+  function downloadAttachment(file: StoredFile): void {
+    fileStorageService.downloadFile(file.fileId)
+  }
+
+  let preview = $state<{ file: StoredFile; src: string } | null>(null)
+
+  async function openImagePreview(file: StoredFile): Promise<void> {
+    const src = await imageService.getAuthenticatedImageUrl(file.url)
+    preview = { file, src }
+  }
+
+  function isInlineImageUrl(url: string): boolean {
+    return /\.(gif|png|jpe?g|webp)(\?|$)/i.test(url) || /static\.klipy\.com/i.test(url)
+  }
 
   let isSent = $derived(message.user.id === sessionState.currentUser?.id)
   let checkmarkIcon: IconName = $derived(isRead ? 'checkmarkFilled' : 'checkmark')
@@ -102,12 +133,41 @@
         </div>
         <input class="editinput" bind:value={editedContent} />
       {:else}
-        {#if message.imageAddress}
-          <img class="attachment" src={message.imageAddress} alt="" />
+        {#if hasAttachments}
+          <div class="attachments">
+            {#each attachments as att (att.fileId)}
+              {#if isImage(att)}
+                {#await imageService.getAuthenticatedImageUrl(att.url) then src}
+                  <button
+                    type="button"
+                    class="image-attachment"
+                    onclick={() => openImagePreview(att)}
+                    aria-label={`Preview ${att.fileName}`}
+                  >
+                    <img {src} alt={att.fileName} />
+                  </button>
+                {/await}
+              {:else}
+                <button
+                  type="button"
+                  class="file-attachment"
+                  onclick={() => downloadAttachment(att)}
+                >
+                  <Icon name="upload" size={20} />
+                  <span class="file-meta">
+                    <span class="file-name">{att.fileName}</span>
+                    <span class="file-size">{formatBytes(att.sizeBytes)}</span>
+                  </span>
+                </button>
+              {/if}
+            {/each}
+          </div>
         {/if}
         <p class="text" class:jumbo={isEmojiOnly}>
           {#each parsedContent as part, i (`${i}-${part.content}`)}
-            {#if part.type === 'link'}
+            {#if part.type === 'link' && part.href && isInlineImageUrl(part.href)}
+              <img class="inline-media" src={part.href} alt="" />
+            {:else if part.type === 'link'}
               <a href={part.href} class="chat-link" onclick={(e) => openExternalLink(e, part.href)}>
                 {part.content}
               </a>
@@ -120,6 +180,14 @@
     </div>
 
     <MessageReactions {message} {onToggleReaction} />
+
+    <ImagePreviewModal
+      open={preview !== null}
+      src={preview?.src ?? ''}
+      fileName={preview?.file.fileName ?? ''}
+      onClose={() => (preview = null)}
+      onDownload={() => preview && downloadAttachment(preview.file)}
+    />
 
     {#if showMeta}
       <div class="meta" class:sent={isSent}>
@@ -279,16 +347,73 @@
     font-style: italic;
   }
 
-  .attachment {
+  .attachments {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin: -2px 0 8px;
+  }
+
+  .image-attachment {
+    display: block;
+    padding: 0;
+    border: none;
+    background: none;
+    cursor: pointer;
+    border-radius: 12px;
+    overflow: hidden;
+    max-width: 320px;
+  }
+
+  .image-attachment img {
     display: block;
     width: 100%;
     max-height: 320px;
     object-fit: cover;
-    border-radius: 12px;
-    margin: -2px 0 8px;
   }
 
-  .bubble:has(.attachment) .text:empty {
+  .file-attachment {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 12px;
+    border: 1px solid rgba(0, 0, 0, 0.12);
+    background: rgba(255, 255, 255, 0.5);
+    border-radius: 10px;
+    cursor: pointer;
+    font-family: inherit;
+    color: inherit;
+    text-align: left;
+    max-width: 260px;
+  }
+
+  .file-meta {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+  }
+
+  .file-name {
+    font-size: 13px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .file-size {
+    font-size: 11px;
+    opacity: 0.6;
+  }
+
+  .bubble:has(.attachments) .text:empty {
     display: none;
+  }
+
+  .inline-media {
+    display: block;
+    max-width: 280px;
+    max-height: 280px;
+    border-radius: 10px;
+    margin: 4px 0;
   }
 </style>

@@ -2,7 +2,7 @@
   import { conversationsState, defaultMeta } from '$src/states/ConversationsState.svelte.js'
   import { chatService } from '$src/services/ChatService'
   import { callService } from '$src/services/call/CallService'
-  import ChatInput from '$src/components/common/chat/ChatInput.svelte'
+  import ChatInput from '$src/components/common/chat/input/ChatInput.svelte'
   import MessagesContainer from '$src/components/common/chat/MessagesContainer.svelte'
   import PrivateChatHeader from '$src/components/content/chat/private/PrivateChatHeader.svelte'
   import { navigationState } from '$src/states/NavigationState.svelte'
@@ -49,38 +49,35 @@
 
   async function handleSubmitMessage(
     event: SubmitEvent,
-    attachedFile: File | null,
-    imageUrl: string | null
+    _files: File[],
+    _inlineFiles: File[],
+    gifUrl: string | null
   ): Promise<void> {
     event.preventDefault()
 
     if (
       !selectedUser ||
-      (!messageInput.trim() && attachedFile == null && imageUrl == null) ||
+      (!messageInput.trim() && gifUrl == null) ||
       !sessionState.currentUser ||
       activeMeta.isLoading
     )
       return
 
-    const messageContent = messageInput
+    const messageContent = gifUrl ? `${messageInput}\n${gifUrl}`.trim() : messageInput
     messageInput = ''
 
     if (activeConversation) {
       const message = await chatService.sendMessage(
         sessionState.currentUser,
         activeConversation,
-        messageContent,
-        attachedFile ?? undefined,
-        imageUrl ?? undefined
+        messageContent
       )
       if (message) conversationsState.appendMessage(message, false)
     } else {
       const { message } = await chatService.sendMessageAndStartConversation(
         sessionState.currentUser,
         selectedUser.id,
-        messageContent,
-        attachedFile ?? undefined,
-        imageUrl ?? undefined
+        messageContent
       )
       conversationsState.appendMessage(message, false)
     }
@@ -127,8 +124,13 @@
       selectedContent={true}
       bind:messageInput
       onSubmit={handleSubmitMessage}
+      allowFileAttachments={false}
     />
-  {:else}{/if}
+  {:else}
+    <div class="empty-state">
+      <p>Select a conversation or start a new one</p>
+    </div>
+  {/if}
 </div>
 
 <style>
@@ -149,6 +151,19 @@
     z-index: 1;
     display: flex;
     flex-direction: column;
+  }
+
+  .empty-state {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .empty-state p {
+    font-size: 13px;
+    color: #bbb;
+    margin: 0;
   }
 
   @media (max-width: 768px) {

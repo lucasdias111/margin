@@ -508,7 +508,7 @@ describe('ChatService', () => {
       expect(webSocketService.send).toHaveBeenCalledWith({
         type: WebSocketMessageType.SEND_MESSAGE,
         recipientId: 10,
-        payload: { content: 'cipher', imageAddress: null }
+        payload: { content: 'cipher', attachmentIds: [] }
       })
       expect(msg).not.toBeNull()
       expect(msg!.id).toBeLessThan(0)
@@ -537,7 +537,7 @@ describe('ChatService', () => {
       expect(webSocketService.send).toHaveBeenCalledWith({
         type: WebSocketMessageType.SEND_MESSAGE,
         recipientId: 20,
-        payload: { content: 'hi all', imageAddress: null }
+        payload: { content: 'hi all', attachmentIds: [] }
       })
       expect(msg).not.toBeNull()
       expect(msg!.id).toBeLessThan(0)

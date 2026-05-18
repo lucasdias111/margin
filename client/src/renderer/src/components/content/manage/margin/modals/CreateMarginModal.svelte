@@ -2,7 +2,7 @@
   import AppModal from '$src/components/common/modals/AppModal.svelte'
   import UploadImageButton from '$src/components/common/buttons/UploadImageButton.svelte'
   import UserAvatar from '$src/components/common/user/UserAvatar.svelte'
-  import avatar from '$src/assets/pics/anonym-avatar.png'
+  import avatar from '$src/assets/pics/margin.png'
   import { Visibility } from '$src/interfaces/Visibility'
   import type { CreateMargin } from '$src/interfaces/Margin'
   import Button from '$src/components/common/buttons/Button.svelte'
@@ -42,7 +42,7 @@
 
 <AppModal {open} title="Create Margin" {onClose}>
   <div class="avatar-row">
-    <UserAvatar profilePictureUrl={previewUrl} width={72} height={72} />
+    <UserAvatar profilePictureUrl={previewUrl} width={72} height={72} rounded={false} />
     <UploadImageButton
       onFileChange={async (file) => {
         icon = file

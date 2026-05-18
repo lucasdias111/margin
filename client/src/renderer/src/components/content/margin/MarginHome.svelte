@@ -17,12 +17,18 @@
   import { fileStorageService } from '$src/services/FileStorageService'
   import type { StoredFile } from '$src/interfaces/StoredFile'
   import FileRow from '$src/components/common/files/FileRow.svelte'
+  import { subscriptionState } from '$src/states/SubscriptionState.svelte'
+  import { upgradeState } from '$src/states/UpgradeState.svelte'
 
   const currentUserRole = $derived(
-    navigationState.selectedMargin?.members.find((m) => m.user.id === sessionState.currentUser?.id)?.role
+    navigationState.selectedMargin?.members.find((m) => m.user.id === sessionState.currentUser?.id)
+      ?.role
   )
   const canManage = $derived(
     currentUserRole === MarginRole.ADMIN || currentUserRole === MarginRole.OWNER
+  )
+  const canUploadFiles = $derived(
+    (subscriptionState.subscription?.limits.maxStorageGb ?? 1) > 0
   )
 
   let announcements = $state<Announcement[]>([])
@@ -72,6 +78,17 @@
     await fileStorageService.downloadFile(file.fileId)
   }
 
+  async function handleRenameFile(file: StoredFile, newName: string): Promise<void> {
+    const updated = await fileStorageService.renameFile(file.fileId, newName)
+    if (updated) {
+      marginFiles = marginFiles.map((f) => (f.fileId === updated.fileId ? updated : f))
+    }
+  }
+
+  function canRenameFile(file: StoredFile): boolean {
+    return canManage || file.uploadedBy.id === sessionState.currentUser?.id
+  }
+
   function handleDragOver(event: DragEvent): void {
     if (!canManage) return
     event.preventDefault()
@@ -104,7 +121,10 @@
   }
 
   async function handleDelete(announcementId: number): Promise<void> {
-    await announcementService.deleteAnnouncement(announcementId, navigationState.selectedMargin?.marginId)
+    await announcementService.deleteAnnouncement(
+      announcementId,
+      navigationState.selectedMargin?.marginId
+    )
     announcements = announcements.filter((a) => a.announcementId !== announcementId)
   }
 
@@ -131,7 +151,11 @@
   <div class="welcome-card">
     <div class="welcome-row">
       <div class="margin-icon">
-        <MarginIcon marginIcon={navigationState.selectedMargin?.marginIconUrl} width={75} height={75} />
+        <MarginIcon
+          marginIcon={navigationState.selectedMargin?.marginIconUrl}
+          width={75}
+          height={75}
+        />
       </div>
       <div class="welcome-info">
         <h1 class="margin-name">{navigationState.selectedMargin?.marginName}</h1>
@@ -194,14 +218,15 @@
       <Icon name="file" size={12} strokeWidth={2.5} />
       <span class="card-title">Files</span>
       {#if canManage}
-        <button class="new-file-btn" onclick={() => fileInputRef?.click()}>+ Upload</button>
-        <input
-          bind:this={fileInputRef}
-          type="file"
-          multiple
-          hidden
-          onchange={handleFileSelect}
-        />
+        {#if canUploadFiles}
+          <button class="new-file-btn" onclick={() => fileInputRef?.click()}>+ Upload</button>
+          <input bind:this={fileInputRef} type="file" multiple hidden onchange={handleFileSelect} />
+        {:else}
+          <button
+            class="new-file-btn locked"
+            onclick={() => upgradeState.show({ tier: subscriptionState.subscription?.tier ?? null, limit: 'STORAGE', message: 'Upgrade your plan to share files with your margin.' })}
+          >Upgrade to upload</button>
+        {/if}
       {/if}
     </div>
 
@@ -223,8 +248,10 @@
           <FileRow
             {file}
             canDelete={canManage}
+            canRename={canRenameFile(file)}
             onDownload={handleDownloadFile}
             onDelete={handleDeleteFile}
+            onRename={handleRenameFile}
           />
         {/each}
       </div>
@@ -307,7 +334,8 @@
     flex-direction: column;
     gap: 12px;
     border: 1px dashed transparent;
-    transition: border-color 0.15s, background 0.15s;
+    transition: border-color 0.15s,
+    background 0.15s;
   }
 
   .files-section.drag-over {
@@ -333,8 +361,16 @@
     transition: color 0.15s;
   }
 
-  .new-file-btn:hover {
+  .new-file-btn:hover:not(.locked) {
     color: #e06b28;
+  }
+
+  .new-file-btn.locked {
+    color: #bbb;
+  }
+
+  .new-file-btn.locked:hover {
+    color: #999;
   }
 
   .file-list {

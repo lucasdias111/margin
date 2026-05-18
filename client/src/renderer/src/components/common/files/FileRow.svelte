@@ -6,53 +6,116 @@
   let {
     file,
     canDelete = false,
+    canRename = false,
     compact = false,
     onDownload,
-    onDelete
+    onDelete,
+    onRename
   }: {
     file: StoredFile
     canDelete?: boolean
+    canRename?: boolean
     compact?: boolean
     onDownload?: (file: StoredFile) => void
     onDelete?: (file: StoredFile) => void
+    onRename?: (file: StoredFile, newName: string) => void | Promise<void>
   } = $props()
+
+  let isRenaming = $state(false)
+  let renameInput = $state('')
+  let renameInputRef = $state<HTMLInputElement | null>(null)
+
+  function startRename(): void {
+    if (!canRename) return
+    renameInput = file.fileName
+    isRenaming = true
+    queueMicrotask(() => renameInputRef?.select())
+  }
+
+  function cancelRename(): void {
+    isRenaming = false
+  }
+
+  function commitRename(): void {
+    const trimmed = renameInput.trim()
+    if (!trimmed || trimmed === file.fileName) {
+      isRenaming = false
+      return
+    }
+    onRename?.(file, trimmed)
+    isRenaming = false
+  }
+
+  function handleRenameKey(e: KeyboardEvent): void {
+    if (e.key === 'Enter') {
+      e.preventDefault()
+      commitRename()
+    } else if (e.key === 'Escape') {
+      e.preventDefault()
+      cancelRename()
+    }
+  }
 </script>
 
 <div class="file-row" class:compact>
   <div class="file-icon">
     <Icon name="file" size={compact ? 14 : 16} strokeWidth={1.8} />
   </div>
-  <div class="file-meta">
-    <p class="file-name" title={file.fileName}>{file.fileName}</p>
-    {#if !compact}
-      <p class="file-sub">
-        {formatFileSize(file.sizeBytes)} · {file.uploadedBy.displayName}
-      </p>
+  <div class="file-body">
+    {#if isRenaming}
+      <input
+        bind:this={renameInputRef}
+        bind:value={renameInput}
+        onkeydown={handleRenameKey}
+        onblur={commitRename}
+        class="file-name-input"
+        type="text"
+      />
     {:else}
-      <p class="file-sub">{formatFileSize(file.sizeBytes)}</p>
+      <p class="file-name" title={file.fileName} ondblclick={startRename}>{file.fileName}</p>
     {/if}
-  </div>
-  <div class="file-actions">
-    <button
-      class="icon-btn"
-      type="button"
-      onclick={() => onDownload?.(file)}
-      aria-label="Download file"
-      title="Download"
-    >
-      <Icon name="download" size={compact ? 12 : 14} strokeWidth={1.8} />
-    </button>
-    {#if canDelete}
-      <button
-        class="icon-btn danger"
-        type="button"
-        onclick={() => onDelete?.(file)}
-        aria-label="Delete file"
-        title="Delete"
-      >
-        <Icon name="trash" size={compact ? 12 : 14} strokeWidth={1.8} />
-      </button>
-    {/if}
+    <div class="file-bottom">
+      <p class="file-sub">
+        {#if !compact}
+          {formatFileSize(file.sizeBytes)} · {file.uploadedBy.displayName}
+        {:else}
+          {formatFileSize(file.sizeBytes)}
+        {/if}
+      </p>
+      <div class="file-actions">
+        {#if canRename && !isRenaming}
+          <button
+            class="icon-btn"
+            type="button"
+            onclick={startRename}
+            aria-label="Rename file"
+            title="Rename"
+          >
+            <Icon name="edit" size={compact ? 12 : 14} strokeWidth={1.8} />
+          </button>
+        {/if}
+        <button
+          class="icon-btn"
+          type="button"
+          onclick={() => onDownload?.(file)}
+          aria-label="Download file"
+          title="Download"
+        >
+          <Icon name="download" size={compact ? 12 : 14} strokeWidth={1.8} />
+        </button>
+        {#if canDelete}
+          <button
+            class="icon-btn danger"
+            type="button"
+            onclick={() => onDelete?.(file)}
+            aria-label="Delete file"
+            title="Delete"
+          >
+            <Icon name="trash" size={compact ? 12 : 14} strokeWidth={1.8} />
+          </button>
+        {/if}
+      </div>
+    </div>
   </div>
 </div>
 
@@ -98,12 +161,19 @@
     border-radius: 6px;
   }
 
-  .file-meta {
+  .file-body {
     flex: 1;
     min-width: 0;
     display: flex;
     flex-direction: column;
-    gap: 1px;
+    gap: 2px;
+  }
+
+  .file-bottom {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 4px;
   }
 
   .file-name {
@@ -117,6 +187,24 @@
   }
 
   .file-row.compact .file-name {
+    font-size: 12px;
+  }
+
+  .file-name-input {
+    font: inherit;
+    font-size: 13px;
+    font-weight: 500;
+    color: #2a2a2a;
+    border: 1px solid #ff843c;
+    border-radius: 6px;
+    padding: 2px 6px;
+    outline: none;
+    width: 100%;
+    box-sizing: border-box;
+    background: white;
+  }
+
+  .file-row.compact .file-name-input {
     font-size: 12px;
   }
 
@@ -140,6 +228,10 @@
 
   .file-row:hover .file-actions,
   .file-row:focus-within .file-actions {
+    opacity: 1;
+  }
+
+  .file-bottom .file-actions {
     opacity: 1;
   }
 

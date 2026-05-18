@@ -20,12 +20,13 @@
 
 <li class="channel-item">
   <button class="channel-button" class:active onclick={selectChannel}>
+    <span
+      class="voice-indicator-dot"
+      class:active={channel.voiceParticipants && channel.voiceParticipants.length > 0}
+    ></span>
     <span class="channel-name">{channel.name}</span>
     {#if channel.voiceParticipants && channel.voiceParticipants.length > 0}
-      <span class="voice-indicator">
-        <span class="voice-indicator-dot"></span>
-        {channel.voiceParticipants.length}
-      </span>
+      <span class="voice-count">{channel.voiceParticipants.length}</span>
     {/if}
     <UnreadNotificationBadge shouldShow={hasUnread} count={1} variant="inline" />
   </button>
@@ -43,11 +44,11 @@
     align-items: center;
     gap: 7px;
     padding: 5px 8px;
-    background: none;
+    background: rgba(0, 0, 0, 0.03);
     border: none;
     border-radius: 7px;
     font-size: 13px;
-    color: #888;
+    color: #555;
     cursor: pointer;
     text-align: left;
     transition:
@@ -56,8 +57,8 @@
   }
 
   .channel-button:hover {
-    background: rgba(0, 0, 0, 0.05);
-    color: #444;
+    background: rgba(0, 0, 0, 0.07);
+    color: #222;
   }
 
   .channel-button.active {
@@ -70,20 +71,23 @@
     flex: 1;
   }
 
-  .voice-indicator {
-    display: flex;
-    align-items: center;
-    gap: 3px;
-    font-size: 11px;
-    font-weight: 600;
-    color: #3dd68c;
-  }
-
   .voice-indicator-dot {
     width: 5px;
     height: 5px;
     border-radius: 50%;
+    background: #ccc;
+    flex-shrink: 0;
+    transition: background 0.2s;
+  }
+
+  .voice-indicator-dot.active {
     background: #3dd68c;
     animation: pulse 2s infinite;
+  }
+
+  .voice-count {
+    font-size: 11px;
+    font-weight: 600;
+    color: #3dd68c;
   }
 </style>
