@@ -9,28 +9,32 @@
   import GifPicker from '$src/components/common/chat/GifPicker.svelte'
   import type { Gif } from '$src/services/GifService'
 
+  interface PendingFile {
+    file: File
+    inline: boolean
+  }
+
   let {
     selectedContent,
     messageInput = $bindable(''),
     onSubmit,
-    onAttachFiles
+    allowFileAttachments = true
   }: {
     selectedContent: boolean
     messageInput: string
-    onSubmit: (event: SubmitEvent, file: File | null, imageUrl: string | null) => void
-    onAttachFiles?: (files: File[]) => void
+    onSubmit: (event: SubmitEvent, files: File[], inlineFiles: File[], gifUrl: string | null) => void
+    allowFileAttachments?: boolean
   } = $props()
 
   let showPicker = $state(false)
   let showGifPicker = $state(false)
   let inputRef = $state<HTMLTextAreaElement | null>(null)
-  let attachedFile = $state<File | null>(null)
   let attachedGifUrl = $state<string | null>(null)
-  let previewUrl = $state<string | null>(null)
+  let gifPreviewUrl = $state<string | null>(null)
   let fileInputRef = $state<HTMLInputElement | null>(null)
   let isDraggingFile = $state(false)
   let dragCounter = 0
-  let pendingFiles = $state<File[]>([])
+  let pendingFiles = $state<PendingFile[]>([])
 
   function handleKeydown(event: KeyboardEvent): void {
     if (event.key === ' ') {
@@ -44,6 +48,7 @@
   }
 
   async function handlePaste(e: ClipboardEvent): Promise<void> {
+    if (!allowFileAttachments) return
     const items = e.clipboardData?.items
     if (!items) return
 
@@ -53,53 +58,38 @@
         if (file) {
           e.preventDefault()
           const compressed = await compressImage(file)
-          setAttachment(compressed)
+          queuePendingFiles([compressed], true)
         }
       }
     }
   }
 
-  function setAttachment(file: File): void {
-    if (previewUrl && attachedFile) URL.revokeObjectURL(previewUrl)
-
-    attachedFile = file
-    attachedGifUrl = null
-    previewUrl = URL.createObjectURL(file)
-  }
-
   function setGifAttachment(gif: Gif): void {
-    if (previewUrl && attachedFile) URL.revokeObjectURL(previewUrl)
-
-    attachedFile = null
     attachedGifUrl = gif.gifUrl
-    previewUrl = gif.gifUrl
+    gifPreviewUrl = gif.gifUrl
     showGifPicker = false
     inputRef?.focus()
   }
 
-  function removeAttachment(): void {
-    if (previewUrl && attachedFile) URL.revokeObjectURL(previewUrl)
-    attachedFile = null
+  function removeGif(): void {
     attachedGifUrl = null
-    previewUrl = null
+    gifPreviewUrl = null
   }
 
   function handleFormSubmit(e: SubmitEvent): void {
     e.preventDefault()
-    onSubmit(e, attachedFile, attachedGifUrl)
+    const regularFiles = pendingFiles.filter((p) => !p.inline).map((p) => p.file)
+    const inlineFiles = pendingFiles.filter((p) => p.inline).map((p) => p.file)
+    onSubmit(e, regularFiles, inlineFiles, attachedGifUrl)
 
-    if (pendingFiles.length > 0) {
-      onAttachFiles?.(pendingFiles)
-      pendingFiles = []
-    }
-
+    pendingFiles = []
     messageInput = ''
-    removeAttachment()
+    removeGif()
   }
 
-  function queuePendingFiles(files: File[]): void {
-    if (files.length === 0) return
-    pendingFiles = [...pendingFiles, ...files]
+  function queuePendingFiles(files: File[], inline = false): void {
+    if (files.length === 0 || !allowFileAttachments) return
+    pendingFiles = [...pendingFiles, ...files.map((file) => ({ file, inline }))]
   }
 
   function removePendingFile(index: number): void {
@@ -124,7 +114,7 @@
   }
 
   function handleDragEnter(event: DragEvent): void {
-    if (!onAttachFiles || !selectedContent) return
+    if (!allowFileAttachments || !selectedContent) return
     if (!event.dataTransfer?.types?.includes('Files')) return
     event.preventDefault()
     dragCounter++
@@ -132,13 +122,13 @@
   }
 
   function handleDragOver(event: DragEvent): void {
-    if (!onAttachFiles || !selectedContent) return
+    if (!allowFileAttachments || !selectedContent) return
     if (!event.dataTransfer?.types?.includes('Files')) return
     event.preventDefault()
   }
 
   function handleDragLeave(event: DragEvent): void {
-    if (!onAttachFiles || !selectedContent) return
+    if (!allowFileAttachments || !selectedContent) return
     event.preventDefault()
     dragCounter = Math.max(0, dragCounter - 1)
     if (dragCounter === 0) {
@@ -147,7 +137,7 @@
   }
 
   function handleDrop(event: DragEvent): void {
-    if (!onAttachFiles || !selectedContent) return
+    if (!allowFileAttachments || !selectedContent) return
     event.preventDefault()
     dragCounter = 0
     isDraggingFile = false
@@ -190,30 +180,30 @@
     <div class="drag-overlay">Drop to share with this channel</div>
   {/if}
   <form class="input-container" onsubmit={handleFormSubmit}>
-    {#if previewUrl || pendingFiles.length > 0}
+    {#if gifPreviewUrl || pendingFiles.length > 0}
       <div class="preview-bar">
-        {#if previewUrl}
+        {#if gifPreviewUrl}
           <div class="preview-card">
-            <img src={previewUrl} alt="Paste preview" />
+            <img src={gifPreviewUrl} alt="GIF preview" />
             <button
               type="button"
               class="remove-preview"
-              onclick={removeAttachment}
-              title="Remove image"
+              onclick={removeGif}
+              title="Remove GIF"
             >
               <Icon name="close" size={14} color="white" />
             </button>
           </div>
         {/if}
 
-        {#each pendingFiles as file, i (i + '-' + file.name + '-' + file.size)}
-          <div class="file-chip" title={file.name}>
+        {#each pendingFiles as pending, i (i + '-' + pending.file.name + '-' + pending.file.size)}
+          <div class="file-chip" title={pending.file.name}>
             <div class="file-chip-icon">
               <Icon name="file" size={14} strokeWidth={1.8} />
             </div>
             <div class="file-chip-meta">
-              <span class="file-chip-name">{file.name}</span>
-              <span class="file-chip-size">{formatFileSize(file.size)}</span>
+              <span class="file-chip-name">{pending.file.name}</span>
+              <span class="file-chip-size">{formatFileSize(pending.file.size)}</span>
             </div>
             <button
               type="button"
@@ -230,7 +220,7 @@
     {/if}
 
     <div class="input-area">
-      {#if onAttachFiles}
+      {#if allowFileAttachments}
         <button
           class="secondary-button attach-button"
           type="button"
@@ -288,7 +278,7 @@
         class="sendbut"
         type="submit"
         disabled={!selectedContent ||
-          (!messageInput.trim() && !attachedFile && !attachedGifUrl && pendingFiles.length === 0)}
+          (!messageInput.trim() && !attachedGifUrl && pendingFiles.length === 0)}
         aria-label="Send"
         title="Send"
       >
