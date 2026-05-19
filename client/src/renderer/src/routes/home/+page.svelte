@@ -45,8 +45,6 @@
   import { subscriptionState } from '$src/states/SubscriptionState.svelte'
   import type { Subscription } from '$src/interfaces/Subscription'
   import OnboardingOverlay from '$src/components/content/onboarding/OnboardingOverlay.svelte'
-  import { onboardingState } from '$src/states/OnboardingState.svelte'
-  import { sessionState } from '$src/states/SessionState.svelte'
 
   const MOBILE_BREAKPOINT = 768
   let onboardingReady = $state(false)
@@ -68,11 +66,7 @@
   )
 
   onMount(() => {
-    setup().then(() => {
-      const userId = sessionState.currentUser?.id
-      if (userId !== undefined) onboardingState.loadForUser(userId)
-      onboardingReady = true
-    })
+    setup().then(() => (onboardingReady = true))
     webSocketService.connect()
     webSocketService.onReconnect(resync)
 

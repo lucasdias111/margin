@@ -1,4 +1,5 @@
 import type { Conversation } from '$src/interfaces/Conversation'
+import type { StoredFile } from '$src/interfaces/StoredFile'
 import type { User } from '$src/interfaces/User'
 
 export interface MessageReaction {
@@ -21,7 +22,7 @@ export interface Message {
   marginId?: number
   channelName?: string
   reactions: MessageReaction[]
-  imageAddress?: string | null
+  attachments: StoredFile[]
 }
 
 export interface ConversationMessagesResponse {

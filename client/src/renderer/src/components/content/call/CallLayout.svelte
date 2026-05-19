@@ -91,6 +91,20 @@
         </div>
       {/if}
     </div>
+  {:else if isRemoteScreenSharing}
+    <div class="screen-share-stage">
+      <div class="screen-share-main">
+        <video use:srcObject={remoteScreenStream} autoplay playsinline class="screen-share-video"
+        ></video>
+      </div>
+      <div class="participant-strip">
+        {#each gridParticipants as participant (participant.id)}
+          <div class="strip-tile">
+            <CallParticipantTile {participant} isLocal={participant.isLocal} />
+          </div>
+        {/each}
+      </div>
+    </div>
   {:else}
     <div class="grid" style:--cols={gridCols} style:--rows={gridRows}>
       {#each gridParticipants as participant (participant.id)}
@@ -191,6 +205,39 @@
     grid-template-columns: repeat(var(--cols), 1fr);
     grid-template-rows: repeat(var(--rows), 1fr);
     gap: 8px;
+  }
+
+  .screen-share-stage {
+    position: absolute;
+    inset: 0;
+    padding: 16px 16px 120px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .screen-share-main {
+    flex: 1;
+    min-height: 0;
+    border-radius: 8px;
+    overflow: hidden;
+    background: #1a1a1a;
+  }
+
+  .participant-strip {
+    flex-shrink: 0;
+    height: 120px;
+    display: flex;
+    gap: 8px;
+    overflow-x: auto;
+  }
+
+  .strip-tile {
+    flex-shrink: 0;
+    height: 100%;
+    aspect-ratio: 16/9;
+    border-radius: 8px;
+    overflow: hidden;
   }
 
   .pagination {

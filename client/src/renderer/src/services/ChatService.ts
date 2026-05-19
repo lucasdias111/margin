@@ -10,7 +10,8 @@ import { encryptionService } from './EncryptionService'
 import { webSocketService } from './WebSocketService'
 import { WebSocketMessageType } from '$src/interfaces/WebSocketMessageType'
 import type { Channel } from '$src/interfaces/Channel'
-import { authenticatedGet, authenticatedPost, authenticatedPostForm } from '$src/services/api'
+import { authenticatedGet, authenticatedPost } from '$src/services/api'
+import { fileStorageService } from '$src/services/FileStorageService'
 import { notificationService } from '$src/services/NotificationService'
 import type { WebSocketMessage } from '$src/interfaces/WebSocketMessages'
 import type { View } from '$src/interfaces/View'
@@ -241,13 +242,11 @@ class ChatService {
   async sendMessageAndStartConversation(
     currentUser: User,
     toUserId: number,
-    messageText: string,
-    attachedFile?: File,
-    imageUrl?: string
+    messageText: string
   ): Promise<{ conversation: Conversation; message: Message }> {
     const content = await this.encryptForUser(messageText, toUserId, currentUser.id)
     const response = await authenticatedPost(
-      { recipientUserId: toUserId, encryptedContent: content, attachedFile, imageUrl },
+      { recipientUserId: toUserId, encryptedContent: content },
       'conversations/create_private'
     )
     const conversation: Conversation = await response.json()
@@ -259,22 +258,17 @@ class ChatService {
   async sendMessage(
     currentUser: User,
     conversation: Conversation,
-    messageText: string,
-    attachedFile?: File,
-    imageUrl?: string
+    messageText: string
   ): Promise<Message | null> {
     if (!this.guardConnected()) return null
     let content = messageText
     if (isDirectConversation(conversation)) {
       content = await this.encryptForUser(messageText, conversation.otherUserId, currentUser.id)
     }
-    const conversationId = conversation.id
-    const imageAddress =
-      imageUrl ?? (await this.uploadConversationImage(attachedFile, conversationId))
-    webSocketService.send<{ content: string; imageAddress: string | null }>({
+    webSocketService.send<{ content: string; attachmentIds: number[] }>({
       type: WebSocketMessageType.SEND_MESSAGE,
       recipientId: conversation.id,
-      payload: { content, imageAddress }
+      payload: { content, attachmentIds: [] }
     })
     return this.buildOptimisticMessage(currentUser, conversation.id, messageText, 'DIRECT')
   }
@@ -283,18 +277,33 @@ class ChatService {
     currentUser: User,
     channel: Channel,
     messageText: string,
-    attachedFile?: File,
-    imageUrl?: string
+    attachments: File[] = [],
+    inlineAttachments: File[] = []
   ): Promise<Message | null> {
     if (!this.guardConnected()) return null
-    const imageAddress =
-      imageUrl ?? (await this.uploadConversationImage(attachedFile, channel.conversationId))
-    webSocketService.send<{ content: string; imageAddress: string | null }>({
+    const [fileIds, inlineIds] = await Promise.all([
+      this.uploadChannelAttachments(channel.id, attachments, false),
+      this.uploadChannelAttachments(channel.id, inlineAttachments, true)
+    ])
+    const attachmentIds = [...inlineIds, ...fileIds]
+    webSocketService.send<{ content: string; attachmentIds: number[] }>({
       type: WebSocketMessageType.SEND_MESSAGE,
       recipientId: channel.conversationId,
-      payload: { content: messageText, imageAddress }
+      payload: { content: messageText, attachmentIds }
     })
     return this.buildOptimisticMessage(currentUser, channel.conversationId, messageText, 'CHANNEL')
+  }
+
+  private async uploadChannelAttachments(
+    channelId: number,
+    files: File[],
+    inline: boolean
+  ): Promise<number[]> {
+    if (!files.length) return []
+    const uploaded = await Promise.all(
+      files.map((f) => fileStorageService.uploadChannelFile(channelId, f, inline))
+    )
+    return uploaded.filter((f): f is NonNullable<typeof f> => f !== null).map((f) => f.fileId)
   }
 
   private guardConnected(): boolean {
@@ -327,7 +336,8 @@ class ChatService {
       conversationType,
       isEdited: false,
       createdAt: new Date().toISOString(),
-      reactions: []
+      reactions: [],
+      attachments: []
     }
   }
 
@@ -518,18 +528,6 @@ class ChatService {
         unread: false
       })
     }
-  }
-
-  async uploadConversationImage(attachedFile: File, conversationId: number): Promise<string> {
-    let imageAddress: string | null = null
-    if (attachedFile) {
-      const formData = new FormData()
-      formData.append('attachedFile', attachedFile)
-      formData.append('conversationId', conversationId.toString())
-      const response = await authenticatedPostForm(formData, 'files/upload_to_conversation')
-      imageAddress = await response.text()
-    }
-    return imageAddress
   }
 }
 

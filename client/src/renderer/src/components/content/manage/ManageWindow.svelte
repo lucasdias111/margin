@@ -20,7 +20,7 @@
   })
 </script>
 
-<div class="manage-window">
+<div class="pane manage-window">
   <ManageHeader
     activeTab={navigationState.manageTab}
     onTabChange={(tab) => (navigationState.manageTab = tab)}
@@ -42,8 +42,6 @@
     flex-direction: column;
     flex: 1;
     min-height: 0;
-    background-color: #ffffff;
-    border-radius: 20px;
     overflow: hidden;
     font-family: 'Segoe UI', sans-serif;
   }

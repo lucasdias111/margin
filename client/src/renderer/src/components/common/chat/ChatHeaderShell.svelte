@@ -22,7 +22,7 @@
   }: Props = $props()
 </script>
 
-<div class="chat-header">
+<div class="pane chat-header">
   <div class="header-left">
     {#if onBack}
       <div
@@ -75,12 +75,10 @@
 <style>
   .chat-header {
     height: 80px;
-    background: #fff;
     display: flex;
     align-items: center;
     justify-content: space-between;
     padding: 0 12px;
-    border-bottom: none;
     border-radius: 15px;
   }
 
@@ -88,6 +86,7 @@
     .chat-header {
       height: 56px;
       border-radius: 0;
+      border: none;
       border-bottom: 1px solid rgba(0, 0, 0, 0.06);
     }
   }

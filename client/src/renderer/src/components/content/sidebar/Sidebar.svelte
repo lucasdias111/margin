@@ -32,7 +32,7 @@
 
 <div class="sidebar">
   {#if selectedContent === 'private'}
-    <div class="panel" data-tour="private-sidebar">
+    <div class="pane panel" data-tour="private-sidebar">
       <div class="panel-header">
         <div class="search-row">
           <UserSearchBar {onSelectUser} showSharedMargins={true} />
@@ -51,7 +51,7 @@
       </div>
     </div>
   {:else if selectedContent === 'margin' && marginState.isMemberOfAnyMargins}
-    <div class="panel">
+    <div class="pane panel">
       <div class="panel-divider"></div>
 
       <div class="panel-nav">
@@ -69,7 +69,7 @@
       </div>
     </div>
   {:else if selectedContent === 'settings'}
-    <div class="panel">
+    <div class="pane panel">
       <Settings />
     </div>
   {/if}
@@ -95,6 +95,7 @@
 
     .panel {
       border-radius: 0;
+      border: none;
     }
   }
 
@@ -103,8 +104,6 @@
     flex-direction: column;
     flex: 1;
     min-height: 0;
-    background-color: #fff;
-    border-radius: 20px;
   }
 
   .panel-header {

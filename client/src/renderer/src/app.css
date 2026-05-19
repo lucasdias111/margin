@@ -19,6 +19,14 @@ button {
   cursor: pointer;
 }
 
+.pane {
+  background-color: #ffffff;
+  border: 1px solid #e4cbb2;
+  border-radius: 20px;
+  outline: none;
+  transition: border-color 0.15s, background-color 0.15s;
+}
+
 @media (prefers-color-scheme: dark) {
   :root {
     color: #f6f6f6;

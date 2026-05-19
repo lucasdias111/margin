@@ -6,9 +6,10 @@
     profilePictureUrl: string | null
     height?: number
     width?: number
+    rounded?: boolean
   }
 
-  let { profilePictureUrl, height = 40, width = 40 }: Props = $props()
+  let { profilePictureUrl, height = 40, width = 40, rounded = true }: Props = $props()
   let blobUrl = $state('')
 
   $effect(() => {
@@ -28,7 +29,6 @@
       cancelled = true
     }
   })
-
 </script>
 
 {#if blobUrl}
@@ -37,6 +37,7 @@
     alt="Profile"
     style="width: {width}px; height: {height}px;"
     class="user-avatar"
+    class:rounded
   />
 {:else}
   <img
@@ -44,11 +45,18 @@
     alt="Profile"
     style="width: {width}px; height: {height}px"
     class="anon-avatar"
+    class:rounded
   />
 {/if}
 
 <style>
   .user-avatar {
+    object-fit: contain;
+    border-radius: 8px;
+  }
+
+  .user-avatar.rounded,
+  .anon-avatar.rounded {
     border-radius: 50%;
     object-fit: cover;
   }
