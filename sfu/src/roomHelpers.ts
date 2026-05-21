@@ -1,8 +1,12 @@
 import {Room} from "./types.js"
 import {types as MediasoupTypes} from 'mediasoup'
 
-export async function getOrCreateRoom(rooms: Map<string, Room>, roomId: string, worker: MediasoupTypes.Worker): Promise<Room> {
-    if (rooms.has(roomId)) return rooms.get(roomId)!
+export async function getOrCreateRoom(rooms: Map<string, Room>, roomId: string, worker: MediasoupTypes.Worker, maxParticipants: number): Promise<Room> {
+    const existing = rooms.get(roomId)
+    if (existing) {
+        existing.maxParticipants = maxParticipants
+        return existing
+    }
 
     const router = await worker.createRouter({
         mediaCodecs: [
@@ -23,10 +27,11 @@ export async function getOrCreateRoom(rooms: Map<string, Room>, roomId: string, 
     const room: Room = {
         id: roomId,
         router,
-        peers: new Map()
+        peers: new Map(),
+        maxParticipants
     }
 
     rooms.set(roomId, room)
-    console.log(`✓ Room created: ${roomId}`)
+    console.log(`✓ Room created: ${roomId} (cap ${maxParticipants})`)
     return room
 }

@@ -22,6 +22,12 @@ export async function handleGetRouterRtpCapabilities(
         room.peers.delete(msg.peerId)
     }
 
+    if (room.peers.size >= room.maxParticipants) {
+        ws.send(JSON.stringify({type: 'error', code: 'ROOM_FULL', message: 'Room is full'}))
+        ws.close()
+        throw new Error(`Room ${msg.roomId} is full (${room.peers.size}/${room.maxParticipants})`)
+    }
+
     const peer: Peer = {
         id: msg.peerId,
         displayName: msg.displayName,

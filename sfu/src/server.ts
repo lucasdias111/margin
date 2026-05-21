@@ -28,11 +28,17 @@ const app = express()
 app.use(express.json())
 
 app.post('/rooms/:roomId', requireInternalApiKey, async (req, res) => {
-    const room = await getOrCreateRoom(rooms, req.params.roomId, worker)
+    const maxParticipants = Number(req.body?.maxParticipants)
+    if (!Number.isInteger(maxParticipants) || maxParticipants <= 0) {
+        return res.status(400).json({error: 'maxParticipants must be a positive integer'})
+    }
+
+    const room = await getOrCreateRoom(rooms, req.params.roomId, worker, maxParticipants)
 
     res.json({
         roomId: room.id,
-        rtpCapabilities: room.router.rtpCapabilities
+        rtpCapabilities: room.router.rtpCapabilities,
+        maxParticipants: room.maxParticipants
     })
 })
 
