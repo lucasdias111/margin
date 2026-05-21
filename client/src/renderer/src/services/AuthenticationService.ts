@@ -83,6 +83,13 @@ class AuthenticationService {
     }
   }
 
+  async forgotPassword(email: string): Promise<void> {
+    const response = await unauthenticatedPost({ email }, 'auth/forgot-password')
+    if (!response.ok) {
+      throw new Error('Request failed')
+    }
+  }
+
   async register(
     handle: string,
     displayName: string,

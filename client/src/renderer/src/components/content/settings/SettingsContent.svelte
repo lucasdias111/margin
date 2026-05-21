@@ -3,8 +3,11 @@
   import UploadImageButton from '$src/components/common/buttons/UploadImageButton.svelte'
   import { usersService } from '$src/services/UsersService'
   import ConfirmationModal from '$src/components/common/modals/ConfirmationModal.svelte'
+  import LegalDocumentModal from '$src/components/common/modals/LegalDocumentModal.svelte'
   import Button from '$src/components/common/buttons/Button.svelte'
   import { sessionState } from '$src/states/SessionState.svelte'
+  import { termsOfServiceHtml } from '$src/assets/legal/terms-of-service'
+  import { privacyPolicyHtml } from '$src/assets/legal/privacy-policy'
 
   let newProfilePicture = $state<File | null>(null)
   let previewUrl = $state<string | null>(sessionState.currentUser.profilePictureUrl)
@@ -12,6 +15,7 @@
   let email = $state(sessionState.currentUser.email)
   let editingField = $state<'displayName' | 'email' | null>(null)
   let showDeleteConfirm = $state(false)
+  let legalModal = $state<'tos' | 'privacy' | null>(null)
 
   let currentPassword = $state('')
   let newPassword = $state('')
@@ -238,6 +242,14 @@
 
     <div class="divider"></div>
 
+    <div class="legal-links">
+      <button class="legal-link" onclick={() => (legalModal = 'tos')}>Terms of Service</button>
+      <span class="legal-sep">·</span>
+      <button class="legal-link" onclick={() => (legalModal = 'privacy')}>Privacy Policy</button>
+    </div>
+
+    <div class="divider"></div>
+
     <div class="danger-zone">
       <div class="danger-info">
         <span class="danger-title">Delete account</span>
@@ -250,6 +262,18 @@
   </div>
 </div>
 
+<LegalDocumentModal
+  open={legalModal === 'tos'}
+  title="Terms of Service"
+  html={termsOfServiceHtml}
+  onClose={() => (legalModal = null)}
+/>
+<LegalDocumentModal
+  open={legalModal === 'privacy'}
+  title="Privacy Policy"
+  html={privacyPolicyHtml}
+  onClose={() => (legalModal = null)}
+/>
 <ConfirmationModal
   open={showDeleteConfirm}
   title="Delete account"
@@ -401,6 +425,33 @@
   .password-success {
     font-size: 0.8rem;
     color: #3d8a52;
+  }
+
+  .legal-links {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .legal-link {
+    background: none;
+    border: none;
+    padding: 0;
+    font-size: 0.78rem;
+    color: #aaa;
+    cursor: pointer;
+    font-family: inherit;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+  }
+
+  .legal-link:hover {
+    color: #666;
+  }
+
+  .legal-sep {
+    font-size: 0.78rem;
+    color: #ccc;
   }
 
   .danger-zone {

@@ -4,7 +4,10 @@
   import { navigationState } from '$src/states/NavigationState.svelte'
   import type { SubscriptionTier, TierPrice } from '$src/interfaces/Subscription'
   import Button from '$src/components/common/buttons/Button.svelte'
+  import LegalDocumentModal from '$src/components/common/modals/LegalDocumentModal.svelte'
   import { subscriptionState } from '$src/states/SubscriptionState.svelte'
+  import { termsOfServiceHtml } from '$src/assets/legal/terms-of-service'
+  import { privacyPolicyHtml } from '$src/assets/legal/privacy-policy'
 
   const CANCEL_DELAY_MS = 30_000
 
@@ -16,6 +19,8 @@
   let reconciling = $state(false)
   let cancelPendingLoading = $state(false)
   let showCancelPending = $state(false)
+  let hasConsented = $state(false)
+  let legalModal = $state<'tos' | 'privacy' | null>(null)
 
   const subscription = $derived(subscriptionState.subscription)
 
@@ -30,12 +35,6 @@
     return () => clearTimeout(timer)
   })
 
-  const tierFeatures: Record<SubscriptionTier, string[]> = {
-    FREE: ['25 members', '5 GB storage', '10 in calls'],
-    SMALL: ['50 members', '50 GB storage', '25 in calls'],
-    MEDIUM: ['200 members', '200 GB storage', '50 in calls'],
-    CUSTOM: ['Unlimited everything', 'Custom limits', 'Priority support']
-  }
 
   onMount(async () => {
     try {
@@ -58,7 +57,8 @@
     return new Date(iso).toLocaleDateString()
   }
 
-  function formatPrice(price: number, currency: string): string {
+  function formatPrice(price: number | null, currency: string): string {
+    if (price === null) return 'Free'
     return new Intl.NumberFormat(undefined, {
       style: 'currency',
       currency
@@ -105,6 +105,7 @@
 
   async function handleSelectTier(tier: SubscriptionTier): Promise<void> {
     if (!subscription || tier === subscription.tier) return
+    if (!hasConsented) return
     checkoutPending = tier
     const marginId = navigationState.selectedMargin.marginId
     try {
@@ -220,30 +221,46 @@
             <header class="tier-header">
               <h3>{tier.tier}</h3>
               <p class="tier-price">
-                {formatPrice(tier.price, tier.currency)} <span>/ month</span>
+                {formatPrice(tier.price, tier.currency)}
+                {#if tier.price !== null}<span>/ month</span>{/if}
               </p>
             </header>
             <ul class="tier-features">
-              {#each tierFeatures[tier.tier] as feature, i (i)}
-                <li>{feature}</li>
-              {/each}
+              <li>{tier.maxMembers} members</li>
+              <li>{tier.maxStorageGb} GB storage</li>
+              <li>{tier.maxCallParticipants} in calls</li>
             </ul>
             {#if isCurrent}
               <p class="current-label">Current plan</p>
             {:else if subscription.pendingTier === tier.tier}
               <p class="pending-label">Payment processing…</p>
+            {:else if tier.price === null}
+              <p class="current-label" style="color: #888">Cancel to return to Free</p>
             {:else}
               <Button
                 buttonType="primary"
                 size="medium"
                 text={checkoutPending === tier.tier ? 'Redirecting...' : 'Choose'}
-                disabled={checkoutPending !== null || subscription.hasPendingPayment}
+                disabled={checkoutPending !== null || subscription.hasPendingPayment || !hasConsented}
                 onClick={() => handleSelectTier(tier.tier)}
               />
             {/if}
           </article>
         {/each}
       </div>
+
+      {#if !subscription.hasPendingPayment}
+        <label class="consent-label">
+          <input type="checkbox" bind:checked={hasConsented} />
+          <span>
+            I've read and agree to the
+            <button class="consent-link" onclick={() => (legalModal = 'tos')}>Terms of Service</button>
+            and
+            <button class="consent-link" onclick={() => (legalModal = 'privacy')}>Privacy Policy</button>,
+            and I confirm that my subscription starts immediately, waiving my 14-day right of withdrawal.
+          </span>
+        </label>
+      {/if}
 
       {#if subscription.hasPendingPayment}
         <div class="pending-actions">
@@ -275,6 +292,19 @@
     <div class="loading">Could not load subscription.</div>
   {/if}
 </div>
+
+<LegalDocumentModal
+  open={legalModal === 'tos'}
+  title="Terms of Service"
+  html={termsOfServiceHtml}
+  onClose={() => (legalModal = null)}
+/>
+<LegalDocumentModal
+  open={legalModal === 'privacy'}
+  title="Privacy Policy"
+  html={privacyPolicyHtml}
+  onClose={() => (legalModal = null)}
+/>
 
 <style>
   .manage-subscription {
@@ -459,6 +489,43 @@
     color: #888;
     font-size: 0.85rem;
     font-style: italic;
+  }
+
+  .consent-label {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    margin-top: 16px;
+    cursor: pointer;
+  }
+
+  .consent-label input[type='checkbox'] {
+    margin-top: 2px;
+    flex-shrink: 0;
+    accent-color: #f47e3a;
+    cursor: pointer;
+  }
+
+  .consent-label span {
+    font-size: 0.78rem;
+    color: #666;
+    line-height: 1.55;
+  }
+
+  .consent-link {
+    background: none;
+    border: none;
+    padding: 0;
+    font-size: inherit;
+    color: #f47e3a;
+    cursor: pointer;
+    font-family: inherit;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+  }
+
+  .consent-link:hover {
+    color: #d4682e;
   }
 
   .pending-actions {

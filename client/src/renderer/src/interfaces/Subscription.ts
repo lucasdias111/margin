@@ -20,8 +20,11 @@ export interface Subscription {
 
 export interface TierPrice {
   tier: SubscriptionTier
-  price: number
+  price: number | null
   currency: string
+  maxMembers: number
+  maxStorageGb: number
+  maxCallParticipants: number
 }
 
 export interface CheckoutResponse {

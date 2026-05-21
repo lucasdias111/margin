@@ -39,8 +39,18 @@ export const termsOfServiceHtml = `
 <h2>8. Service Availability</h2>
 <p>We aim to keep margin available and reliable, but we do not guarantee uninterrupted access. The Service may be temporarily unavailable due to maintenance, updates, or circumstances beyond our control. We will make reasonable efforts to notify users of planned downtime.</p>
 
-<h2>9. Pricing and Payment</h2>
-<p>margin offers both free and paid tiers. The free tier is available to non-profit organizations and open source communities. Paid plans are available for for-profit organizations. Current pricing and plan details are published on our website. We reserve the right to change pricing with reasonable notice. Existing subscriptions will be honored for their current billing period.</p>
+<h2>9. Pricing, Payment and Subscriptions</h2>
+<p>margin offers a free tier and paid monthly subscription plans. Current pricing is displayed in the application and on our website.</p>
+
+<p><strong>Billing.</strong> Paid subscriptions are billed monthly in advance at the start of each billing period. Payments are processed by Mollie B.V. (mollie.com) on our behalf. By subscribing, you authorize Mollie to charge your chosen payment method on a recurring monthly basis.</p>
+
+<p><strong>Cancellation.</strong> You may cancel your subscription at any time from your workspace settings. Cancellation takes effect at the end of the current billing period. You retain access to the paid features until that date, after which your workspace reverts to the free tier. We do not issue partial refunds for unused time within a billing period.</p>
+
+<p><strong>Failed payments.</strong> If a payment fails, we will attempt to notify you by email. Continued failure to pay may result in your subscription being downgraded to the free tier.</p>
+
+<p><strong>Pricing changes.</strong> We reserve the right to change pricing with at least 30 days' notice. Changes will not affect the current billing period of active subscriptions.</p>
+
+<p><strong>Right of withdrawal.</strong> Under EU consumer law, you ordinarily have a 14-day right of withdrawal for digital services. However, when you start a subscription, you expressly request that the service begin immediately. By confirming your purchase, you acknowledge that you lose your right of withdrawal once the subscription has started and confirm that you have been informed of this in advance, in accordance with Article 16(m) of EU Directive 2011/83/EU.</p>
 
 <h2>10. Data and Privacy</h2>
 <p>Your use of margin is also governed by our Privacy Policy, which describes how we collect, use, and protect your personal data. By using the Service, you acknowledge that you have read and understood the Privacy Policy.</p>

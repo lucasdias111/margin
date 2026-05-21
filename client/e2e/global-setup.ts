@@ -192,6 +192,22 @@ export default async function globalSetup(_config: FullConfig): Promise<void> {
     await apiPost(`invites/join/${joinCode}`, bobToken)
   }
 
+  // ── Evict stale Carol accounts left over from previous runs ──────────────
+  // The free tier allows 10 members. Each run creates a new carol-{ts}@e2e.margin,
+  // which accumulates until the cap is hit and Carol's join returns 402.
+  const marginDetails: any = await apiGet(`margins/get_margin/${margin.marginId}`, aliceToken)
+  const staleCarols: any[] = (marginDetails.members ?? []).filter(
+    (m: any) => /^carol\d+$/.test(m.user?.handle ?? ''),
+  )
+  await Promise.all(
+    staleCarols.map((m: any) =>
+      apiPost('margins/remove_margin_member', aliceToken, {
+        marginId: margin.marginId,
+        userIdToRemove: m.user.id,
+      }),
+    ),
+  )
+
   // ── Space ─────────────────────────────────────────────────────────────────────
   const spaces: any[] = await apiGet(`spaces/get_all_spaces_for_user/${margin.marginId}`, aliceToken)
   let space = spaces.find((s: any) => s.spaceName === 'E2E Test Space')

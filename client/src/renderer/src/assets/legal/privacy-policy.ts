@@ -50,9 +50,10 @@ export const privacyPolicyHtml = `
   <tbody>
     <tr><td>Hetzner Online GmbH</td><td>Server hosting and object storage</td><td>All service data</td><td>Germany (EU)</td></tr>
     <tr><td>Scaleway (Iliad Group)</td><td>Transactional email delivery</td><td>Email addresses</td><td>France (EU)</td></tr>
+    <tr><td>Mollie B.V.</td><td>Payment processing and subscription management</td><td>Name, email address, billing and transaction data</td><td>Netherlands (EU)</td></tr>
   </tbody>
 </table>
-<p>Both sub-processors are located within the EU. No personal data is transferred outside the European Economic Area.</p>
+<p>All sub-processors are located within the EU. No personal data is transferred outside the European Economic Area. Mollie acts as an independent data controller for payment data they collect directly; their privacy policy is available at mollie.com/privacy.</p>
 
 <h2>6. Data Retention</h2>
 <p>We retain your data for as long as your account is active. Messages and content remain stored until you or your organization's administrator deletes them, or until you delete your account. Upon account deletion, your personal data will be removed within 30 days, except where retention is required by law.</p>

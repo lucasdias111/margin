@@ -53,6 +53,10 @@
   function goToRegister(): void {
     push('/register')
   }
+
+  function goToForgotPassword(): void {
+    push('/forgot-password')
+  }
 </script>
 
 <div class="page">
@@ -86,6 +90,10 @@
           bind:value={password}
           autocomplete="current-password"
         />
+      </div>
+
+      <div class="forgot-row">
+        <button class="forgot-link" type="button" onclick={goToForgotPassword}>Forgot password?</button>
       </div>
 
       <div class="checkboxes">
@@ -287,6 +295,27 @@
     to {
       transform: rotate(360deg);
     }
+  }
+
+  .forgot-row {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: -4px;
+  }
+
+  .forgot-link {
+    background: none;
+    border: none;
+    padding: 0;
+    font-size: 12px;
+    color: #888480;
+    cursor: pointer;
+    font-family: inherit;
+    text-decoration: underline;
+  }
+
+  .forgot-link:hover {
+    color: #1a1a1a;
   }
 
   .divider {
