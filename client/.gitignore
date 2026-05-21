@@ -8,3 +8,6 @@ out
 .vscode/
 release.sh
 .env
+.e2e-seed.json
+playwright-report/
+test-results/

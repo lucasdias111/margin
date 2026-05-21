@@ -1,0 +1,37 @@
+import { expect, test } from '../fixtures'
+import { HomePage } from '../pages/HomePage'
+
+test.describe('Direct messages', () => {
+  test('New conversation modal finds a user by handle', async ({ authedPage, seed }) => {
+    const home = new HomePage(authedPage)
+    await home.goToPrivate()
+
+    await authedPage.locator('.search-row .but.primary').click()
+
+    await authedPage.locator('#handle-input').fill(seed.bob.handle)
+    await authedPage.getByRole('button', { name: 'Find' }).click()
+
+    await expect(authedPage.locator('.name', { hasText: seed.bob.displayName })).toBeVisible({
+      timeout: 6000
+    })
+  })
+
+  test('Alice sends a message that Bob sees', async ({ twoUsers }) => {
+    const { alice: alicePage, bob: bobPage, seed } = twoUsers
+    const msg = `Hello Bob ${Date.now()}`
+
+    const aliceHome = new HomePage(alicePage)
+    await aliceHome.goToPrivate()
+    await alicePage.locator('.user-button', { hasText: seed.bob.displayName }).click()
+
+    await aliceHome.sendMessage(msg)
+
+    const bobHome = new HomePage(bobPage)
+    await bobHome.goToPrivate()
+    await bobPage.locator('.user-button', { hasText: seed.alice.displayName }).click()
+
+    await expect(bobPage.locator('.bubble p.text', { hasText: msg })).toBeVisible({
+      timeout: 10000
+    })
+  })
+})

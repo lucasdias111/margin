@@ -5,6 +5,7 @@ import path from 'path'
 export default defineConfig({
   root: 'src/renderer',
   plugins: [svelte()],
+  server: { port: 5274 },
   resolve: {
     alias: {
       $src: path.resolve(__dirname, 'src/renderer/src'),

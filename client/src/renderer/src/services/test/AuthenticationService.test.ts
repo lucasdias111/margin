@@ -355,4 +355,31 @@ describe('AuthenticationService', () => {
       expect(sessionStorage.getItem('authToken')).toBeNull()
     })
   })
+
+  describe('forgotPassword', () => {
+    it('calls unauthenticatedPost with email and correct endpoint', async () => {
+      vi.mocked(api.unauthenticatedPost).mockResolvedValue({ ok: true } as Response)
+
+      await authenticationService.forgotPassword('alice@margin.chat')
+
+      expect(api.unauthenticatedPost).toHaveBeenCalledWith(
+        { email: 'alice@margin.chat' },
+        'auth/forgot-password'
+      )
+    })
+
+    it('resolves without throwing on ok response', async () => {
+      vi.mocked(api.unauthenticatedPost).mockResolvedValue({ ok: true } as Response)
+
+      await expect(authenticationService.forgotPassword('alice@margin.chat')).resolves.toBeUndefined()
+    })
+
+    it('throws on non-ok response', async () => {
+      vi.mocked(api.unauthenticatedPost).mockResolvedValue({ ok: false } as Response)
+
+      await expect(authenticationService.forgotPassword('alice@margin.chat')).rejects.toThrow(
+        'Request failed'
+      )
+    })
+  })
 })
