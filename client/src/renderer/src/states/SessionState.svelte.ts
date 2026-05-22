@@ -10,6 +10,10 @@ class SessionState {
   set currentUser(value: User | null) {
     this._currentUser = value
   }
+
+  clear(): void {
+    this._currentUser = null
+  }
 }
 
 export const sessionState = new SessionState()

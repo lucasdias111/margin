@@ -6,6 +6,10 @@ class SpaceState {
   setSpaces(spaces: Space[]): void {
     this.spaces = spaces
   }
+
+  clear(): void {
+    this.spaces = []
+  }
 }
 
 export const spaceState = new SpaceState()

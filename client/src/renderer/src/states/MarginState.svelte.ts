@@ -11,6 +11,11 @@ class MarginState {
   setMargins(margins: Margin[]): void {
     this.margins = margins
   }
+
+  clear(): void {
+    this.margins = []
+    this.isMemberOfAnyMargins = true
+  }
 }
 
 export const marginState = new MarginState()

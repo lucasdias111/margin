@@ -19,6 +19,10 @@ class ConversationInviteService {
   removePendingInvite(conversationId: number): void {
     this.pendingInvites = this.pendingInvites.filter((i) => i.conversation.id !== conversationId)
   }
+
+  clear(): void {
+    this.pendingInvites = []
+  }
 }
 
 export const conversationInviteService = new ConversationInviteService()

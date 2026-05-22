@@ -47,10 +47,14 @@
 
     let newContent = edited.content
     if (conversationsState.currentConversation?.type === 'DIRECT') {
-      newContent = await encryptionService.decryptMessage(
-        edited.content,
-        edited.user.id !== sessionState.currentUser?.id
-      )
+      try {
+        newContent = await encryptionService.decryptMessage(
+          edited.content,
+          edited.user.id !== sessionState.currentUser?.id
+        )
+      } catch {
+        newContent = '[Unable to decrypt]'
+      }
     }
 
     const updatedMessages = [...currentMessages]

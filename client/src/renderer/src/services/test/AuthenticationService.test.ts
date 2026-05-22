@@ -50,6 +50,7 @@ vi.mock('$src/states/CallState.svelte', () => ({
 
 vi.mock('$src/services/api', () => ({
   authenticatedPost: vi.fn(),
+  authenticatedPut: vi.fn(),
   setUnauthenticatedHandler: vi.fn(),
   unauthenticatedPost: vi.fn()
 }))
@@ -177,8 +178,9 @@ describe('AuthenticationService', () => {
       expect(sessionStorage.getItem('authToken')).toBeNull()
     })
 
-    it('skips private key decryption when encryption fields are missing', async () => {
+    it('regenerates and uploads encryption keys when fields are missing', async () => {
       const authResponse = buildAuthResponse({
+        publicKey: undefined,
         encryptedPrivateKey: undefined,
         salt: undefined,
         iv: undefined
@@ -186,12 +188,34 @@ describe('AuthenticationService', () => {
       vi.mocked(api.unauthenticatedPost).mockResolvedValue({
         json: async () => authResponse
       } as Response)
+      vi.mocked(encryptionService.generateKeyPairFromPassword).mockResolvedValue({
+        publicKey: 'new-pub-key',
+        privateKey: 'new-priv-key'
+      })
+      vi.mocked(encryptionService.encryptPrivateKey).mockResolvedValue({
+        encryptedKey: 'new-enc-priv-key',
+        salt: 'new-salt',
+        iv: 'new-iv'
+      })
+      vi.mocked(api.authenticatedPut).mockResolvedValue({ ok: true } as Response)
 
       await authenticationService.login('lucas@margin.chat', 'password123')
 
       expect(encryptionService.decryptPrivateKey).not.toHaveBeenCalled()
+      expect(encryptionService.generateKeyPairFromPassword).toHaveBeenCalledWith('password123')
+      expect(encryptionService.encryptPrivateKey).toHaveBeenCalledWith('new-priv-key', 'password123')
+      expect(api.authenticatedPut).toHaveBeenCalledWith(
+        {
+          publicKey: 'new-pub-key',
+          encryptedPrivateKey: 'new-enc-priv-key',
+          salt: 'new-salt',
+          iv: 'new-iv'
+        },
+        'auth/encryption-keys'
+      )
       expect(sessionStorage.getItem('authToken')).toBe('jwt-token-123')
-      expect(sessionStorage.getItem('privateKey')).toBeNull()
+      expect(sessionStorage.getItem('privateKey')).toBe('new-priv-key')
+      expect(sessionStorage.getItem('publicKey')).toBe('new-pub-key')
     })
 
     it('skips public key storage when publicKey is missing', async () => {

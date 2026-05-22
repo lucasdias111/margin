@@ -1,4 +1,4 @@
-import { authenticatedPost, setUnauthenticatedHandler, unauthenticatedPost } from './api'
+import { authenticatedPost, authenticatedPut, setUnauthenticatedHandler, unauthenticatedPost } from './api'
 import { encryptionService } from './EncryptionService'
 import { usersState } from '$src/states/UsersState.svelte.js'
 import { callState } from '$src/states/CallState.svelte'
@@ -9,6 +9,13 @@ import { webSocketService } from '$src/services/WebSocketService'
 import { push } from 'svelte-spa-router'
 import { isElectron } from '$src/utils/platformUtils'
 import { navigationService } from '$src/services/NavigationService'
+import { marginState } from '$src/states/MarginState.svelte'
+import { spaceState } from '$src/states/SpaceState.svelte'
+import { notificationState } from '$src/states/NotificationState.svelte'
+import { conversationsState } from '$src/states/ConversationsState.svelte'
+import { subscriptionState } from '$src/states/SubscriptionState.svelte'
+import { conversationInviteService } from '$src/states/UserListState.svelte'
+import { sessionState } from '$src/states/SessionState.svelte'
 
 class AuthenticationService {
   async login(email: string, password: string, keepLoggedIn: boolean = false): Promise<void> {
@@ -26,6 +33,8 @@ class AuthenticationService {
     sessionStorage.setItem('authToken', authResponse.token)
 
     let privateKey: string | undefined
+    let publicKey: string | undefined = authResponse.publicKey ?? undefined
+
     if (authResponse.encryptedPrivateKey && authResponse.salt && authResponse.iv) {
       privateKey = await encryptionService.decryptPrivateKey(
         authResponse.encryptedPrivateKey,
@@ -33,16 +42,32 @@ class AuthenticationService {
         authResponse.salt,
         authResponse.iv
       )
-      sessionStorage.setItem('privateKey', privateKey)
+    } else {
+      const regenerated = await this.regenerateEncryptionKeys(password)
+      privateKey = regenerated.privateKey
+      publicKey = regenerated.publicKey
     }
 
-    if (authResponse.publicKey) {
-      sessionStorage.setItem('publicKey', authResponse.publicKey)
+    sessionStorage.setItem('privateKey', privateKey)
+    if (publicKey) {
+      sessionStorage.setItem('publicKey', publicKey)
     }
 
-    if (keepLoggedIn && privateKey) {
+    if (keepLoggedIn) {
       await this.saveSession(authResponse.token, privateKey)
     }
+  }
+
+  private async regenerateEncryptionKeys(
+    password: string
+  ): Promise<{ publicKey: string; privateKey: string }> {
+    const { publicKey, privateKey } = await encryptionService.generateKeyPairFromPassword(password)
+    const { encryptedKey, salt, iv } = await encryptionService.encryptPrivateKey(privateKey, password)
+    await authenticatedPut(
+      { publicKey, encryptedPrivateKey: encryptedKey, salt, iv },
+      'auth/encryption-keys'
+    )
+    return { publicKey, privateKey }
   }
 
   async tryRestoreSession(): Promise<boolean> {
@@ -157,9 +182,20 @@ class AuthenticationService {
 
   public async clear(): Promise<void> {
     webSocketService.disconnect()
+    callState.endCall()
+
     usersState.reset()
     navigationService.reset()
-    callState.endCall()
+    marginState.clear()
+    spaceState.clear()
+    notificationState.clear()
+    conversationsState.clear()
+    subscriptionState.clear()
+    conversationInviteService.clear()
+    sessionState.clear()
+
+    sessionStorage.removeItem('privateKey')
+    sessionStorage.removeItem('publicKey')
 
     await this.clearSession()
     this.clearToken()

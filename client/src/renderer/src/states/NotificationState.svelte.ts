@@ -36,6 +36,11 @@ class NotificationState {
   getTotalUnseenNotifications(): number {
     return this.state.notifications.filter((n) => !n.seen).length
   }
+
+  clear(): void {
+    this.state.notifications = []
+    this.state.notificationsLoaded = false
+  }
 }
 
 export const notificationState = new NotificationState()

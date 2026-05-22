@@ -64,6 +64,11 @@ export async function authenticatedPatch<T>(body: T, url: string): Promise<Respo
   return fetchPatch(url, body, headers)
 }
 
+export async function authenticatedPut<T>(body: T, url: string): Promise<Response> {
+  const headers = await getAuthHeaders({ 'Content-Type': 'application/json' })
+  return fetchPut(url, body, headers)
+}
+
 export async function authenticatedDelete<T>(body: T, url: string): Promise<Response> {
   const headers = await getAuthHeaders({ 'Content-Type': 'application/json' })
   return fetchDelete(url, body, headers)
@@ -131,6 +136,30 @@ async function fetchPatch<T>(url: string, body: T, headers: HeadersInit): Promis
   try {
     response = await fetch(API_CONFIG.baseUrl + url, {
       method: 'PATCH',
+      headers,
+      body: body instanceof FormData ? body : JSON.stringify(body)
+    })
+  } catch (error) {
+    errorService.reportError('Network error — could not reach server')
+    throw error
+  }
+
+  if (await isResponseUnauthenticated(response)) {
+    return response
+  }
+
+  if (!response.ok) {
+    await handleNonOkResponse(response)
+  }
+
+  return response
+}
+
+async function fetchPut<T>(url: string, body: T, headers: HeadersInit): Promise<Response> {
+  let response: Response | null = null
+  try {
+    response = await fetch(API_CONFIG.baseUrl + url, {
+      method: 'PUT',
       headers,
       body: body instanceof FormData ? body : JSON.stringify(body)
     })

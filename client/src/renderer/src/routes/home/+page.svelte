@@ -193,10 +193,14 @@
     const decryptedUsers = await Promise.all(
       users.map(async (recentUser) => {
         if (!recentUser.lastMessage) return recentUser
-        recentUser.lastMessage = await encryptionService.decryptMessage(
-          recentUser.lastMessage,
-          recentUser.lastMessageIncoming
-        )
+        try {
+          recentUser.lastMessage = await encryptionService.decryptMessage(
+            recentUser.lastMessage,
+            recentUser.lastMessageIncoming
+          )
+        } catch {
+          recentUser.lastMessage = '[Unable to decrypt]'
+        }
         return recentUser
       })
     )
