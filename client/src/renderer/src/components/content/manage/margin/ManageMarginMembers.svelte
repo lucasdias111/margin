@@ -4,9 +4,9 @@
   import ListView from '$src/components/common/datatables/ListView.svelte'
   import { formatTimestamp } from '$src/utils/DateUtils'
   import type { User } from '$src/interfaces/User'
-  import { errorService } from '$src/services/ErrorService'
   import { marginInviteService } from '$src/services/MarginInviteService'
   import Button from '$src/components/common/buttons/Button.svelte'
+  import { sessionState } from '$src/states/SessionState.svelte'
 
   interface Props {
     margin: Margin
@@ -19,7 +19,22 @@
   let addMemberOpen = $state(false)
   let inviteLink = $state<string | null>(null)
   let inviteLoading = $state(false)
-  const marginRoles = Object.values(MarginRole)
+
+  let currentUserRole = $derived(
+    margin.members.find((m) => m.user.id === sessionState.currentUser?.id)?.role ??
+    MarginRole.MEMBER
+  )
+
+  let assignableRoles = $derived(
+    currentUserRole === MarginRole.OWNER
+      ? Object.values(MarginRole)
+      : [MarginRole.MEMBER, MarginRole.ADMIN]
+  )
+
+  function canEditRole(member: MarginMember): boolean {
+    if (member.user.id === sessionState.currentUser?.id) return false
+    return roleRank[currentUserRole] < roleRank[member.role]
+  }
 
   async function handleCreateInviteLink(): Promise<void> {
     inviteLoading = true
@@ -40,12 +55,6 @@
 
   function handleRoleSelectChange(member: MarginMember, e: Event): void {
     const value = (e.currentTarget as HTMLSelectElement).value as MarginRole
-    if (
-      roleRank[value] > roleRank[member.role] &&
-      member.user?.id === sessionState.currentUser?.id &&
-      margin.members.filter((m) => m.role === 'ADMIN').length === 1
-    )
-      return errorService.reportError(`At least one admin is required.`)
     onUpdateMemberRole({ ...member, role: value })
   }
 </script>
@@ -84,15 +93,19 @@
     {/if}
 
     {#snippet roleCell(member)}
-      <select
-        class="role-select"
-        bind:value={member.role}
-        onchange={(e) => handleRoleSelectChange(member, e)}
-      >
-        {#each marginRoles as role (role)}
-          <option value={role}>{role}</option>
-        {/each}
-      </select>
+      {#if canEditRole(member)}
+        <select
+          class="role-select"
+          bind:value={member.role}
+          onchange={(e) => handleRoleSelectChange(member, e)}
+        >
+          {#each assignableRoles as role (role)}
+            <option value={role}>{role}</option>
+          {/each}
+        </select>
+      {:else}
+        <span class="role-label">{member.role}</span>
+      {/if}
     {/snippet}
 
     <ListView
@@ -169,6 +182,11 @@
 
   .role-select:focus {
     border-color: #f5a623;
+  }
+
+  .role-label {
+    font-size: 0.85rem;
+    color: #2d2d2d;
   }
 
   .invite-link-bar {

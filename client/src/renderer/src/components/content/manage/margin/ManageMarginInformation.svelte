@@ -3,6 +3,7 @@
   import UploadImageButton from '$src/components/common/buttons/UploadImageButton.svelte'
   import MarginIcon from '$src/components/content/margin/MarginIcon.svelte'
   import Button from '$src/components/common/buttons/Button.svelte'
+  import ConfirmationModal from '$src/components/common/modals/ConfirmationModal.svelte'
 
   interface Props {
     margin: Margin
@@ -11,6 +12,7 @@
   }
 
   let { margin, onSaveInfo, onDeleteMargin }: Props = $props()
+  let showDeleteConfirm = $state(false)
   let icon = $state<File | null>(null)
   let previewUrl = $state<string | null>()
   let marginIcon = $state<string | null>(null)
@@ -103,9 +105,19 @@
       <span>Delete margin</span>
       <p>Permanently delete this margin, all its spaces, channels, and members.</p>
     </div>
-    <Button buttonType="delete" size="small" text="Delete margin" onClick={handleDelete} />
+    <Button buttonType="delete" size="small" text="Delete margin" onClick={() => (showDeleteConfirm = true)} />
   </div>
 </div>
+
+<ConfirmationModal
+  open={showDeleteConfirm}
+  title="Delete margin"
+  message="Permanently delete "{margin.marginName}", including all its spaces, channels, and members. This cannot be undone."
+  confirmLabel="Delete margin"
+  variant="delete"
+  onConfirm={handleDelete}
+  onClose={() => (showDeleteConfirm = false)}
+/>
 
 <style>
   .margin-information {

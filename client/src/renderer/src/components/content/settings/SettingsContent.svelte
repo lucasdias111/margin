@@ -257,7 +257,7 @@
           Permanently delete your account and all associated data. This action cannot be undone.
         </span>
       </div>
-      <Button buttonType="delete" size="small" text="Delete account" onClick={onDeleteAccount} />
+      <Button buttonType="delete" size="small" text="Delete account" onClick={() => (showDeleteConfirm = true)} />
     </div>
   </div>
 </div>

@@ -11,6 +11,7 @@
   import { privacyPolicyHtml } from '$src/assets/legal/privacy-policy'
   import { termsOfServiceHtml } from '$src/assets/legal/terms-of-service'
   import Button from '$src/components/common/buttons/Button.svelte'
+  import Tooltip from '$src/components/common/Tooltip.svelte'
 
   let handle = $state('')
   let displayName = $state('')
@@ -39,6 +40,15 @@
   let passwordTouched = $state(false)
   let repeatPasswordTouched = $state(false)
   let policyTouched = $state(false)
+  let focusedField = $state<string | null>(null)
+
+  const fieldHints: Record<string, string> = {
+    displayName: 'This is how others see you in Margin. You can change it any time.',
+    handle: 'Unique username for @mentions. Letters, numbers, dots, hyphens, underscores. Must start with a letter.',
+    email: 'Used to sign in and recover your account. You\'ll need to verify it.',
+    password: 'At least 8 characters.',
+    repeatPassword: 'Re-enter your password to confirm they match.'
+  }
 
   function deriveHandleError(value: string): string | null {
     if (value.length === 0) return null
@@ -206,7 +216,10 @@
             bind:value={displayName}
             required
             autocomplete="name"
+            onfocus={() => (focusedField = 'displayName')}
+            onblur={() => (focusedField = null)}
           />
+          <Tooltip open={focusedField === 'displayName'} text={fieldHints.displayName} />
         </div>
 
         <div class="field">
@@ -221,11 +234,13 @@
               placeholder="Handle"
               bind:value={handle}
               oninput={sanitizeHandle}
-              onblur={() => (handleTouched = true)}
+              onfocus={() => (focusedField = 'handle')}
+              onblur={() => { handleTouched = true; focusedField = null }}
               required
               autocomplete="handle"
             />
           </div>
+          <Tooltip open={focusedField === 'handle'} text={fieldHints.handle} />
           {#if handleTouched && handleError}
             <span class="error-text">{handleError}</span>
           {/if}
@@ -242,7 +257,10 @@
             bind:value={email}
             required
             autocomplete="email"
+            onfocus={() => (focusedField = 'email')}
+            onblur={() => (focusedField = null)}
           />
+          <Tooltip open={focusedField === 'email'} text={fieldHints.email} />
         </div>
 
         <div class="field">
@@ -255,10 +273,12 @@
             name="password"
             placeholder="••••••••"
             bind:value={password}
-            onblur={() => (passwordTouched = true)}
+            onfocus={() => (focusedField = 'password')}
+            onblur={() => { passwordTouched = true; focusedField = null }}
             required
             autocomplete="new-password"
           />
+          <Tooltip open={focusedField === 'password'} text={fieldHints.password} />
           {#if passwordTouched && passwordError}
             <span class="error-text">{passwordError}</span>
           {/if}
@@ -274,10 +294,12 @@
             name="repeatPassword"
             placeholder="••••••••"
             bind:value={repeatPassword}
-            onblur={() => (repeatPasswordTouched = true)}
+            onfocus={() => (focusedField = 'repeatPassword')}
+            onblur={() => { repeatPasswordTouched = true; focusedField = null }}
             required
             autocomplete="new-password"
           />
+          <Tooltip open={focusedField === 'repeatPassword'} text={fieldHints.repeatPassword} />
           {#if repeatPasswordTouched && repeatPasswordError}
             <span class="error-text">{repeatPasswordError}</span>
           {/if}
@@ -409,6 +431,7 @@
   }
 
   .field {
+    position: relative;
     display: flex;
     flex-direction: column;
     gap: 6px;
