@@ -11,7 +11,7 @@ Check the [wiki](https://codeberg.org/margin/margin-desktop/wiki) or open an [is
 
 ## Found a bug?
 
-Please search [existing issues](https://github.com/margin-chat/margin-desktop/issues) before opening a new one.
+Please search [existing issues](https://codeberg.org/margin/margin-desktop/issues) before opening a new one.
 
 ## Contributing
 
