@@ -171,9 +171,11 @@
   })
 
   $effect(() => {
-    void messages.length
+    const len = messages.length
     if (!initialScrollDone || isPrepending || isLoading) return
-    if (isAtBottom) {
+    const lastMessage = messages[len - 1]
+    const isMine = lastMessage?.user?.id === sessionState.currentUser?.id
+    if (isAtBottom || isMine) {
       untrack(() => {
         tick().then(() => scrollToBottom('smooth'))
       })

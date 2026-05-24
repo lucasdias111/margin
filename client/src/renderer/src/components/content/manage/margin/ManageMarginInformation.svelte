@@ -112,7 +112,7 @@
 <ConfirmationModal
   open={showDeleteConfirm}
   title="Delete margin"
-  message="Permanently delete "{margin.marginName}", including all its spaces, channels, and members. This cannot be undone."
+  message={`Permanently delete "${margin.marginName}", including all its spaces, channels, and members. This cannot be undone.`}
   confirmLabel="Delete margin"
   variant="delete"
   onConfirm={handleDelete}

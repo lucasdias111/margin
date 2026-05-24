@@ -114,6 +114,16 @@ class CallState {
     this.groupData.session.videoProducer = producer
   }
 
+  setGroupVideoQuality(height: number | null): void {
+    if (!this.isGroupCall || !this.groupData?.session) return
+    this.groupData.session.preferredVideoHeight = height
+  }
+
+  setGroupScreenShareQuality(height: number | null): void {
+    if (!this.isGroupCall || !this.groupData?.session) return
+    this.groupData.session.preferredScreenHeight = height
+  }
+
   setGroupScreenShareProducer(producer: Producer | null): void {
     if (!this.isGroupCall || !this.groupData) return
     this.groupData.screenShareProducer = producer

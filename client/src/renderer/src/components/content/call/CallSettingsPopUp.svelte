@@ -3,12 +3,27 @@
   import { deviceState } from '$src/states/DeviceState.svelte'
   import Icon from '$src/components/common/icons/Icon.svelte'
   import { deviceService } from '$src/services/DeviceService'
+  import { callState } from '$src/states/CallState.svelte'
+  import { channelCallService } from '$src/services/call/ChannelCallService'
 
   interface Props {
     onClose: () => void
   }
 
   let { onClose }: Props = $props()
+
+  const QUALITY_OPTIONS = [
+    { label: '360p', height: 360 },
+    { label: '480p', height: 480 },
+    { label: '720p', height: 720 },
+    { label: '1080p', height: 1080 }
+  ]
+
+  const session = $derived(callState.groupCallState?.session ?? null)
+  const maxVideoHeight = $derived(session?.maxVideoHeight ?? null)
+  const availableQualities = $derived(
+    QUALITY_OPTIONS.filter((q) => maxVideoHeight === null || q.height <= maxVideoHeight)
+  )
 
   function handleAudioChange(e: Event): void {
     const deviceId = (e.currentTarget as HTMLSelectElement).value
@@ -18,6 +33,16 @@
   function handleVideoChange(e: Event): void {
     const deviceId = (e.currentTarget as HTMLSelectElement).value
     deviceService.switchVideoDevice(deviceId)
+  }
+
+  function handleVideoQualityChange(e: Event): void {
+    const value = (e.currentTarget as HTMLSelectElement).value
+    channelCallService.setVideoQuality(value === '' ? null : Number(value))
+  }
+
+  function handleScreenQualityChange(e: Event): void {
+    const value = (e.currentTarget as HTMLSelectElement).value
+    channelCallService.setScreenShareQuality(value === '' ? null : Number(value))
   }
 </script>
 
@@ -59,7 +84,37 @@
     </div>
   {/if}
 
-  {#if deviceState.audioInputs.length === 0 && deviceState.videoInputs.length === 0}
+  {#if session !== null}
+    <div class="device-group">
+      <label class="device-label">Camera Quality</label>
+      <select
+        class="device-select"
+        value={session.preferredVideoHeight ?? ''}
+        onchange={handleVideoQualityChange}
+      >
+        <option value="">Auto</option>
+        {#each availableQualities as option (option.height)}
+          <option value={option.height}>{option.label}</option>
+        {/each}
+      </select>
+    </div>
+
+    <div class="device-group">
+      <label class="device-label">Screen Share Quality</label>
+      <select
+        class="device-select"
+        value={session.preferredScreenHeight ?? ''}
+        onchange={handleScreenQualityChange}
+      >
+        <option value="">Auto</option>
+        {#each availableQualities as option (option.height)}
+          <option value={option.height}>{option.label}</option>
+        {/each}
+      </select>
+    </div>
+  {/if}
+
+  {#if deviceState.audioInputs.length === 0 && deviceState.videoInputs.length === 0 && session === null}
     <p class="no-devices">No devices found</p>
   {/if}
 </div>

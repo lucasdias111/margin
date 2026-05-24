@@ -185,7 +185,7 @@ class ChannelCallService {
         return
       }
 
-      const { sfuUrl, roomToken } = await response.json()
+      const { sfuUrl, roomToken, maxVideoHeight } = await response.json()
       const sfuWs = await this.connectToWebSocket(sfuUrl.replace('http', 'ws'))
 
       const rtpCapabilities = await this.getRtpCapabilities(sfuWs, channelId, roomToken)
@@ -227,7 +227,10 @@ class ChannelCallService {
         receiveTransport,
         localStream,
         audioProducer,
-        videoProducer: null
+        videoProducer: null,
+        maxVideoHeight: maxVideoHeight ?? null,
+        preferredVideoHeight: null,
+        preferredScreenHeight: null
       })
       callState.setStatus('connected')
 
@@ -267,7 +270,11 @@ class ChannelCallService {
       callState.setGroupVideoEnabled(false)
     } else {
       try {
-        const videoStream = await navigator.mediaDevices.getUserMedia({ video: true })
+        const effectiveVideoHeight = session.preferredVideoHeight ?? session.maxVideoHeight
+        const videoConstraints: MediaTrackConstraints | boolean = effectiveVideoHeight
+          ? { height: { max: effectiveVideoHeight } }
+          : true
+        const videoStream = await navigator.mediaDevices.getUserMedia({ video: videoConstraints })
         const videoTrack = videoStream.getVideoTracks()[0]
         const producer: Producer = await session.sendTransport.produce({
           track: videoTrack,
@@ -301,8 +308,12 @@ class ChannelCallService {
     if (!session) return
 
     try {
+      const effectiveScreenHeight = session.preferredScreenHeight ?? session.maxVideoHeight
+      const screenVideoConstraints: MediaTrackConstraints | boolean = effectiveScreenHeight
+        ? { height: { max: effectiveScreenHeight } }
+        : true
       const screenStream = await navigator.mediaDevices.getDisplayMedia({
-        video: true,
+        video: screenVideoConstraints,
         audio: false
       })
       const screenTrack = screenStream.getVideoTracks()[0]
@@ -337,6 +348,31 @@ class ChannelCallService {
     group.screenShareProducer.close()
     callState.setGroupScreenShareProducer(null)
     callState.setGroupScreenSharing(false)
+  }
+
+  async setVideoQuality(height: number | null): Promise<void> {
+    const session = callState.groupCallState?.session
+    if (!session) return
+    callState.setGroupVideoQuality(height)
+    if (!session.videoProducer) return
+    const effective = height ?? session.maxVideoHeight
+    const constraint: MediaTrackConstraints | boolean = effective ? { height: { max: effective } } : true
+    const stream = await navigator.mediaDevices.getUserMedia({ video: constraint })
+    const newTrack = stream.getVideoTracks()[0]
+    await session.videoProducer.replaceTrack({ track: newTrack })
+    session.localStream.getVideoTracks().forEach((t) => t.stop())
+  }
+
+  async setScreenShareQuality(height: number | null): Promise<void> {
+    const session = callState.groupCallState?.session
+    if (!session) return
+    callState.setGroupScreenShareQuality(height)
+    const screenProducer = callState.groupCallState?.screenShareProducer
+    if (!screenProducer?.track) return
+    const effective = height ?? session.maxVideoHeight
+    if (effective) {
+      await screenProducer.track.applyConstraints({ height: { max: effective } })
+    }
   }
 
   endChannelCall(): void {
