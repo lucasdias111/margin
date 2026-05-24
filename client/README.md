@@ -7,7 +7,7 @@ video chat.
 
 ## Got a question?
 
-Check the [docs](../docs/) or open a [discussion](https://github.com/margin-chat/margin-desktop/discussions).
+Check the [wiki](https://codeberg.org/margin/margin-desktop/wiki) or open an [issue](https://codeberg.org/margin/margin-desktop/issues).
 
 ## Found a bug?
 
@@ -15,7 +15,7 @@ Please search [existing issues](https://github.com/margin-chat/margin-desktop/is
 
 ## Contributing
 
-Open a [discussion](https://github.com/margin-chat/margin-desktop/discussions) or send a pull request. There are plenty
+Open an [issue](https://codeberg.org/margin/margin-desktop/issues) or send a pull request. There are plenty
 of ways to help that don't require writing code.
 
 ## License
