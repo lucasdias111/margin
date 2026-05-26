@@ -61,7 +61,7 @@ class AuthenticationService {
   private async regenerateEncryptionKeys(
     password: string
   ): Promise<{ publicKey: string; privateKey: string }> {
-    const { publicKey, privateKey } = await encryptionService.generateKeyPairFromPassword(password)
+    const { publicKey, privateKey } = await encryptionService.generateKeyPair()
     const { encryptedKey, salt, iv } = await encryptionService.encryptPrivateKey(privateKey, password)
     await authenticatedPut(
       { publicKey, encryptedPrivateKey: encryptedKey, salt, iv },
@@ -122,7 +122,7 @@ class AuthenticationService {
     email: string,
     profilePicture?: File
   ): Promise<Response> {
-    const { publicKey, privateKey } = await encryptionService.generateKeyPairFromPassword(password)
+    const { publicKey, privateKey } = await encryptionService.generateKeyPair()
 
     const { encryptedKey, salt, iv } = await encryptionService.encryptPrivateKey(
       privateKey,

@@ -27,30 +27,7 @@ class EncryptionService {
     return data.publicKey
   }
 
-  async generateKeyPairFromPassword(
-    password: string
-  ): Promise<{ publicKey: string; privateKey: string }> {
-    const encoder = new TextEncoder()
-    const passwordData = encoder.encode(password)
-
-    const seedBuffer = await crypto.subtle.digest('SHA-256', passwordData)
-    const seed = new Uint8Array(seedBuffer)
-
-    const baseKey = await crypto.subtle.importKey('raw', passwordData, 'PBKDF2', false, [
-      'deriveBits'
-    ])
-
-    await crypto.subtle.deriveBits(
-      {
-        name: 'PBKDF2',
-        salt: seed,
-        iterations: 100000,
-        hash: 'SHA-256'
-      },
-      baseKey,
-      256
-    )
-
+  async generateKeyPair(): Promise<{ publicKey: string; privateKey: string }> {
     const keyPair = await crypto.subtle.generateKey(
       {
         name: 'RSA-OAEP',

@@ -13,7 +13,7 @@ import { navigationService } from '$src/services/NavigationService'
 vi.mock('$src/services/EncryptionService', () => ({
   encryptionService: {
     decryptPrivateKey: vi.fn(),
-    generateKeyPairFromPassword: vi.fn(),
+    generateKeyPair: vi.fn(),
     encryptPrivateKey: vi.fn()
   }
 }))
@@ -188,7 +188,7 @@ describe('AuthenticationService', () => {
       vi.mocked(api.unauthenticatedPost).mockResolvedValue({
         json: async () => authResponse
       } as Response)
-      vi.mocked(encryptionService.generateKeyPairFromPassword).mockResolvedValue({
+      vi.mocked(encryptionService.generateKeyPair).mockResolvedValue({
         publicKey: 'new-pub-key',
         privateKey: 'new-priv-key'
       })
@@ -202,7 +202,7 @@ describe('AuthenticationService', () => {
       await authenticationService.login('lucas@margin.chat', 'password123')
 
       expect(encryptionService.decryptPrivateKey).not.toHaveBeenCalled()
-      expect(encryptionService.generateKeyPairFromPassword).toHaveBeenCalledWith('password123')
+      expect(encryptionService.generateKeyPair).toHaveBeenCalled()
       expect(encryptionService.encryptPrivateKey).toHaveBeenCalledWith('new-priv-key', 'password123')
       expect(api.authenticatedPut).toHaveBeenCalledWith(
         {
@@ -257,7 +257,7 @@ describe('AuthenticationService', () => {
 
   describe('register', () => {
     it('generates keys, encrypts private key, and sends registration', async () => {
-      vi.mocked(encryptionService.generateKeyPairFromPassword).mockResolvedValue({
+      vi.mocked(encryptionService.generateKeyPair).mockResolvedValue({
         publicKey: 'generated-pub',
         privateKey: 'generated-priv'
       })
@@ -278,7 +278,7 @@ describe('AuthenticationService', () => {
         'john@test.com'
       )
 
-      expect(encryptionService.generateKeyPairFromPassword).toHaveBeenCalledWith('secret123')
+      expect(encryptionService.generateKeyPair).toHaveBeenCalled()
       expect(encryptionService.encryptPrivateKey).toHaveBeenCalledWith(
         'generated-priv',
         'secret123'
@@ -295,7 +295,7 @@ describe('AuthenticationService', () => {
     })
 
     it('includes profile picture in form data when provided', async () => {
-      vi.mocked(encryptionService.generateKeyPairFromPassword).mockResolvedValue({
+      vi.mocked(encryptionService.generateKeyPair).mockResolvedValue({
         publicKey: 'pub',
         privateKey: 'priv'
       })
@@ -321,7 +321,7 @@ describe('AuthenticationService', () => {
     })
 
     it('does not store keys on failed registration', async () => {
-      vi.mocked(encryptionService.generateKeyPairFromPassword).mockResolvedValue({
+      vi.mocked(encryptionService.generateKeyPair).mockResolvedValue({
         publicKey: 'pub',
         privateKey: 'priv'
       })

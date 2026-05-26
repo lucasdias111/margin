@@ -35,9 +35,9 @@ describe('EncryptionService', () => {
     })
   })
 
-  describe('generateKeyPairFromPassword', () => {
+  describe('generateKeyPair', () => {
     it('returns a public and private key pair', async () => {
-      const result = await encryptionService.generateKeyPairFromPassword('test-password')
+      const result = await encryptionService.generateKeyPair()
 
       expect(result.publicKey).toBeDefined()
       expect(result.publicKey.length).toBeGreaterThan(0)
@@ -46,7 +46,7 @@ describe('EncryptionService', () => {
     })
 
     it('returns base64-encoded strings', async () => {
-      const result = await encryptionService.generateKeyPairFromPassword('test-password')
+      const result = await encryptionService.generateKeyPair()
 
       expect(() => atob(result.publicKey)).not.toThrow()
       expect(() => atob(result.privateKey)).not.toThrow()
@@ -98,9 +98,8 @@ describe('EncryptionService', () => {
   describe('encryptMessage / decryptMessage', () => {
     it('round-trips: recipient can decrypt a message', async () => {
       const { publicKey: recipientPub, privateKey: recipientPriv } =
-        await encryptionService.generateKeyPairFromPassword('recipient-pass')
-      const { publicKey: senderPub } =
-        await encryptionService.generateKeyPairFromPassword('sender-pass')
+        await encryptionService.generateKeyPair()
+      const { publicKey: senderPub } = await encryptionService.generateKeyPair()
 
       const encrypted = await encryptionService.encryptMessage(
         'Hello Kasper!',
@@ -116,10 +115,9 @@ describe('EncryptionService', () => {
     })
 
     it('round-trips: sender can decrypt their own message', async () => {
-      const { publicKey: recipientPub } =
-        await encryptionService.generateKeyPairFromPassword('recipient-pass')
+      const { publicKey: recipientPub } = await encryptionService.generateKeyPair()
       const { publicKey: senderPub, privateKey: senderPriv } =
-        await encryptionService.generateKeyPairFromPassword('sender-pass')
+        await encryptionService.generateKeyPair()
 
       const encrypted = await encryptionService.encryptMessage(
         'Hello from me',
@@ -141,8 +139,8 @@ describe('EncryptionService', () => {
     })
 
     it('produces a base64-encoded payload', async () => {
-      const { publicKey: pub1 } = await encryptionService.generateKeyPairFromPassword('pass1')
-      const { publicKey: pub2 } = await encryptionService.generateKeyPairFromPassword('pass2')
+      const { publicKey: pub1 } = await encryptionService.generateKeyPair()
+      const { publicKey: pub2 } = await encryptionService.generateKeyPair()
 
       const encrypted = await encryptionService.encryptMessage('test', pub1, pub2)
 
@@ -157,7 +155,7 @@ describe('EncryptionService', () => {
 
   describe('importPublicKey', () => {
     it('imports a valid base64 public key as CryptoKey', async () => {
-      const { publicKey } = await encryptionService.generateKeyPairFromPassword('test')
+      const { publicKey } = await encryptionService.generateKeyPair()
 
       const cryptoKey = await encryptionService.importPublicKey(publicKey)
 
@@ -170,7 +168,7 @@ describe('EncryptionService', () => {
 
   describe('importPrivateKey', () => {
     it('imports a valid base64 private key as CryptoKey', async () => {
-      const { privateKey } = await encryptionService.generateKeyPairFromPassword('test')
+      const { privateKey } = await encryptionService.generateKeyPair()
 
       const cryptoKey = await encryptionService.importPrivateKey(privateKey)
 
