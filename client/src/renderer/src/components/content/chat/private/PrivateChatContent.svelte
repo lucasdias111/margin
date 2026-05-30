@@ -1,18 +1,23 @@
 <script lang="ts">
   import { conversationsState, defaultMeta } from '$src/states/ConversationsState.svelte.js'
   import { chatService } from '$src/services/ChatService'
+  import type { DirectConversation } from '$src/interfaces/Conversation'
   import { callService } from '$src/services/call/CallService'
   import ChatInput from '$src/components/common/chat/input/ChatInput.svelte'
   import MessagesContainer from '$src/components/common/chat/MessagesContainer.svelte'
   import PrivateChatHeader from '$src/components/content/chat/private/PrivateChatHeader.svelte'
   import { navigationState } from '$src/states/NavigationState.svelte'
   import { sessionState } from '$src/states/SessionState.svelte'
+  import { subscriptionState } from '$src/states/SubscriptionState.svelte'
   import { untrack } from 'svelte'
   import { usersState } from '$src/states/UsersState.svelte'
   import type { User } from '$src/interfaces/User'
 
   let messageInput = $state('')
   let chatInputRef = $state<ChatInput | null>(null)
+  const canUploadFiles = $derived(
+    (subscriptionState.subscription?.limits.maxStorageGb ?? 1) > 0
+  )
   const activeConversation = $derived(
     conversationsState.currentConversation
       ? conversationsState.byId.get(conversationsState.currentConversation.id)
@@ -50,14 +55,16 @@
   async function handleSubmitMessage(
     event: SubmitEvent,
     _files: File[],
-    _inlineFiles: File[],
+    inlineFiles: File[],
     gifUrl: string | null
   ): Promise<void> {
     event.preventDefault()
 
+    const hasText = messageInput.trim() || gifUrl != null
     if (
       !selectedUser ||
-      (!messageInput.trim() && gifUrl == null) ||
+      (!hasText && inlineFiles.length === 0) ||
+      (!activeConversation && !hasText) ||
       !sessionState.currentUser ||
       activeMeta.isLoading
     )
@@ -67,19 +74,29 @@
     messageInput = ''
 
     if (activeConversation) {
-      const message = await chatService.sendMessage(
+      const message = await chatService.sendDirectMessage(
         sessionState.currentUser,
-        activeConversation,
-        messageContent
+        activeConversation as DirectConversation,
+        messageContent,
+        inlineFiles
       )
       if (message) conversationsState.appendMessage(message, false)
     } else {
-      const { message } = await chatService.sendMessageAndStartConversation(
+      const { conversation, message } = await chatService.sendMessageAndStartConversation(
         sessionState.currentUser,
         selectedUser.id,
         messageContent
       )
       conversationsState.appendMessage(message, false)
+      if (inlineFiles.length > 0) {
+        const imgMessage = await chatService.sendDirectMessage(
+          sessionState.currentUser,
+          conversation as DirectConversation,
+          '',
+          inlineFiles
+        )
+        if (imgMessage) conversationsState.appendMessage(imgMessage, false)
+      }
     }
   }
 
@@ -125,6 +142,7 @@
       bind:messageInput
       onSubmit={handleSubmitMessage}
       allowFileAttachments={false}
+      fileUploadEnabled={canUploadFiles}
     />
   {:else}
     <div class="empty-state">

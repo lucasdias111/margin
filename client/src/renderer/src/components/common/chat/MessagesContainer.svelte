@@ -182,6 +182,15 @@
     }
   })
 
+  $effect(() => {
+    if (!messagesContainer) return
+    function onImageLoad(): void {
+      if (isAtBottom) scrollToBottom('instant')
+    }
+    messagesContainer.addEventListener('load', onImageLoad, true)
+    return () => messagesContainer?.removeEventListener('load', onImageLoad, true)
+  })
+
   function shouldShowMeta(message: Message, next: Message | undefined): boolean {
     if (!next) return true
     if (next.user.id !== message.user.id) return true

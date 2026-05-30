@@ -5,7 +5,6 @@
   let {
     value = $bindable(''),
     disabled,
-    allowFileAttachments,
     onImagePasted
   }: {
     value: string
@@ -31,7 +30,6 @@
   }
 
   async function handlePaste(e: ClipboardEvent): Promise<void> {
-    if (!allowFileAttachments) return
     const items = e.clipboardData?.items
     if (!items) return
     for (const item of items) {
