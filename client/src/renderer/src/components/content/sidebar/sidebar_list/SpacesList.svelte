@@ -1,7 +1,6 @@
 <script lang="ts">
   import { spaceState } from '$src/states/SpaceState.svelte.js'
   import type { Space } from '$src/interfaces/Space'
-  import { onDestroy } from 'svelte'
   import { spaceService } from '$src/services/SpaceService'
   import ChannelEntry from '$src/components/content/sidebar/sidebar_list/ChannelEntry.svelte'
   import { notificationService } from '$src/services/NotificationService'
@@ -21,9 +20,15 @@
     }
   })
 
-  onDestroy(() => {
-    spaceService.select(null)
-    channelService.select(null)
+  $effect(() => {
+    const channelId = navigationState.selectedChannel?.id
+    if (!channelId) return
+    for (const space of spaces) {
+      if (space.channels.some((ch) => ch.id === channelId)) {
+        expandedSpaceId = space.spaceId
+        return
+      }
+    }
   })
 
   async function toggleSpace(space: Space): Promise<void> {
