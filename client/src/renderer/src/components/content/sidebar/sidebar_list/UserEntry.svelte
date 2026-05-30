@@ -25,6 +25,12 @@
   const meta = $derived(recentUser.meta)
 
   const unreadCount = $derived(notificationService.isUnread(recentUser.conversation.id) ? 1 : 0)
+
+  function lastMessagePreview(msg: string | null): string | null {
+    if (!msg) return msg
+    if (/\.gif(\?|$)/i.test(msg) || /static\.klipy\.com/i.test(msg)) return 'GIF'
+    return msg
+  }
 </script>
 
 <button
@@ -45,13 +51,13 @@
 
   <div class="user-info">
     <div class="top-row">
-      <span class="handle">{chatUser.displayName}</span>
+      <span class="handle" class:unread={unreadCount > 0}>{chatUser.displayName}</span>
       {#if meta.lastMessageTime}
         <span class="timestamp">{formatTime(meta.lastMessageTime)}</span>
       {/if}
     </div>
     <div class="bottom-row">
-      <span class="last-message">{meta.lastMessage}</span>
+      <span class="last-message" class:unread={unreadCount > 0}>{lastMessagePreview(meta.lastMessage)}</span>
       {#if unreadCount > 0}
         <UnreadNotificationBadge shouldShow={true} count={1} variant="inline" />
       {/if}
@@ -160,6 +166,15 @@
     overflow: hidden;
     text-overflow: ellipsis;
     flex: 1;
+  }
+
+  .handle.unread {
+    font-weight: 700;
+  }
+
+  .last-message.unread {
+    font-weight: 600;
+    color: #6b6b6b;
   }
 
   .presence-dot {
