@@ -273,6 +273,31 @@ class ChatService {
     return this.buildOptimisticMessage(currentUser, conversation.id, messageText, 'DIRECT')
   }
 
+  async sendDirectMessage(
+    currentUser: User,
+    conversation: DirectConversation,
+    messageText: string,
+    inlineFiles: File[] = []
+  ): Promise<Message | null> {
+    if (!this.guardConnected()) return null
+    const inlineIds = await this.uploadConversationAttachments(conversation.id, inlineFiles)
+    const content = await this.encryptForUser(messageText, conversation.otherUserId, currentUser.id)
+    webSocketService.send<{ content: string; attachmentIds: number[] }>({
+      type: WebSocketMessageType.SEND_MESSAGE,
+      recipientId: conversation.id,
+      payload: { content, attachmentIds: inlineIds }
+    })
+    return this.buildOptimisticMessage(currentUser, conversation.id, messageText, 'DIRECT')
+  }
+
+  private async uploadConversationAttachments(conversationId: number, files: File[]): Promise<number[]> {
+    if (!files.length) return []
+    const uploaded = await Promise.all(
+      files.map((f) => fileStorageService.uploadConversationFile(conversationId, f))
+    )
+    return uploaded.filter((f): f is NonNullable<typeof f> => f !== null).map((f) => f.fileId)
+  }
+
   async sendChannelMessage(
     currentUser: User,
     channel: Channel,
