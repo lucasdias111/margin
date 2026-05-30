@@ -1,4 +1,8 @@
-import type { ConversationMessagesResponse, Message, MessageReaction } from '$src/interfaces/Messages'
+import type {
+  ConversationMessagesResponse,
+  Message,
+  MessageReaction
+} from '$src/interfaces/Messages'
 import type { User } from '$src/interfaces/User'
 import {
   type Conversation,
@@ -57,7 +61,7 @@ class ChatService {
       await this.markConversationAsRead(msg.conversationId)
     } else {
       conversationsState.markUnread(msg.conversationId)
-      notificationService.handleIncomingMessage(msg)
+      notificationService.notifyIncomingMessage(msg)
     }
   }
 
@@ -90,7 +94,7 @@ class ChatService {
       await this.markConversationAsRead(msg.conversationId)
     } else {
       conversationsState.markUnread(msg.conversationId)
-      notificationService.handleIncomingMessage(msg)
+      notificationService.notifyIncomingMessage(msg)
     }
   }
 
@@ -290,7 +294,10 @@ class ChatService {
     return this.buildOptimisticMessage(currentUser, conversation.id, messageText, 'DIRECT')
   }
 
-  private async uploadConversationAttachments(conversationId: number, files: File[]): Promise<number[]> {
+  private async uploadConversationAttachments(
+    conversationId: number,
+    files: File[]
+  ): Promise<number[]> {
     if (!files.length) return []
     const uploaded = await Promise.all(
       files.map((f) => fileStorageService.uploadConversationFile(conversationId, f))
