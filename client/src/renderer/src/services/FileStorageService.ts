@@ -27,7 +27,22 @@ class FileStorageService {
     return (await response.json()) as StoredFile
   }
 
-  async uploadChannelFile(channelId: number, file: File, inline = false): Promise<StoredFile | null> {
+  async uploadConversationFile(conversationId: number, file: File): Promise<StoredFile | null> {
+    const form = new FormData()
+    form.append('file', file)
+    const response = await authenticatedPostForm(
+      form,
+      `files/conversations/${conversationId}/stored-files?inline=true`
+    )
+    if (!response.ok) return null
+    return (await response.json()) as StoredFile
+  }
+
+  async uploadChannelFile(
+    channelId: number,
+    file: File,
+    inline = false
+  ): Promise<StoredFile | null> {
     const form = new FormData()
     form.append('file', file)
     const path = `files/channels/${channelId}/stored-files${inline ? '?inline=true' : ''}`
