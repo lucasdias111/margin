@@ -35,7 +35,7 @@ vi.mock('$src/services/WebSocketService', () => ({
 
 vi.mock('$src/services/NotificationService', () => ({
   notificationService: {
-    handleIncomingMessage: vi.fn(),
+    notifyIncomingMessage: vi.fn(),
     dismissNotificationsForConversation: vi.fn()
   }
 }))
@@ -184,7 +184,7 @@ describe('ChatService', () => {
       })
 
       expect(conversationsState.messagesByConversationId.get(99)).toContainEqual(msg)
-      expect(notificationService.handleIncomingMessage).toHaveBeenCalledWith(msg)
+      expect(notificationService.notifyIncomingMessage).toHaveBeenCalledWith(msg)
     })
 
     it('routes direct messages to direct handler', async () => {
@@ -379,7 +379,7 @@ describe('ChatService', () => {
         payload: msg
       })
 
-      expect(notificationService.handleIncomingMessage).toHaveBeenCalledWith(msg)
+      expect(notificationService.notifyIncomingMessage).toHaveBeenCalledWith(msg)
     })
   })
 
