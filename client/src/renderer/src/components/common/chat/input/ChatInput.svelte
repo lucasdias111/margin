@@ -23,7 +23,12 @@
   }: {
     selectedContent: boolean
     messageInput: string
-    onSubmit: (event: SubmitEvent, files: File[], inlineFiles: File[], gifUrl: string | null) => void
+    onSubmit: (
+      event: SubmitEvent,
+      files: File[],
+      inlineFiles: File[],
+      gifUrl: string | null
+    ) => void
     allowFileAttachments?: boolean
     fileUploadEnabled?: boolean
   } = $props()
@@ -40,8 +45,10 @@
   }
 
   function queuePendingFiles(files: File[], inline = false): void {
-    if (files.length === 0 || !allowFileAttachments || !fileUploadEnabled) return
-    pendingFiles = [...pendingFiles, ...files.map((file) => ({ file, inline }))]
+    if (files.length === 0 || (!allowFileAttachments && !inline) || !fileUploadEnabled) return
+    const filtered = inline ? files.filter((f) => f.type.startsWith('image/')) : files
+    if (filtered.length === 0) return
+    pendingFiles = [...pendingFiles, ...filtered.map((file) => ({ file, inline }))]
   }
 
   function showStorageUpgradePrompt(): void {
