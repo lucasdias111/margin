@@ -17,6 +17,7 @@ import { conversationsState } from '$src/states/ConversationsState.svelte.js'
 class UsersService {
   select(user: User): void {
     navigationState.selectedUser = user
+    navigationState.selectedChannel = null
   }
 
   setOnline(userId: number): void {
@@ -96,6 +97,7 @@ class UsersService {
       conversationsState.conversationMetaById.set(recentUser.conversation.id, {
         hasMore: true,
         isLoading: false,
+        initialFetchCompleted: false,
         lastMessage: recentUser.lastMessage ?? '',
         lastMessageTime: recentUser.lastMessageTime ?? new Date().toISOString(),
         lastMessageIncoming: !!recentUser.lastMessageIncoming,

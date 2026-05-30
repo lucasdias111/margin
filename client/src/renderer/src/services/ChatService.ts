@@ -18,7 +18,7 @@ import { authenticatedGet, authenticatedPost } from '$src/services/api'
 import { fileStorageService } from '$src/services/FileStorageService'
 import { notificationService } from '$src/services/NotificationService'
 import type { WebSocketMessage } from '$src/interfaces/WebSocketMessages'
-import type { View } from '$src/interfaces/View'
+import { View } from '$src/interfaces/View'
 import { navigationState } from '$src/states/NavigationState.svelte'
 import { navigationService } from '$src/services/NavigationService'
 import { channelService } from '$src/services/ChannelService'
@@ -43,7 +43,8 @@ class ChatService {
 
   private handleIncomingChannelMessage = async (msg: Message): Promise<void> => {
     const isFromMe = msg.user.id === sessionState.currentUser?.id
-    const isActive = msg.conversationId === navigationState.selectedChannel?.conversationId
+    const isActive = navigationState.view === View.Margin &&
+      msg.conversationId === navigationState.selectedChannel?.conversationId
 
     if (isFromMe && this.replaceOptimisticIfPresent(msg)) {
       if (isActive && document.hasFocus()) {
@@ -78,7 +79,8 @@ class ChatService {
       msg.content = '[Decryption failed]'
     }
 
-    const isActive = navigationState.selectedUser?.id === otherUserId
+    const isActive =
+      navigationState.view === View.Private && navigationState.selectedUser?.id === otherUserId
 
     if (isFromMe && this.replaceOptimisticIfPresent(msg)) {
       if (document.hasFocus() && isActive) {

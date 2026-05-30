@@ -27,6 +27,9 @@
   let scrollHeightBeforePrepend = 0
   let isPrepending = $state(false)
   let isAtBottom = $state(true)
+  let autoFollow = true
+  let lastScrollTop = 0
+  let lastMessageCount = 0
   let lastConversationId = $state<number | undefined>(undefined)
   let initialScrollDone = $state(false)
 
@@ -106,6 +109,10 @@
     const { scrollTop, scrollHeight, clientHeight } = messagesContainer
     isAtBottom = scrollHeight - scrollTop - clientHeight < 60
 
+    if (scrollTop < lastScrollTop - 2) autoFollow = false
+    else if (isAtBottom) autoFollow = true
+    lastScrollTop = scrollTop
+
     if (scrollTop < 20 && activeMeta.hasMore && !activeMeta.isLoading) {
       void loadOlderMessages()
     }
@@ -163,6 +170,9 @@
             if (messagesContainer) {
               scrollToBottom('instant')
               initialScrollDone = true
+              autoFollow = true
+              lastScrollTop = messagesContainer.scrollTop
+              lastMessageCount = messages.length
             }
           })
         })
@@ -172,23 +182,29 @@
 
   $effect(() => {
     const len = messages.length
-    if (!initialScrollDone || isPrepending || isLoading) return
-    const lastMessage = messages[len - 1]
-    const isMine = lastMessage?.user?.id === sessionState.currentUser?.id
-    if (isAtBottom || isMine) {
-      untrack(() => {
+    untrack(() => {
+      if (!initialScrollDone || isPrepending || isLoading) return
+      if (len <= lastMessageCount) {
+        lastMessageCount = len
+        return
+      }
+      lastMessageCount = len
+      const isMine = messages[len - 1]?.user?.id === sessionState.currentUser?.id
+      if (isMine) autoFollow = true
+      if (autoFollow) {
         tick().then(() => scrollToBottom('smooth'))
-      })
-    }
+      }
+    })
   })
 
   $effect(() => {
-    if (!messagesContainer) return
-    function onImageLoad(): void {
-      if (isAtBottom) scrollToBottom('instant')
+    const container = messagesContainer
+    if (!container) return undefined
+    const onImageLoad = (): void => {
+      if (autoFollow) scrollToBottom('instant')
     }
-    messagesContainer.addEventListener('load', onImageLoad, true)
-    return () => messagesContainer?.removeEventListener('load', onImageLoad, true)
+    container.addEventListener('load', onImageLoad, true)
+    return () => container.removeEventListener('load', onImageLoad, true)
   })
 
   function shouldShowMeta(message: Message, next: Message | undefined): boolean {

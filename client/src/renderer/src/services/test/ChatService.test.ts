@@ -65,6 +65,7 @@ function buildUser(overrides: Partial<User> = {}): User {
     email: 'lucas@margin.chat',
     createdAt: '2025-01-01T00:00:00Z',
     profilePictureUrl: null,
+    lastSeenAt: null,
     isOnline: true,
     ...overrides
   }
@@ -80,6 +81,7 @@ function buildMessage(overrides: Partial<Message> = {}): Message {
     isEdited: false,
     createdAt: '2025-06-01T12:00:00Z',
     reactions: [],
+    attachments: [],
     ...overrides
   }
 }
@@ -227,6 +229,7 @@ describe('ChatService', () => {
     it('marks read when active and window focused', async () => {
       vi.spyOn(document, 'hasFocus').mockReturnValue(true)
       mockApiPost({})
+      navigationState.view = View.Margin
       navigationState.selectedChannel = buildChannel({ conversationId: 99 })
       const msg = buildMessage({
         id: 1,

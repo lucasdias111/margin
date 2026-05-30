@@ -110,7 +110,7 @@ class ConversationsState {
       }
     }
 
-    if (navigationState.selectedChannel) {
+    if (navigationState.view === View.Margin && navigationState.selectedChannel) {
       return this._byId.get(navigationState.selectedChannel.conversationId)
     }
 
