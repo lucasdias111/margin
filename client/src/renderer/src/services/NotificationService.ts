@@ -10,7 +10,6 @@ import { usersService } from '$src/services/UsersService'
 import { View } from '$src/interfaces/View'
 import { channelService } from '$src/services/ChannelService'
 import { navigationService } from '$src/services/NavigationService'
-import { navigationState } from '$src/states/NavigationState.svelte'
 import { conversationsState } from '$src/states/ConversationsState.svelte'
 import { isChannelConversation, isDirectConversation } from '$src/interfaces/Conversation'
 import type { Space } from '$src/interfaces/Space'
@@ -41,14 +40,12 @@ class NotificationService {
     sound.currentTime = 0
   }
 
-  handleIncomingMessage = (message: Message): void => {
+  notifyIncomingMessage = (message: Message): void => {
     if (message.user.id === sessionState.currentUser?.id) return
 
-    const isActive = this.isActiveConversation(message)
-    const isWindowFocused = document.hasFocus()
+    this.playSound(NotificationSounds.NEW_MESSAGE)
 
-    if (!isActive || !isWindowFocused) {
-      this.playSound(NotificationSounds.NEW_MESSAGE)
+    if (!document.hasFocus()) {
       this.showSystemNotification(message)
     }
   }
@@ -121,18 +118,6 @@ class NotificationService {
     if (list) {
       list.forEach((n) => n.close())
       this.pendingNotifications.delete(conversationId)
-    }
-  }
-
-  private isActiveConversation(message: Message): boolean {
-    switch (message.conversationType) {
-      case 'DIRECT':
-        return navigationState.selectedUser?.id === message.user.id
-      case 'CHANNEL':
-      case 'GROUP':
-        return navigationState.selectedChannel?.conversationId === message.conversationId
-      default:
-        return false
     }
   }
 
