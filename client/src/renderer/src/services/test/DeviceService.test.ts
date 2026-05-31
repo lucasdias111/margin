@@ -140,7 +140,6 @@ function makeMockP2PCallState(
 }
 
 beforeEach(() => {
-  vi.clearAllMocks()
   mockCallState.p2pCallState = null
   mockCallState.groupCallState = null
 

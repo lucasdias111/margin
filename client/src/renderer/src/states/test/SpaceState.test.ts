@@ -1,53 +1,16 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { spaceState } from '../SpaceState.svelte'
-import type { User } from '$src/interfaces/User'
-import type { Space } from '$src/interfaces/Space'
 import type { Channel } from '$src/interfaces/Channel'
 import { channelService } from '$src/services/ChannelService'
 import { navigationState } from '$src/states/NavigationState.svelte'
 import { spaceService } from '$src/services/SpaceService'
+import { buildChannel, buildSpace, buildUser } from '$src/test-utils/mocks'
 
 vi.mock('$src/states/ChatState.svelte', () => ({
   chatState: {
     selectedChannel: null as Channel | null
   }
 }))
-
-function buildUser(overrides: Partial<User> = {}): User {
-  return {
-    id: 1,
-    handle: 'lucas',
-    displayName: 'Lucas',
-    email: 'lucas@margin.chat',
-    createdAt: '2025-01-01T00:00:00Z',
-    profilePictureUrl: null,
-    isOnline: true,
-    ...overrides
-  }
-}
-
-function buildChannel(overrides: Partial<Channel> = {}): Channel {
-  return {
-    id: 1,
-    conversationId: 10,
-    name: 'general',
-    description: '',
-    spaceId: 1,
-    type: 'Communication',
-    voiceParticipants: [],
-    ...overrides
-  }
-}
-
-function buildSpace(overrides: Partial<Space> = {}): Space {
-  return {
-    spaceId: 1,
-    spaceName: 'Test Space',
-    channels: [],
-    members: [],
-    ...overrides
-  } as Space
-}
 
 describe('SpaceState', () => {
   beforeEach(() => {

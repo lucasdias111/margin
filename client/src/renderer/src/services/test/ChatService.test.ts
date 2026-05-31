@@ -14,10 +14,16 @@ import { connectionState } from '$src/states/ConnectionState.svelte'
 import { WebSocketMessageType } from '$src/interfaces/WebSocketMessageType'
 import * as api from '$src/services/api'
 import { View } from '$src/interfaces/View'
-import type { ConversationMessagesResponse, Message, MessageReaction } from '$src/interfaces/Messages'
-import type { User } from '$src/interfaces/User'
-import type { ChannelConversation, Conversation, DirectConversation } from '$src/interfaces/Conversation'
-import type { Channel } from '$src/interfaces/Channel'
+import type { ConversationMessagesResponse } from '$src/interfaces/Messages'
+import type { Conversation, DirectConversation } from '$src/interfaces/Conversation'
+import {
+  buildChannel,
+  buildChannelConversation,
+  buildDirectConversation,
+  buildMessage,
+  buildReaction,
+  buildUser
+} from '$src/test-utils/mocks'
 
 vi.mock('$src/services/EncryptionService', () => ({
   encryptionService: {
@@ -57,84 +63,6 @@ vi.mock('$src/services/api', () => ({
   authenticatedPost: vi.fn()
 }))
 
-function buildUser(overrides: Partial<User> = {}): User {
-  return {
-    id: 1,
-    handle: 'lucas',
-    displayName: 'Lucas',
-    email: 'lucas@margin.chat',
-    createdAt: '2025-01-01T00:00:00Z',
-    profilePictureUrl: null,
-    lastSeenAt: null,
-    isOnline: true,
-    ...overrides
-  }
-}
-
-function buildMessage(overrides: Partial<Message> = {}): Message {
-  return {
-    id: 100,
-    conversationId: 10,
-    user: buildUser(),
-    content: 'encrypted-content',
-    conversationType: 'DIRECT',
-    isEdited: false,
-    createdAt: '2025-06-01T12:00:00Z',
-    reactions: [],
-    attachments: [],
-    ...overrides
-  }
-}
-
-function buildDirectConversation(overrides: Partial<DirectConversation> = {}): DirectConversation {
-  return {
-    id: 10,
-    type: 'DIRECT',
-    otherUserId: 2,
-    otherUserReadAt: '2025-01-01T00:00:00Z',
-    inviteStatus: 'ACCEPTED',
-    createdAt: '2025-06-01T12:00:00Z',
-    ...overrides
-  }
-}
-
-function buildChannelConversation(
-  overrides: Partial<ChannelConversation> = {}
-): ChannelConversation {
-  return {
-    id: 20,
-    type: 'CHANNEL',
-    channelId: 5,
-    name: 'general',
-    createdAt: '2025-06-01T12:00:00Z',
-    ...overrides
-  }
-}
-
-function buildChannel(overrides: Partial<Channel> = {}): Channel {
-  return {
-    id: 5,
-    conversationId: 20,
-    name: 'general',
-    description: 'General channel',
-    spaceId: 1,
-    type: 'Communication',
-    ...overrides
-  }
-}
-
-function buildReaction(overrides: Partial<MessageReaction> = {}): MessageReaction {
-  return {
-    id: 1,
-    messageId: 100,
-    conversationId: 10,
-    userId: 2,
-    displayName: 'Other User',
-    emoji: '👍',
-    ...overrides
-  }
-}
-
 function mockApiGet(body: ConversationMessagesResponse | unknown, ok = true): void {
   vi.mocked(api.authenticatedGet).mockResolvedValue({
     ok,
@@ -151,8 +79,6 @@ function mockApiPost(body: Conversation | unknown, ok = true): void {
 
 describe('ChatService', () => {
   beforeEach(() => {
-    vi.clearAllMocks()
-
     conversationsState.clear()
 
     navigationState.view = View.Private

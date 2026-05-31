@@ -1,5 +1,5 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/svelte'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import RegisterPage from './+page.svelte'
 import { authenticationService } from '$src/services/AuthenticationService'
 import { errorService } from '$src/services/ErrorService'
@@ -108,10 +108,6 @@ async function submitForm(): Promise<void> {
 }
 
 describe('RegisterPage', () => {
-  beforeEach(() => {
-    vi.clearAllMocks()
-  })
-
   it('renders all form fields', () => {
     render(RegisterPage)
 

@@ -25,7 +25,6 @@ async function submitForm(): Promise<void> {
 
 describe('LoginComponent', () => {
   beforeEach(() => {
-    vi.clearAllMocks()
     localStorage.clear()
   })
 

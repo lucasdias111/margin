@@ -1,27 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { callState } from '../CallState.svelte'
-import type { User } from '$src/interfaces/User'
 import type { SFUParticipant } from '$src/interfaces/Calls'
-
-function buildUser(overrides: Partial<User> = {}): User {
-  return {
-    id: 2,
-    handle: 'kasper',
-    displayName: 'Kasper',
-    email: 'kasper@margin.chat',
-    createdAt: '2025-01-01T00:00:00Z',
-    profilePictureUrl: null,
-    isOnline: true,
-    ...overrides
-  }
-}
-
-function buildParticipant(overrides: Partial<SFUParticipant> = {}): SFUParticipant {
-  return {
-    peerId: 'peer-1',
-    ...overrides
-  } as SFUParticipant
-}
+import { buildParticipant, buildUser } from '$src/test-utils/mocks'
 
 describe('CallState', () => {
   beforeEach(() => {

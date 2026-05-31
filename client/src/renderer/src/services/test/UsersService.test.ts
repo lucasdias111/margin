@@ -2,9 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { usersService } from '../UsersService'
 import { conversationsState } from '$src/states/ConversationsState.svelte'
 import { usersState } from '$src/states/UsersState.svelte'
-import type { RecentChatUser } from '$src/interfaces/RecentChatUser'
-import type { DirectConversation } from '$src/interfaces/Conversation'
-import type { User } from '$src/interfaces/User'
+import { buildDirectConversation, buildRecentChatUser } from '$src/test-utils/mocks'
 
 vi.mock('$src/services/api', () => ({
   authenticatedGet: vi.fn(),
@@ -27,42 +25,6 @@ vi.mock('$src/services/EncryptionService', () => ({
 vi.mock('$src/services/AuthenticationService', () => ({
   authenticationService: { clear: vi.fn() }
 }))
-
-function buildUser(overrides: Partial<User> = {}): User {
-  return {
-    id: 2,
-    handle: 'other',
-    displayName: 'Other',
-    email: 'other@margin.chat',
-    createdAt: '2025-01-01T00:00:00Z',
-    profilePictureUrl: null,
-    isOnline: false,
-    ...overrides
-  }
-}
-
-function buildDirectConversation(overrides: Partial<DirectConversation> = {}): DirectConversation {
-  return {
-    id: 10,
-    type: 'DIRECT',
-    otherUserId: 2,
-    otherUserReadAt: null,
-    inviteStatus: 'ACCEPTED',
-    createdAt: '2025-01-01T00:00:00Z',
-    ...overrides
-  }
-}
-
-function buildRecentChatUser(overrides: Partial<RecentChatUser> = {}): RecentChatUser {
-  return {
-    conversation: buildDirectConversation(),
-    user: buildUser(),
-    lastMessage: 'last',
-    lastMessageTime: '2025-06-01T00:00:00Z',
-    lastMessageIncoming: true,
-    ...overrides
-  }
-}
 
 describe('UsersService', () => {
   beforeEach(() => {

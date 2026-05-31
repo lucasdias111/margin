@@ -96,7 +96,6 @@ describe('AuthenticationService', () => {
   let secureStorage: ReturnType<typeof mockSecureStorage>
 
   beforeEach(() => {
-    vi.clearAllMocks()
     sessionStorage.clear()
     secureStorage = mockSecureStorage()
   })

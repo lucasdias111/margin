@@ -7,6 +7,7 @@ import { deviceService } from '$src/services/DeviceService'
 import { WebSocketMessageType } from '$src/interfaces/WebSocketMessageType'
 import type { User } from '$src/interfaces/User'
 import type { CallResponsePayload, WebSocketMessage } from '$src/interfaces/WebSocketMessages'
+import { buildUser } from '$src/test-utils/mocks'
 
 globalThis.RTCIceCandidate = vi.fn(function (init: RTCIceCandidateInit) {
   return init
@@ -105,22 +106,9 @@ vi.mock('$src/services/ErrorService', () => ({
 
 const mockCallState = callState as unknown as MockCallState
 
-function buildUser(overrides: Partial<User> = {}): User {
-  return {
-    id: 2,
-    handle: 'kasper',
-    displayName: 'Kasper',
-    email: 'kasper@margin.chat',
-    createdAt: '2025-01-01T00:00:00Z',
-    profilePictureUrl: null,
-    isOnline: true,
-    ...overrides
-  }
-}
-
 function buildP2PCallState(overrides: Partial<MockP2PCallState> = {}): MockP2PCallState {
   return {
-    user: buildUser(),
+    user: buildUser({ id: 2 }),
     peerConnection: null,
     localStream: null,
     remoteStream: null,
@@ -135,7 +123,6 @@ function buildP2PCallState(overrides: Partial<MockP2PCallState> = {}): MockP2PCa
 
 describe('CallService', () => {
   beforeEach(() => {
-    vi.clearAllMocks()
     vi.useFakeTimers()
     mockCallState.callId = null
     mockCallState.status = 'idle'

@@ -8,7 +8,6 @@ vi.mock('$src/services/api', () => ({
 
 describe('EncryptionService', () => {
   beforeEach(() => {
-    vi.clearAllMocks()
     sessionStorage.clear()
     encryptionService.clearCache()
   })

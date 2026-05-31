@@ -61,7 +61,6 @@ vi.mock('$src/actions/clickOutside', () => ({
 
 describe('Navigation', () => {
   beforeEach(() => {
-    vi.clearAllMocks()
     sessionState.currentUser = {
       id: 1,
       displayName: 'Lucas',

@@ -39,11 +39,11 @@
   }
 
   .channel-name {
-    font-size: 0.9375rem;
+    font-size: 16px;
     font-weight: 600;
     color: #1a1a1a;
     letter-spacing: -0.01em;
-    line-height: 1;
+    line-height: 1.5;
   }
 
   .channel-description {

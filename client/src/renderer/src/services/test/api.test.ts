@@ -64,7 +64,6 @@ function mockFetchNetworkError(): void {
 
 describe('API helpers', () => {
   beforeEach(() => {
-    vi.clearAllMocks()
     sessionStorage.clear()
     unauthenticatedHandler = vi.fn<() => Promise<void>>().mockResolvedValue(undefined)
     setUnauthenticatedHandler(unauthenticatedHandler)

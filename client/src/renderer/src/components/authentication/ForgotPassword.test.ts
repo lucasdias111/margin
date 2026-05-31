@@ -1,5 +1,5 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/svelte'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import ForgotPasswordComponent from './ForgotPassword.svelte'
 import { authenticationService } from '$src/services/AuthenticationService'
 import * as svelteRouter from 'svelte-spa-router'
@@ -24,10 +24,6 @@ async function submitForm(): Promise<void> {
 }
 
 describe('ForgotPasswordComponent', () => {
-  beforeEach(() => {
-    vi.clearAllMocks()
-  })
-
   it('renders email input', () => {
     render(ForgotPasswordComponent)
 

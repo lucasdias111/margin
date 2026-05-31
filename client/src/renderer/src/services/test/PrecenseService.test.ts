@@ -1,20 +1,7 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import { presenceService } from '../PrecenseService'
 import { usersState } from '$src/states/UsersState.svelte'
-import type { User } from '$src/interfaces/User'
-
-function buildUser(overrides: Partial<User> = {}): User {
-  return {
-    id: 1,
-    handle: 'lucas',
-    displayName: 'Lucas',
-    email: 'lucas@margin.chat',
-    createdAt: '2025-01-01T00:00:00Z',
-    profilePictureUrl: null,
-    isOnline: false,
-    ...overrides
-  }
-}
+import { buildUser } from '$src/test-utils/mocks'
 
 describe('PresenceService', () => {
   beforeEach(() => {

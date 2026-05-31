@@ -106,7 +106,6 @@ function connectWithToken(): MockWebSocket {
 
 describe('WebSocketService', () => {
   beforeEach(() => {
-    vi.clearAllMocks()
     sessionStorage.clear()
     installWebSocketMock()
     resetInternalState()
