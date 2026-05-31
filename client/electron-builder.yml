@@ -15,6 +15,11 @@ asarUnpack:
 win:
   executableName: margin
   icon: build/icons/win/icon.ico
+  azureSignOptions:
+    endpoint: https://neu.codesigning.azure.net/
+    codeSigningAccountName: margin-signing
+    certificateProfileName: margin-cert
+    publisherName: margin Software ApS
 nsis:
   artifactName: ${name}-${version}-setup.${ext}
   shortcutName: ${productName}
@@ -22,7 +27,7 @@ nsis:
   createDesktopShortcut: always
 mac:
   target:
-    - zip
+    - dmg
   icon: build/icons/mac/icon.icns
   entitlementsInherit: build/entitlements.mac.plist
   extendInfo:
@@ -30,7 +35,12 @@ mac:
     - NSMicrophoneUsageDescription: Application requests access to the device's microphone.
     - NSDocumentsFolderUsageDescription: Application requests access to the user's Documents folder.
     - NSDownloadsFolderUsageDescription: Application requests access to the user's Downloads folder.
+  hardenedRuntime: true
+  gatekeeperAssess: false
+  entitlements: build/entitlements.mac.plist
+  identity: "Developer ID Application: Lucas Dias (WGW4TMK5W9)"
   notarize: false
+  afterSign: scripts/notarize.js
 dmg:
   artifactName: ${name}-${version}.${ext}
 linux:
