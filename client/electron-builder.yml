@@ -1,5 +1,6 @@
 appId: com.margin.app
 productName: margin
+afterSign: scripts/notarize.cjs
 directories:
   buildResources: build
 files:
@@ -40,7 +41,6 @@ mac:
   entitlements: build/entitlements.mac.plist
   identity: "Developer ID Application: Lucas Dias (WGW4TMK5W9)"
   notarize: false
-  afterSign: scripts/notarize.js
 dmg:
   artifactName: ${name}-${version}.${ext}
 linux:
