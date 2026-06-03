@@ -23,10 +23,10 @@ class MarginInviteService {
     return response.json()
   }
 
-  async sendDirectInvite(marginId: number, handle: string): Promise<void> {
+  async sendDirectInvite(marginId: number, email: string): Promise<void> {
     await authenticatedPost(
       null,
-      `invites/margins/${marginId}/handle?handle=${encodeURIComponent(handle)}`
+      `invites/margins/${marginId}/email?email=${encodeURIComponent(email)}`
     )
   }
 

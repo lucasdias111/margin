@@ -117,7 +117,7 @@
           onclick={() => handleSelectUser(result.user)}
         >
           <div class="user-result-content">
-            <span class="handle">{result.user.handle}</span>
+            <span class="handle">{result.user.displayName}</span>
             {#if showSharedMargins && result.sharedMargins.length > 0}
               <div class="shared-margins">
                 {#each result.sharedMargins as margin (margin)}

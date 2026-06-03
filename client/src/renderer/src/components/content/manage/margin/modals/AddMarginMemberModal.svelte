@@ -8,13 +8,13 @@
   interface Props {
     open: boolean
     onClose: () => void
-    onInviteUser: (user: User) => Promise<void>
+    onInviteUser: (email: string) => Promise<void>
   }
 
   let { open, onClose, onInviteUser }: Props = $props()
 
   let userToInvite = $state<User | undefined>(undefined)
-  let exactHandle = $state('')
+  let exactEmail = $state('')
   let exactLookupLoading = $state(false)
   let exactLookupError = $state<string | null>(null)
   let inviteSent = $state(false)
@@ -23,13 +23,13 @@
   let title = $state<string>(initialTitle)
 
   async function handleExactLookup(): Promise<void> {
-    if (!exactHandle.trim()) return
+    if (!exactEmail.trim()) return
     exactLookupLoading = true
     exactLookupError = null
 
     try {
       const response = await authenticatedGet(
-        `users/lookup?handle=${encodeURIComponent(exactHandle.trim())}`
+        `users/lookup?email=${encodeURIComponent(exactEmail.trim())}`
       )
       if (!response.ok) {
         exactLookupError = 'User not found.'
@@ -37,7 +37,7 @@
       }
       const user: User = await response.json()
       userToInvite = user
-      title = `Invite ${user.displayName ?? user.handle} to margin?`
+      title = `Invite ${user.displayName} to margin?`
     } catch (e) {
       exactLookupError = 'Lookup failed. Try again.'
     } finally {
@@ -48,7 +48,7 @@
   async function handleSubmit(): Promise<void> {
     if (!userToInvite) return
     try {
-      await onInviteUser(userToInvite)
+      await onInviteUser(exactEmail.trim())
       inviteSent = true
     } catch (e) {
       exactLookupError = 'Failed to send invite.'
@@ -63,7 +63,7 @@
   function clear(): void {
     userToInvite = undefined
     title = initialTitle
-    exactHandle = ''
+    exactEmail = ''
     exactLookupError = null
     exactLookupLoading = false
     inviteSent = false
@@ -73,7 +73,7 @@
 <AppModal {open} {title} onClose={handleCancel}>
   {#if inviteSent}
     <div class="success-message">
-      <span>Invite sent to {userToInvite?.displayName ?? userToInvite?.handle}.</span>
+      <span>Invite sent to {userToInvite?.displayName}.</span>
     </div>
     <div class="actions">
       <button class="confirm" onclick={handleCancel}>Done</button>
@@ -81,7 +81,7 @@
   {:else if userToInvite}
     <div class="selected-user">
       <UserAvatar profilePictureUrl={userToInvite.profilePictureUrl} />
-      <span class="handle">{userToInvite.displayName ?? userToInvite.handle}</span>
+      <span class="handle">{userToInvite.displayName}</span>
     </div>
 
     {#if exactLookupError}
@@ -100,15 +100,15 @@
     </div>
   {:else}
     <div class="exact-lookup">
-      <label class="field-label" for="exact-handle">Enter exact handle</label>
+      <label class="field-label" for="exact-email">Enter exact email</label>
       <div class="lookup-row">
         <input
-          id="exact-handle"
+          id="exact-email"
           class="lookup-input"
-          type="text"
-          placeholder="handle"
-          bind:value={exactHandle}
-          maxlength="100"
+          type="email"
+          placeholder="email"
+          bind:value={exactEmail}
+          maxlength="255"
           onkeydown={(e) => {
             if (e.key === 'Enter') handleExactLookup()
           }}
@@ -118,7 +118,7 @@
           size="small"
           onClick={() => handleExactLookup()}
           text="Find"
-          disabled={exactLookupLoading || !exactHandle.trim()}
+          disabled={exactLookupLoading || !exactEmail.trim()}
         />
 
         {#if exactLookupLoading}

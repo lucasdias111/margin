@@ -13,7 +13,7 @@
 
   let { open, onClose }: Props = $props()
 
-  let handle = $state('')
+  let email = $state('')
   let foundUser = $state<User | undefined>(undefined)
   let loading = $state(false)
   let error = $state<string | null>(null)
@@ -23,19 +23,19 @@
   let title = $state(initialTitle)
 
   async function lookup(): Promise<void> {
-    if (!handle.trim()) return
+    if (!email.trim()) return
     loading = true
     error = null
     try {
       const response = await authenticatedGet(
-        `users/lookup?handle=${encodeURIComponent(handle.trim())}`
+        `users/lookup?email=${encodeURIComponent(email.trim())}`
       )
       if (!response.ok) {
         error = 'User not found.'
         return
       }
       foundUser = await response.json()
-      title = `Send invite to ${foundUser!.displayName ?? foundUser!.handle}?`
+      title = `Send invite to ${foundUser!.displayName}?`
     } catch (e) {
       error = `${e}. Try again.`
     } finally {
@@ -46,7 +46,7 @@
   async function sendInvite(): Promise<void> {
     if (!foundUser) return
     try {
-      await chatService.sendConversationInvite(foundUser.handle)
+      await chatService.sendConversationInvite(email.trim())
       sent = true
     } catch {
       error = 'Failed to send invite. The user may already have a conversation with you.'
@@ -59,7 +59,7 @@
   }
 
   function reset(): void {
-    handle = ''
+    email = ''
     foundUser = undefined
     error = null
     loading = false
@@ -72,7 +72,7 @@
   {#if sent}
     <div class="success">
       <span
-      >Invite sent to {foundUser?.displayName ?? foundUser?.handle}. They'll need to accept before
+      >Invite sent to {foundUser?.displayName}. They'll need to accept before
         you can chat.</span
       >
     </div>
@@ -82,7 +82,7 @@
   {:else if foundUser}
     <div class="selected-user">
       <UserAvatar profilePictureUrl={foundUser.profilePictureUrl} />
-      <span class="name">{foundUser.displayName ?? foundUser.handle}</span>
+      <span class="name">{foundUser.displayName}</span>
     </div>
     {#if error}
       <span class="lookup-error">{error}</span>
@@ -100,15 +100,15 @@
     </div>
   {:else}
     <div class="lookup">
-      <label class="field-label" for="handle-input">Handle</label>
+      <label class="field-label" for="email-input">Email</label>
       <div class="lookup-row">
         <input
-          id="handle-input"
+          id="email-input"
           class="lookup-input"
-          type="text"
-          placeholder="Enter handle for user..."
-          bind:value={handle}
-          maxlength="100"
+          type="email"
+          placeholder="Enter email for user..."
+          bind:value={email}
+          maxlength="255"
           onkeydown={(e) => {
             if (e.key === 'Enter') lookup()
           }}
@@ -118,7 +118,7 @@
           size="small"
           onClick={lookup}
           text="Find"
-          disabled={loading || !handle.trim()}
+          disabled={loading || !email.trim()}
         />
       </div>
       {#if error}

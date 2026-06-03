@@ -53,7 +53,7 @@
       rows={selectedSpace.members}
       getKey={(member) => member.user.id}
       searchPlaceholder="Search member"
-      searchFilter={(member, query) => member.user.handle.toLowerCase().includes(query)}
+      searchFilter={(member, query) => member.user.displayName.toLowerCase().includes(query)}
       onAction={(member) => onRemoveMember(member)}
       cellSnippets={{ role: roleCell }}
     />

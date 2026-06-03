@@ -51,7 +51,6 @@ vi.mock('$src/assets/legal/terms-of-service', () => ({
 function fillForm(
   overrides: Partial<{
     displayName: string
-    handle: string
     email: string
     password: string
     repeatPassword: string
@@ -60,7 +59,6 @@ function fillForm(
   fill: () => Promise<void>
   values: {
     displayName: string
-    handle: string
     email: string
     password: string
     repeatPassword: string
@@ -68,7 +66,6 @@ function fillForm(
 } {
   const defaults = {
     displayName: 'John Doe',
-    handle: 'johndoe',
     email: 'john@test.com',
     password: 'secret123',
     repeatPassword: 'secret123',
@@ -79,9 +76,6 @@ function fillForm(
     fill: async () => {
       await fireEvent.input(screen.getByLabelText('Display name'), {
         target: { value: defaults.displayName }
-      })
-      await fireEvent.input(screen.getByLabelText('Handle'), {
-        target: { value: defaults.handle }
       })
       await fireEvent.input(screen.getByLabelText('Email'), { target: { value: defaults.email } })
       await fireEvent.input(screen.getByLabelText('Password'), {
@@ -112,7 +106,6 @@ describe('RegisterPage', () => {
     render(RegisterPage)
 
     expect(screen.getByLabelText('Display name')).toBeInTheDocument()
-    expect(screen.getByLabelText('Handle')).toBeInTheDocument()
     expect(screen.getByLabelText('Email')).toBeInTheDocument()
     expect(screen.getByLabelText('Password')).toBeInTheDocument()
     expect(screen.getByLabelText('Confirm password')).toBeInTheDocument()
@@ -127,7 +120,6 @@ describe('RegisterPage', () => {
     await submitForm()
 
     expect(authenticationService.register).toHaveBeenCalledWith(
-      'johndoe',
       'John Doe',
       'secret123',
       'john@test.com',
@@ -207,62 +199,6 @@ describe('RegisterPage', () => {
     expect(authenticationService.register).not.toHaveBeenCalled()
   })
 
-  // Handle validation
-
-  it('shows error when handle is fewer than 3 characters after blur', async () => {
-    render(RegisterPage)
-
-    const input = screen.getByLabelText('Handle')
-    await fireEvent.input(input, { target: { value: 'ab' } })
-    await fireEvent.blur(input)
-
-    expect(screen.getByText('Must be at least 3 characters')).toBeInTheDocument()
-  })
-
-  it('shows error when handle exceeds 24 characters after blur', async () => {
-    render(RegisterPage)
-
-    const input = screen.getByLabelText('Handle')
-    await fireEvent.input(input, { target: { value: 'a'.repeat(25) } })
-    await fireEvent.blur(input)
-
-    expect(screen.getByText('Must be 24 characters or fewer')).toBeInTheDocument()
-  })
-
-  it('shows error when handle contains invalid characters after blur', async () => {
-    render(RegisterPage)
-
-    const input = screen.getByLabelText('Handle')
-    await fireEvent.input(input, { target: { value: 'user name!' } })
-    await fireEvent.blur(input)
-
-    expect(
-      screen.getByText('Only letters, numbers, dots, hyphens, and underscores')
-    ).toBeInTheDocument()
-  })
-
-  it('shows error when handle starts with a non-letter after blur', async () => {
-    render(RegisterPage)
-
-    const input = screen.getByLabelText('Handle')
-    await fireEvent.input(input, { target: { value: '1handle' } })
-    await fireEvent.blur(input)
-
-    expect(screen.getByText('Must start with a letter')).toBeInTheDocument()
-  })
-
-  it('shows no error for valid handle', async () => {
-    render(RegisterPage)
-
-    const input = screen.getByLabelText('Handle')
-    await fireEvent.input(input, { target: { value: 'john.doe-1' } })
-    await fireEvent.blur(input)
-
-    expect(screen.queryByText('Must be at least 3 characters')).not.toBeInTheDocument()
-    expect(screen.queryByText('Must start with a letter')).not.toBeInTheDocument()
-    expect(screen.queryByText(/only letters/i)).not.toBeInTheDocument()
-  })
-
   // Password validation
 
   it('shows error when password is fewer than 8 characters after blur', async () => {
@@ -289,10 +225,8 @@ describe('RegisterPage', () => {
   it('does not show validation errors before blur', async () => {
     render(RegisterPage)
 
-    await fireEvent.input(screen.getByLabelText('Handle'), { target: { value: 'ab' } })
     await fireEvent.input(screen.getByLabelText('Password'), { target: { value: 'short' } })
 
-    expect(screen.queryByText('Must be at least 3 characters')).not.toBeInTheDocument()
     expect(screen.queryByText('Must be at least 8 characters')).not.toBeInTheDocument()
   })
 
@@ -304,17 +238,6 @@ describe('RegisterPage', () => {
     await submitForm()
 
     expect(authenticationService.register).not.toHaveBeenCalled()
-  })
-
-  // Handle sanitization
-
-  it('strips whitespace from handle input', async () => {
-    render(RegisterPage)
-
-    const input = screen.getByLabelText('Handle')
-    await fireEvent.input(input, { target: { value: 'john doe' } })
-
-    expect(input).toHaveValue('johndoe')
   })
 
   // Policy checkboxes

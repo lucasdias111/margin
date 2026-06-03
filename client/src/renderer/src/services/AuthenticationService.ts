@@ -116,7 +116,6 @@ class AuthenticationService {
   }
 
   async register(
-    handle: string,
     displayName: string,
     password: string,
     email: string,
@@ -132,7 +131,6 @@ class AuthenticationService {
     const formData = new FormData()
 
     const registrationData = {
-      handle: handle,
       displayName,
       password,
       email,

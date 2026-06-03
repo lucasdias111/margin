@@ -664,10 +664,10 @@ describe('ChatService', () => {
     it('sendConversationInvite posts to API', async () => {
       mockApiPost({})
 
-      await chatService.sendConversationInvite('alice')
+      await chatService.sendConversationInvite('alice@margin.chat')
 
       expect(api.authenticatedPost).toHaveBeenCalledWith(
-        { handle: 'alice' },
+        { email: 'alice@margin.chat' },
         'conversations/invite'
       )
     })

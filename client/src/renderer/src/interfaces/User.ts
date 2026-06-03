@@ -1,8 +1,8 @@
 export interface User {
   id: number
-  handle: string
   displayName: string
-  email: string
+  // Personal data: only populated for the authenticated user themselves (`/me`).
+  email?: string
   createdAt: string
   profilePictureUrl: string | null
   lastSeenAt: string | null

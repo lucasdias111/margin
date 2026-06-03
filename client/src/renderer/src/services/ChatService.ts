@@ -496,8 +496,8 @@ class ChatService {
     }
   }
 
-  async sendConversationInvite(handle: string): Promise<void> {
-    await authenticatedPost({ handle }, 'conversations/invite')
+  async sendConversationInvite(email: string): Promise<void> {
+    await authenticatedPost({ email }, 'conversations/invite')
   }
 
   async acceptConversationInvite(invite: PendingInvite): Promise<void> {

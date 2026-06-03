@@ -17,7 +17,6 @@ import { conversationsState } from '$src/states/ConversationsState.svelte.js'
 class UsersService {
   select(user: User): void {
     navigationState.selectedUser = user
-    navigationState.selectedChannel = null
   }
 
   setOnline(userId: number): void {

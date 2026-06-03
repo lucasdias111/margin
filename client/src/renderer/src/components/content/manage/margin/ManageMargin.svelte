@@ -4,7 +4,6 @@
   import ManageMarginInformation from '$src/components/content/manage/margin/ManageMarginInformation.svelte'
   import ManageMarginMembers from '$src/components/content/manage/margin/ManageMarginMembers.svelte'
   import { marginService } from '$src/services/MarginService'
-  import type { User } from '$src/interfaces/User'
   import { marginInviteService } from '$src/services/MarginInviteService'
   import ConfirmationModal from '$src/components/common/modals/ConfirmationModal.svelte'
   import { navigationState } from '$src/states/NavigationState.svelte'
@@ -45,9 +44,9 @@
     }
   }
 
-  async function onInviteUser(user: User): Promise<void> {
+  async function onInviteUser(email: string): Promise<void> {
     try {
-      await marginInviteService.sendDirectInvite(margin.marginId, user.handle)
+      await marginInviteService.sendDirectInvite(margin.marginId, email)
     } catch (e) {
       console.error('Failed to send invite:', e)
       throw e

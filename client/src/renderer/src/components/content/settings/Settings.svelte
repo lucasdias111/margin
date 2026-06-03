@@ -3,8 +3,7 @@
   import Icon from '$src/components/common/icons/Icon.svelte'
   import { sessionState } from '$src/states/SessionState.svelte'
 
-  let email: string = $derived(sessionState.currentUser.email)
-  let handle: string = $derived(sessionState.currentUser.handle)
+  let email: string | undefined = $derived(sessionState.currentUser.email)
 </script>
 
 <div class="settings-panel">
@@ -24,10 +23,6 @@
     <div class="info-row">
       <span class="label">Email</span>
       <span class="value">{email}</span>
-    </div>
-    <div class="info-row">
-      <span class="label">Handle</span>
-      <span class="value">{handle}</span>
     </div>
   </div>
 

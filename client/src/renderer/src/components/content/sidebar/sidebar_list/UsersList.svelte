@@ -38,7 +38,7 @@
       {#each conversationInviteService.pendingInvites as invite (invite.conversation.id)}
         <li class="invite-entry">
           <UserAvatar profilePictureUrl={invite.fromUser.profilePictureUrl} height={30} />
-          <span class="invite-name">{invite.fromUser.displayName ?? invite.fromUser.handle}</span>
+          <span class="invite-name">{invite.fromUser.displayName}</span>
           <div class="invite-actions">
             <button class="accept-btn" onclick={() => chatService.acceptConversationInvite(invite)}>
               Accept

@@ -13,7 +13,6 @@
   import Button from '$src/components/common/buttons/Button.svelte'
   import Tooltip from '$src/components/common/Tooltip.svelte'
 
-  let handle = $state('')
   let displayName = $state('')
   let password = $state('')
   let repeatPassword = $state('')
@@ -32,11 +31,9 @@
   let registrationComplete = $state(false)
   let registeredEmail = $state('')
 
-  let handleError = $derived(deriveHandleError(handle))
   let passwordError = $derived(derivePasswordError(password))
   let repeatPasswordError = $derived(deriveRepeatPasswordError(password, repeatPassword))
 
-  let handleTouched = $state(false)
   let passwordTouched = $state(false)
   let repeatPasswordTouched = $state(false)
   let policyTouched = $state(false)
@@ -44,20 +41,9 @@
 
   const fieldHints: Record<string, string> = {
     displayName: 'This is how others see you in Margin. You can change it any time.',
-    handle: 'Unique username for @mentions. Letters, numbers, dots, hyphens, underscores. Must start with a letter.',
     email: 'Used to sign in and recover your account. You\'ll need to verify it.',
     password: 'At least 8 characters.',
     repeatPassword: 'Re-enter your password to confirm they match.'
-  }
-
-  function deriveHandleError(value: string): string | null {
-    if (value.length === 0) return null
-    if (value.length < 3) return 'Must be at least 3 characters'
-    if (value.length > 24) return 'Must be 24 characters or fewer'
-    if (!/^[a-zA-Z0-9._-]+$/.test(value))
-      return 'Only letters, numbers, dots, hyphens, and underscores'
-    if (!/^[a-zA-Z]/.test(value)) return 'Must start with a letter'
-    return null
   }
 
   function derivePasswordError(value: string): string | null {
@@ -80,23 +66,15 @@
   )
 
   let hasErrors = $derived(
-    !handle ||
-      !displayName ||
+    !displayName ||
       !email ||
       !password ||
       !repeatPassword ||
       !acceptedTerms ||
       !acceptedPrivacy ||
-      handleError !== null ||
       passwordError !== null ||
       repeatPasswordError !== null
   )
-
-  function sanitizeHandle(event: Event): void {
-    const input = event.currentTarget as HTMLInputElement
-    input.value = input.value.replace(/\s/g, '')
-    handle = input.value
-  }
 
   function openPolicy(type: 'terms' | 'privacy'): void {
     if (type === 'terms') {
@@ -112,7 +90,6 @@
   async function handleRegistration(event: SubmitEvent): Promise<void> {
     event.preventDefault()
 
-    handleTouched = true
     passwordTouched = true
     repeatPasswordTouched = true
     policyTouched = true
@@ -122,7 +99,6 @@
     isLoading = true
     try {
       const response = await authenticationService.register(
-        handle,
         displayName,
         password,
         email,
@@ -220,30 +196,6 @@
             onblur={() => (focusedField = null)}
           />
           <Tooltip open={focusedField === 'displayName'} text={fieldHints.displayName} />
-        </div>
-
-        <div class="field">
-          <label class="label" for="handle">Handle</label>
-          <div class="input-with-badge" class:input-error={handleTouched && handleError}>
-            <span class="input-badge">@</span>
-            <input
-              id="handle"
-              class="input input-badged"
-              type="text"
-              name="handle"
-              placeholder="Handle"
-              bind:value={handle}
-              oninput={sanitizeHandle}
-              onfocus={() => (focusedField = 'handle')}
-              onblur={() => { handleTouched = true; focusedField = null }}
-              required
-              autocomplete="handle"
-            />
-          </div>
-          <Tooltip open={focusedField === 'handle'} text={fieldHints.handle} />
-          {#if handleTouched && handleError}
-            <span class="error-text">{handleError}</span>
-          {/if}
         </div>
 
         <div class="field">
@@ -481,59 +433,6 @@
     font-size: 12px;
     color: #d94040;
     margin: 0;
-  }
-
-  .input-with-badge {
-    display: flex;
-    align-items: center;
-    height: 42px;
-    border-radius: 10px;
-    border: 1px solid #ece8e0;
-    background: #f7f4ef;
-    overflow: hidden;
-    transition: border-color 0.15s ease;
-    padding-left: 5px;
-  }
-
-  .input-with-badge:focus-within {
-    border-color: #e8712a;
-    background: #ffffff;
-  }
-
-  .input-with-badge.input-error {
-    border-color: #d94040;
-  }
-
-  .input-with-badge.input-error:focus-within {
-    border-color: #d94040;
-  }
-
-  .input-badge {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 30px;
-    height: 30px;
-    border-radius: 7px;
-    background: #ece8e0;
-    font-size: 14px;
-    font-weight: 600;
-    color: #888480;
-    flex-shrink: 0;
-    user-select: none;
-  }
-
-  .input-badged {
-    border: none;
-    border-radius: 0;
-    background: transparent;
-    padding-left: 8px;
-    height: 100%;
-  }
-
-  .input-badged:focus {
-    border-color: transparent;
-    background: transparent;
   }
 
   .legal-checkboxes {

@@ -3,16 +3,15 @@
   import AddMarginMemberModal from '$src/components/content/manage/margin/modals/AddMarginMemberModal.svelte'
   import ListView from '$src/components/common/datatables/ListView.svelte'
   import { formatTimestamp } from '$src/utils/DateUtils'
-  import type { User } from '$src/interfaces/User'
   import { marginInviteService } from '$src/services/MarginInviteService'
   import Button from '$src/components/common/buttons/Button.svelte'
   import { sessionState } from '$src/states/SessionState.svelte'
 
   interface Props {
     margin: Margin
-    onInviteUser: (user: User) => Promise<void>
+    onInviteUser: (email: string) => Promise<void>
     onUpdateMemberRole: (member: MarginMember) => Promise<void>
-    onRemoveMember: (member: MarginMember) => Promise<void>
+    onRemoveMember: (member: MarginMember) => void
   }
 
   let { margin, onInviteUser, onUpdateMemberRole, onRemoveMember }: Props = $props()
@@ -134,7 +133,7 @@
       getKey={(m) => m.user.id}
       onAction={(m) => onRemoveMember(m)}
       searchPlaceholder="Search member"
-      searchFilter={(m, q) => m.user.handle.toLowerCase().includes(q)}
+      searchFilter={(m, q) => m.user.displayName.toLowerCase().includes(q)}
       cellSnippets={{ role: roleCell }}
     />
   </div>
