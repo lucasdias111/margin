@@ -1,3 +1,9 @@
+x-logging: &default-logging
+  driver: "json-file"
+  options:
+    max-size: "50m"
+    max-file: "5"
+
 services:
   postgres:
     image: postgres:15-alpine
@@ -18,6 +24,7 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    logging: *default-logging
   margin-server:
     image: codeberg.org/margin/margin-server:${SERVER_VERSION:-latest}
     pull_policy: never
@@ -57,6 +64,7 @@ services:
       interval: 15s
       timeout: 5s
       retries: 5
+    logging: *default-logging
 
   margin-sfu:
     image: codeberg.org/margin/margin-sfu:${SFU_VERSION:-latest}
@@ -77,6 +85,7 @@ services:
       - margin-net
     depends_on:
       - margin-server
+    logging: *default-logging
 
   coturn:
     image: coturn/coturn:latest
@@ -87,6 +96,7 @@ services:
       - ./coturn/turnserver.conf:/etc/coturn/turnserver.conf:ro
       - /etc/letsencrypt:/etc/letsencrypt:ro
     command: ["-c", "/etc/coturn/turnserver.conf"]
+    logging: *default-logging
 
   nginx:
     image: nginx:alpine
@@ -104,6 +114,7 @@ services:
       - certbot_webroot:/var/www/certbot:ro
     networks:
       - margin-net
+    logging: *default-logging
 
   certbot:
     image: certbot/certbot:latest
@@ -126,6 +137,7 @@ services:
       - MARGIN_API_URL=http://margin-server:8080
     networks:
       - margin-net
+    logging: *default-logging
 
   margin-web:
     build:
@@ -135,6 +147,7 @@ services:
     restart: unless-stopped
     networks:
       - margin-net
+    logging: *default-logging
 
   umami-db:
     image: postgres:16-alpine
@@ -153,6 +166,7 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    logging: *default-logging
 
   umami:
     image: ghcr.io/umami-software/umami:postgresql-latest
@@ -167,6 +181,7 @@ services:
     depends_on:
       umami-db:
         condition: service_healthy
+    logging: *default-logging
 
 networks:
   margin-net:
