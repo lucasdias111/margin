@@ -2,7 +2,6 @@ import type { Page, Locator } from '@playwright/test'
 
 export class RegisterPage {
   readonly displayNameInput: Locator
-  readonly handleInput: Locator
   readonly emailInput: Locator
   readonly passwordInput: Locator
   readonly repeatPasswordInput: Locator
@@ -12,7 +11,6 @@ export class RegisterPage {
 
   constructor(private readonly page: Page) {
     this.displayNameInput = page.locator('#display-name')
-    this.handleInput = page.locator('#handle')
     this.emailInput = page.locator('#email')
     this.passwordInput = page.locator('#password')
     this.repeatPasswordInput = page.locator('#repeatPassword')
@@ -35,13 +33,11 @@ export class RegisterPage {
 
   async fillAndSubmit(fields: {
     displayName: string
-    handle: string
     email: string
     password: string
     repeatPassword?: string
   }): Promise<void> {
     await this.displayNameInput.fill(fields.displayName)
-    await this.handleInput.fill(fields.handle)
     await this.emailInput.fill(fields.email)
     await this.passwordInput.fill(fields.password)
     await this.repeatPasswordInput.fill(fields.repeatPassword ?? fields.password)

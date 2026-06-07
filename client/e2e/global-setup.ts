@@ -8,24 +8,23 @@ export const ALICE = {
   email: 'alice@e2e.margin',
   password: 'AliceE2E123!',
   handle: 'alicee2e',
-  displayName: 'Alice E2E',
+  displayName: 'Alice E2E'
 }
 
 export const BOB = {
   email: 'bob@e2e.margin',
   password: 'BobE2E123!',
   handle: 'bobe2e',
-  displayName: 'Bob E2E',
+  displayName: 'Bob E2E'
 }
 
-// Carol is a fresh user each run so she always has zero margins for the join-margin test
 function makeCarol() {
   const ts = Date.now()
   return {
     email: `carol-${ts}@e2e.margin`,
     password: 'CarolE2E123!',
     handle: `carol${ts}`,
-    displayName: 'Carol E2E',
+    displayName: 'Carol E2E'
   }
 }
 
@@ -34,13 +33,24 @@ async function generateKeys(password: string) {
   const passwordData = enc.encode(password)
   const seed = new Uint8Array(await crypto.subtle.digest('SHA-256', passwordData))
 
-  const baseKey = await crypto.subtle.importKey('raw', passwordData, 'PBKDF2', false, ['deriveBits'])
-  await crypto.subtle.deriveBits({ name: 'PBKDF2', salt: seed, iterations: 100000, hash: 'SHA-256' }, baseKey, 256)
+  const baseKey = await crypto.subtle.importKey('raw', passwordData, 'PBKDF2', false, [
+    'deriveBits'
+  ])
+  await crypto.subtle.deriveBits(
+    { name: 'PBKDF2', salt: seed, iterations: 100000, hash: 'SHA-256' },
+    baseKey,
+    256
+  )
 
   const keyPair = await crypto.subtle.generateKey(
-    { name: 'RSA-OAEP', modulusLength: 2048, publicExponent: new Uint8Array([1, 0, 1]), hash: 'SHA-256' },
+    {
+      name: 'RSA-OAEP',
+      modulusLength: 2048,
+      publicExponent: new Uint8Array([1, 0, 1]),
+      hash: 'SHA-256'
+    },
     true,
-    ['encrypt', 'decrypt'],
+    ['encrypt', 'decrypt']
   )
   const pubBytes = await crypto.subtle.exportKey('spki', keyPair.publicKey)
   const privBytes = await crypto.subtle.exportKey('pkcs8', keyPair.privateKey)
@@ -55,15 +65,19 @@ async function generateKeys(password: string) {
     pwKey,
     { name: 'AES-GCM', length: 256 },
     false,
-    ['encrypt'],
+    ['encrypt']
   )
-  const encrypted = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, aesKey, enc.encode(privateKey))
+  const encrypted = await crypto.subtle.encrypt(
+    { name: 'AES-GCM', iv },
+    aesKey,
+    enc.encode(privateKey)
+  )
 
   return {
     publicKey,
     encryptedPrivateKey: btoa(String.fromCharCode(...new Uint8Array(encrypted))),
     salt: btoa(String.fromCharCode(...salt)),
-    iv: btoa(String.fromCharCode(...iv)),
+    iv: btoa(String.fromCharCode(...iv))
   }
 }
 
@@ -71,7 +85,7 @@ async function tryLogin(email: string, password: string): Promise<string | null>
   const res = await fetch(`${API}/auth/login`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ email, password }),
+    body: JSON.stringify({ email, password })
   })
   if (!res.ok) return null
   const data = await res.json()
@@ -82,9 +96,6 @@ async function ensureUser(user: typeof ALICE): Promise<string> {
   const existing = await tryLogin(user.email, user.password)
   if (existing) return existing
 
-  // Register + activate in one call, bypassing the rate limiter.
-  // Returns 200 (created) or 409 (already exists — proceed to login).
-  // Requires POST /api/auth/register-and-activate-test on the backend (@Profile("dev")).
   const keys = await generateKeys(user.password)
   const secret = process.env.TEST_ACTIVATION_SECRET ?? 'dev-test-secret'
   const res = await fetch(`${API}/auth/register-and-activate-test`, {
@@ -96,14 +107,14 @@ async function ensureUser(user: typeof ALICE): Promise<string> {
       email: user.email,
       password: user.password,
       secret,
-      ...keys,
-    }),
+      ...keys
+    })
   })
 
   if (!res.ok && res.status !== 409) {
     throw new Error(
       `register-and-activate-test failed for ${user.email}: HTTP ${res.status}\n` +
-        'Ensure the backend is running with @Profile("dev") and the TestSupportController is loaded.',
+        'Ensure the backend is running with @Profile("dev") and the TestSupportController is loaded.'
     )
   }
 
@@ -132,22 +143,19 @@ async function apiPost(path: string, token: string, body: unknown = null): Promi
 }
 
 async function seedDmConversation(aliceToken: string, bobToken: string): Promise<void> {
-  // Send conversation invite from Alice to Bob.
-  // A 4xx response means a conversation already exists — that's fine.
   const inviteRes = await fetch(`${API}/conversations/invite`, {
     method: 'POST',
     headers: { Authorization: `Bearer ${aliceToken}`, 'Content-Type': 'application/json' },
-    body: JSON.stringify({ handle: BOB.handle }),
+    body: JSON.stringify({ email: BOB.email })
   })
 
   if (!inviteRes.ok && inviteRes.status >= 500) {
     throw new Error(`seedDmConversation invite: HTTP ${inviteRes.status}`)
   }
 
-  // Accept the invite from Bob's side if it's pending
   const pending: any[] = await apiGet('conversations/pending_invites', bobToken)
   const invite = pending.find(
-    (inv: any) => inv.fromUser?.handle?.toLowerCase() === ALICE.handle.toLowerCase(),
+    (inv: any) => inv.fromUser?.handle?.toLowerCase() === ALICE.handle.toLowerCase()
   )
   if (invite) {
     await apiPost(`conversations/${invite.conversation.id}/invite/accept`, bobToken)
@@ -160,10 +168,9 @@ export default async function globalSetup(_config: FullConfig): Promise<void> {
   const [aliceToken, bobToken] = await Promise.all([
     ensureUser(ALICE),
     ensureUser(BOB),
-    ensureUser(CAROL),  // fresh each run — always has zero margins
+    ensureUser(CAROL)
   ])
 
-  // ── Margin ────────────────────────────────────────────────────────────────────
   const margins: any[] = await apiGet('margins/get_margins', aliceToken)
   let margin = margins.find((m: any) => m.marginName === 'E2E Test Margin')
 
@@ -172,44 +179,51 @@ export default async function globalSetup(_config: FullConfig): Promise<void> {
     fd.append(
       'data',
       new Blob(
-        [JSON.stringify({ marginName: 'E2E Test Margin', marginDescription: 'Playwright seeds', visibility: 'PUBLIC' })],
-        { type: 'application/json' },
-      ),
+        [
+          JSON.stringify({
+            marginName: 'E2E Test Margin',
+            marginDescription: 'Playwright seeds',
+            visibility: 'PUBLIC'
+          })
+        ],
+        { type: 'application/json' }
+      )
     )
     const res = await fetch(`${API}/margins/create_new_margin`, {
       method: 'POST',
       headers: { Authorization: `Bearer ${aliceToken}` },
-      body: fd,
+      body: fd
     })
     if (!res.ok) throw new Error(`create margin: HTTP ${res.status}`)
     margin = await res.json()
   }
 
-  // ── Bob joins the margin if not already a member ───────────────────────────
   const bobMargins: any[] = await apiGet('margins/get_margins', bobToken)
   if (!bobMargins.some((m: any) => m.marginId === margin.marginId)) {
-    const { inviteCode: joinCode } = await apiPost(`invites/margins/${margin.marginId}/link`, aliceToken)
+    const { inviteCode: joinCode } = await apiPost(
+      `invites/margins/${margin.marginId}/link`,
+      aliceToken
+    )
     await apiPost(`invites/join/${joinCode}`, bobToken)
   }
 
-  // ── Evict stale Carol accounts left over from previous runs ──────────────
-  // The free tier allows 10 members. Each run creates a new carol-{ts}@e2e.margin,
-  // which accumulates until the cap is hit and Carol's join returns 402.
   const marginDetails: any = await apiGet(`margins/get_margin/${margin.marginId}`, aliceToken)
-  const staleCarols: any[] = (marginDetails.members ?? []).filter(
-    (m: any) => /^carol\d+$/.test(m.user?.handle ?? ''),
+  const staleCarols: any[] = (marginDetails.members ?? []).filter((m: any) =>
+    /^carol\d+$/.test(m.user?.handle ?? '')
   )
   await Promise.all(
     staleCarols.map((m: any) =>
       apiPost('margins/remove_margin_member', aliceToken, {
         marginId: margin.marginId,
-        userIdToRemove: m.user.id,
-      }),
-    ),
+        userIdToRemove: m.user.id
+      })
+    )
   )
 
-  // ── Space ─────────────────────────────────────────────────────────────────────
-  const spaces: any[] = await apiGet(`spaces/get_all_spaces_for_user/${margin.marginId}`, aliceToken)
+  const spaces: any[] = await apiGet(
+    `spaces/get_all_spaces_for_user/${margin.marginId}`,
+    aliceToken
+  )
   let space = spaces.find((s: any) => s.spaceName === 'E2E Test Space')
 
   if (!space) {
@@ -217,11 +231,10 @@ export default async function globalSetup(_config: FullConfig): Promise<void> {
       name: 'E2E Test Space',
       description: 'Playwright seeds',
       visibility: 'PUBLIC',
-      marginId: margin.marginId,
+      marginId: margin.marginId
     })
   }
 
-  // ── Channel ───────────────────────────────────────────────────────────────────
   let channel = space.channels?.find((c: any) => c.name === 'E2E Test Channel')
 
   if (!channel) {
@@ -229,17 +242,14 @@ export default async function globalSetup(_config: FullConfig): Promise<void> {
       name: 'E2E Test Channel',
       description: '',
       spaceId: space.spaceId,
-      channelType: 'Communication',
+      channelType: 'Communication'
     })
   }
 
-  // ── Fresh invite code for test 03 (Carol joins) ───────────────────────────
   const { inviteCode } = await apiPost(`invites/margins/${margin.marginId}/link`, aliceToken)
 
-  // ── Pre-seed Alice↔Bob DM so test 04 can skip the invite flow ────────────
   await seedDmConversation(aliceToken, bobToken)
 
-  // ── Write seed for tests ──────────────────────────────────────────────────
   writeFileSync(
     join(process.cwd(), '.e2e-seed.json'),
     JSON.stringify(
@@ -253,10 +263,10 @@ export default async function globalSetup(_config: FullConfig): Promise<void> {
         spaceName: space.spaceName ?? 'E2E Test Space',
         channelId: channel.id,
         channelName: channel.name ?? 'E2E Test Channel',
-        inviteCode,
+        inviteCode
       },
       null,
-      2,
-    ),
+      2
+    )
   )
 }

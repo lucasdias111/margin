@@ -2,13 +2,13 @@ import { expect, test } from '../fixtures'
 import { HomePage } from '../pages/HomePage'
 
 test.describe('Direct messages', () => {
-  test('New conversation modal finds a user by handle', async ({ authedPage, seed }) => {
+  test('New conversation modal finds a user by email', async ({ authedPage, seed }) => {
     const home = new HomePage(authedPage)
     await home.goToPrivate()
 
     await authedPage.locator('.search-row .but.primary').click()
 
-    await authedPage.locator('#handle-input').fill(seed.bob.handle)
+    await authedPage.locator('#email-input').fill(seed.bob.email)
     await authedPage.getByRole('button', { name: 'Find' }).click()
 
     await expect(authedPage.locator('.name', { hasText: seed.bob.displayName })).toBeVisible({

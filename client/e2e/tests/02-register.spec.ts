@@ -9,21 +9,6 @@ test.describe('Registration', () => {
     await expect(reg.errorTexts().first()).toBeVisible()
   })
 
-  test('handle shorter than 3 characters shows error', async ({ page }) => {
-    const reg = new RegisterPage(page)
-    await reg.goto()
-    await reg.handleInput.fill('ab')
-    await reg.handleInput.blur()
-    await expect(reg.errorTexts().filter({ hasText: 'at least 3' })).toBeVisible()
-  })
-
-  test('handle with spaces is sanitized automatically', async ({ page }) => {
-    const reg = new RegisterPage(page)
-    await reg.goto()
-    await reg.handleInput.pressSequentially('alice test')
-    await expect(reg.handleInput).toHaveValue('alicetest')
-  })
-
   test('mismatched passwords shows error', async ({ page }) => {
     const reg = new RegisterPage(page)
     await reg.goto()
@@ -39,7 +24,6 @@ test.describe('Registration', () => {
     const email = `test-${Date.now()}@e2e.margin`
     await reg.fillAndSubmit({
       displayName: 'Test User',
-      handle: `testuser${Date.now().toString().slice(-6)}`,
       email,
       password: 'TestPass123!'
     })
