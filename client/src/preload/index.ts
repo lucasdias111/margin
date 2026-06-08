@@ -8,9 +8,6 @@ const api = {
   setBadgeCount: (count: number) => ipcRenderer.send('set-badge-count', count)
 }
 
-// Use `contextBridge` APIs to expose Electron APIs to
-// renderer only if context isolation is enabled, otherwise
-// just add to the DOM global.
 if (process.contextIsolated) {
   try {
     contextBridge.exposeInMainWorld('electron', electronAPI)
@@ -28,6 +25,12 @@ if (process.contextIsolated) {
       },
       onUpdateDownloaded: (callback: () => void) => {
         ipcRenderer.on('update-downloaded', () => callback())
+      },
+      onUpdateProgress: (callback: (percent: number) => void) => {
+        ipcRenderer.on('update-progress', (_e, percent) => callback(percent))
+      },
+      onUpdateError: (callback: (message: string) => void) => {
+        ipcRenderer.on('update-error', (_e, message) => callback(message))
       },
       acceptUpdate: () => ipcRenderer.send('update-accept'),
       declineUpdate: () => ipcRenderer.send('update-decline'),

@@ -87,7 +87,7 @@
 
       {#if localParticipant.isVideoEnabled}
         <div class="local-pip">
-          <CallParticipantTile participant={localParticipant} />
+          <CallParticipantTile participant={localParticipant} isLocal />
         </div>
       {/if}
     </div>

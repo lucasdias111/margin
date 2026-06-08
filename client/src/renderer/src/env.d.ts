@@ -9,6 +9,8 @@ interface Window {
   updater?: {
     onUpdateAvailable: (callback: (version: string) => void) => void
     onUpdateDownloaded: (callback: () => void) => void
+    onUpdateProgress: (callback: (percent: number) => void) => void
+    onUpdateError: (callback: (message: string) => void) => void
     acceptUpdate: () => void
     declineUpdate: () => void
     installUpdate: () => void

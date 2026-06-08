@@ -154,6 +154,14 @@
         updateService.hasUpdateDownloaded(true)
       })
 
+      window.updater!.onUpdateProgress((percent: number) => {
+        updateService.setProgress(percent)
+      })
+
+      window.updater!.onUpdateError((message: string) => {
+        updateService.setError(message)
+      })
+
       window.updater!.notifyReady()
     }
 

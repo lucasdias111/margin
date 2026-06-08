@@ -14,6 +14,10 @@ const TOKEN_FILE = join(app.getPath('userData'), 'session.bin')
 
 const badgeImage = nativeImage.createFromPath(notificationBadge)
 
+function logUpdater(...args: unknown[]): void {
+  console.log('[updater]', ...args)
+}
+
 ipcMain.on('set-badge-count', (_event, count: number) => {
   if (process.platform === 'darwin') {
     app.dock?.setBadge(count > 0 ? String(count) : '')
@@ -41,52 +45,6 @@ function readEncrypted(filePath: string): string | null {
   return safeStorage.decryptString(encrypted)
 }
 
-function checkForUpdates(): void {
-  autoUpdater.autoDownload = false
-  console.log('autoDownload set to:', autoUpdater.autoDownload)
-  autoUpdater.autoInstallOnAppQuit = false
-  autoUpdater.disableDifferentialDownload = true
-
-  autoUpdater.checkForUpdates().catch((err) => console.log('Update check failed:', err))
-
-  autoUpdater.on('update-available', (info) => {
-    BrowserWindow.getAllWindows()[0]?.webContents.send('update-available', info.version)
-  })
-
-  ipcMain.on('update-accept', () => {
-    autoUpdater.downloadUpdate()
-  })
-
-  ipcMain.on('update-decline', () => {
-    // user said no, do nothing
-  })
-
-  autoUpdater.on('update-downloaded', () => {
-    BrowserWindow.getAllWindows()[0]?.webContents.send('update-downloaded')
-  })
-
-  autoUpdater.on('error', (err) => {
-    console.error('AutoUpdater error:', err)
-  })
-
-  ipcMain.on('update-install', () => {
-    console.log('update-install received')
-
-    if (process.platform === 'darwin') {
-      app.removeAllListeners('window-all-closed')
-
-      BrowserWindow.getAllWindows().forEach((w) => w.destroy())
-
-      setTimeout(() => {
-        autoUpdater.quitAndInstall(false, true)
-        setTimeout(() => app.exit(0), 2000)
-      }, 100)
-    } else {
-      autoUpdater.quitAndInstall(false, true)
-    }
-  })
-}
-
 ipcMain.handle('secure:saveSession', (_event, token: string, privateKey: string) => {
   writeEncrypted(TOKEN_FILE, token)
   writeEncrypted(SECURE_FILE, privateKey)
@@ -103,6 +61,114 @@ ipcMain.handle('secure:clearSession', () => {
   if (existsSync(TOKEN_FILE)) unlinkSync(TOKEN_FILE)
   if (existsSync(SECURE_FILE)) unlinkSync(SECURE_FILE)
 })
+
+let squirrelReady = false
+let installConfirmed = false
+
+function doQuitAndInstall(): void {
+  logUpdater('Calling quitAndInstall (macOS)')
+  app.removeAllListeners('window-all-closed')
+  autoUpdater.quitAndInstall(false, true)
+  setTimeout(() => {
+    logUpdater('quitAndInstall did not exit after 15s — forcing app.exit(0)')
+    app.exit(0)
+  }, 15000)
+}
+
+ipcMain.on('update-accept', () => {
+  logUpdater('User accepted update — starting download')
+  autoUpdater.downloadUpdate().catch((err) => logUpdater('downloadUpdate error:', err))
+})
+
+ipcMain.on('update-decline', () => {
+  logUpdater('User declined update')
+})
+
+ipcMain.on('update-install', () => {
+  logUpdater('update-install received — platform:', process.platform)
+
+  if (process.platform === 'darwin') {
+    installConfirmed = true
+    if (squirrelReady) {
+      logUpdater('Squirrel already ready — installing now')
+      doQuitAndInstall()
+    } else {
+      logUpdater('Squirrel not ready yet — will install once it signals ready')
+    }
+  } else {
+    logUpdater('Calling quitAndInstall (non-macOS)')
+    autoUpdater.quitAndInstall(false, true)
+  }
+})
+
+autoUpdater.autoDownload = false
+autoUpdater.autoInstallOnAppQuit = false
+
+autoUpdater.logger = {
+  info: (...args: unknown[]) => logUpdater('ℹ', ...args),
+  warn: (...args: unknown[]) => logUpdater('⚠', ...args),
+  error: (...args: unknown[]) => logUpdater('✖', ...args),
+  debug: (...args: unknown[]) => logUpdater('·', ...args)
+} as any
+
+autoUpdater.on('checking-for-update', () => {
+  logUpdater('Checking for update…')
+})
+
+autoUpdater.on('update-available', (info) => {
+  logUpdater('Update available:', info.version, '| releaseName:', info.releaseName)
+  logUpdater('Release date:', info.releaseDate)
+  BrowserWindow.getAllWindows()[0]?.webContents.send('update-available', info.version)
+})
+
+autoUpdater.on('update-not-available', (info) => {
+  logUpdater('No update available. Current version is latest:', info.version)
+})
+
+autoUpdater.on('download-progress', (progress) => {
+  logUpdater(
+    `Download progress: ${progress.percent.toFixed(1)}%`,
+    `| speed: ${(progress.bytesPerSecond / 1024).toFixed(1)} KB/s`,
+    `| transferred: ${(progress.transferred / 1024 / 1024).toFixed(2)} MB`,
+    `/ ${(progress.total / 1024 / 1024).toFixed(2)} MB`
+  )
+  BrowserWindow.getAllWindows()[0]?.webContents.send('update-progress', progress.percent)
+})
+
+autoUpdater.on('update-downloaded', (info) => {
+  logUpdater('Update downloaded:', info.version)
+  logUpdater('Download path:', (info as any).downloadedFile ?? 'unknown')
+
+  BrowserWindow.getAllWindows()[0]?.webContents.send('update-downloaded')
+
+  if (process.platform === 'darwin') {
+    squirrelReady = true
+    logUpdater('Squirrel ready. installConfirmed:', installConfirmed)
+    if (installConfirmed) {
+      logUpdater('User already confirmed — installing now')
+      doQuitAndInstall()
+    } else {
+      logUpdater('Waiting for user to confirm install…')
+    }
+  }
+})
+
+autoUpdater.on('error', (err) => {
+  logUpdater('AutoUpdater error:', err?.message ?? err)
+  logUpdater('Stack:', err?.stack)
+  BrowserWindow.getAllWindows()[0]?.webContents.send('update-error', err?.message ?? String(err))
+})
+
+function checkForUpdates(): void {
+  logUpdater('checkForUpdates called')
+  logUpdater('app version:', app.getVersion())
+  logUpdater('platform:', process.platform, process.arch)
+  logUpdater('userData (update cache lives here):', app.getPath('userData'))
+
+  autoUpdater.checkForUpdates().catch((err) => {
+    logUpdater('checkForUpdates() rejected:', err?.message ?? err)
+  })
+}
 
 function createWindow(): void {
   const mainWindow = new BrowserWindow({
@@ -151,9 +217,7 @@ function createWindow(): void {
     return { action: 'deny' }
   })
 
-  ipcMain.on('window-minimize', () => {
-    mainWindow.minimize()
-  })
+  ipcMain.on('window-minimize', () => mainWindow.minimize())
 
   ipcMain.on('window-maximize', () => {
     if (mainWindow.isMaximized()) {
@@ -163,18 +227,17 @@ function createWindow(): void {
     }
   })
 
-  ipcMain.on('window-close', () => {
-    mainWindow.close()
-  })
+  ipcMain.on('window-close', () => mainWindow.close())
 
   ipcMain.on('renderer-ready', () => {
+    logUpdater('renderer-ready received')
     if (!is.dev) {
       checkForUpdates()
+    } else {
+      logUpdater('Skipping update check in dev mode')
     }
   })
 
-  // HMR for renderer base on electron-vite cli.
-  // Load the remote URL for development or the local html file for production.
   if (is.dev && process.env['ELECTRON_RENDERER_URL']) {
     mainWindow.loadURL(process.env['ELECTRON_RENDERER_URL'])
   } else {
@@ -182,15 +245,9 @@ function createWindow(): void {
   }
 }
 
-// This method will be called when Electron has finished
-// initialization and is ready to create browser windows.
-// Some APIs can only be used after this event occurs.
 app.whenReady().then(() => {
   electronApp.setAppUserModelId('com.electron')
 
-  // Default open or close DevTools by F12 in development
-  // and ignore CommandOrControl + R in production.
-  // see https://github.com/alex8088/electron-toolkit/tree/master/packages/utils
   app.on('browser-window-created', (_, window) => {
     optimizer.watchWindowShortcuts(window)
   })
@@ -200,21 +257,15 @@ app.whenReady().then(() => {
     callback({ video: sources[0], audio: 'loopback' })
   })
 
-  // IPC test
   ipcMain.on('ping', () => console.log('pong'))
 
   createWindow()
 
   app.on('activate', function () {
-    // On macOS it's common to re-create a window in the app when the
-    // dock icon is clicked and there are no other windows open.
     if (BrowserWindow.getAllWindows().length === 0) createWindow()
   })
 })
 
-// Quit when all windows are closed, except on macOS. There, it's common
-// for applications and their menu bar to stay active until the user quits
-// explicitly with Cmd + Q.
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') {
     app.quit()

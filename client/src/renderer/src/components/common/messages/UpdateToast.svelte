@@ -12,12 +12,29 @@
     updateService.setUpdateAvailable(false)
   }
 
+  function dismissError(): void {
+    updateService.clearError()
+  }
+
   function install(): void {
     window.updater?.installUpdate()
   }
 </script>
 
-{#if updateState.updateDownloaded}
+{#if updateState.error}
+  <div class="toast" role="alert">
+    <div class="toast-icon toast-icon--error">
+      <Icon name="x" size={14} strokeWidth={2.5} />
+    </div>
+    <div class="toast-body">
+      <span class="toast-title">Update failed</span>
+      <span class="toast-msg">{updateState.error}</span>
+    </div>
+    <button class="toast-close" aria-label="Dismiss" onclick={dismissError}>
+      <Icon name="x" size={12} strokeWidth={2.5} />
+    </button>
+  </div>
+{:else if updateState.updateDownloaded}
   <div class="toast" role="alert">
     <div class="toast-icon toast-icon--success">
       <Icon name="checkCircle" size={14} strokeWidth={2.5} />
@@ -38,7 +55,7 @@
       <span class="toast-msg">Version {updateState.version} is ready to download</span>
     </div>
     {#if updateState.downloading}
-      <span class="toast-downloading">Downloading...</span>
+      <span class="toast-downloading">Downloading {Math.round(updateState.progress)}%</span>
     {:else}
       <button class="toast-action" onclick={accept}>Update</button>
       <button class="toast-close" aria-label="Dismiss" onclick={dismiss}>
@@ -85,6 +102,11 @@
   .toast-icon--success {
     background: #e8f5e9;
     color: #2e7d32;
+  }
+
+  .toast-icon--error {
+    background: #fdecea;
+    color: #c62828;
   }
 
   .toast-body {

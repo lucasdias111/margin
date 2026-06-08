@@ -2,9 +2,11 @@ import { authenticatedGet } from './api'
 
 class EncryptionService {
   private publicKeyCache = new Map<number, string>()
+  private privateKeyCache: { pem: string; key: CryptoKey } | null = null
 
   clearCache(): void {
     this.publicKeyCache.clear()
+    this.privateKeyCache = null
   }
 
   async getPublicKey(userId: number): Promise<string> {
@@ -136,14 +138,18 @@ class EncryptionService {
   }
 
   async importPrivateKey(keyData: string): Promise<CryptoKey> {
+    if (this.privateKeyCache?.pem === keyData) return this.privateKeyCache.key
+
     const binaryKey = Uint8Array.from(atob(keyData), (c) => c.charCodeAt(0))
-    return crypto.subtle.importKey(
+    const key = await crypto.subtle.importKey(
       'pkcs8',
       binaryKey,
       { name: 'RSA-OAEP', hash: 'SHA-256' },
-      true,
+      false,
       ['decrypt']
     )
+    this.privateKeyCache = { pem: keyData, key }
+    return key
   }
 
   async encryptMessage(

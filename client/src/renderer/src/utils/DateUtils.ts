@@ -4,21 +4,30 @@ function parseDate(date: Date | string): Date {
   return new Date(date)
 }
 
+const timestampFormatter = new Intl.DateTimeFormat('en-GB', {
+  day: 'numeric',
+  month: 'short',
+  year: 'numeric',
+  hour: '2-digit',
+  minute: '2-digit'
+})
+
+const timeFormatter = new Intl.DateTimeFormat('en-GB', {
+  hour: '2-digit',
+  minute: '2-digit'
+})
+
+const dayMonthFormatter = new Intl.DateTimeFormat('en-GB', {
+  day: 'numeric',
+  month: 'short'
+})
+
 export function formatTimestamp(date: Date | string): string {
-  return parseDate(date).toLocaleString('en-GB', {
-    day: 'numeric',
-    month: 'short',
-    year: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit'
-  })
+  return timestampFormatter.format(parseDate(date))
 }
 
 export function formatTime(date: Date | string): string {
-  return parseDate(date).toLocaleTimeString('en-GB', {
-    hour: '2-digit',
-    minute: '2-digit'
-  })
+  return timeFormatter.format(parseDate(date))
 }
 
 export function formatDuration(seconds: number): string {
@@ -49,5 +58,5 @@ export function formatLastSeen(date: Date | string | null | undefined): string {
     return `Last seen yesterday at ${formatTime(seen)}`
   }
 
-  return `Last seen ${seen.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}`
+  return `Last seen ${dayMonthFormatter.format(seen)}`
 }
