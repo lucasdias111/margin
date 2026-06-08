@@ -59,4 +59,4 @@ appImage:
 npmRebuild: false
 publish:
   provider: generic
-  url: https://nbg1.your-objectstorage.com/margininstall
+  url: https://updates.margin.chat
