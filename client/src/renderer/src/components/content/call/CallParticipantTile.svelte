@@ -10,17 +10,17 @@
   }
 
   let { participant, isLocal = false, fullScreen = false }: Props = $props()
+
+  const displayStream = $derived(
+    isLocal && participant.stream
+      ? new MediaStream(participant.stream.getVideoTracks())
+      : participant.stream
+  )
 </script>
 
 <div class="tile" class:full-screen={fullScreen} class:is-local={isLocal}>
   {#if participant.stream && participant.isVideoEnabled}
-    <video
-      use:srcObject={participant.stream}
-      autoplay
-      playsinline
-      muted={isLocal}
-      class="video"
-    ></video>
+    <video use:srcObject={displayStream} autoplay playsinline muted={isLocal} class="video"></video>
   {:else}
     <div class="avatar-fallback">
       <UserAvatar
