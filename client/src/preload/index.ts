@@ -1,10 +1,11 @@
-import { contextBridge, ipcRenderer, shell } from 'electron'
+import { contextBridge, ipcRenderer } from 'electron'
 import { electronAPI } from '@electron-toolkit/preload'
 
 const api = {
   minimizeWindow: () => ipcRenderer.send('window-minimize'),
   maximizeWindow: () => ipcRenderer.send('window-maximize'),
   closeWindow: () => ipcRenderer.send('window-close'),
+  openExternal: (url: string) => ipcRenderer.invoke('open-external', url),
   setBadgeCount: (count: number) => ipcRenderer.send('set-badge-count', count)
 }
 
@@ -35,9 +36,6 @@ if (process.contextIsolated) {
       acceptUpdate: () => ipcRenderer.send('update-accept'),
       declineUpdate: () => ipcRenderer.send('update-decline'),
       installUpdate: () => ipcRenderer.send('update-install')
-    })
-    contextBridge.exposeInMainWorld('shell', {
-      openExternal: (url) => shell.openExternal(url)
     })
     contextBridge.exposeInMainWorld('electronAPI', {
       onUserStatusChange: (callback: (status: 'active' | 'idle' | 'away') => void) =>

@@ -5,6 +5,7 @@
   import UserAvatar from '$src/components/common/user/UserAvatar.svelte'
   import { navigationState } from '$src/states/NavigationState.svelte'
   import { usersState } from '$src/states/UsersState.svelte'
+  import { clock } from '$src/states/Clock.svelte'
   import { formatLastSeen } from '$src/utils/DateUtils'
 
   interface Props {
@@ -22,6 +23,11 @@
 
   const isOnline = $derived(usersState.byId.get(navigationState.selectedUser.id).isOnline ?? false)
   const selectedUser = $derived(usersState.byId.get(navigationState.selectedUser.id))
+
+  const lastSeenLabel = $derived.by(() => {
+    void clock.now
+    return formatLastSeen(selectedUser.lastSeenAt)
+  })
 </script>
 
 <ChatHeaderShell {isLoading} onBack={handleBack}>
@@ -33,7 +39,7 @@
     <div class="user-info">
       <span class="handle">{selectedUser.displayName}</span>
       <span class="status-label" class:online={isOnline}>
-        {isOnline ? 'Online' : formatLastSeen(selectedUser.lastSeenAt)}
+        {isOnline ? 'Online' : lastSeenLabel}
       </span>
     </div>
   {/snippet}

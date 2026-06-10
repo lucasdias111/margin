@@ -37,7 +37,14 @@
   let isEditing = $state(false)
   let showActions = $state(false)
   let attachments = $derived(message.attachments ?? [])
-  let hasAttachments = $derived(attachments.length > 0)
+  let localAttachments = $derived(message.localAttachments ?? [])
+  let hasAttachments = $derived(attachments.length > 0 || localAttachments.length > 0)
+  let isSending = $derived(message.status === 'sending')
+  let isFailed = $derived(message.status === 'error')
+
+  function retrySend(): void {
+    chatService.retryMessage(message)
+  }
 
   const EMOJI_ONLY = /^(\p{Extended_Pictographic}|‍|️|[\u{1F3FB}-\u{1F3FF}]|\s)+$/u
   let isEmojiOnly = $derived(
@@ -63,8 +70,12 @@
   let preview = $state<{ file: StoredFile; src: string } | null>(null)
 
   async function openImagePreview(file: StoredFile): Promise<void> {
-    const src = await imageService.getAuthenticatedImageUrl(file.url)
-    preview = { file, src }
+    try {
+      const src = await imageService.getAuthenticatedImageUrl(file.url)
+      preview = { file, src }
+    } catch {
+      preview = null
+    }
   }
 
   function isInlineImageUrl(url: string): boolean {
@@ -125,7 +136,7 @@
       <span class="handle">{message.user.displayName}</span>
     {/if}
 
-    <div class="bubble" class:sent={isSent}>
+    <div class="bubble" class:sent={isSent} class:sending={isSending} class:failed={isFailed}>
       {#if isEditing}
         <div class="editactions">
           <button class="editbut" onclick={handleSaveEdit}>Save</button>
@@ -133,11 +144,31 @@
         </div>
         <input class="editinput" bind:value={editedContent} />
       {:else}
-        {#if hasAttachments}
+        {#if localAttachments.length > 0}
+          <div class="attachments">
+            {#each localAttachments as att (att.previewUrl)}
+              {#if att.contentType.startsWith('image/')}
+                <div class="image-attachment local">
+                  <img src={att.previewUrl} alt={att.fileName} />
+                </div>
+              {:else}
+                <div class="file-attachment local">
+                  <Icon name="upload" size={20} />
+                  <span class="file-meta">
+                    <span class="file-name">{att.fileName}</span>
+                  </span>
+                </div>
+              {/if}
+            {/each}
+          </div>
+        {/if}
+        {#if attachments.length > 0}
           <div class="attachments">
             {#each attachments as att (att.fileId)}
               {#if isImage(att)}
-                {#await imageService.getAuthenticatedImageUrl(att.url) then src}
+                {#await imageService.getAuthenticatedImageUrl(att.url)}
+                  <!-- loading -->
+                {:then src}
                   <button
                     type="button"
                     class="image-attachment"
@@ -146,6 +177,8 @@
                   >
                     <img {src} alt={att.fileName} />
                   </button>
+                {:catch}
+                  <span class="attachment-failed">Image unavailable</span>
                 {/await}
               {:else}
                 <button
@@ -195,7 +228,11 @@
           <span class="edited">edited</span>
         {/if}
         <span class="timestamp">{formatTimestamp(message.createdAt)}</span>
-        {#if isSent && showReadStatus}
+        {#if isSent && isSending}
+          <span class="status">Sending…</span>
+        {:else if isSent && isFailed}
+          <button type="button" class="retry" onclick={retrySend}>Failed — Retry</button>
+        {:else if isSent && showReadStatus}
           <Icon name={checkmarkIcon} size={12} />
         {/if}
       </div>
@@ -347,6 +384,34 @@
     font-style: italic;
   }
 
+  .bubble.sending {
+    opacity: 0.7;
+  }
+
+  .bubble.failed {
+    box-shadow: inset 0 0 0 1.5px rgba(214, 69, 69, 0.6);
+  }
+
+  .status {
+    font-style: italic;
+    opacity: 0.7;
+  }
+
+  .retry {
+    background: none;
+    border: none;
+    padding: 0;
+    margin: 0;
+    font: inherit;
+    font-weight: 600;
+    color: #d64545;
+    cursor: pointer;
+  }
+
+  .retry:hover {
+    text-decoration: underline;
+  }
+
   .attachments {
     display: flex;
     flex-direction: column;
@@ -370,6 +435,13 @@
     width: 100%;
     max-height: 320px;
     object-fit: cover;
+  }
+
+  .attachment-failed {
+    display: inline-block;
+    font-size: 12px;
+    font-style: italic;
+    color: rgba(0, 0, 0, 0.4);
   }
 
   .file-attachment {

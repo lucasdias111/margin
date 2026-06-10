@@ -32,6 +32,15 @@ import { errorService } from '$src/services/ErrorService'
 class ChatService {
   private static readonly PAGE_SIZE = 30
 
+  // Monotonically decreasing ids for optimistic messages. A plain counter (vs
+  // -Date.now()) guarantees uniqueness when several messages are sent within
+  // the same millisecond, so each optimistic bubble can be tracked individually.
+  private optimisticIdSeq = -1
+
+  // Keyed by optimistic message id. Holds a re-dispatch closure for a message
+  // whose send failed, so the "Retry" affordance can replay it verbatim.
+  private pendingRetries = new Map<number, () => Promise<void>>()
+
   handleIncomingMessage = async (data: WebSocketMessage<Message>): Promise<void> => {
     const msg = data.payload
     if (msg.conversationType === 'CHANNEL') {
@@ -102,8 +111,18 @@ class ChatService {
 
   private replaceOptimisticIfPresent(msg: Message): boolean {
     const messages = conversationsState.messagesByConversationId.get(msg.conversationId) ?? []
-    const optimisticIndex = messages.findIndex((m) => m.id < 0)
-    if (optimisticIndex === -1) return false
+    const optimisticIndices = messages.flatMap((m, i) => (m.id < 0 ? [i] : []))
+    if (optimisticIndices.length === 0) return false
+
+    // Multiple optimistic messages can be in flight (e.g. a slow image upload
+    // sent before a fast text message), and their echoes may arrive out of
+    // order. Prefer the placeholder whose content matches this echo; fall back
+    // to the oldest so a placeholder is never left stranded.
+    const optimisticIndex =
+      optimisticIndices.find((i) => messages[i].content === msg.content) ?? optimisticIndices[0]
+
+    revokePreviewUrls(messages[optimisticIndex])
+    this.pendingRetries.delete(messages[optimisticIndex].id)
 
     const updated = [...messages]
     updated[optimisticIndex] = msg
@@ -286,14 +305,19 @@ class ChatService {
     inlineFiles: File[] = []
   ): Promise<Message | null> {
     if (!this.guardConnected()) return null
-    const inlineIds = await this.uploadConversationAttachments(conversation.id, inlineFiles)
-    const content = await this.encryptForUser(messageText, conversation.otherUserId, currentUser.id)
-    webSocketService.send<{ content: string; attachmentIds: number[] }>({
-      type: WebSocketMessageType.SEND_MESSAGE,
-      recipientId: conversation.id,
-      payload: { content, attachmentIds: inlineIds }
+    const optimistic = this.buildOptimisticMessage(
+      currentUser,
+      conversation.id,
+      messageText,
+      'DIRECT',
+      inlineFiles
+    )
+    conversationsState.appendMessage(optimistic, false)
+    await this.dispatch(optimistic, () => this.uploadConversationAttachments(conversation.id, inlineFiles), async (attachmentIds) => {
+      const content = await this.encryptForUser(messageText, conversation.otherUserId, currentUser.id)
+      return { recipientId: conversation.id, content, attachmentIds }
     })
-    return this.buildOptimisticMessage(currentUser, conversation.id, messageText, 'DIRECT')
+    return optimistic
   }
 
   private async uploadConversationAttachments(
@@ -304,7 +328,8 @@ class ChatService {
     const uploaded = await Promise.all(
       files.map((f) => fileStorageService.uploadConversationFile(conversationId, f))
     )
-    return uploaded.filter((f): f is NonNullable<typeof f> => f !== null).map((f) => f.fileId)
+    if (uploaded.some((f) => f === null)) throw new Error('Attachment upload failed')
+    return uploaded.map((f) => f!.fileId)
   }
 
   async sendChannelMessage(
@@ -315,17 +340,70 @@ class ChatService {
     inlineAttachments: File[] = []
   ): Promise<Message | null> {
     if (!this.guardConnected()) return null
-    const [fileIds, inlineIds] = await Promise.all([
-      this.uploadChannelAttachments(channel.id, attachments, false),
-      this.uploadChannelAttachments(channel.id, inlineAttachments, true)
-    ])
-    const attachmentIds = [...inlineIds, ...fileIds]
-    webSocketService.send<{ content: string; attachmentIds: number[] }>({
-      type: WebSocketMessageType.SEND_MESSAGE,
-      recipientId: channel.conversationId,
-      payload: { content: messageText, attachmentIds }
-    })
-    return this.buildOptimisticMessage(currentUser, channel.conversationId, messageText, 'CHANNEL')
+    const optimistic = this.buildOptimisticMessage(
+      currentUser,
+      channel.conversationId,
+      messageText,
+      'CHANNEL',
+      [...inlineAttachments, ...attachments]
+    )
+    conversationsState.appendMessage(optimistic, false)
+    await this.dispatch(
+      optimistic,
+      async () => {
+        const [fileIds, inlineIds] = await Promise.all([
+          this.uploadChannelAttachments(channel.id, attachments, false),
+          this.uploadChannelAttachments(channel.id, inlineAttachments, true)
+        ])
+        return [...inlineIds, ...fileIds]
+      },
+      async (attachmentIds) => ({
+        recipientId: channel.conversationId,
+        content: messageText,
+        attachmentIds
+      })
+    )
+    return optimistic
+  }
+
+  /**
+   * Uploads attachments, then sends the WebSocket frame. On any failure the
+   * optimistic message is flipped to 'error' and a retry closure is stored so
+   * the user can replay the exact same send. The optimistic bubble is already
+   * on screen by the time this runs, so the upload never blocks rendering.
+   */
+  private async dispatch(
+    optimistic: Message,
+    uploadAttachments: () => Promise<number[]>,
+    buildFrame: (
+      attachmentIds: number[]
+    ) => Promise<{ recipientId: number; content: string; attachmentIds: number[] }>
+  ): Promise<void> {
+    const convId = optimistic.conversationId
+    try {
+      const attachmentIds = await uploadAttachments()
+      const { recipientId, content } = await buildFrame(attachmentIds)
+      webSocketService.send<{ content: string; attachmentIds: number[] }>({
+        type: WebSocketMessageType.SEND_MESSAGE,
+        recipientId,
+        payload: { content, attachmentIds }
+      })
+      this.pendingRetries.delete(optimistic.id)
+    } catch (error) {
+      console.error('Failed to send message:', error)
+      conversationsState.setMessageStatus(convId, optimistic.id, 'error')
+      this.pendingRetries.set(optimistic.id, () =>
+        this.dispatch(optimistic, uploadAttachments, buildFrame)
+      )
+    }
+  }
+
+  async retryMessage(message: Message): Promise<void> {
+    const retry = this.pendingRetries.get(message.id)
+    if (!retry) return
+    if (!this.guardConnected()) return
+    conversationsState.setMessageStatus(message.conversationId, message.id, 'sending')
+    await retry()
   }
 
   private async uploadChannelAttachments(
@@ -337,7 +415,8 @@ class ChatService {
     const uploaded = await Promise.all(
       files.map((f) => fileStorageService.uploadChannelFile(channelId, f, inline))
     )
-    return uploaded.filter((f): f is NonNullable<typeof f> => f !== null).map((f) => f.fileId)
+    if (uploaded.some((f) => f === null)) throw new Error('Attachment upload failed')
+    return uploaded.map((f) => f!.fileId)
   }
 
   private guardConnected(): boolean {
@@ -360,10 +439,11 @@ class ChatService {
     user: User,
     conversationId: number | null,
     content: string,
-    conversationType: 'DIRECT' | 'CHANNEL'
+    conversationType: 'DIRECT' | 'CHANNEL',
+    files: File[] = []
   ): Message {
     return {
-      id: -Date.now(),
+      id: this.optimisticIdSeq--,
       conversationId,
       user,
       content,
@@ -371,7 +451,13 @@ class ChatService {
       isEdited: false,
       createdAt: new Date().toISOString(),
       reactions: [],
-      attachments: []
+      attachments: [],
+      status: 'sending',
+      localAttachments: files.map((file) => ({
+        fileName: file.name,
+        contentType: file.type,
+        previewUrl: createPreviewUrl(file)
+      }))
     }
   }
 
@@ -562,6 +648,18 @@ class ChatService {
         unread: false
       })
     }
+  }
+}
+
+function createPreviewUrl(file: File): string {
+  if (typeof URL === 'undefined' || typeof URL.createObjectURL !== 'function') return ''
+  return URL.createObjectURL(file)
+}
+
+function revokePreviewUrls(message: Message): void {
+  if (typeof URL === 'undefined' || typeof URL.revokeObjectURL !== 'function') return
+  for (const att of message.localAttachments ?? []) {
+    if (att.previewUrl) URL.revokeObjectURL(att.previewUrl)
   }
 }
 

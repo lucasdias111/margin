@@ -5,6 +5,7 @@
   import { sessionState } from '$src/states/SessionState.svelte.js'
   import { subscriptionState } from '$src/states/SubscriptionState.svelte'
   import { upgradeState } from '$src/states/UpgradeState.svelte'
+  import { FileListStore } from '$src/composables/FileListStore.svelte'
   import Icon from '$src/components/common/icons/Icon.svelte'
   import FileRow from '$src/components/common/files/FileRow.svelte'
 
@@ -16,7 +17,7 @@
     fileCount: number
   } = $props()
 
-  let channelFiles = $state<StoredFile[]>([])
+  const fileList = new FileListStore()
   let isUploading = $state(false)
   let fileInput: HTMLInputElement
 
@@ -27,16 +28,14 @@
   $effect(() => {
     const channelId = channel?.id
     if (!channelId) {
-      channelFiles = []
+      fileList.reset()
       return
     }
-    fileStorageService.getChannelFiles(channelId).then((result) => {
-      channelFiles = result
-    })
+    fileList.load(() => fileStorageService.getChannelFiles(channelId))
   })
 
   $effect(() => {
-    fileCount = channelFiles.length
+    fileCount = fileList.files.length
   })
 
   async function handleUploadClick(): Promise<void> {
@@ -57,9 +56,7 @@
     if (!file || !channel?.id) return
     isUploading = true
     const uploaded = await fileStorageService.uploadChannelFile(channel.id, file)
-    if (uploaded) {
-      channelFiles = [uploaded, ...channelFiles]
-    }
+    if (uploaded) fileList.prepend(uploaded)
     isUploading = false
     input.value = ''
   }
@@ -70,14 +67,12 @@
 
   async function handleDeleteFile(file: StoredFile): Promise<void> {
     await fileStorageService.deleteFile(file.fileId)
-    channelFiles = channelFiles.filter((f) => f.fileId !== file.fileId)
+    fileList.remove(file.fileId)
   }
 
   async function handleRenameFile(file: StoredFile, newName: string): Promise<void> {
     const updated = await fileStorageService.renameFile(file.fileId, newName)
-    if (updated) {
-      channelFiles = channelFiles.map((f) => (f.fileId === updated.fileId ? updated : f))
-    }
+    if (updated) fileList.replace(updated)
   }
 
   function canDeleteFile(file: StoredFile): boolean {
@@ -115,11 +110,11 @@
     {/if}
   </button>
 
-  {#if channelFiles.length === 0}
+  {#if fileList.files.length === 0}
     <p class="files-empty">No files shared yet</p>
   {:else}
     <div class="files-list">
-      {#each channelFiles as file (file.fileId)}
+      {#each fileList.files as file (file.fileId)}
         <FileRow
           {file}
           compact

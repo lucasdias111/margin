@@ -62,6 +62,18 @@ ipcMain.handle('secure:clearSession', () => {
   if (existsSync(SECURE_FILE)) unlinkSync(SECURE_FILE)
 })
 
+ipcMain.handle('open-external', (_event, url: string) => {
+  try {
+    const { protocol } = new URL(url)
+    if (protocol === 'http:' || protocol === 'https:' || protocol === 'mailto:') {
+      return shell.openExternal(url)
+    }
+  } catch {
+    // invalid URL — ignore
+  }
+  return undefined
+})
+
 let squirrelReady = false
 let installConfirmed = false
 
@@ -184,8 +196,9 @@ function createWindow(): void {
     ...(process.platform === 'linux' ? { icon } : {}),
     webPreferences: {
       preload: join(__dirname, '../preload/index.cjs'),
-      sandbox: false,
-      nodeIntegration: true
+      sandbox: true,
+      contextIsolation: true,
+      nodeIntegration: false
     }
   })
 
@@ -196,7 +209,7 @@ function createWindow(): void {
       responseHeaders: {
         ...details.responseHeaders,
         'Content-Security-Policy': [
-          `default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: ${API_CONFIG.baseUrl} ${API_CONFIG.s3Url} https://static.klipy.com; connect-src 'self' ${API_CONFIG.baseUrl} ${API_CONFIG.wsUrl} ${API_CONFIG.sfuUrl} ${API_CONFIG.s3Url} https://api.klipy.com`
+          `default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: ${API_CONFIG.baseUrl} ${API_CONFIG.s3Url} ${API_CONFIG.cdnUrl} https://static.klipy.com; connect-src 'self' ${API_CONFIG.baseUrl} ${API_CONFIG.wsUrl} ${API_CONFIG.sfuUrl} ${API_CONFIG.s3Url} https://api.klipy.com`
         ]
       }
     })
@@ -213,7 +226,14 @@ function createWindow(): void {
   })
 
   mainWindow.webContents.setWindowOpenHandler((details) => {
-    shell.openExternal(details.url)
+    try {
+      const { protocol } = new URL(details.url)
+      if (protocol === 'http:' || protocol === 'https:' || protocol === 'mailto:') {
+        shell.openExternal(details.url)
+      }
+    } catch {
+      // invalid URL — deny silently
+    }
     return { action: 'deny' }
   })
 

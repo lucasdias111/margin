@@ -74,13 +74,12 @@
     messageInput = ''
 
     if (activeConversation) {
-      const message = await chatService.sendDirectMessage(
+      await chatService.sendDirectMessage(
         sessionState.currentUser,
         activeConversation as DirectConversation,
         messageContent,
         inlineFiles
       )
-      if (message) conversationsState.appendMessage(message, false)
     } else {
       const { conversation, message } = await chatService.sendMessageAndStartConversation(
         sessionState.currentUser,
@@ -89,13 +88,12 @@
       )
       conversationsState.appendMessage(message, false)
       if (inlineFiles.length > 0) {
-        const imgMessage = await chatService.sendDirectMessage(
+        await chatService.sendDirectMessage(
           sessionState.currentUser,
           conversation as DirectConversation,
           '',
           inlineFiles
         )
-        if (imgMessage) conversationsState.appendMessage(imgMessage, false)
       }
     }
   }

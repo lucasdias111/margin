@@ -19,9 +19,12 @@
     }
 
     let cancelled = false
-    imageService.getAuthenticatedImageUrl(marginIcon).then((url) => {
-      if (!cancelled) blobUrl = url
-    })
+    imageService
+      .getAuthenticatedImageUrl(marginIcon)
+      .then((url) => {
+        if (!cancelled) blobUrl = url
+      })
+      .catch(() => {})
     return () => {
       cancelled = true
     }

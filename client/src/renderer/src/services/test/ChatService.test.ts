@@ -11,6 +11,8 @@ import { sessionState } from '$src/states/SessionState.svelte'
 import { usersState } from '$src/states/UsersState.svelte'
 import { conversationInviteService } from '$src/states/UserListState.svelte'
 import { connectionState } from '$src/states/ConnectionState.svelte'
+import { fileStorageService } from '$src/services/FileStorageService'
+import type { StoredFile } from '$src/interfaces/StoredFile'
 import { WebSocketMessageType } from '$src/interfaces/WebSocketMessageType'
 import * as api from '$src/services/api'
 import { View } from '$src/interfaces/View'
@@ -63,6 +65,21 @@ vi.mock('$src/services/api', () => ({
   authenticatedPost: vi.fn()
 }))
 
+vi.mock('$src/services/FileStorageService', () => ({
+  fileStorageService: {
+    uploadChannelFile: vi.fn(),
+    uploadConversationFile: vi.fn()
+  }
+}))
+
+function imageFile(name = 'pic.png'): File {
+  return new File(['bytes'], name, { type: 'image/png' })
+}
+
+function storedFile(fileId: number): StoredFile {
+  return { fileId } as StoredFile
+}
+
 function mockApiGet(body: ConversationMessagesResponse | unknown, ok = true): void {
   vi.mocked(api.authenticatedGet).mockResolvedValue({
     ok,
@@ -94,6 +111,9 @@ describe('ChatService', () => {
     conversationInviteService.pendingInvites = []
 
     connectionState.connectionStatus = 'connected'
+
+    globalThis.URL.createObjectURL = vi.fn(() => 'blob:mock')
+    globalThis.URL.revokeObjectURL = vi.fn()
   })
 
   describe('handleIncomingMessage', () => {
@@ -199,6 +219,41 @@ describe('ChatService', () => {
       expect(messages).toHaveLength(1)
       expect(messages[0].id).toBe(5)
       expect(messages[0].content).toBe('real content')
+    })
+
+    it('replaces the content-matched placeholder when echoes arrive out of order', async () => {
+      const me = sessionState.currentUser!
+      const first = buildMessage({
+        id: -1,
+        conversationType: 'CHANNEL',
+        conversationId: 99,
+        user: me,
+        content: 'first'
+      })
+      const second = buildMessage({
+        id: -2,
+        conversationType: 'CHANNEL',
+        conversationId: 99,
+        user: me,
+        content: 'second'
+      })
+      conversationsState.messagesByConversationId.set(99, [first, second])
+      const echo = buildMessage({
+        id: 5,
+        conversationType: 'CHANNEL',
+        conversationId: 99,
+        user: me,
+        content: 'second'
+      })
+
+      await chatService.handleIncomingMessage({
+        type: WebSocketMessageType.RECEIVE_MESSAGE,
+        timestamp: 0,
+        payload: echo
+      })
+
+      const messages = conversationsState.messagesByConversationId.get(99)!
+      expect(messages.map((m) => m.id)).toEqual([-1, 5])
     })
   })
 
@@ -481,6 +536,111 @@ describe('ChatService', () => {
 
       expect(msg).toBeNull()
       expect(webSocketService.send).not.toHaveBeenCalled()
+    })
+  })
+
+  describe('optimistic image messages', () => {
+    it('appends a sending placeholder with local previews before the upload resolves', async () => {
+      const channel = buildChannel({ id: 5, conversationId: 20 })
+      let resolveUpload!: (f: StoredFile | null) => void
+      vi.mocked(fileStorageService.uploadChannelFile).mockReturnValue(
+        new Promise((resolve) => (resolveUpload = resolve))
+      )
+
+      const pending = chatService.sendChannelMessage(
+        sessionState.currentUser!,
+        channel,
+        'look at this',
+        [],
+        [imageFile()]
+      )
+
+      const messages = conversationsState.messagesByConversationId.get(20)!
+      expect(messages).toHaveLength(1)
+      expect(messages[0].status).toBe('sending')
+      expect(messages[0].localAttachments).toHaveLength(1)
+      expect(messages[0].localAttachments![0].previewUrl).toBe('blob:mock')
+      expect(webSocketService.send).not.toHaveBeenCalled()
+
+      resolveUpload(storedFile(9))
+      await pending
+
+      expect(webSocketService.send).toHaveBeenCalledWith({
+        type: WebSocketMessageType.SEND_MESSAGE,
+        recipientId: 20,
+        payload: { content: 'look at this', attachmentIds: [9] }
+      })
+    })
+
+    it('marks the placeholder as error when a channel upload fails', async () => {
+      const channel = buildChannel({ id: 5, conversationId: 20 })
+      vi.mocked(fileStorageService.uploadChannelFile).mockResolvedValue(null)
+
+      await chatService.sendChannelMessage(
+        sessionState.currentUser!,
+        channel,
+        'oops',
+        [],
+        [imageFile()]
+      )
+
+      const messages = conversationsState.messagesByConversationId.get(20)!
+      expect(messages[0].status).toBe('error')
+      expect(webSocketService.send).not.toHaveBeenCalled()
+    })
+
+    it('marks the placeholder as error when a direct upload fails', async () => {
+      vi.mocked(encryptionService.getPublicKey).mockResolvedValue('PK')
+      vi.mocked(encryptionService.encryptMessage).mockResolvedValue('cipher')
+      vi.mocked(fileStorageService.uploadConversationFile).mockResolvedValue(null)
+      const conv = buildDirectConversation({ id: 10, otherUserId: 2 })
+
+      await chatService.sendDirectMessage(sessionState.currentUser!, conv, 'hi', [imageFile()])
+
+      const messages = conversationsState.messagesByConversationId.get(10)!
+      expect(messages[0].status).toBe('error')
+      expect(webSocketService.send).not.toHaveBeenCalled()
+    })
+
+    it('retryMessage replays a failed send and sends once the upload succeeds', async () => {
+      const channel = buildChannel({ id: 5, conversationId: 20 })
+      vi.mocked(fileStorageService.uploadChannelFile)
+        .mockResolvedValueOnce(null)
+        .mockResolvedValueOnce(storedFile(9))
+
+      const optimistic = await chatService.sendChannelMessage(
+        sessionState.currentUser!,
+        channel,
+        'retry me',
+        [],
+        [imageFile()]
+      )
+      expect(conversationsState.messagesByConversationId.get(20)![0].status).toBe('error')
+
+      await chatService.retryMessage(optimistic!)
+
+      expect(webSocketService.send).toHaveBeenCalledWith({
+        type: WebSocketMessageType.SEND_MESSAGE,
+        recipientId: 20,
+        payload: { content: 'retry me', attachmentIds: [9] }
+      })
+    })
+
+    it('retryMessage is a no-op for a message with no pending retry', async () => {
+      await chatService.retryMessage(buildMessage({ id: 12345, conversationId: 20 }))
+
+      expect(webSocketService.send).not.toHaveBeenCalled()
+    })
+
+    it('assigns unique negative ids to placeholders sent in the same tick', async () => {
+      const channel = buildChannel({ id: 5, conversationId: 20 })
+
+      const a = await chatService.sendChannelMessage(sessionState.currentUser!, channel, 'one')
+      const b = await chatService.sendChannelMessage(sessionState.currentUser!, channel, 'two')
+
+      expect(a!.id).toBeLessThan(0)
+      expect(b!.id).toBeLessThan(0)
+      expect(a!.id).not.toBe(b!.id)
     })
   })
 

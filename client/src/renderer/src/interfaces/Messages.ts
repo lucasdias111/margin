@@ -11,6 +11,14 @@ export interface MessageReaction {
   emoji: string
 }
 
+export type MessageStatus = 'sending' | 'sent' | 'error'
+
+export interface LocalAttachment {
+  fileName: string
+  contentType: string
+  previewUrl: string
+}
+
 export interface Message {
   id: number
   conversationId: number
@@ -23,6 +31,8 @@ export interface Message {
   channelName?: string
   reactions: MessageReaction[]
   attachments: StoredFile[]
+  status?: MessageStatus
+  localAttachments?: LocalAttachment[]
 }
 
 export interface ConversationMessagesResponse {

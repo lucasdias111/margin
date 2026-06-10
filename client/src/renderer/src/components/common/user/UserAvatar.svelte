@@ -20,9 +20,12 @@
     } else if (!profilePictureUrl.includes('/api/')) {
       blobUrl = profilePictureUrl
     } else {
-      imageService.getAuthenticatedImageUrl(profilePictureUrl).then((url) => {
-        if (!cancelled) blobUrl = url
-      })
+      imageService
+        .getAuthenticatedImageUrl(profilePictureUrl)
+        .then((url) => {
+          if (!cancelled) blobUrl = url
+        })
+        .catch(() => {})
     }
 
     return () => {

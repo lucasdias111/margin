@@ -54,15 +54,13 @@
     const messageContent = gifUrl ? `${messageInput}\n${gifUrl}`.trim() : messageInput
     messageInput = ''
 
-    const message = await chatService.sendChannelMessage(
+    await chatService.sendChannelMessage(
       sessionState.currentUser,
       navigationState.selectedChannel,
       messageContent,
       files,
       inlineFiles
     )
-
-    if (message) conversationsState.appendMessage(message, false)
   }
 
   function onToggleSidebar(): void {

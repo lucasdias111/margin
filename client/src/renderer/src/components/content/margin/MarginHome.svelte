@@ -16,6 +16,7 @@
   import { sessionState } from '$src/states/SessionState.svelte'
   import { fileStorageService } from '$src/services/FileStorageService'
   import type { StoredFile } from '$src/interfaces/StoredFile'
+  import { FileListStore } from '$src/composables/FileListStore.svelte'
   import FileRow from '$src/components/common/files/FileRow.svelte'
   import { subscriptionState } from '$src/states/SubscriptionState.svelte'
   import { upgradeState } from '$src/states/UpgradeState.svelte'
@@ -37,19 +38,20 @@
   let editModalOpen = $state(false)
   let leaveModalOpen = $state(false)
 
-  let marginFiles = $state<StoredFile[]>([])
+  const fileList = new FileListStore()
   let fileInputRef = $state<HTMLInputElement | null>(null)
   let isDraggingFile = $state(false)
 
   $effect(() => {
     const marginId = navigationState.selectedMargin?.marginId
-    if (!marginId) return
+    if (!marginId) {
+      fileList.reset()
+      return
+    }
     announcementService.getAnnouncements(marginId).then((result) => {
       announcements = result
     })
-    fileStorageService.getMarginFiles(marginId).then((result) => {
-      marginFiles = result
-    })
+    fileList.load(() => fileStorageService.getMarginFiles(marginId))
   })
 
   async function handleFileSelect(event: Event): Promise<void> {
@@ -65,13 +67,13 @@
     if (!marginId) return
     for (const file of files) {
       const uploaded = await fileStorageService.uploadMarginFile(marginId, file)
-      if (uploaded) marginFiles = [uploaded, ...marginFiles]
+      if (uploaded) fileList.prepend(uploaded)
     }
   }
 
   async function handleDeleteFile(file: StoredFile): Promise<void> {
     await fileStorageService.deleteFile(file.fileId)
-    marginFiles = marginFiles.filter((f) => f.fileId !== file.fileId)
+    fileList.remove(file.fileId)
   }
 
   async function handleDownloadFile(file: StoredFile): Promise<void> {
@@ -80,9 +82,7 @@
 
   async function handleRenameFile(file: StoredFile, newName: string): Promise<void> {
     const updated = await fileStorageService.renameFile(file.fileId, newName)
-    if (updated) {
-      marginFiles = marginFiles.map((f) => (f.fileId === updated.fileId ? updated : f))
-    }
+    if (updated) fileList.replace(updated)
   }
 
   function canRenameFile(file: StoredFile): boolean {
@@ -234,7 +234,7 @@
       <p class="files-hint">Only admins and owners can share files with the whole margin.</p>
     {/if}
 
-    {#if marginFiles.length === 0}
+    {#if fileList.files.length === 0}
       <div class="card-empty">
         {#if canManage}
           No files shared yet — drop a file here or click upload.
@@ -244,7 +244,7 @@
       </div>
     {:else}
       <div class="file-list">
-        {#each marginFiles as file (file.fileId)}
+        {#each fileList.files as file (file.fileId)}
           <FileRow
             {file}
             canDelete={canManage}

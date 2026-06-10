@@ -1,4 +1,4 @@
-import type { Message } from '$src/interfaces/Messages'
+import type { Message, MessageStatus } from '$src/interfaces/Messages'
 import type { Conversation } from '$src/interfaces/Conversation'
 import { navigationState } from '$src/states/NavigationState.svelte'
 import { View } from '$src/interfaces/View'
@@ -75,6 +75,16 @@ class ConversationsState {
       lastMessageTime: msg.createdAt,
       lastMessageIncoming: incoming
     })
+  }
+
+  setMessageStatus(conversationId: number, messageId: number, status: MessageStatus): void {
+    const messages = this._messagesByConversationId.get(conversationId)
+    if (!messages) return
+    const index = messages.findIndex((m) => m.id === messageId)
+    if (index === -1) return
+    const updated = [...messages]
+    updated[index] = { ...updated[index], status }
+    this._messagesByConversationId.set(conversationId, updated)
   }
 
   markUnread(convId: number): void {
