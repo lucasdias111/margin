@@ -29,9 +29,9 @@ nsis:
 mac:
   target:
     - target: dmg
-      arch: [ x64 ]
+      arch: [ universal ]
     - target: zip
-      arch: [ x64 ]
+      arch: [ universal ]
   icon: build/icons/mac/icon.icns
   hardenedRuntime: true
   gatekeeperAssess: false
