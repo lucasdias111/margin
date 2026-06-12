@@ -13,8 +13,24 @@
   } from '$src/composables/useCallWebSocket.svelte'
   import CallPipWidget from '$src/components/content/call/CallPipWidget.svelte'
   import CallLayout from '$src/components/content/call/CallLayout.svelte'
+  import { NotificationSounds } from '$src/utils/NotificationSounds'
 
   const { user, isIncoming, offer } = callState.p2pCallState!
+
+  const pendingCallSound = new Audio(NotificationSounds.PENDING_CALL)
+  pendingCallSound.loop = true
+
+  $effect(() => {
+    if (!isIncoming && callState.status === 'connecting') {
+      pendingCallSound.currentTime = 0
+      pendingCallSound.play().catch(() => {})
+      return () => {
+        pendingCallSound.pause()
+        pendingCallSound.currentTime = 0
+      }
+    }
+    return undefined
+  })
 
   const remoteStream = $derived(callState.p2pCallState?.remoteStream ?? null)
   const localStream = $derived(callState.p2pCallState?.localStream ?? null)
