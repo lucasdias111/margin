@@ -123,7 +123,7 @@
       title="Notifications"
     >
       <Icon name="notifications" size={28} />
-      <UnreadNotificationBadge shouldShow={totalAnnouncements > 0} count={1} />
+      <UnreadNotificationBadge shouldShow={totalAnnouncements > 0} count={totalAnnouncements} />
       <span class="nav-label">Notifications</span>
     </button>
     <button
