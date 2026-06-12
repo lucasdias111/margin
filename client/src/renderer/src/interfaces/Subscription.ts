@@ -1,5 +1,5 @@
 export type SubscriptionTier = 'FREE' | 'SMALL' | 'MEDIUM' | 'CUSTOM'
-export type SubscriptionStatus = 'ACTIVE' | 'EXPIRED' | 'CANCELLED'
+export type SubscriptionStatus = 'ACTIVE' | 'PAST_DUE' | 'CANCELLED'
 
 export interface SubscriptionLimits {
   maxMembers: number

@@ -106,13 +106,17 @@
   async function handleSelectTier(tier: SubscriptionTier): Promise<void> {
     if (!subscription || tier === subscription.tier) return
     if (!hasConsented) return
+    if (tier === 'FREE') {
+      if (subscription.status === 'ACTIVE') confirmCancel = true
+      return
+    }
     checkoutPending = tier
     const marginId = navigationState.selectedMargin.marginId
     try {
       const isDowngrade =
         subscription.tier !== 'FREE' &&
         subscription.status === 'ACTIVE' &&
-        (tiers.find((t) => t.tier === tier)?.price ?? 0) <
+        (tiers.find((t) => t.tier === tier)?.price ?? Infinity) <
         (tiers.find((t) => t.tier === subscription!.tier)?.price ?? 0)
 
       if (isDowngrade) {
