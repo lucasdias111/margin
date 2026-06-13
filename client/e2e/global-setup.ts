@@ -18,13 +18,15 @@ export const BOB = {
   displayName: 'Bob E2E'
 }
 
+const CAROL_DISPLAY_NAME = 'Carol E2E'
+
 function makeCarol() {
   const ts = Date.now()
   return {
     email: `carol-${ts}@e2e.margin`,
     password: 'CarolE2E123!',
     handle: `carol${ts}`,
-    displayName: 'Carol E2E'
+    displayName: CAROL_DISPLAY_NAME
   }
 }
 
@@ -208,8 +210,8 @@ export default async function globalSetup(_config: FullConfig): Promise<void> {
   }
 
   const marginDetails: any = await apiGet(`margins/get_margin/${margin.marginId}`, aliceToken)
-  const staleCarols: any[] = (marginDetails.members ?? []).filter((m: any) =>
-    /^carol\d+$/.test(m.user?.handle ?? '')
+  const staleCarols: any[] = (marginDetails.members ?? []).filter(
+    (m: any) => m.user?.displayName === CAROL_DISPLAY_NAME
   )
   await Promise.all(
     staleCarols.map((m: any) =>

@@ -5,7 +5,11 @@ import type { CallResponsePayload, WebSocketMessage } from '$src/interfaces/WebS
 import { errorService } from '$src/services/ErrorService'
 import { webSocketService } from '$src/services/WebSocketService'
 import { WebSocketMessageType } from '$src/interfaces/WebSocketMessageType'
-import { deviceService } from '$src/services/DeviceService'
+import {
+  deviceService,
+  defaultDeviceConstraint,
+  getUserMediaPreferringDefault
+} from '$src/services/DeviceService'
 import { ICE_SERVERS } from '$src/services/call/iceServers'
 
 class CallService {
@@ -188,7 +192,10 @@ class CallService {
     const stream = new MediaStream()
 
     try {
-      const audioStream = await navigator.mediaDevices.getUserMedia({ audio: true })
+      const audioStream = await getUserMediaPreferringDefault(
+        { audio: defaultDeviceConstraint() },
+        { audio: true }
+      )
       audioStream.getAudioTracks().forEach((t) => stream.addTrack(t))
     } catch (e) {
       errorService.reportError('Microphone not available: ' + e.message)
@@ -204,7 +211,10 @@ class CallService {
     }
 
     try {
-      const videoStream = await navigator.mediaDevices.getUserMedia({ video: true })
+      const videoStream = await getUserMediaPreferringDefault(
+        { video: defaultDeviceConstraint() },
+        { video: true }
+      )
       videoStream.getVideoTracks().forEach((t) => stream.addTrack(t))
     } catch (e) {
       errorService.reportError('Camera not available: ' + e.message)

@@ -47,6 +47,8 @@ const mockCallState = callState as {
 }
 
 const mockDeviceState = deviceState as unknown as {
+  audioInputs: { deviceId: string; label: string }[]
+  videoInputs: { deviceId: string; label: string }[]
   selectedAudioDeviceId: string | undefined
   selectedVideoDeviceId: string | undefined
   setAudioInputs: ReturnType<typeof vi.fn>
@@ -383,6 +385,42 @@ describe('DeviceService.enumerateDevices (inferSelectedDevices)', () => {
     ])
     mockDeviceState.selectedAudioDeviceId = undefined
     mockDeviceState.selectedVideoDeviceId = undefined
+    mockDeviceState.audioInputs = []
+    mockDeviceState.videoInputs = []
+  })
+
+  it('selects the virtual default device when one is enumerated', async () => {
+    mockDeviceState.audioInputs = [{ deviceId: 'default', label: 'Default - Mic' }]
+    mockDeviceState.videoInputs = [{ deviceId: 'default', label: 'Default - Cam' }]
+    mockCallState.p2pCallState = makeMockP2PCallState({
+      localStream: makeMockStream([makeMockTrack('mic-1')], [makeMockTrack('cam-1')])
+    })
+
+    await deviceService.enumerateDevices()
+
+    expect(mockDeviceState.setSelectedAudioDeviceId).toHaveBeenCalledWith('default')
+    expect(mockDeviceState.setSelectedVideoDeviceId).toHaveBeenCalledWith('default')
+  })
+
+  it('selects the default device even when no call is active', async () => {
+    mockDeviceState.audioInputs = [{ deviceId: 'default', label: 'Default - Mic' }]
+    mockCallState.p2pCallState = null
+    mockCallState.groupCallState = null
+
+    await deviceService.enumerateDevices()
+
+    expect(mockDeviceState.setSelectedAudioDeviceId).toHaveBeenCalledWith('default')
+  })
+
+  it('falls back to the resolved track device id when no default is enumerated', async () => {
+    const audioTrack = makeMockTrack('mic-1')
+    mockCallState.p2pCallState = makeMockP2PCallState({
+      localStream: makeMockStream([audioTrack])
+    })
+
+    await deviceService.enumerateDevices()
+
+    expect(mockDeviceState.setSelectedAudioDeviceId).toHaveBeenCalledWith('mic-1')
   })
 
   it('infers selected audio device from group call session localStream', async () => {

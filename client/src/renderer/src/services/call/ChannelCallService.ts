@@ -3,7 +3,11 @@ import { Device } from 'mediasoup-client'
 import type { Producer, RtpCapabilities, RtpParameters, Transport, TransportOptions } from 'mediasoup-client/types'
 import { callState } from '$src/states/CallState.svelte.js'
 import { errorService } from '$src/services/ErrorService'
-import { deviceService } from '$src/services/DeviceService'
+import {
+  deviceService,
+  defaultDeviceConstraint,
+  getUserMediaPreferringDefault
+} from '$src/services/DeviceService'
 import { ICE_SERVERS } from '$src/services/call/iceServers'
 import { sessionState } from '$src/states/SessionState.svelte'
 
@@ -205,10 +209,15 @@ class ChannelCallService {
       this.setupTransportConnection(receiveTransport, sfuWs)
       this.setupConsumer(receiveTransport, device, sfuWs)
 
-      const localStream = await navigator.mediaDevices.getUserMedia({
-        audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true },
-        video: false
-      })
+      const audioBase: MediaTrackConstraints = {
+        echoCancellation: true,
+        noiseSuppression: true,
+        autoGainControl: true
+      }
+      const localStream = await getUserMediaPreferringDefault(
+        { audio: defaultDeviceConstraint(audioBase), video: false },
+        { audio: audioBase, video: false }
+      )
 
       const audioTrack = localStream.getAudioTracks()[0]
       const audioProducer = await sendTransport.produce({
@@ -274,7 +283,10 @@ class ChannelCallService {
         const videoConstraints: MediaTrackConstraints | boolean = effectiveVideoHeight
           ? { height: { max: effectiveVideoHeight } }
           : true
-        const videoStream = await navigator.mediaDevices.getUserMedia({ video: videoConstraints })
+        const videoStream = await getUserMediaPreferringDefault(
+          { video: defaultDeviceConstraint(videoConstraints) },
+          { video: videoConstraints }
+        )
         const videoTrack = videoStream.getVideoTracks()[0]
         const producer: Producer = await session.sendTransport.produce({
           track: videoTrack,

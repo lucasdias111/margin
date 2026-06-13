@@ -61,7 +61,7 @@
       onclick={onToggleAudio}
       title="Toggle Microphone"
     >
-      <Icon name={isAudioEnabled ? 'mic_off' : 'mic'} />
+      <Icon name={isAudioEnabled ? 'mic' : 'mic_off'} />
     </button>
 
     <button
@@ -70,7 +70,7 @@
       onclick={onToggleVideo}
       title="Toggle Video"
     >
-      <Icon name={isVideoEnabled ? 'video_off' : 'video'} />
+      <Icon name={isVideoEnabled ? 'video' : 'video_off'} />
     </button>
 
     <button
@@ -80,7 +80,7 @@
       disabled={isRemoteScreenSharing}
       title="Share Screen"
     >
-      <Icon name="monitor" />
+      <Icon name="screen_share" />
     </button>
 
     <div class="settings-anchor">

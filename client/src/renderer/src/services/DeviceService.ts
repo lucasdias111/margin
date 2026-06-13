@@ -2,6 +2,30 @@ import { deviceState } from '$src/states/DeviceState.svelte'
 import { callState } from '$src/states/CallState.svelte'
 import { errorService } from '$src/services/ErrorService'
 
+export const DEFAULT_DEVICE_ID = 'default'
+
+export function defaultDeviceConstraint(
+  base: MediaTrackConstraints | boolean = true
+): MediaTrackConstraints {
+  const constraints = typeof base === 'object' ? { ...base } : {}
+  constraints.deviceId = { exact: DEFAULT_DEVICE_ID }
+  return constraints
+}
+
+export async function getUserMediaPreferringDefault(
+  preferred: MediaStreamConstraints,
+  fallback: MediaStreamConstraints
+): Promise<MediaStream> {
+  try {
+    return await navigator.mediaDevices.getUserMedia(preferred)
+  } catch (err) {
+    if (err instanceof Error && err.name === 'OverconstrainedError') {
+      return navigator.mediaDevices.getUserMedia(fallback)
+    }
+    throw err
+  }
+}
+
 class DeviceService {
   private boundOnDeviceChange: (() => void) | null = null
 
@@ -167,25 +191,22 @@ class DeviceService {
   private inferSelectedDevices(): void {
     const localStream =
       callState.p2pCallState?.localStream ?? callState.groupCallState?.session?.localStream
-    if (!localStream) return
 
     if (!deviceState.selectedAudioDeviceId) {
-      const activeAudioTrack = localStream.getAudioTracks()[0]
-      if (activeAudioTrack) {
-        const settings = activeAudioTrack.getSettings()
-        if (settings.deviceId) {
-          deviceState.setSelectedAudioDeviceId(settings.deviceId)
-        }
+      if (deviceState.audioInputs.some((d) => d.deviceId === DEFAULT_DEVICE_ID)) {
+        deviceState.setSelectedAudioDeviceId(DEFAULT_DEVICE_ID)
+      } else {
+        const deviceId = localStream?.getAudioTracks()[0]?.getSettings().deviceId
+        if (deviceId) deviceState.setSelectedAudioDeviceId(deviceId)
       }
     }
 
     if (!deviceState.selectedVideoDeviceId) {
-      const activeVideoTrack = localStream.getVideoTracks()[0]
-      if (activeVideoTrack) {
-        const settings = activeVideoTrack.getSettings()
-        if (settings.deviceId) {
-          deviceState.setSelectedVideoDeviceId(settings.deviceId)
-        }
+      if (deviceState.videoInputs.some((d) => d.deviceId === DEFAULT_DEVICE_ID)) {
+        deviceState.setSelectedVideoDeviceId(DEFAULT_DEVICE_ID)
+      } else {
+        const deviceId = localStream?.getVideoTracks()[0]?.getSettings().deviceId
+        if (deviceId) deviceState.setSelectedVideoDeviceId(deviceId)
       }
     }
   }
