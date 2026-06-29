@@ -5,7 +5,8 @@ const api = {
   maximizeWindow: () => ipcRenderer.send('window-maximize'),
   closeWindow: () => ipcRenderer.send('window-close'),
   openExternal: (url: string) => ipcRenderer.invoke('open-external', url),
-  setBadgeCount: (count: number) => ipcRenderer.send('set-badge-count', count)
+  setBadgeCount: (count: number) => ipcRenderer.send('set-badge-count', count),
+  platform: process.platform
 }
 
 if (process.contextIsolated) {

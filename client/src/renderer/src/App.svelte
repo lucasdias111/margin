@@ -5,9 +5,11 @@
   import ErrorToast from '$src/components/common/messages/ErrorToast.svelte'
   import UpgradeModal from '$src/components/common/modals/UpgradeModal.svelte'
   import { isElectron } from '$src/utils/platformUtils'
+
+  const rounded = window.api?.platform !== 'linux'
 </script>
 
-<div class="app-shell">
+<div class="app-shell" class:rounded>
   {#if isElectron()}
     <TitleBar title="margin" />
   {/if}
@@ -25,6 +27,17 @@
     height: 100vh;
     height: 100dvh;
     overflow: hidden;
+  }
+
+  .app-shell.rounded {
+    border-radius: 14px;
+    background: #f2eee8;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    .app-shell.rounded {
+      background: #2d2d2d;
+    }
   }
 
   .app-content {

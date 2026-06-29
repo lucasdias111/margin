@@ -17,10 +17,10 @@
 
 {#if open}
   <!-- svelte-ignore a11y_no_static_element_interactions -->
-  <div class="backdrop" onclick={handleBackdropClick} onkeydown={() => {}}>
+  <div class="backdrop modal-overlay" onclick={handleBackdropClick} onkeydown={() => {}}>
     <div class="modal" role="dialog" aria-modal="true">
       <div class="modal-header">
-        {#if title}<h2>{title}</h2>{/if}
+        {#if title}<h2 class="modal-title">{title}</h2>{/if}
         <button class="close-btn" onclick={onClose} aria-label="Close">✕</button>
       </div>
       <div class="modal-body">
