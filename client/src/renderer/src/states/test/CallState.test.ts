@@ -251,6 +251,17 @@ describe('CallState', () => {
       callState.toggleMinimized()
       expect(callState.isMinimized).toBe(false)
     })
+
+    it('clears the previous duration interval when setDurationInterval is called again', () => {
+      const clearIntervalSpy = vi.spyOn(globalThis, 'clearInterval')
+      callState.startP2PCall(1, buildUser())
+
+      callState.setDurationInterval(111)
+      callState.setDurationInterval(222)
+
+      expect(clearIntervalSpy).toHaveBeenCalledWith(111)
+      clearIntervalSpy.mockRestore()
+    })
   })
 
   describe('endCall', () => {
