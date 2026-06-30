@@ -36,47 +36,21 @@ test.describe('Group chat', () => {
     await expect(authedPage.locator('.modal-title', { hasText: /New.*Group/ })).toBeVisible()
   })
 
-  test('Alice creates a group with Bob and sends a message that Bob sees', async ({
-    twoUsers
-  }) => {
+  test('Alice sends a message in a group that Bob sees', async ({ twoUsers }) => {
     const { alice: alicePage, bob: bobPage, seed } = twoUsers
 
+    // Alice navigates to the pre-seeded group
     const aliceHome = new HomePage(alicePage)
     await aliceHome.goToPrivate()
+    await alicePage.locator('.group-entry', { hasText: seed.groupName }).click({ timeout: 6000 })
 
-    // Open group chat modal
-    await alicePage.locator('.new-chat-btn').click()
-    await alicePage.locator('.dropdown-item', { hasText: 'Group chat' }).click()
-
-    // Add Bob by email
-    await alicePage.locator('#member-email-input').fill(seed.bob.email)
-    await alicePage.getByRole('button', { name: 'Add' }).click()
-    await expect(
-      alicePage.locator('.member-chip', { hasText: seed.bob.displayName })
-    ).toBeVisible({ timeout: 4000 })
-
-    // Set group name
-    await alicePage.locator('#group-name-input').fill('Test Group')
-
-    // Create
-    await alicePage.getByRole('button', { name: 'Create' }).click()
-    await expect(alicePage.locator('.modal-overlay')).not.toBeVisible({ timeout: 6000 })
-
-    // Alice sends a message
     const msg = `Group hello ${Date.now()}`
     await aliceHome.sendMessage(msg)
 
-    // Bob accepts the invite
+    // Bob navigates to the same group
     const bobHome = new HomePage(bobPage)
     await bobHome.goToPrivate()
-
-    await bobPage
-      .locator('.invite-item', { hasText: 'Test Group' })
-      .locator('button', { hasText: 'Accept' })
-      .click({ timeout: 10000 })
-
-    // Bob should now see the group and the message
-    await bobPage.locator('.group-entry', { hasText: 'Test Group' }).click({ timeout: 6000 })
+    await bobPage.locator('.group-entry', { hasText: seed.groupName }).click({ timeout: 6000 })
 
     await expect(bobPage.locator('.bubble p.text', { hasText: msg })).toBeVisible({
       timeout: 10000

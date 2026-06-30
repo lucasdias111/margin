@@ -11,6 +11,7 @@
     onclick: () => void
     avatar: Snippet
     badge?: Snippet
+    class?: string
   }
 
   let {
@@ -21,11 +22,12 @@
     isSelected,
     onclick,
     avatar,
-    badge
+    badge,
+    class: extraClass
   }: Props = $props()
 </script>
 
-<button class="entry" class:selected={isSelected} {onclick}>
+<button class="entry {extraClass ?? ''}" class:selected={isSelected} {onclick}>
   <span class="avatar-wrap">
     {@render avatar()}
   </span>

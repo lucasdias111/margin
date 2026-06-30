@@ -23,13 +23,13 @@ test.describe('Direct messages', () => {
 
     const aliceHome = new HomePage(alicePage)
     await aliceHome.goToPrivate()
-    await alicePage.locator('.user-button', { hasText: seed.bob.displayName }).click()
+    await alicePage.locator('.entry', { hasText: seed.bob.displayName }).click()
 
     await aliceHome.sendMessage(msg)
 
     const bobHome = new HomePage(bobPage)
     await bobHome.goToPrivate()
-    await bobPage.locator('.user-button', { hasText: seed.alice.displayName }).click()
+    await bobPage.locator('.entry', { hasText: seed.alice.displayName }).click()
 
     await expect(bobPage.locator('.bubble p.text', { hasText: msg })).toBeVisible({
       timeout: 10000

@@ -31,6 +31,7 @@
     {unreadCount}
     {isSelected}
     {onclick}
+    class="group-entry"
   >
     {#snippet avatar()}
       <Icon name="users" size={14} />

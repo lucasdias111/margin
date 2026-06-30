@@ -144,6 +144,31 @@ async function apiPost(path: string, token: string, body: unknown = null): Promi
   return text ? JSON.parse(text) : null
 }
 
+async function seedGroupConversation(aliceToken: string, bobToken: string): Promise<string> {
+  const groupName = 'E2E Group'
+
+  const convs: any[] = await apiGet('conversations', aliceToken)
+  const existing = convs.find((c: any) => c.type === 'GROUP' && c.name === groupName)
+
+  if (!existing) {
+    await apiPost('conversations/group', aliceToken, {
+      memberEmails: [BOB.email],
+      name: groupName,
+      encrypted: false
+    })
+  }
+
+  const pending: any[] = await apiGet('conversations/pending_invites', bobToken)
+  const invite = pending.find(
+    (inv: any) => inv.conversation?.type === 'GROUP' && inv.conversation?.name === groupName
+  )
+  if (invite) {
+    await apiPost(`conversations/${invite.conversation.id}/invite/accept`, bobToken)
+  }
+
+  return groupName
+}
+
 async function seedDmConversation(aliceToken: string, bobToken: string): Promise<void> {
   const inviteRes = await fetch(`${API}/conversations/invite`, {
     method: 'POST',
@@ -251,6 +276,7 @@ export default async function globalSetup(_config: FullConfig): Promise<void> {
   const { inviteCode } = await apiPost(`invites/margins/${margin.marginId}/link`, aliceToken)
 
   await seedDmConversation(aliceToken, bobToken)
+  const groupName = await seedGroupConversation(aliceToken, bobToken)
 
   writeFileSync(
     join(process.cwd(), '.e2e-seed.json'),
@@ -265,7 +291,8 @@ export default async function globalSetup(_config: FullConfig): Promise<void> {
         spaceName: space.spaceName ?? 'E2E Test Space',
         channelId: channel.id,
         channelName: channel.name ?? 'E2E Test Channel',
-        inviteCode
+        inviteCode,
+        groupName
       },
       null,
       2
