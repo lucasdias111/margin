@@ -7,6 +7,7 @@ declare global {
       openExternal: (url: string) => Promise<void>
       setBadgeCount: (count: number) => void
       setAppIcon: (dataUrl: string | null) => void
+      platform: string
     }
   }
 }

@@ -7,6 +7,7 @@ html, body {
   font-family: 'Inter', sans-serif;
   font-weight: 300;
   font-size: 14px;
+  background: transparent !important;
 }
 
 input, textarea, button, select {

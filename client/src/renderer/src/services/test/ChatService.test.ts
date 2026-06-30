@@ -138,6 +138,7 @@ describe('ChatService', () => {
     it('routes direct messages to direct handler', async () => {
       const sender = buildUser({ id: 2 })
       navigationState.selectedUser = sender
+      conversationsState.byId.set(10, buildDirectConversation({ id: 10, encrypted: true }))
       vi.mocked(encryptionService.decryptMessage).mockResolvedValue('hello')
       mockApiPost({})
       const msg = buildMessage({ id: 201, conversationType: 'DIRECT', user: sender })
@@ -261,6 +262,7 @@ describe('ChatService', () => {
     it('decrypts and appends when from another user in the active conversation', async () => {
       const sender = buildUser({ id: 2 })
       navigationState.selectedUser = sender
+      conversationsState.byId.set(10, buildDirectConversation({ id: 10, encrypted: true }))
       mockApiPost({})
       vi.mocked(encryptionService.decryptMessage).mockResolvedValue('decrypted hi')
       const msg = buildMessage({
@@ -284,6 +286,7 @@ describe('ChatService', () => {
     it('falls back to placeholder content when decryption throws', async () => {
       const sender = buildUser({ id: 2 })
       navigationState.selectedUser = sender
+      conversationsState.byId.set(10, buildDirectConversation({ id: 10, encrypted: true }))
       mockApiPost({})
       vi.mocked(encryptionService.decryptMessage).mockRejectedValue(new Error('fail'))
       const msg = buildMessage({
@@ -484,7 +487,7 @@ describe('ChatService', () => {
     it('encrypts DM, sends via WebSocket, returns optimistic message', async () => {
       vi.mocked(encryptionService.getPublicKey).mockResolvedValue('PK')
       vi.mocked(encryptionService.encryptMessage).mockResolvedValue('cipher')
-      const conv = buildDirectConversation({ id: 10, otherUserId: 2 })
+      const conv = buildDirectConversation({ id: 10, otherUserId: 2, encrypted: true })
 
       const msg = await chatService.sendMessage(sessionState.currentUser!, conv, 'plain hello')
 
@@ -654,11 +657,12 @@ describe('ChatService', () => {
       const result = await chatService.sendMessageAndStartConversation(
         sessionState.currentUser!,
         2,
-        'hi'
+        'hi',
+        true
       )
 
       expect(api.authenticatedPost).toHaveBeenCalledWith(
-        { recipientUserId: 2, encryptedContent: 'cipher' },
+        { recipientUserId: 2, encryptedContent: 'cipher', encrypted: true },
         'conversations/create_private'
       )
       expect(result.conversation).toEqual(newConv)
@@ -827,7 +831,7 @@ describe('ChatService', () => {
       await chatService.sendConversationInvite('alice@margin.chat')
 
       expect(api.authenticatedPost).toHaveBeenCalledWith(
-        { email: 'alice@margin.chat' },
+        { email: 'alice@margin.chat', encrypted: false },
         'conversations/invite'
       )
     })
@@ -1119,7 +1123,7 @@ describe('ChatService', () => {
         return content
       })
       mockApiGet({
-        conversation: buildDirectConversation({ id: 10 }),
+        conversation: buildDirectConversation({ id: 10, encrypted: true }),
         messages: [buildMessage({ id: 1, content: 'hi' })]
       })
       mockApiPost({})

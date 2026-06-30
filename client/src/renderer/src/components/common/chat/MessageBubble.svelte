@@ -12,6 +12,7 @@
   import MessageActions from '$src/components/common/chat/MessageActions.svelte'
   import MessageReactions from '$src/components/common/chat/MessageReactions.svelte'
   import ImagePreviewModal from '$src/components/common/modals/ImagePreviewModal.svelte'
+  import LoadingImage from '$src/components/common/media/LoadingImage.svelte'
   import { sessionState } from '$src/states/SessionState.svelte'
 
   interface Props {
@@ -113,7 +114,7 @@
   onmouseenter={() => (showActions = true)}
   onmouseleave={() => (showActions = false)}
 >
-  {#if !isSent && message.conversationType === 'CHANNEL'}
+  {#if !isSent && (message.conversationType === 'CHANNEL' || message.conversationType === 'GROUP')}
     <div class="avatar">
       <UserAvatar profilePictureUrl={message.user.profilePictureUrl} width={32} height={32} />
     </div>
@@ -132,7 +133,7 @@
   {/if}
 
   <div class="message-column" class:sent={isSent}>
-    {#if showDisplayName && message.conversationType === 'CHANNEL' && message.user.id !== sessionState.currentUser?.id}
+    {#if showDisplayName && (message.conversationType === 'CHANNEL' || message.conversationType === 'GROUP') && message.user.id !== sessionState.currentUser?.id}
       <span class="handle">{message.user.displayName}</span>
     {/if}
 
@@ -175,7 +176,7 @@
                     onclick={() => openImagePreview(att)}
                     aria-label={`Preview ${att.fileName}`}
                   >
-                    <img {src} alt={att.fileName} />
+                    <LoadingImage {src} alt={att.fileName} class="attachment-thumb" />
                   </button>
                 {:catch}
                   <span class="attachment-failed">Image unavailable</span>
@@ -199,7 +200,7 @@
         <p class="text" class:jumbo={isEmojiOnly}>
           {#each parsedContent as part, i (`${i}-${part.content}`)}
             {#if part.type === 'link' && part.href && isInlineImageUrl(part.href)}
-              <img class="inline-media" src={part.href} alt="" />
+              <LoadingImage class="inline-media" src={part.href} alt="" block />
             {:else if part.type === 'link'}
               <a href={part.href} class="chat-link" onclick={(e) => openExternalLink(e, part.href)}>
                 {part.content}
@@ -430,7 +431,16 @@
     max-width: 320px;
   }
 
-  .image-attachment img {
+  .image-attachment :global(.attachment-thumb) {
+    width: 100%;
+  }
+
+  .image-attachment :global(.attachment-thumb:not(.is-loaded)) {
+    width: 220px;
+    height: 160px;
+  }
+
+  .image-attachment :global(.attachment-thumb img) {
     display: block;
     width: 100%;
     max-height: 320px;
@@ -481,11 +491,23 @@
     display: none;
   }
 
-  .inline-media {
-    display: block;
+  :global(.inline-media) {
     max-width: 280px;
     max-height: 280px;
     border-radius: 10px;
     margin: 4px 0;
+    overflow: hidden;
+  }
+
+  :global(.inline-media:not(.is-loaded)) {
+    width: 160px;
+    height: 120px;
+  }
+
+  :global(.inline-media img) {
+    display: block;
+    max-width: 100%;
+    max-height: 280px;
+    border-radius: 10px;
   }
 </style>

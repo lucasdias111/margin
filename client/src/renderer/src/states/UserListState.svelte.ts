@@ -1,8 +1,8 @@
-import type { DirectConversation } from '$src/interfaces/Conversation'
+import type { Conversation } from '$src/interfaces/Conversation'
 import type { User } from '$src/interfaces/User'
 
 export interface PendingInvite {
-  conversation: DirectConversation
+  conversation: Conversation
   fromUser: User
 }
 

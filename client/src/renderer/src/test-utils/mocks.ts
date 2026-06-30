@@ -2,14 +2,13 @@ import type { User } from '$src/interfaces/User'
 import type { Channel } from '$src/interfaces/Channel'
 import type { Space } from '$src/interfaces/Space'
 import type { Message, MessageReaction } from '$src/interfaces/Messages'
-import type { ChannelConversation, DirectConversation } from '$src/interfaces/Conversation'
+import type { ChannelConversation, DirectConversation, GroupConversation } from '$src/interfaces/Conversation'
 import type { RecentChatUser } from '$src/interfaces/RecentChatUser'
 import type { SFUParticipant } from '$src/interfaces/Calls'
 
 export function buildUser(overrides: Partial<User> = {}): User {
   return {
     id: 1,
-    handle: 'lucas',
     displayName: 'Lucas',
     email: 'lucas@margin.chat',
     createdAt: '2025-01-01T00:00:00Z',
@@ -83,6 +82,21 @@ export function buildDirectConversation(
     otherUserReadAt: '2025-01-01T00:00:00Z',
     inviteStatus: 'ACCEPTED',
     createdAt: '2025-06-01T12:00:00Z',
+    encrypted: false,
+    ...overrides
+  }
+}
+
+export function buildGroupConversation(
+  overrides: Partial<GroupConversation> = {}
+): GroupConversation {
+  return {
+    id: 30,
+    type: 'GROUP',
+    name: 'Test Group',
+    memberIds: [1, 2, 3],
+    createdAt: '2025-06-01T12:00:00Z',
+    encrypted: false,
     ...overrides
   }
 }

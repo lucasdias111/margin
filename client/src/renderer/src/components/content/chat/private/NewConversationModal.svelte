@@ -2,6 +2,7 @@
   import AppModal from '$src/components/common/modals/AppModal.svelte'
   import UserAvatar from '$src/components/common/user/UserAvatar.svelte'
   import Button from '$src/components/common/buttons/Button.svelte'
+  import Icon from '$src/components/common/icons/Icon.svelte'
   import { authenticatedGet } from '$src/services/api'
   import { chatService } from '$src/services/ChatService'
   import type { User } from '$src/interfaces/User'
@@ -18,9 +19,16 @@
   let loading = $state(false)
   let error = $state<string | null>(null)
   let sent = $state(false)
+  let encryptionMode = $state<'standard' | 'secret'>('standard')
+  const encrypted = $derived(encryptionMode === 'secret')
 
-  const initialTitle = 'Invite a user to chat'
-  let title = $state(initialTitle)
+  const title = $derived(
+    foundUser
+      ? `Send invite to ${foundUser.displayName}?`
+      : encrypted
+        ? 'New Secret Chat'
+        : 'New Private Chat'
+  )
 
   async function lookup(): Promise<void> {
     if (!email.trim()) return
@@ -35,7 +43,6 @@
         return
       }
       foundUser = await response.json()
-      title = `Send invite to ${foundUser!.displayName}?`
     } catch (e) {
       error = `${e}. Try again.`
     } finally {
@@ -46,7 +53,7 @@
   async function sendInvite(): Promise<void> {
     if (!foundUser) return
     try {
-      await chatService.sendConversationInvite(email.trim())
+      await chatService.sendConversationInvite(email.trim(), encrypted)
       sent = true
     } catch {
       error = 'Failed to send invite. The user may already have a conversation with you.'
@@ -64,7 +71,7 @@
     error = null
     loading = false
     sent = false
-    title = initialTitle
+    encryptionMode = 'standard'
   }
 </script>
 
@@ -72,31 +79,47 @@
   {#if sent}
     <div class="success">
       <span
-      >Invite sent to {foundUser?.displayName}. They'll need to accept before
-        you can chat.</span
+        >Invite sent to {foundUser?.displayName}. They'll need to accept before you can chat.</span
       >
+      {#if encrypted}
+        <p class="enc-note">
+          <Icon name="lock" size={12} />
+          This will be a Secret Chat — end-to-end encrypted.
+        </p>
+      {/if}
     </div>
     <div class="actions">
-      <button class="confirm" onclick={close}>Done</button>
+      <Button buttonType="primary" onClick={close} text="Done" />
     </div>
   {:else if foundUser}
     <div class="selected-user">
       <UserAvatar profilePictureUrl={foundUser.profilePictureUrl} />
       <span class="name">{foundUser.displayName}</span>
+      {#if encrypted}
+        <span class="secret-badge">
+          <Icon name="lock" size={11} />
+          Secret
+        </span>
+      {/if}
     </div>
     {#if error}
       <span class="lookup-error">{error}</span>
     {/if}
     <div class="actions">
-      <button
-        class="cancel"
-        onclick={() => {
+      <Button
+        buttonType="secondary"
+        onClick={() => {
           foundUser = undefined
-          title = initialTitle
-        }}>Back
-      </button
-      >
-      <button class="confirm" onclick={sendInvite}>Send Invite</button>
+        }}
+        size="medium"
+        text="Back"
+      />
+      <Button
+        buttonType="primary"
+        onClick={sendInvite}
+        size="medium"
+        text="Send Invite"
+      />
     </div>
   {:else}
     <div class="lookup">
@@ -121,6 +144,24 @@
           disabled={loading || !email.trim()}
         />
       </div>
+
+      <div class="encryption-options">
+        <label class="radio-option" class:selected={encryptionMode === 'standard'}>
+          <input type="radio" name="chat-enc" value="standard" bind:group={encryptionMode} />
+          <span class="radio-content">
+            <span class="radio-title">Standard</span>
+            <span class="radio-hint">Messages stored on server</span>
+          </span>
+        </label>
+        <label class="radio-option" class:selected={encryptionMode === 'secret'}>
+          <input type="radio" name="chat-enc" value="secret" bind:group={encryptionMode} />
+          <span class="radio-content">
+            <span class="radio-title"><Icon name="lock" size={11} /> Secret Chat</span>
+            <span class="radio-hint">End-to-end encrypted</span>
+          </span>
+        </label>
+      </div>
+
       {#if error}
         <span class="lookup-error">{error}</span>
       {/if}
@@ -132,7 +173,7 @@
   .lookup {
     display: flex;
     flex-direction: column;
-    gap: 8px;
+    gap: 10px;
   }
 
   .field-label {
@@ -159,8 +200,9 @@
     font-size: 13px;
     color: #2a2a2a;
     box-sizing: border-box;
-    transition: border-color 0.15s,
-    background 0.15s;
+    transition:
+      border-color 0.15s,
+      background 0.15s;
   }
 
   .lookup-input:focus {
@@ -170,6 +212,52 @@
 
   .lookup-input::placeholder {
     color: #c1c1c1;
+  }
+
+  .encryption-options {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .radio-option {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: 10px 12px;
+    border-radius: 8px;
+    border: 1.5px solid #e8e8e8;
+    cursor: pointer;
+    transition:
+      border-color 0.15s,
+      background 0.15s;
+  }
+
+  .radio-option.selected {
+    border-color: #e8712a;
+    background: #fff8f4;
+  }
+
+  .radio-option input[type='radio'] {
+    display: none;
+  }
+
+  .radio-content {
+    display: contents;
+  }
+
+  .radio-title {
+    display: flex;
+    align-items: center;
+    gap: 3px;
+    font-size: 0.88rem;
+    font-weight: 600;
+    color: #2d2d2d;
+  }
+
+  .radio-hint {
+    font-size: 0.78rem;
+    color: #888;
   }
 
   .lookup-error {
@@ -188,9 +276,23 @@
   }
 
   .name {
+    flex: 1;
     color: #2d2d2d;
     font-weight: 600;
     font-size: 14px;
+  }
+
+  .secret-badge {
+    display: flex;
+    align-items: center;
+    gap: 3px;
+    font-size: 11px;
+    font-weight: 600;
+    color: #ff6203;
+    background: #fff0eb;
+    border: 1px solid #ffd8c8;
+    border-radius: 12px;
+    padding: 2px 8px;
   }
 
   .success {
@@ -203,6 +305,16 @@
     margin-bottom: 8px;
   }
 
+  .enc-note {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    margin: 6px 0 0;
+    font-size: 11px;
+    color: #555;
+    font-weight: 400;
+  }
+
   .actions {
     display: flex;
     justify-content: flex-end;
@@ -210,24 +322,4 @@
     padding: 5% 0 1%;
   }
 
-  .cancel {
-    background: none;
-    border: 1px solid #d9d9d9;
-    border-radius: 8px;
-    padding: 8px 16px;
-    cursor: pointer;
-    color: #2d2d2d;
-    font-family: inherit;
-  }
-
-  .confirm {
-    background: #ff6203;
-    color: #fff;
-    border: none;
-    border-radius: 8px;
-    padding: 8px 16px;
-    font-weight: 600;
-    cursor: pointer;
-    font-family: inherit;
-  }
 </style>

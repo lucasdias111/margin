@@ -7,14 +7,16 @@ import type { User } from '$src/interfaces/User'
 import {
   type Conversation,
   type DirectConversation,
+  type GroupConversation,
   isChannelConversation,
-  isDirectConversation
+  isDirectConversation,
+  isGroupConversation
 } from '$src/interfaces/Conversation'
 import { encryptionService } from './EncryptionService'
 import { webSocketService } from './WebSocketService'
 import { WebSocketMessageType } from '$src/interfaces/WebSocketMessageType'
 import type { Channel } from '$src/interfaces/Channel'
-import { authenticatedGet, authenticatedPost } from '$src/services/api'
+import { authenticatedGet, authenticatedPost, authenticatedDelete } from '$src/services/api'
 import { fileStorageService } from '$src/services/FileStorageService'
 import { notificationService } from '$src/services/NotificationService'
 import type { WebSocketMessage } from '$src/interfaces/WebSocketMessages'
@@ -32,19 +34,15 @@ import { errorService } from '$src/services/ErrorService'
 class ChatService {
   private static readonly PAGE_SIZE = 30
 
-  // Monotonically decreasing ids for optimistic messages. A plain counter (vs
-  // -Date.now()) guarantees uniqueness when several messages are sent within
-  // the same millisecond, so each optimistic bubble can be tracked individually.
   private optimisticIdSeq = -1
-
-  // Keyed by optimistic message id. Holds a re-dispatch closure for a message
-  // whose send failed, so the "Retry" affordance can replay it verbatim.
   private pendingRetries = new Map<number, () => Promise<void>>()
 
   handleIncomingMessage = async (data: WebSocketMessage<Message>): Promise<void> => {
     const msg = data.payload
     if (msg.conversationType === 'CHANNEL') {
       await this.handleIncomingChannelMessage(msg)
+    } else if (msg.conversationType === 'GROUP') {
+      await this.handleIncomingGroupMessage(msg)
     } else {
       await this.handleIncomingDirectMessage(msg)
     }
@@ -52,7 +50,8 @@ class ChatService {
 
   private handleIncomingChannelMessage = async (msg: Message): Promise<void> => {
     const isFromMe = msg.user.id === sessionState.currentUser?.id
-    const isActive = navigationState.view === View.Margin &&
+    const isActive =
+      navigationState.view === View.Margin &&
       msg.conversationId === navigationState.selectedChannel?.conversationId
 
     if (isFromMe && this.replaceOptimisticIfPresent(msg)) {
@@ -82,8 +81,15 @@ class ChatService {
 
     if (!otherUser || !otherUserId) return
 
+    const conv = [...conversationsState.byId.values()].find(
+      (c) => c.type === 'DIRECT' && c.otherUserId === otherUserId
+    ) as DirectConversation | undefined
+
+    const shouldDecrypt = conv ? conv.encrypted : true
     try {
-      msg.content = await encryptionService.decryptMessage(msg.content, !isFromMe)
+      if (shouldDecrypt) {
+        msg.content = await encryptionService.decryptMessage(msg.content, !isFromMe)
+      }
     } catch {
       msg.content = '[Decryption failed]'
     }
@@ -109,15 +115,48 @@ class ChatService {
     }
   }
 
+  private handleIncomingGroupMessage = async (msg: Message): Promise<void> => {
+    const isFromMe = msg.user.id === sessionState.currentUser?.id
+    const conv = conversationsState.byId.get(msg.conversationId) as GroupConversation | undefined
+
+    if (conv?.encrypted && sessionState.currentUser) {
+      try {
+        msg.content = await encryptionService.decryptGroupMessage(
+          msg.content,
+          sessionState.currentUser.id
+        )
+      } catch {
+        msg.content = '[Decryption failed]'
+      }
+    }
+
+    const isActive =
+      navigationState.view === View.Private &&
+      navigationState.selectedGroupConversation?.id === msg.conversationId
+
+    if (isFromMe && this.replaceOptimisticIfPresent(msg)) {
+      if (document.hasFocus() && isActive) {
+        const meta = conversationsState.conversationMetaById.get(msg.conversationId)
+        if (meta?.unread) await this.markConversationAsRead(msg.conversationId)
+      }
+      return
+    }
+
+    conversationsState.appendMessage(msg, !isFromMe)
+
+    if (isActive && document.hasFocus()) {
+      await this.markConversationAsRead(msg.conversationId)
+    } else {
+      conversationsState.markUnread(msg.conversationId)
+      notificationService.notifyIncomingMessage(msg)
+    }
+  }
+
   private replaceOptimisticIfPresent(msg: Message): boolean {
     const messages = conversationsState.messagesByConversationId.get(msg.conversationId) ?? []
     const optimisticIndices = messages.flatMap((m, i) => (m.id < 0 ? [i] : []))
     if (optimisticIndices.length === 0) return false
 
-    // Multiple optimistic messages can be in flight (e.g. a slow image upload
-    // sent before a fast text message), and their echoes may arrive out of
-    // order. Prefer the placeholder whose content matches this echo; fall back
-    // to the oldest so a placeholder is never left stranded.
     const optimisticIndex =
       optimisticIndices.find((i) => messages[i].content === msg.content) ?? optimisticIndices[0]
 
@@ -156,6 +195,60 @@ class ChatService {
       `conversations/${user.id}/direct_messages?limit=${ChatService.PAGE_SIZE}`,
       (conv) => (document.hasFocus() ? this.markConversationAsRead(conv.id) : Promise.resolve())
     )
+  }
+
+  async loadConversationForGroup(group: GroupConversation, force = false): Promise<void> {
+    const meta = conversationsState.conversationMetaById.get(group.id)
+    if (!force && meta?.initialFetchCompleted && !meta?.isLoading) {
+      if (document.hasFocus()) await this.markConversationAsRead(group.id)
+      return
+    }
+
+    await this.loadGroupMessages(group)
+  }
+
+  private async loadGroupMessages(group: GroupConversation): Promise<void> {
+    const url = `conversations/${group.id}/messages?limit=${ChatService.PAGE_SIZE}`
+    const response = await authenticatedGet(url)
+    if (!response.ok) return
+
+    const messageResponse: ConversationMessagesResponse = await response.json()
+    const conv = messageResponse.conversation
+    if (!conv) return
+
+    conversationsState.byId.set(conv.id, conv)
+    conversationsState.conversationMetaById.set(conv.id, {
+      ...(conversationsState.conversationMetaById.get(conv.id) ?? defaultMeta()),
+      isLoading: true
+    })
+
+    let messages = messageResponse.messages
+    if (group.encrypted && sessionState.currentUser) {
+      messages = await Promise.all(
+        messages.map(async (msg) => {
+          try {
+            msg.content = await encryptionService.decryptGroupMessage(
+              msg.content,
+              sessionState.currentUser!.id
+            )
+          } catch {
+            msg.content = '[Decryption failed]'
+          }
+          return msg
+        })
+      )
+    }
+
+    conversationsState.messagesByConversationId.set(conv.id, messages)
+    conversationsState.conversationMetaById.set(conv.id, {
+      ...(conversationsState.conversationMetaById.get(conv.id) ?? defaultMeta()),
+      isLoading: false,
+      hasMore: messages.length >= ChatService.PAGE_SIZE,
+      lastMessage: messages[messages.length - 1]?.content ?? null,
+      initialFetchCompleted: true
+    })
+
+    if (document.hasFocus()) await this.markConversationAsRead(conv.id)
   }
 
   async loadConversationForChannel(channel: Channel, force = false): Promise<void> {
@@ -225,7 +318,26 @@ class ChatService {
       if (!response.ok) return { messages: [], hasMore: false }
 
       const messageResponse: ConversationMessagesResponse = await response.json()
-      const messages = await this.decryptIfDirect(messageResponse.messages, conv)
+      let messages = messageResponse.messages
+
+      if (isGroupConversation(conv) && conv.encrypted && sessionState.currentUser) {
+        messages = await Promise.all(
+          messages.map(async (msg) => {
+            try {
+              msg.content = await encryptionService.decryptGroupMessage(
+                msg.content,
+                sessionState.currentUser!.id
+              )
+            } catch {
+              msg.content = '[Decryption failed]'
+            }
+            return msg
+          })
+        )
+      } else {
+        messages = await this.decryptIfDirect(messages, conv)
+      }
+
       const hasMore = messages.length === ChatService.PAGE_SIZE
       return { messages, hasMore }
     } catch (error) {
@@ -238,6 +350,9 @@ class ChatService {
     if (isDirectConversation(conversation)) {
       return `conversations/${conversation.otherUserId}/direct_messages?limit=${ChatService.PAGE_SIZE}&before=${before}`
     }
+    if (isGroupConversation(conversation)) {
+      return `conversations/${conversation.id}/messages?limit=${ChatService.PAGE_SIZE}&before=${before}`
+    }
     if (isChannelConversation(conversation)) {
       return `conversations/${conversation.channelId}/channel_messages?limit=${ChatService.PAGE_SIZE}&before=${before}`
     }
@@ -248,7 +363,7 @@ class ChatService {
     messages: Message[],
     conversation: Conversation
   ): Promise<Message[]> {
-    if (!isDirectConversation(conversation)) return messages
+    if (!isDirectConversation(conversation) || !conversation.encrypted) return messages
 
     return Promise.all(
       messages.map(async (message) => {
@@ -267,11 +382,15 @@ class ChatService {
   async sendMessageAndStartConversation(
     currentUser: User,
     toUserId: number,
-    messageText: string
+    messageText: string,
+    encrypted = false
   ): Promise<{ conversation: Conversation; message: Message }> {
-    const content = await this.encryptForUser(messageText, toUserId, currentUser.id)
+    let content = messageText
+    if (encrypted) {
+      content = await this.encryptForUser(messageText, toUserId, currentUser.id)
+    }
     const response = await authenticatedPost(
-      { recipientUserId: toUserId, encryptedContent: content },
+      { recipientUserId: toUserId, encryptedContent: content, encrypted },
       'conversations/create_private'
     )
     const conversation: Conversation = await response.json()
@@ -287,7 +406,7 @@ class ChatService {
   ): Promise<Message | null> {
     if (!this.guardConnected()) return null
     let content = messageText
-    if (isDirectConversation(conversation)) {
+    if (isDirectConversation(conversation) && conversation.encrypted) {
       content = await this.encryptForUser(messageText, conversation.otherUserId, currentUser.id)
     }
     webSocketService.send<{ content: string; attachmentIds: number[] }>({
@@ -313,11 +432,55 @@ class ChatService {
       inlineFiles
     )
     conversationsState.appendMessage(optimistic, false)
-    await this.dispatch(optimistic, () => this.uploadConversationAttachments(conversation.id, inlineFiles), async (attachmentIds) => {
-      const content = await this.encryptForUser(messageText, conversation.otherUserId, currentUser.id)
-      return { recipientId: conversation.id, content, attachmentIds }
-    })
+    await this.dispatch(
+      optimistic,
+      () => this.uploadConversationAttachments(conversation.id, inlineFiles),
+      async (attachmentIds) => {
+        let content = messageText
+        if (conversation.encrypted) {
+          content = await this.encryptForUser(messageText, conversation.otherUserId, currentUser.id)
+        }
+        return { recipientId: conversation.id, content, attachmentIds }
+      }
+    )
     return optimistic
+  }
+
+  async sendGroupMessage(
+    currentUser: User,
+    conversation: GroupConversation,
+    messageText: string,
+    inlineFiles: File[] = []
+  ): Promise<Message | null> {
+    if (!this.guardConnected()) return null
+    const optimistic = this.buildOptimisticMessage(
+      currentUser,
+      conversation.id,
+      messageText,
+      'GROUP',
+      inlineFiles
+    )
+    conversationsState.appendMessage(optimistic, false)
+    await this.dispatch(
+      optimistic,
+      () => this.uploadConversationAttachments(conversation.id, inlineFiles),
+      async (attachmentIds) => {
+        let content = messageText
+        if (conversation.encrypted) {
+          const memberKeys = await this.fetchGroupMemberKeys(conversation.id)
+          content = await encryptionService.encryptMessageForGroup(messageText, memberKeys)
+        }
+        return { recipientId: conversation.id, content, attachmentIds }
+      }
+    )
+    return optimistic
+  }
+
+  private async fetchGroupMemberKeys(conversationId: number): Promise<Record<string, string>> {
+    const response = await authenticatedGet(`conversations/${conversationId}/member-public-keys`)
+    if (!response.ok) throw new Error('Failed to fetch group member keys')
+    const data: Record<number, string> = await response.json()
+    return Object.fromEntries(Object.entries(data).map(([k, v]) => [String(k), v]))
   }
 
   private async uploadConversationAttachments(
@@ -366,12 +529,6 @@ class ChatService {
     return optimistic
   }
 
-  /**
-   * Uploads attachments, then sends the WebSocket frame. On any failure the
-   * optimistic message is flipped to 'error' and a retry closure is stored so
-   * the user can replay the exact same send. The optimistic bubble is already
-   * on screen by the time this runs, so the upload never blocks rendering.
-   */
   private async dispatch(
     optimistic: Message,
     uploadAttachments: () => Promise<number[]>,
@@ -439,7 +596,7 @@ class ChatService {
     user: User,
     conversationId: number | null,
     content: string,
-    conversationType: 'DIRECT' | 'CHANNEL',
+    conversationType: 'DIRECT' | 'CHANNEL' | 'GROUP',
     files: File[] = []
   ): Message {
     return {
@@ -582,26 +739,49 @@ class ChatService {
     }
   }
 
-  async sendConversationInvite(email: string): Promise<void> {
-    await authenticatedPost({ email }, 'conversations/invite')
+  async sendConversationInvite(email: string, encrypted = false): Promise<void> {
+    await authenticatedPost({ email, encrypted }, 'conversations/invite')
+  }
+
+  async createGroupConversation(
+    memberEmails: string[],
+    name: string,
+    encrypted = false
+  ): Promise<GroupConversation> {
+    const response = await authenticatedPost(
+      { memberEmails, name, encrypted },
+      'conversations/group'
+    )
+    if (!response.ok) throw new Error('Failed to create group conversation')
+    const group: GroupConversation = await response.json()
+    conversationsState.byId.set(group.id, group)
+    if (!conversationsState.conversationMetaById.has(group.id)) {
+      conversationsState.conversationMetaById.set(group.id, defaultMeta())
+    }
+    return group
   }
 
   async acceptConversationInvite(invite: PendingInvite): Promise<void> {
     await authenticatedPost(null, `conversations/${invite.conversation.id}/invite/accept`)
-
     conversationInviteService.removePendingInvite(invite.conversation.id)
 
-    usersState.add(invite.fromUser)
-
-    const accepted: DirectConversation = {
-      ...invite.conversation,
-      otherUserId: invite.fromUser.id,
-      inviteStatus: 'ACCEPTED'
-    }
-    conversationsState.byId.set(accepted.id, accepted)
-
-    if (!conversationsState.conversationMetaById.has(accepted.id)) {
-      conversationsState.conversationMetaById.set(accepted.id, defaultMeta())
+    if (invite.conversation.type === 'DIRECT') {
+      usersState.add(invite.fromUser)
+      const accepted: DirectConversation = {
+        ...invite.conversation,
+        otherUserId: invite.fromUser.id,
+        inviteStatus: 'ACCEPTED'
+      }
+      conversationsState.byId.set(accepted.id, accepted)
+      if (!conversationsState.conversationMetaById.has(accepted.id)) {
+        conversationsState.conversationMetaById.set(accepted.id, defaultMeta())
+      }
+    } else if (invite.conversation.type === 'GROUP') {
+      const group = invite.conversation as GroupConversation
+      conversationsState.byId.set(group.id, group)
+      if (!conversationsState.conversationMetaById.has(group.id)) {
+        conversationsState.conversationMetaById.set(group.id, defaultMeta())
+      }
     }
   }
 
@@ -624,7 +804,7 @@ class ChatService {
   selectContent(content: View): void {
     if (navigationState.view !== content) {
       navigationState.selectedUser = null
-      // conversationsState.clear()
+      navigationState.selectedGroupConversation = null
     }
     navigationService.setView(content)
     channelService.select(null)
@@ -648,6 +828,40 @@ class ChatService {
         unread: false
       })
     }
+  }
+
+  selectGroupConversation(group: GroupConversation): void {
+    navigationState.selectedUser = null
+    navigationState.selectedGroupConversation = group
+    navigationService.setView(View.Private)
+    channelService.select(null)
+    this.loadConversationForGroup(group)
+  }
+
+  async addGroupMember(conversationId: number, userId: number): Promise<void> {
+    const response = await authenticatedPost({ userId }, `conversations/${conversationId}/members`)
+    if (!response.ok) throw new Error('Failed to add member')
+    const conv = conversationsState.byId.get(conversationId)
+    if (conv && conv.type === 'GROUP') {
+      conversationsState.byId.set(conversationId, {
+        ...conv,
+        memberIds: [...conv.memberIds, userId]
+      })
+    }
+  }
+
+  async leaveGroup(conversationId: number): Promise<void> {
+    const userId = sessionState.currentUser?.id
+    if (!userId) return
+    const response = await authenticatedDelete(
+      null,
+      `conversations/${conversationId}/members/${userId}`
+    )
+    if (!response.ok) throw new Error('Failed to leave group')
+    conversationsState.byId.delete(conversationId)
+    conversationsState.messagesByConversationId.delete(conversationId)
+    conversationsState.conversationMetaById.delete(conversationId)
+    navigationState.selectedGroupConversation = null
   }
 }
 

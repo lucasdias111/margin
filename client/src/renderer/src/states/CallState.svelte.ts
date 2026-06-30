@@ -141,6 +141,9 @@ class CallState {
     this.baseState.duration++
   }
   setDurationInterval(intervalId: number): void {
+    if (this.baseState.durationInterval) {
+      clearInterval(this.baseState.durationInterval)
+    }
     this.baseState.durationInterval = intervalId
   }
   setCallId(callId: number): void {

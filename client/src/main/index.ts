@@ -191,7 +191,7 @@ function createWindow(): void {
     show: false,
     frame: false,
     titleBarStyle: 'hidden',
-    transparent: false,
+    transparent: process.platform !== 'linux',
     hasShadow: true,
     ...(process.platform === 'linux' ? { icon } : {}),
     webPreferences: {

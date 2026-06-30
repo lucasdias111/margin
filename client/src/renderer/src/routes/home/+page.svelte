@@ -41,6 +41,7 @@
   import { marginState } from '$src/states/MarginState.svelte'
   import { spaceService } from '$src/services/SpaceService'
   import { sessionHandler } from '$src/handlers/SessionHandler'
+  import { sessionState } from '$src/states/SessionState.svelte'
   import { conversationsState } from '$src/states/ConversationsState.svelte'
   import { subscriptionState } from '$src/states/SubscriptionState.svelte'
   import type { Subscription } from '$src/interfaces/Subscription'
@@ -201,11 +202,20 @@
     const decryptedUsers = await Promise.all(
       users.map(async (recentUser) => {
         if (!recentUser.lastMessage) return recentUser
+        const conv = recentUser.conversation
+        if (!('encrypted' in conv) || !conv.encrypted) return recentUser
         try {
-          recentUser.lastMessage = await encryptionService.decryptMessage(
-            recentUser.lastMessage,
-            recentUser.lastMessageIncoming
-          )
+          if (conv.type === 'GROUP') {
+            recentUser.lastMessage = await encryptionService.decryptGroupMessage(
+              recentUser.lastMessage,
+              sessionState.currentUser.id
+            )
+          } else {
+            recentUser.lastMessage = await encryptionService.decryptMessage(
+              recentUser.lastMessage,
+              recentUser.lastMessageIncoming
+            )
+          }
         } catch {
           recentUser.lastMessage = '[Unable to decrypt]'
         }

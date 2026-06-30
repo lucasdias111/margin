@@ -12,10 +12,20 @@
     fullWidth?: boolean
     children?: Snippet
     onSave?: () => void | Promise<void>
+    class?: string
   }
 
-  let { text, buttonType, size, onClick, fullWidth, disabled, children, onSave }: ButtonProps =
-    $props()
+  let {
+    text,
+    buttonType,
+    size,
+    onClick,
+    fullWidth,
+    disabled,
+    children,
+    onSave,
+    class: extraClass
+  }: ButtonProps = $props()
   let saving = $state(false)
 
   async function handleSave(): Promise<void> {
@@ -29,7 +39,7 @@
 </script>
 
 <button
-  class="but {buttonType} {size}"
+  class="but {buttonType} {size} {extraClass ?? ''}"
   class:full-width={fullWidth}
   onclick={onSave ? handleSave : onClick}
   disabled={disabled || saving}
@@ -53,11 +63,13 @@
     height: fit-content;
     cursor: pointer;
     font-family: inherit;
-    transition: background-color 0.15s ease,
-    border-color 0.15s ease,
-    box-shadow 0.15s ease,
-    transform 0.05s ease,
-    opacity 0.15s ease;
+    font-weight: bold;
+    transition:
+      background-color 0.15s ease,
+      border-color 0.15s ease,
+      box-shadow 0.15s ease,
+      transform 0.05s ease,
+      opacity 0.15s ease;
   }
 
   .but:active:not(:disabled) {

@@ -16,6 +16,7 @@ import { conversationsState } from '$src/states/ConversationsState.svelte.js'
 
 class UsersService {
   select(user: User): void {
+    navigationState.selectedGroupConversation = null
     navigationState.selectedUser = user
   }
 

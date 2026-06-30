@@ -6,7 +6,6 @@
   import { notificationService } from '$src/services/NotificationService'
   import UnreadNotificationBadge from '$src/components/common/chat/UnreadNotificationBadge.svelte'
   import Icon from '$src/components/common/icons/Icon.svelte'
-  import { channelService } from '$src/services/ChannelService'
   import { navigationState } from '$src/states/NavigationState.svelte'
 
   const spaces = $derived(spaceState.spaces)
@@ -121,20 +120,21 @@
     display: flex;
     align-items: center;
     gap: 6px;
-    padding: 0 18px 10px;
+    padding: 8px 18px 4px;
   }
 
   .header-label {
-    font-size: 14px;
-    color: #2d2d2d;
-    letter-spacing: 0.09em;
+    font-size: 11px;
+    font-weight: 600;
     text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #aaa;
   }
 
   .header-count {
     font-size: 10px;
     font-weight: 600;
-    color: #2d2d2d;
+    color: #bbb;
     background: #f2f2f2;
     border-radius: 20px;
     padding: 1px 6px;

@@ -72,7 +72,7 @@ test.describe('Call initiation', () => {
 
     // Alice navigates to her DM with Bob
     await alicePage.locator('[data-tour="nav-private"]').click()
-    await alicePage.locator('.user-button', { hasText: seed.bob.displayName }).click()
+    await alicePage.locator('.entry', { hasText: seed.bob.displayName }).click()
 
     // Click the voice call button (aria-label from PrivateChatHeader)
     const callButton = alicePage.locator('button[aria-label="Start voice call"]')

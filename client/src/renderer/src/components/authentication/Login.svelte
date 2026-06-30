@@ -2,9 +2,13 @@
   import { authenticationService } from '$src/services/AuthenticationService'
   import { push } from 'svelte-spa-router'
   import { onMount } from 'svelte'
+  import { riseIn } from '$src/animations/riseIn'
   import Button from '$src/components/common/buttons/Button.svelte'
+  import Spinner from '$src/components/common/Spinner.svelte'
 
   const REMEMBERED_EMAIL_KEY = 'margin_remembered_email'
+  const STAGGER_DELAY = 250
+  const STAGGER_STEP = 60
 
   let email = $state('')
   let password = $state('')
@@ -60,13 +64,19 @@
 </script>
 
 <div class="page">
-  <div class="card">
-    <div class="header">
+  <div class="card" in:riseIn={{ distance: 32, duration: 500 }}>
+    <div
+      class="header"
+      in:riseIn={{ delay: STAGGER_DELAY, index: 0, stagger: STAGGER_STEP }}
+    >
       <h1 class="title">Welcome back</h1>
     </div>
 
     <form class="form" onsubmit={handleLogin}>
-      <div class="field">
+      <div
+        class="field"
+        in:riseIn={{ delay: STAGGER_DELAY, index: 1, stagger: STAGGER_STEP }}
+      >
         <label class="label" for="email">Email</label>
         <input
           id="email"
@@ -79,7 +89,10 @@
         />
       </div>
 
-      <div class="field">
+      <div
+        class="field"
+        in:riseIn={{ delay: STAGGER_DELAY, index: 2, stagger: STAGGER_STEP }}
+      >
         <label class="label" for="password">Password</label>
         <input
           id="password"
@@ -92,11 +105,17 @@
         />
       </div>
 
-      <div class="forgot-row">
+      <div
+        class="forgot-row"
+        in:riseIn={{ delay: STAGGER_DELAY, index: 3, stagger: STAGGER_STEP }}
+      >
         <button class="forgot-link" type="button" onclick={goToForgotPassword}>Forgot password?</button>
       </div>
 
-      <div class="checkboxes">
+      <div
+        class="checkboxes"
+        in:riseIn={{ delay: STAGGER_DELAY, index: 4, stagger: STAGGER_STEP }}
+      >
         <label class="check">
           <input type="checkbox" bind:checked={rememberMe} />
           <span class="checkmark"></span>
@@ -113,29 +132,36 @@
         <p class="error">{loginResponse}</p>
       {/if}
 
-      <Button
-        buttonType="primary"
-        size="medium"
-        text="Sign in"
-        onClick={handleLogin}
-        disabled={isLoading}
-        fullWidth
-      />
+      <div in:riseIn={{ delay: STAGGER_DELAY, index: 5, stagger: STAGGER_STEP }}>
+        <Button
+          buttonType="primary"
+          size="medium"
+          text="Sign in"
+          onClick={handleLogin}
+          disabled={isLoading}
+          fullWidth
+        />
+      </div>
       {#if isLoading}
-        <span class="spinner"></span>
+        <Spinner size={16} color="#ffffff" />
       {/if}
     </form>
 
-    <div class="divider">
+    <div
+      class="divider"
+      in:riseIn={{ delay: STAGGER_DELAY, index: 6, stagger: STAGGER_STEP }}
+    >
       <span>or</span>
     </div>
-    <Button
-      buttonType="secondary"
-      onClick={goToRegister}
-      size="medium"
-      text="Create an account"
-      fullWidth
-    />
+    <div in:riseIn={{ delay: STAGGER_DELAY, index: 7, stagger: STAGGER_STEP }}>
+      <Button
+        buttonType="secondary"
+        onClick={goToRegister}
+        size="medium"
+        text="Create an account"
+        fullWidth
+      />
+    </div>
   </div>
 </div>
 
@@ -280,21 +306,6 @@
     background: #fdf0e8;
     border-radius: 8px;
     border: 1px solid #f5d5be;
-  }
-
-  .spinner {
-    width: 16px;
-    height: 16px;
-    border: 2px solid rgba(255, 255, 255, 0.3);
-    border-top-color: white;
-    border-radius: 50%;
-    animation: spin 0.7s linear infinite;
-  }
-
-  @keyframes spin {
-    to {
-      transform: rotate(360deg);
-    }
   }
 
   .forgot-row {

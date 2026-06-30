@@ -9,6 +9,7 @@
   import { chatService } from '$src/services/ChatService'
   import { conversationsState, defaultMeta } from '$src/states/ConversationsState.svelte.js'
   import { sessionState } from '$src/states/SessionState.svelte'
+  import Spinner from '$src/components/common/Spinner.svelte'
 
   let {
     messages,
@@ -237,14 +238,14 @@
 <div class="messages-wrapper" bind:this={messagesContainer} onscroll={onScroll}>
   {#if isLoading}
     <div class="full-loader">
-      <div class="spinner"></div>
+      <Spinner size={24} />
     </div>
   {:else}
     <div class="messages">
       <div class="top-status">
         {#if isPrepending}
           <div class="top-status__loading">
-            <div class="spinner small"></div>
+            <Spinner size={14} />
             <span>Loading older messages…</span>
           </div>
         {:else if !activeMeta.hasMore}
@@ -369,25 +370,4 @@
     background: #ece8e0;
   }
 
-  .spinner {
-    width: 24px;
-    height: 24px;
-    border: 2.5px solid rgba(232, 113, 42, 0.2);
-    border-top-color: #e8712a;
-    border-radius: 50%;
-    animation: spin 0.65s linear infinite;
-    flex-shrink: 0;
-  }
-
-  .spinner.small {
-    width: 14px;
-    height: 14px;
-    border-width: 2px;
-  }
-
-  @keyframes spin {
-    to {
-      transform: rotate(360deg);
-    }
-  }
 </style>
