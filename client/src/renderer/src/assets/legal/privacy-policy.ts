@@ -18,8 +18,8 @@ export const privacyPolicyHtml = `
 <h3>2.2 Messages and Content</h3>
 <p>margin handles messages differently depending on the context:</p>
 <ul>
-  <li><strong>Private messages</strong> (direct messages) are end-to-end encrypted. We cannot read their content. Encrypted message data is stored on our servers solely for delivery and synchronization.</li>
-  <li><strong>Channel and group messages</strong> are not end-to-end encrypted. They are transmitted over encrypted connections (TLS) and stored encrypted at rest on our servers, but are readable by the server for delivery purposes.</li>
+  <li><strong>Secret chats and secret groups</strong> are end-to-end encrypted. We cannot read their content. Encrypted message data is stored on our servers solely for delivery and synchronization.</li>
+  <li><strong>Channel messages and standard group messages</strong> are not end-to-end encrypted. They are transmitted over encrypted connections (TLS) and stored encrypted at rest on our servers, but are readable by the server for delivery purposes.</li>
 </ul>
 
 <h3>2.3 Usage and Connection Data</h3>
@@ -38,7 +38,7 @@ export const privacyPolicyHtml = `
 </ul>
 
 <h2>4. Data Storage and Security</h2>
-<p>All data is stored on servers located in the European Union, hosted by Hetzner Online GmbH in Germany. Data is encrypted in transit (TLS) and at rest. Private messages are additionally protected by end-to-end encryption, meaning only the communicating parties can read them.</p>
+<p>All data is stored on servers located in the European Union, hosted by Hetzner Online GmbH in Germany. Data is encrypted in transit (TLS) and at rest. Secret chats and secret groups are additionally protected by end-to-end encryption, meaning only the participants can read them.</p>
 <p>We implement appropriate technical and organizational measures to protect your data against unauthorized access, alteration, disclosure, or destruction.</p>
 
 <h2>5. Sub-processors</h2>

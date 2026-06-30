@@ -31,7 +31,7 @@ export const termsOfServiceHtml = `
 
 <h2>6. Your Content</h2>
 <p>You retain ownership of all content you create, upload, or share through margin. By using the Service, you grant us a limited license to store, transmit, and display your content solely for the purpose of operating the Service. We do not claim any ownership rights over your content.</p>
-<p>For end-to-end encrypted private messages, we store only the encrypted data. We cannot access the content of these messages.</p>
+<p>For end-to-end encrypted conversations (secret chats and secret groups), we store only the encrypted data. We cannot access the content of these messages.</p>
 
 <h2>7. Open Source</h2>
 <p>margin is open source software. The source code is available under its respective license. These Terms govern your use of the hosted Service at margin.chat, not self-hosted instances of the software.</p>

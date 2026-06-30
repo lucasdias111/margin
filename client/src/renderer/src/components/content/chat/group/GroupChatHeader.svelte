@@ -72,7 +72,7 @@
         <div class="name-row">
           <span class="name">{group.name}</span>
           {#if group.encrypted}
-            <Icon name="lock" size={12} color="#ff6203" />
+            <span class="secret-badge">Secret</span>
           {/if}
         </div>
         <button class="member-count-btn" onclick={openMembers}>
@@ -199,7 +199,19 @@
   .name-row {
     display: flex;
     align-items: center;
-    gap: 5px;
+    gap: 6px;
+  }
+
+  .secret-badge {
+    font-size: 10px;
+    font-weight: 600;
+    color: #ff6203;
+    background: #fff0eb;
+    border: 1px solid #ffd8c8;
+    border-radius: 10px;
+    padding: 1px 7px;
+    white-space: nowrap;
+    flex-shrink: 0;
   }
 
   .name {

@@ -1,6 +1,7 @@
 <script lang="ts">
   import type { Snippet } from 'svelte'
   import UnreadNotificationBadge from '$src/components/common/chat/UnreadNotificationBadge.svelte'
+  import Icon from '$src/components/common/icons/Icon.svelte'
 
   interface Props {
     name: string
@@ -8,9 +9,9 @@
     lastMessageTime: string | null
     unreadCount: number
     isSelected: boolean
+    isSecret?: boolean
     onclick: () => void
     avatar: Snippet
-    badge?: Snippet
     class?: string
   }
 
@@ -20,9 +21,9 @@
     lastMessageTime,
     unreadCount,
     isSelected,
+    isSecret = false,
     onclick,
     avatar,
-    badge,
     class: extraClass
   }: Props = $props()
 </script>
@@ -34,7 +35,11 @@
   <span class="info">
     <span class="top-row">
       <span class="name" class:unread={unreadCount > 0}>{name}</span>
-      {@render badge?.()}
+      {#if isSecret}
+        <span class="secret-indicator">
+          <Icon name="lock" size={9} />
+        </span>
+      {/if}
       {#if lastMessageTime}
         <span class="timestamp">{lastMessageTime}</span>
       {/if}
@@ -134,6 +139,17 @@
 
   .name.unread {
     font-weight: 700;
+  }
+
+  .secret-indicator {
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+    font-size: 10px;
+    font-weight: 500;
+    color: #ff6203;
+    flex-shrink: 0;
+    white-space: nowrap;
   }
 
   .timestamp {

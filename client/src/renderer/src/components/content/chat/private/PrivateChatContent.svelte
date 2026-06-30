@@ -126,6 +126,7 @@
       handleStartCall={startCall}
       handleStartVideoCall={handleVideoCall}
       isLoading={activeMeta.isLoading}
+      isSecret={activeConversation?.type !== 'CHANNEL' && activeConversation?.encrypted}
     />
     <div class="pane chat-background">
       <MessagesContainer

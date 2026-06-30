@@ -11,11 +11,12 @@
   interface Props {
     handleStartCall(): void
     handleStartVideoCall(): void
-
     isLoading?: boolean
+    isSecret?: boolean
   }
 
-  let { handleStartCall, handleStartVideoCall, isLoading = false }: Props = $props()
+  let { handleStartCall, handleStartVideoCall, isLoading = false, isSecret = false }: Props =
+    $props()
 
   function handleBack(): void {
     navigationState.selectedUser = null
@@ -37,7 +38,12 @@
       <span class="presence-dot" class:online={isOnline}></span>
     </div>
     <div class="user-info">
-      <span class="handle">{selectedUser.displayName}</span>
+      <div class="name-row">
+        <span class="handle">{selectedUser.displayName}</span>
+        {#if isSecret}
+          <span class="secret-badge">Secret</span>
+        {/if}
+      </div>
       <span class="status-label" class:online={isOnline}>
         {isOnline ? 'Online' : lastSeenLabel}
       </span>
@@ -93,6 +99,24 @@
     display: flex;
     flex-direction: column;
     gap: 2px;
+  }
+
+  .name-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .secret-badge {
+    font-size: 10px;
+    font-weight: 600;
+    color: #ff6203;
+    background: #fff0eb;
+    border: 1px solid #ffd8c8;
+    border-radius: 10px;
+    padding: 1px 7px;
+    white-space: nowrap;
+    flex-shrink: 0;
   }
 
   .handle {

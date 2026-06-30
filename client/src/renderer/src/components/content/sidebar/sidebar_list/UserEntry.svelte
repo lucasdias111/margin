@@ -3,7 +3,6 @@
   import type { User } from '$src/interfaces/User'
   import type { ConversationMeta } from '$src/states/ConversationsState.svelte.js'
   import UserAvatar from '$src/components/common/user/UserAvatar.svelte'
-  import Icon from '$src/components/common/icons/Icon.svelte'
   import { formatTime } from '$src/utils/DateUtils'
   import { usersService } from '$src/services/UsersService'
   import { notificationService } from '$src/services/NotificationService'
@@ -43,6 +42,7 @@
   {lastMessageTime}
   {unreadCount}
   {isSelected}
+  {isSecret}
   onclick={() => usersService.select(chatUser)}
 >
   {#snippet avatar()}
@@ -52,11 +52,6 @@
       <span class="avatar-initials">{chatUser.displayName.slice(0, 2).toUpperCase()}</span>
     {/if}
     <span class="presence-dot" class:online={isOnline}></span>
-    {#if isSecret}
-      <span class="lock-badge">
-        <Icon name="lock" size={9} />
-      </span>
-    {/if}
   {/snippet}
 </SidebarConversationEntry>
 
@@ -80,20 +75,5 @@
 
   .presence-dot.online {
     background: #3dd68c;
-  }
-
-  .lock-badge {
-    position: absolute;
-    top: -3px;
-    right: -3px;
-    width: 16px;
-    height: 16px;
-    background: #ff6203;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: white;
-    border: 2px solid white;
   }
 </style>
