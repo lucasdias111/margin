@@ -1,6 +1,12 @@
 import { authenticatedGet } from './api'
 
-class EncryptionService {
+export interface GroupEncryptedPayload {
+  iv: string
+  message: string
+  keys: Record<string, string>
+}
+
+export class EncryptionService {
   private publicKeyCache = new Map<number, string>()
   private privateKeyCache: { pem: string; key: CryptoKey } | null = null
 
@@ -152,6 +158,7 @@ class EncryptionService {
     return key
   }
 
+  /** 1:1 encryption — AES key encrypted for recipient + sender */
   async encryptMessage(
     message: string,
     recipientPublicKeyPem: string,
@@ -210,6 +217,82 @@ class EncryptionService {
       atob(isRecipient ? payload.recipientKey : payload.senderKey),
       (c) => c.charCodeAt(0)
     )
+
+    const privateKey = await this.importPrivateKey(privateKeyPem)
+    const aesKeyBytes = await crypto.subtle.decrypt(
+      { name: 'RSA-OAEP' },
+      privateKey,
+      encryptedKeyBytes
+    )
+
+    const aesKey = await crypto.subtle.importKey('raw', aesKeyBytes, { name: 'AES-GCM' }, false, [
+      'decrypt'
+    ])
+
+    const decryptedData = await crypto.subtle.decrypt(
+      { name: 'AES-GCM', iv },
+      aesKey,
+      encryptedMessage
+    )
+
+    const decoder = new TextDecoder()
+    return decoder.decode(decryptedData)
+  }
+
+  async encryptMessageForGroup(
+    message: string,
+    memberPublicKeys: Record<string, string>
+  ): Promise<string> {
+    const aesKey = await crypto.subtle.generateKey({ name: 'AES-GCM', length: 256 }, true, [
+      'encrypt',
+      'decrypt'
+    ])
+
+    const encoder = new TextEncoder()
+    const iv = crypto.getRandomValues(new Uint8Array(12))
+    const encryptedMessage = await crypto.subtle.encrypt(
+      { name: 'AES-GCM', iv },
+      aesKey,
+      encoder.encode(message)
+    )
+
+    const exportedKey = await crypto.subtle.exportKey('raw', aesKey)
+
+    const keys: Record<string, string> = {}
+    for (const [userId, publicKeyPem] of Object.entries(memberPublicKeys)) {
+      const publicKey = await this.importPublicKey(publicKeyPem)
+      const encryptedKeyBytes = await crypto.subtle.encrypt(
+        { name: 'RSA-OAEP' },
+        publicKey,
+        exportedKey
+      )
+      keys[userId] = btoa(String.fromCharCode(...new Uint8Array(encryptedKeyBytes)))
+    }
+
+    const payload: GroupEncryptedPayload = {
+      iv: btoa(String.fromCharCode(...iv)),
+      message: btoa(String.fromCharCode(...new Uint8Array(encryptedMessage))),
+      keys
+    }
+
+    return btoa(JSON.stringify(payload))
+  }
+
+  async decryptGroupMessage(encryptedPayload: string, myUserId: number): Promise<string> {
+    const privateKeyPem = this.getStoredPrivateKey()
+    if (!privateKeyPem) {
+      throw new Error('No private key available')
+    }
+
+    const payload: GroupEncryptedPayload = JSON.parse(atob(encryptedPayload))
+    const myEncryptedKey = payload.keys[String(myUserId)]
+    if (!myEncryptedKey) {
+      throw new Error('No key slot found for current user in group message')
+    }
+
+    const iv = Uint8Array.from(atob(payload.iv), (c) => c.charCodeAt(0))
+    const encryptedMessage = Uint8Array.from(atob(payload.message), (c) => c.charCodeAt(0))
+    const encryptedKeyBytes = Uint8Array.from(atob(myEncryptedKey), (c) => c.charCodeAt(0))
 
     const privateKey = await this.importPrivateKey(privateKeyPem)
     const aesKeyBytes = await crypto.subtle.decrypt(

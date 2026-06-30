@@ -148,7 +148,7 @@ async function seedDmConversation(aliceToken: string, bobToken: string): Promise
   const inviteRes = await fetch(`${API}/conversations/invite`, {
     method: 'POST',
     headers: { Authorization: `Bearer ${aliceToken}`, 'Content-Type': 'application/json' },
-    body: JSON.stringify({ email: BOB.email })
+    body: JSON.stringify({ email: BOB.email, encrypted: false })
   })
 
   if (!inviteRes.ok && inviteRes.status >= 500) {
@@ -157,7 +157,7 @@ async function seedDmConversation(aliceToken: string, bobToken: string): Promise
 
   const pending: any[] = await apiGet('conversations/pending_invites', bobToken)
   const invite = pending.find(
-    (inv: any) => inv.fromUser?.handle?.toLowerCase() === ALICE.handle.toLowerCase()
+    (inv: any) => inv.fromUser?.displayName?.toLowerCase() === ALICE.displayName.toLowerCase()
   )
   if (invite) {
     await apiPost(`conversations/${invite.conversation.id}/invite/accept`, bobToken)

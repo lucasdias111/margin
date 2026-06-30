@@ -10,12 +10,15 @@ export interface DirectConversation extends BaseConversation {
   otherUserId: number
   otherUserReadAt: string
   inviteStatus: ConversationInviteStatus
+  encrypted: boolean
 }
 
 export interface GroupConversation extends BaseConversation {
   type: 'GROUP'
   name: string
   memberIds: number[]
+  pendingMemberIds: number[]
+  encrypted: boolean
 }
 
 export interface ChannelConversation extends BaseConversation {

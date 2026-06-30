@@ -3,12 +3,14 @@ import type { User } from '$src/interfaces/User'
 import type { Margin } from '$src/interfaces/Margin'
 import type { Channel } from '$src/interfaces/Channel'
 import type { Space } from '$src/interfaces/Space'
+import type { GroupConversation } from '$src/interfaces/Conversation'
 
 export type ManageTab = 'Margin' | 'Spaces' | 'Subscription'
 
 class NavigationState {
   private _view = $state<View | null>(View.Private)
   private _selectedUser = $state<User | null>(null)
+  private _selectedGroupConversation = $state<GroupConversation | null>(null)
   private _selectedMargin = $state<Margin | null>(null)
   private _selectedSpace = $state<Space | null>(null)
   private _selectedChannel = $state<Channel | null>(null)
@@ -28,6 +30,14 @@ class NavigationState {
 
   set selectedUser(value: User) {
     this._selectedUser = value
+  }
+
+  get selectedGroupConversation(): GroupConversation | null {
+    return this._selectedGroupConversation
+  }
+
+  set selectedGroupConversation(value: GroupConversation | null) {
+    this._selectedGroupConversation = value
   }
 
   get selectedMargin(): Margin {

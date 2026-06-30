@@ -70,8 +70,12 @@ class NotificationService {
     if (message.conversationType === 'DIRECT') {
       title = message.user.displayName
       content = message.content
+    } else if (message.conversationType === 'GROUP') {
+      const conv = conversationsState.byId.get(message.conversationId)
+      title = (conv && 'name' in conv ? conv.name : null) ?? 'Group'
+      content = `${message.user.displayName}: ${message.content}`
     } else {
-      title = message.channelName
+      title = message.channelName ?? 'Channel'
       content = `${message.user.displayName}: ${message.content}`
     }
 

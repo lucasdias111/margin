@@ -112,10 +112,15 @@ class ConversationsState {
   }
 
   get currentConversation(): Conversation | undefined {
-    if (navigationState.view === View.Private && navigationState.selectedUser) {
-      for (const conv of this._byId.values()) {
-        if (conv.type === 'DIRECT' && conv.otherUserId === navigationState.selectedUser.id) {
-          return conv
+    if (navigationState.view === View.Private) {
+      if (navigationState.selectedGroupConversation) {
+        return this._byId.get(navigationState.selectedGroupConversation.id)
+      }
+      if (navigationState.selectedUser) {
+        for (const conv of this._byId.values()) {
+          if (conv.type === 'DIRECT' && conv.otherUserId === navigationState.selectedUser.id) {
+            return conv
+          }
         }
       }
     }

@@ -6,7 +6,8 @@ test.describe('Direct messages', () => {
     const home = new HomePage(authedPage)
     await home.goToPrivate()
 
-    await authedPage.locator('.search-row .but.primary').click()
+    await authedPage.locator('.new-chat-btn').click()
+    await authedPage.locator('.dropdown-item', { hasText: 'Private chat' }).click()
 
     await authedPage.locator('#email-input').fill(seed.bob.email)
     await authedPage.getByRole('button', { name: 'Find' }).click()

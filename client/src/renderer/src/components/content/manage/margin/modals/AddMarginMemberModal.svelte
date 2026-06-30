@@ -4,6 +4,7 @@
   import { authenticatedGet } from '$src/services/api'
   import type { User } from '$src/interfaces/User'
   import Button from '$src/components/common/buttons/Button.svelte'
+  import Spinner from '$src/components/common/Spinner.svelte'
 
   interface Props {
     open: boolean
@@ -122,7 +123,7 @@
         />
 
         {#if exactLookupLoading}
-          <span class="spinner"></span>
+          <Spinner size={14} color="#ffffff" />
         {/if}
       </div>
       {#if exactLookupError}
@@ -180,21 +181,6 @@
   .lookup-error {
     font-size: 12px;
     color: #c0392b;
-  }
-
-  .spinner {
-    width: 14px;
-    height: 14px;
-    border: 2px solid rgba(255, 255, 255, 0.3);
-    border-top-color: white;
-    border-radius: 50%;
-    animation: spin 0.7s linear infinite;
-  }
-
-  @keyframes spin {
-    to {
-      transform: rotate(360deg);
-    }
   }
 
   .selected-user {

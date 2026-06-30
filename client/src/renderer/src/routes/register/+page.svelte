@@ -12,6 +12,7 @@
   import { termsOfServiceHtml } from '$src/assets/legal/terms-of-service'
   import Button from '$src/components/common/buttons/Button.svelte'
   import Tooltip from '$src/components/common/Tooltip.svelte'
+  import Spinner from '$src/components/common/Spinner.svelte'
 
   let displayName = $state('')
   let password = $state('')
@@ -293,7 +294,7 @@
           onClick={handleRegistration}
         />
         {#if isLoading}
-          <span class="spinner"></span>
+          <Spinner size={16} color="#ffffff" />
         {/if}
       </form>
 
@@ -473,15 +474,6 @@
 
   .link:hover {
     color: #d4621a;
-  }
-
-  .spinner {
-    width: 16px;
-    height: 16px;
-    border: 2px solid rgba(255, 255, 255, 0.3);
-    border-top-color: white;
-    border-radius: 50%;
-    animation: spin 0.7s linear infinite;
   }
 
   @keyframes spin {

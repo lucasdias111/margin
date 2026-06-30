@@ -4,6 +4,7 @@
   import { onMount } from 'svelte'
   import { riseIn } from '$src/animations/riseIn'
   import Button from '$src/components/common/buttons/Button.svelte'
+  import Spinner from '$src/components/common/Spinner.svelte'
 
   const REMEMBERED_EMAIL_KEY = 'margin_remembered_email'
   const STAGGER_DELAY = 250
@@ -142,7 +143,7 @@
         />
       </div>
       {#if isLoading}
-        <span class="spinner"></span>
+        <Spinner size={16} color="#ffffff" />
       {/if}
     </form>
 
@@ -305,21 +306,6 @@
     background: #fdf0e8;
     border-radius: 8px;
     border: 1px solid #f5d5be;
-  }
-
-  .spinner {
-    width: 16px;
-    height: 16px;
-    border: 2px solid rgba(255, 255, 255, 0.3);
-    border-top-color: white;
-    border-radius: 50%;
-    animation: spin 0.7s linear infinite;
-  }
-
-  @keyframes spin {
-    to {
-      transform: rotate(360deg);
-    }
   }
 
   .forgot-row {

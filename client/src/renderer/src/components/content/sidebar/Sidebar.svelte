@@ -8,16 +8,20 @@
   import MarginSwitcher from '$src/components/content/sidebar/sidebar_list/MarginSwitcher.svelte'
   import Settings from '$src/components/content/settings/Settings.svelte'
   import Icon from '$src/components/common/icons/Icon.svelte'
-  import NewConversationModal from '$src/components/content/chat/private/NewConversationModal.svelte'
   import Button from '$src/components/common/buttons/Button.svelte'
+  import NewConversationModal from '$src/components/content/chat/private/NewConversationModal.svelte'
+  import NewGroupChatModal from '$src/components/content/chat/group/NewGroupChatModal.svelte'
   import { usersService } from '$src/services/UsersService'
   import { channelService } from '$src/services/ChannelService'
   import { navigationState } from '$src/states/NavigationState.svelte'
   import { navigationService } from '$src/services/NavigationService'
   import { marginState } from '$src/states/MarginState.svelte'
+  import { clickOutside } from '$src/actions/clickOutside'
 
   let selectedContent = $derived<View>(navigationState.view)
-  let newConversationOpen = $state(false)
+  let newPrivateChatOpen = $state(false)
+  let newGroupChatOpen = $state(false)
+  let dropdownOpen = $state(false)
   let isHome = $derived(!navigationState.selectedChannel)
 
   function onSelectUser(user: User): void {
@@ -28,6 +32,16 @@
   function goHome(): void {
     channelService.select(null)
   }
+
+  function openPrivateChat(): void {
+    dropdownOpen = false
+    newPrivateChatOpen = true
+  }
+
+  function openGroupChat(): void {
+    dropdownOpen = false
+    newGroupChatOpen = true
+  }
 </script>
 
 <div class="sidebar">
@@ -36,14 +50,31 @@
       <div class="panel-header">
         <div class="search-row">
           <UserSearchBar {onSelectUser} showSharedMargins={true} />
-          <Button
-            buttonType="primary"
-            size="small"
-            onClick={() => (newConversationOpen = true)}
-            text="New conversation"
-          >
-            <Icon name="plus" size={14} />
-          </Button>
+          <div class="new-chat-wrapper" use:clickOutside={() => (dropdownOpen = false)}>
+            <Button buttonType="secondary" size="small" class="new-chat-btn" onClick={() => (dropdownOpen = !dropdownOpen)}>
+              {#snippet children()}
+                <Icon name="plus" size={14} />
+              {/snippet}
+            </Button>
+            {#if dropdownOpen}
+              <div class="dropdown">
+                <button class="dropdown-item" onclick={openPrivateChat}>
+                  <Icon name="messages" size={13} />
+                  <span class="item-text">
+                    <span class="item-title">Private chat</span>
+                    <span class="item-hint">1-on-1, optional Secret Chat</span>
+                  </span>
+                </button>
+                <button class="dropdown-item" onclick={openGroupChat}>
+                  <Icon name="users" size={13} />
+                  <span class="item-text">
+                    <span class="item-title">Group chat</span>
+                    <span class="item-hint">Multiple people, optional Secret Group</span>
+                  </span>
+                </button>
+              </div>
+            {/if}
+          </div>
         </div>
       </div>
       <div class="panel-content">
@@ -75,7 +106,14 @@
   {/if}
 </div>
 
-<NewConversationModal open={newConversationOpen} onClose={() => (newConversationOpen = false)} />
+<NewConversationModal
+  open={newPrivateChatOpen}
+  onClose={() => (newPrivateChatOpen = false)}
+/>
+<NewGroupChatModal
+  open={newGroupChatOpen}
+  onClose={() => (newGroupChatOpen = false)}
+/>
 
 <style>
   .sidebar {
@@ -145,5 +183,59 @@
     display: flex;
     align-items: center;
     gap: 6px;
+  }
+
+  .new-chat-wrapper {
+    position: relative;
+    flex-shrink: 0;
+  }
+
+  .dropdown {
+    position: absolute;
+    top: calc(100% + 6px);
+    right: 0;
+    background: #fff;
+    border: 1.5px solid #ebebeb;
+    border-radius: 12px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+    min-width: 220px;
+    z-index: 100;
+    overflow: hidden;
+  }
+
+  .dropdown-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    padding: 10px 14px;
+    border: none;
+    background: none;
+    cursor: pointer;
+    text-align: left;
+    font-family: inherit;
+    color: #2d2d2d;
+    transition: background 0.1s;
+  }
+
+  .dropdown-item:hover {
+    background: #fff8f5;
+  }
+
+  .item-text {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+  }
+
+  .item-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: #2d2d2d;
+  }
+
+  .item-hint {
+    font-size: 11px;
+    color: #aaa;
   }
 </style>

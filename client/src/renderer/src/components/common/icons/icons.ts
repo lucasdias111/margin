@@ -153,7 +153,19 @@ export const icons = {
 
   upload: `<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
            <polyline points="17 8 12 3 7 8" />
-           <line x1="12" y1="3" x2="12" y2="15" />`
+           <line x1="12" y1="3" x2="12" y2="15" />`,
+
+  userPlus: `<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+             <circle cx="9" cy="7" r="4" />
+             <line x1="19" y1="8" x2="19" y2="14" />
+             <line x1="22" y1="11" x2="16" y2="11" />`,
+
+  doorOut: `<path d="M13 4h3a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h3" />
+            <polyline points="15 17 20 12 15 7" />
+            <line x1="20" y1="12" x2="8" y2="12" />`,
+
+  lock: `<rect x="3" y="11" width="18" height="11" rx="2" />
+         <path d="M7 11V7a5 5 0 0 1 10 0v4" />`
 } as const
 
 export type IconName = keyof typeof icons
