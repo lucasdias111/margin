@@ -2,6 +2,7 @@
   import type { Snippet } from 'svelte'
   import UnreadNotificationBadge from '$src/components/common/chat/UnreadNotificationBadge.svelte'
   import Icon from '$src/components/common/icons/Icon.svelte'
+  import Tooltip from '$src/components/common/Tooltip.svelte'
 
   interface Props {
     name: string
@@ -36,9 +37,13 @@
     <span class="top-row">
       <span class="name" class:unread={unreadCount > 0}>{name}</span>
       {#if isSecret}
-        <span class="secret-indicator">
-          <Icon name="lock" size={9} />
-        </span>
+        <Tooltip
+          text="End-to-end encrypted: only chat members can read these messages"
+        >
+          <span class="secret-indicator">
+            <Icon name="lock" size={9} />
+          </span>
+        </Tooltip>
       {/if}
       {#if lastMessageTime}
         <span class="timestamp">{lastMessageTime}</span>

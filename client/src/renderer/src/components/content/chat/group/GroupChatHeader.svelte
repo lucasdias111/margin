@@ -72,7 +72,12 @@
         <div class="name-row">
           <span class="name">{group.name}</span>
           {#if group.encrypted}
-            <span class="secret-badge">Secret</span>
+            <Tooltip
+              text="End-to-end encrypted: only chat members can read these messages"
+              position="bottom"
+            >
+              <span class="secret-badge">Secret</span>
+            </Tooltip>
           {/if}
         </div>
         <button class="member-count-btn" onclick={openMembers}>
