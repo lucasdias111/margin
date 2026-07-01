@@ -7,8 +7,6 @@ import { inviteService } from '../ConversationInviteService'
 import { encryptionService } from '$src/services/EncryptionService'
 import { webSocketService } from '$src/services/WebSocketService'
 import { notificationService } from '$src/services/NotificationService'
-import { navigationService } from '$src/services/NavigationService'
-import { channelService } from '$src/services/ChannelService'
 import { conversationsState, defaultMeta } from '$src/states/ConversationsState.svelte'
 import { navigationState } from '$src/states/NavigationState.svelte'
 import { sessionState } from '$src/states/SessionState.svelte'
@@ -114,6 +112,7 @@ describe('ChatService', () => {
     usersState.reset()
 
     conversationInviteService.pendingInvites = []
+    conversationInviteService.sentInvites = []
 
     connectionState.connectionStatus = 'connected'
 
@@ -907,6 +906,73 @@ describe('ChatService', () => {
       await inviteService.loadPendingInvites()
 
       expect(conversationInviteService.pendingInvites).toHaveLength(2)
+    })
+
+    it('sendConversationInvite adds to sentInvites when recipient is provided', async () => {
+      const conversation = buildDirectConversation({ id: 50, otherUserId: 7 })
+      const recipient = buildUser({ id: 7 })
+      mockApiPost(conversation)
+
+      await inviteService.sendConversationInvite('alice@margin.chat', false, recipient)
+
+      expect(conversationInviteService.sentInvites).toContainEqual({
+        conversation,
+        toUser: recipient
+      })
+    })
+
+    it('sendConversationInvite does not touch sentInvites without a recipient', async () => {
+      mockApiPost({})
+
+      await inviteService.sendConversationInvite('alice@margin.chat')
+
+      expect(conversationInviteService.sentInvites).toHaveLength(0)
+    })
+
+    it('handleConversationInviteAccepted removes the matching sent invite', () => {
+      const conversation = buildDirectConversation({ id: 50, otherUserId: 7 })
+      const recipient = buildUser({ id: 7 })
+      conversationInviteService.addSentInvite({ conversation, toUser: recipient })
+
+      inviteService.handleConversationInviteAccepted({
+        type: WebSocketMessageType.CONVERSATION_INVITE_ACCEPTED,
+        timestamp: 0,
+        payload: { conversation, acceptedBy: recipient }
+      })
+
+      expect(conversationInviteService.sentInvites).toHaveLength(0)
+    })
+
+    it('handleConversationInviteDeclined removes the matching sent invite', () => {
+      const conversation = buildDirectConversation({ id: 50, otherUserId: 7 })
+      const recipient = buildUser({ id: 7 })
+      conversationInviteService.addSentInvite({ conversation, toUser: recipient })
+
+      inviteService.handleConversationInviteDeclined({
+        type: WebSocketMessageType.CONVERSATION_INVITE_DECLINED,
+        timestamp: 0,
+        payload: { conversationId: 50, declinedBy: recipient }
+      })
+
+      expect(conversationInviteService.sentInvites).toHaveLength(0)
+    })
+
+    it('loadSentInvites fetches and adds each', async () => {
+      const invites = [
+        {
+          conversation: buildDirectConversation({ id: 50 }),
+          toUser: buildUser({ id: 7 })
+        },
+        {
+          conversation: buildDirectConversation({ id: 51 }),
+          toUser: buildUser({ id: 8 })
+        }
+      ]
+      mockApiGet(invites)
+
+      await inviteService.loadSentInvites()
+
+      expect(conversationInviteService.sentInvites).toHaveLength(2)
     })
   })
 

@@ -15,6 +15,7 @@
 
   let groupsOpen = $state(true)
   let dmsOpen = $state(true)
+  let sentInvitesOpen = $state(true)
 
   const recentUsers = $derived(
     [...conversationsState.byId.values()]
@@ -54,11 +55,41 @@
   const hasAnyContent = $derived(
     recentUsers.length > 0 ||
       recentGroups.length > 0 ||
-      conversationInviteService.pendingInvites.length > 0
+      conversationInviteService.pendingInvites.length > 0 ||
+      conversationInviteService.sentInvites.length > 0
   )
 </script>
 
 <div class="chat_overview">
+  {#if conversationInviteService.sentInvites.length > 0}
+    <button class="section-header" onclick={() => (sentInvitesOpen = !sentInvitesOpen)}>
+      <span class="section-label">Sent invites</span>
+      <span class="chevron" class:open={sentInvitesOpen}>
+        <Icon name="chevronDown" size={12} />
+      </span>
+    </button>
+    {#if sentInvitesOpen}
+      <ul class="invite-list">
+        {#each conversationInviteService.sentInvites as invite (invite.conversation.id)}
+          <li class="invite-item">
+            <UserAvatar profilePictureUrl={invite.toUser.profilePictureUrl} height={30} />
+
+            <div class="invite-info">
+              <div class="invite-name-row">
+                <span class="invite-name">{invite.toUser.displayName}</span>
+                {#if invite.conversation.type !== 'CHANNEL' && invite.conversation.encrypted}
+                  <span class="secret-label">Secret</span>
+                {/if}
+              </div>
+              <span class="invite-from">Waiting for response</span>
+            </div>
+          </li>
+        {/each}
+      </ul>
+    {/if}
+    <div class="section-divider"></div>
+  {/if}
+
   {#if conversationInviteService.pendingInvites.length > 0}
     <div class="section-header-static">
       <span class="section-label">Pending invites</span>
@@ -168,7 +199,9 @@
 <style>
   .chat_overview {
     flex: 1;
+    min-width: 0;
     min-height: 0;
+    overflow-x: hidden;
     overflow-y: auto;
     width: 100%;
   }

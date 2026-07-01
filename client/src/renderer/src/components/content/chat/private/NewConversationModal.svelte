@@ -53,7 +53,7 @@
   async function sendInvite(): Promise<void> {
     if (!foundUser) return
     try {
-      await inviteService.sendConversationInvite(email.trim(), encrypted)
+      await inviteService.sendConversationInvite(email.trim(), encrypted, foundUser)
       sent = true
     } catch {
       error = 'Failed to send invite. The user may already have a conversation with you.'
