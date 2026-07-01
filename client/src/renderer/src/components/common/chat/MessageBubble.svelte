@@ -84,6 +84,16 @@
     return /\.(gif|png|jpe?g|webp)(\?|$)/i.test(url) || /static\.klipy\.com/i.test(url)
   }
 
+  let isMediaOnly = $derived(
+    !hasAttachments &&
+      parsedContent.some((part) => part.type === 'link') &&
+      parsedContent.every(
+        (part) =>
+          (part.type === 'text' && part.content.trim().length === 0) ||
+          (part.type === 'link' && !!part.href && isInlineImageUrl(part.href))
+      )
+  )
+
   let isSent = $derived(message.user.id === sessionState.currentUser?.id)
   let checkmarkIcon: IconName = $derived(isRead ? 'checkmarkFilled' : 'checkmark')
 
@@ -138,7 +148,13 @@
       <span class="handle">{message.user.displayName}</span>
     {/if}
 
-    <div class="bubble" class:sent={isSent} class:sending={isSending} class:failed={isFailed}>
+    <div
+      class="bubble"
+      class:sent={isSent}
+      class:sending={isSending}
+      class:failed={isFailed}
+      class:media-only={isMediaOnly}
+    >
       {#if isEditing}
         <div class="editactions">
           <button class="editbut" onclick={handleSaveEdit}>Save</button>
@@ -301,6 +317,13 @@
     background: #ff843c;
     color: #2d2d2d;
     border-bottom-right-radius: 4px;
+  }
+
+  .bubble.media-only,
+  .bubble.media-only.sent {
+    background: none;
+    padding: 0;
+    border-radius: 10px;
   }
 
   .handle {
@@ -498,6 +521,10 @@
     border-radius: 10px;
     margin: 4px 0;
     overflow: hidden;
+  }
+
+  .bubble.media-only :global(.inline-media) {
+    margin: 0;
   }
 
   :global(.inline-media:not(.is-loaded)) {
