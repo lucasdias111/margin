@@ -3,7 +3,8 @@
   import UserAvatar from '$src/components/common/user/UserAvatar.svelte'
   import type { Message } from '$src/interfaces/Messages'
   import type { StoredFile } from '$src/interfaces/StoredFile'
-  import { chatService } from '$src/services/ChatService'
+  import { messageSenderService } from '$src/services/MessageSenderService'
+  import { reactionService } from '$src/services/ReactionService'
   import { fileStorageService } from '$src/services/FileStorageService'
   import { imageService } from '$src/services/ImageService'
   import Icon from '$src/components/common/icons/Icon.svelte'
@@ -44,7 +45,7 @@
   let isFailed = $derived(message.status === 'error')
 
   function retrySend(): void {
-    chatService.retryMessage(message)
+    messageSenderService.retryMessage(message)
   }
 
   const EMOJI_ONLY = /^(\p{Extended_Pictographic}|‍|️|[\u{1F3FB}-\u{1F3FF}]|\s)+$/u
@@ -96,9 +97,9 @@
       (r) => r.emoji === emoji && r.userId === sessionState.currentUser?.id
     )
     if (alreadyReacted) {
-      chatService.removeReaction(message, emoji)
+      reactionService.removeReaction(message, emoji)
     } else {
-      chatService.addReaction(message, emoji)
+      reactionService.addReaction(message, emoji)
     }
   }
 

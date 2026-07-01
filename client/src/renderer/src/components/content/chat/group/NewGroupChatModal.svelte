@@ -4,7 +4,7 @@
   import Button from '$src/components/common/buttons/Button.svelte'
   import Icon from '$src/components/common/icons/Icon.svelte'
   import { authenticatedGet } from '$src/services/api'
-  import { chatService } from '$src/services/ChatService'
+  import { groupConversationService } from '$src/services/GroupConversationService'
   import type { User } from '$src/interfaces/User'
 
   interface Props {
@@ -75,12 +75,12 @@
     creating = true
     error = null
     try {
-      const group = await chatService.createGroupConversation(
+      const group = await groupConversationService.createGroupConversation(
         members.map((m) => m.email),
         groupName.trim(),
         encrypted
       )
-      chatService.selectGroupConversation(group)
+      groupConversationService.selectGroupConversation(group)
       close()
     } catch {
       error = 'Failed to create group. Please try again.'

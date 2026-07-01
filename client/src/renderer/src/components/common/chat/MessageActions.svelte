@@ -1,6 +1,6 @@
 <script lang="ts">
   import type { Message } from '$src/interfaces/Messages'
-  import { chatService } from '$src/services/ChatService'
+  import { messageSenderService } from '$src/services/MessageSenderService'
   import Icon from '$src/components/common/icons/Icon.svelte'
 
   const QUICK_EMOJIS = ['👍', '❤️', '😂', '😮', '😢']
@@ -60,7 +60,7 @@
         <Icon name="edit" size={14} />
         Edit
       </button>
-      <button class="menu-item delete" onclick={() => chatService.deleteMessage(message)}>
+      <button class="menu-item delete" onclick={() => messageSenderService.deleteMessage(message)}>
         <Icon name="trash" size={14} />
         Delete
       </button>

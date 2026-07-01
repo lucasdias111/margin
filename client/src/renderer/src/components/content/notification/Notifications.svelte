@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { chatService } from '$src/services/ChatService'
+  import { messageLoaderService } from '$src/services/MessageLoaderService'
   import type { Notification } from '$src/interfaces/Notification'
   import { NotificationType } from '$src/interfaces/Notification'
   import { formatTimestamp } from '$src/utils/DateUtils'
@@ -48,7 +48,7 @@
       marginService.select(await marginService.getMargin(notification.marginId))
       navigationService.setView(View.Margin)
     } else if (notification.type === NotificationType.MISSED_CALL) {
-      await chatService.loadConversationForUser(notification.sender)
+      await messageLoaderService.loadConversationForUser(notification.sender)
       usersService.select(notification.sender)
       navigationService.setView(View.Private)
     } else if (notification.type === NotificationType.ADDED_TO_MARGIN) {

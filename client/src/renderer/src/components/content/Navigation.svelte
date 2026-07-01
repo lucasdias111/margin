@@ -16,7 +16,7 @@
   import { navigationService } from '$src/services/NavigationService'
 
   function onContentSelected(selectedContent: View): void {
-    navigationService.setView(selectedContent)
+    navigationService.selectContent(selectedContent)
   }
 
   async function handleLogout(): Promise<void> {

@@ -3,7 +3,8 @@
   import GroupEntry from '$src/components/content/sidebar/sidebar_list/GroupEntry.svelte'
   import UserAvatar from '$src/components/common/user/UserAvatar.svelte'
   import Icon from '$src/components/common/icons/Icon.svelte'
-  import { chatService } from '$src/services/ChatService'
+  import { inviteService } from '$src/services/ConversationInviteService'
+  import { groupConversationService } from '$src/services/GroupConversationService'
   import { navigationState } from '$src/states/NavigationState.svelte'
   import { conversationsState, defaultMeta } from '$src/states/ConversationsState.svelte.js'
   import { isDirectConversation, isGroupConversation } from '$src/interfaces/Conversation'
@@ -96,12 +97,12 @@
           </div>
 
           <div class="invite-actions">
-            <button class="accept-btn" onclick={() => chatService.acceptConversationInvite(invite)}>
+            <button class="accept-btn" onclick={() => inviteService.acceptConversationInvite(invite)}>
               Accept
             </button>
             <button
               class="decline-btn"
-              onclick={() => chatService.declineConversationInvite(invite.conversation.id)}
+              onclick={() => inviteService.declineConversationInvite(invite.conversation.id)}
             >
               Decline
             </button>
@@ -126,7 +127,7 @@
             {group}
             {meta}
             isSelected={navigationState.selectedGroupConversation?.id === group.id}
-            onclick={() => chatService.selectGroupConversation(group)}
+            onclick={() => groupConversationService.selectGroupConversation(group)}
           />
         {/each}
       </ul>

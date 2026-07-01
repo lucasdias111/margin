@@ -1,5 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { chatService } from '../ChatService'
+import { messageRouter } from '../MessageRouter'
+import { messageSenderService } from '../MessageSenderService'
+import { messageLoaderService } from '../MessageLoaderService'
+import { groupConversationService } from '../GroupConversationService'
 import { encryptionService } from '$src/services/EncryptionService'
 import { webSocketService } from '$src/services/WebSocketService'
 import { notificationService } from '$src/services/NotificationService'
@@ -79,7 +82,7 @@ describe('ChatService group messaging', () => {
         user: buildUser({ id: 2 })
       })
 
-      await chatService.handleIncomingMessage({
+      await messageRouter.handleIncomingMessage({
         type: WebSocketMessageType.RECEIVE_MESSAGE,
         timestamp: 0,
         payload: msg
@@ -103,7 +106,7 @@ describe('ChatService group messaging', () => {
         user: buildUser({ id: 2 })
       })
 
-      await chatService.handleIncomingMessage({
+      await messageRouter.handleIncomingMessage({
         type: WebSocketMessageType.RECEIVE_MESSAGE,
         timestamp: 0,
         payload: msg
@@ -131,7 +134,7 @@ describe('ChatService group messaging', () => {
         user: buildUser({ id: 2 })
       })
 
-      await chatService.handleIncomingMessage({
+      await messageRouter.handleIncomingMessage({
         type: WebSocketMessageType.RECEIVE_MESSAGE,
         timestamp: 0,
         payload: msg
@@ -152,7 +155,7 @@ describe('ChatService group messaging', () => {
         user: buildUser({ id: 2 })
       })
 
-      await chatService.handleIncomingMessage({
+      await messageRouter.handleIncomingMessage({
         type: WebSocketMessageType.RECEIVE_MESSAGE,
         timestamp: 0,
         payload: msg
@@ -166,7 +169,7 @@ describe('ChatService group messaging', () => {
     it('sends a plain group message via WebSocket', async () => {
       const group = buildGroupConversation({ id: 30, encrypted: false })
 
-      await chatService.sendGroupMessage(currentUser, group, 'hello group')
+      await messageSenderService.sendGroupMessage(currentUser, group, 'hello group')
 
       expect(webSocketService.send).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -187,7 +190,7 @@ describe('ChatService group messaging', () => {
 
       vi.mocked(encryptionService.encryptMessageForGroup).mockResolvedValue('encrypted-blob')
 
-      await chatService.sendGroupMessage(currentUser, group, 'secret')
+      await messageSenderService.sendGroupMessage(currentUser, group, 'secret')
 
       expect(encryptionService.encryptMessageForGroup).toHaveBeenCalledWith(
         'secret',
@@ -210,7 +213,7 @@ describe('ChatService group messaging', () => {
         json: async () => group
       } as Response)
 
-      const result = await chatService.createGroupConversation(
+      const result = await groupConversationService.createGroupConversation(
         ['a@example.com'],
         'My Group',
         false
@@ -241,7 +244,7 @@ describe('ChatService group messaging', () => {
 
       vi.mocked(api.authenticatedPost).mockResolvedValue({ ok: true, json: async () => {} } as Response)
 
-      await chatService.loadConversationForGroup(group, true)
+      await messageLoaderService.loadConversationForGroup(group, true)
 
       expect(encryptionService.decryptGroupMessage).toHaveBeenCalled()
       const stored = conversationsState.messagesByConversationId.get(30)!

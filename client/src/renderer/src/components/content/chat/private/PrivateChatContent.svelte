@@ -1,6 +1,7 @@
 <script lang="ts">
   import { conversationsState, defaultMeta } from '$src/states/ConversationsState.svelte.js'
-  import { chatService } from '$src/services/ChatService'
+  import { messageLoaderService } from '$src/services/MessageLoaderService'
+  import { messageSenderService } from '$src/services/MessageSenderService'
   import type { DirectConversation } from '$src/interfaces/Conversation'
   import { callService } from '$src/services/call/CallService'
   import ChatInput from '$src/components/common/chat/input/ChatInput.svelte'
@@ -37,7 +38,7 @@
     const user = selectedUser
     if (user) {
       untrack(() => {
-        chatService.loadConversationForUser(user)
+        messageLoaderService.loadConversationForUser(user)
       })
     }
   })
@@ -74,21 +75,21 @@
     messageInput = ''
 
     if (activeConversation) {
-      await chatService.sendDirectMessage(
+      await messageSenderService.sendDirectMessage(
         sessionState.currentUser,
         activeConversation as DirectConversation,
         messageContent,
         inlineFiles
       )
     } else {
-      const { conversation, message } = await chatService.sendMessageAndStartConversation(
+      const { conversation, message } = await messageSenderService.sendMessageAndStartConversation(
         sessionState.currentUser,
         selectedUser.id,
         messageContent
       )
       conversationsState.appendMessage(message, false)
       if (inlineFiles.length > 0) {
-        await chatService.sendDirectMessage(
+        await messageSenderService.sendDirectMessage(
           sessionState.currentUser,
           conversation as DirectConversation,
           '',
@@ -114,7 +115,7 @@
 <svelte:window
   onfocus={() => {
     if (activeConversation) {
-      chatService.markConversationAsRead(activeConversation.id)
+      messageLoaderService.markConversationAsRead(activeConversation.id)
       focusInput()
     }
   }}

@@ -1,5 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { chatService } from '../ChatService'
+import { messageRouter } from '../MessageRouter'
+import { messageSenderService } from '../MessageSenderService'
+import { messageLoaderService } from '../MessageLoaderService'
+import { reactionService } from '../ReactionService'
+import { inviteService } from '../ConversationInviteService'
 import { encryptionService } from '$src/services/EncryptionService'
 import { webSocketService } from '$src/services/WebSocketService'
 import { notificationService } from '$src/services/NotificationService'
@@ -50,7 +54,8 @@ vi.mock('$src/services/NotificationService', () => ({
 
 vi.mock('$src/services/NavigationService', () => ({
   navigationService: {
-    setView: vi.fn()
+    setView: vi.fn(),
+    selectContent: vi.fn()
   }
 }))
 
@@ -125,7 +130,7 @@ describe('ChatService', () => {
         user: buildUser({ id: 2 })
       })
 
-      await chatService.handleIncomingMessage({
+      await messageRouter.handleIncomingMessage({
         type: WebSocketMessageType.RECEIVE_MESSAGE,
         timestamp: 0,
         payload: msg
@@ -143,7 +148,7 @@ describe('ChatService', () => {
       mockApiPost({})
       const msg = buildMessage({ id: 201, conversationType: 'DIRECT', user: sender })
 
-      await chatService.handleIncomingMessage({
+      await messageRouter.handleIncomingMessage({
         type: WebSocketMessageType.RECEIVE_MESSAGE,
         timestamp: 0,
         payload: msg
@@ -163,7 +168,7 @@ describe('ChatService', () => {
         user: buildUser({ id: 2 })
       })
 
-      await chatService.handleIncomingMessage({
+      await messageRouter.handleIncomingMessage({
         type: WebSocketMessageType.RECEIVE_MESSAGE,
         timestamp: 0,
         payload: msg
@@ -185,7 +190,7 @@ describe('ChatService', () => {
         user: buildUser({ id: 2 })
       })
 
-      await chatService.handleIncomingMessage({
+      await messageRouter.handleIncomingMessage({
         type: WebSocketMessageType.RECEIVE_MESSAGE,
         timestamp: 0,
         payload: msg
@@ -210,7 +215,7 @@ describe('ChatService', () => {
         content: 'real content'
       })
 
-      await chatService.handleIncomingMessage({
+      await messageRouter.handleIncomingMessage({
         type: WebSocketMessageType.RECEIVE_MESSAGE,
         timestamp: 0,
         payload: real
@@ -247,7 +252,7 @@ describe('ChatService', () => {
         content: 'second'
       })
 
-      await chatService.handleIncomingMessage({
+      await messageRouter.handleIncomingMessage({
         type: WebSocketMessageType.RECEIVE_MESSAGE,
         timestamp: 0,
         payload: echo
@@ -273,7 +278,7 @@ describe('ChatService', () => {
         content: 'cipher'
       })
 
-      await chatService.handleIncomingMessage({
+      await messageRouter.handleIncomingMessage({
         type: WebSocketMessageType.RECEIVE_MESSAGE,
         timestamp: 0,
         payload: msg
@@ -296,7 +301,7 @@ describe('ChatService', () => {
         user: sender
       })
 
-      await chatService.handleIncomingMessage({
+      await messageRouter.handleIncomingMessage({
         type: WebSocketMessageType.RECEIVE_MESSAGE,
         timestamp: 0,
         payload: msg
@@ -314,7 +319,7 @@ describe('ChatService', () => {
         user: sessionState.currentUser!
       })
 
-      await chatService.handleIncomingMessage({
+      await messageRouter.handleIncomingMessage({
         type: WebSocketMessageType.RECEIVE_MESSAGE,
         timestamp: 0,
         payload: msg
@@ -344,7 +349,7 @@ describe('ChatService', () => {
         content: 'enc'
       })
 
-      await chatService.handleIncomingMessage({
+      await messageRouter.handleIncomingMessage({
         type: WebSocketMessageType.RECEIVE_MESSAGE,
         timestamp: 0,
         payload: real
@@ -360,7 +365,7 @@ describe('ChatService', () => {
       vi.mocked(encryptionService.decryptMessage).mockResolvedValue('hello')
       const msg = buildMessage({ id: 1, conversationType: 'DIRECT', user: sender })
 
-      await chatService.handleIncomingMessage({
+      await messageRouter.handleIncomingMessage({
         type: WebSocketMessageType.RECEIVE_MESSAGE,
         timestamp: 0,
         payload: msg
@@ -385,7 +390,7 @@ describe('ChatService', () => {
         initialFetchCompleted: true
       })
 
-      await chatService.loadConversationForUser(buildUser({ id: 2 }))
+      await messageLoaderService.loadConversationForUser(buildUser({ id: 2 }))
 
       expect(api.authenticatedGet).not.toHaveBeenCalled()
     })
@@ -396,7 +401,7 @@ describe('ChatService', () => {
       mockApiGet({ conversation: conv, messages: [buildMessage({ id: 1, content: 'hi' })] })
       mockApiPost({})
 
-      await chatService.loadConversationForUser(buildUser({ id: 2 }))
+      await messageLoaderService.loadConversationForUser(buildUser({ id: 2 }))
 
       expect(api.authenticatedGet).toHaveBeenCalledWith(
         expect.stringContaining('conversations/2/direct_messages')
@@ -413,7 +418,7 @@ describe('ChatService', () => {
       mockApiGet({ conversation: conv, messages: [] })
       mockApiPost({})
 
-      await chatService.loadConversationForUser(buildUser({ id: 2 }), true)
+      await messageLoaderService.loadConversationForUser(buildUser({ id: 2 }), true)
 
       expect(api.authenticatedGet).toHaveBeenCalled()
     })
@@ -432,7 +437,7 @@ describe('ChatService', () => {
         initialFetchCompleted: true
       })
 
-      await chatService.loadConversationForChannel(channel)
+      await messageLoaderService.loadConversationForChannel(channel)
 
       expect(api.authenticatedGet).not.toHaveBeenCalled()
     })
@@ -442,7 +447,7 @@ describe('ChatService', () => {
       mockApiGet({ conversation: buildChannelConversation(), messages: [] })
       mockApiPost({})
 
-      await chatService.loadConversationForChannel(channel)
+      await messageLoaderService.loadConversationForChannel(channel)
 
       expect(api.authenticatedGet).toHaveBeenCalledWith(expect.stringContaining('channel_messages'))
     })
@@ -457,7 +462,7 @@ describe('ChatService', () => {
       })
       mockApiPost({})
 
-      await chatService.loadConversationForUser(buildUser({ id: 2 }))
+      await messageLoaderService.loadConversationForUser(buildUser({ id: 2 }))
 
       expect(conversationsState.conversationMetaById.get(10)?.hasMore).toBe(true)
       expect(conversationsState.conversationMetaById.get(10)?.isLoading).toBe(false)
@@ -471,7 +476,7 @@ describe('ChatService', () => {
       })
       mockApiPost({})
 
-      await chatService.loadConversationForUser(buildUser({ id: 2 }))
+      await messageLoaderService.loadConversationForUser(buildUser({ id: 2 }))
 
       expect(conversationsState.conversationMetaById.get(10)?.hasMore).toBe(false)
     })
@@ -479,7 +484,7 @@ describe('ChatService', () => {
     it('does not throw on non-ok response', async () => {
       mockApiGet({}, false)
 
-      await expect(chatService.loadConversationForUser(buildUser({ id: 2 }))).resolves.not.toThrow()
+      await expect(messageLoaderService.loadConversationForUser(buildUser({ id: 2 }))).resolves.not.toThrow()
     })
   })
 
@@ -489,7 +494,7 @@ describe('ChatService', () => {
       vi.mocked(encryptionService.encryptMessage).mockResolvedValue('cipher')
       const conv = buildDirectConversation({ id: 10, otherUserId: 2, encrypted: true })
 
-      const msg = await chatService.sendMessage(sessionState.currentUser!, conv, 'plain hello')
+      const msg = await messageSenderService.sendMessage(sessionState.currentUser!, conv, 'plain hello')
 
       expect(encryptionService.encryptMessage).toHaveBeenCalled()
       expect(webSocketService.send).toHaveBeenCalledWith({
@@ -506,7 +511,7 @@ describe('ChatService', () => {
       connectionState.connectionStatus = 'disconnected'
       const conv = buildDirectConversation({ id: 10, otherUserId: 2 })
 
-      const msg = await chatService.sendMessage(sessionState.currentUser!, conv, 'plain hello')
+      const msg = await messageSenderService.sendMessage(sessionState.currentUser!, conv, 'plain hello')
 
       expect(msg).toBeNull()
       expect(encryptionService.encryptMessage).not.toHaveBeenCalled()
@@ -518,7 +523,7 @@ describe('ChatService', () => {
     it('does not encrypt, sends via WebSocket, returns optimistic', async () => {
       const channel = buildChannel({ conversationId: 20 })
 
-      const msg = await chatService.sendChannelMessage(sessionState.currentUser!, channel, 'hi all')
+      const msg = await messageSenderService.sendChannelMessage(sessionState.currentUser!, channel, 'hi all')
 
       expect(encryptionService.encryptMessage).not.toHaveBeenCalled()
       expect(webSocketService.send).toHaveBeenCalledWith({
@@ -535,7 +540,7 @@ describe('ChatService', () => {
       connectionState.connectionStatus = 'reconnecting'
       const channel = buildChannel({ conversationId: 20 })
 
-      const msg = await chatService.sendChannelMessage(sessionState.currentUser!, channel, 'hi')
+      const msg = await messageSenderService.sendChannelMessage(sessionState.currentUser!, channel, 'hi')
 
       expect(msg).toBeNull()
       expect(webSocketService.send).not.toHaveBeenCalled()
@@ -550,7 +555,7 @@ describe('ChatService', () => {
         new Promise((resolve) => (resolveUpload = resolve))
       )
 
-      const pending = chatService.sendChannelMessage(
+      const pending = messageSenderService.sendChannelMessage(
         sessionState.currentUser!,
         channel,
         'look at this',
@@ -579,7 +584,7 @@ describe('ChatService', () => {
       const channel = buildChannel({ id: 5, conversationId: 20 })
       vi.mocked(fileStorageService.uploadChannelFile).mockResolvedValue(null)
 
-      await chatService.sendChannelMessage(
+      await messageSenderService.sendChannelMessage(
         sessionState.currentUser!,
         channel,
         'oops',
@@ -598,7 +603,7 @@ describe('ChatService', () => {
       vi.mocked(fileStorageService.uploadConversationFile).mockResolvedValue(null)
       const conv = buildDirectConversation({ id: 10, otherUserId: 2 })
 
-      await chatService.sendDirectMessage(sessionState.currentUser!, conv, 'hi', [imageFile()])
+      await messageSenderService.sendDirectMessage(sessionState.currentUser!, conv, 'hi', [imageFile()])
 
       const messages = conversationsState.messagesByConversationId.get(10)!
       expect(messages[0].status).toBe('error')
@@ -611,7 +616,7 @@ describe('ChatService', () => {
         .mockResolvedValueOnce(null)
         .mockResolvedValueOnce(storedFile(9))
 
-      const optimistic = await chatService.sendChannelMessage(
+      const optimistic = await messageSenderService.sendChannelMessage(
         sessionState.currentUser!,
         channel,
         'retry me',
@@ -620,7 +625,7 @@ describe('ChatService', () => {
       )
       expect(conversationsState.messagesByConversationId.get(20)![0].status).toBe('error')
 
-      await chatService.retryMessage(optimistic!)
+      await messageSenderService.retryMessage(optimistic!)
 
       expect(webSocketService.send).toHaveBeenCalledWith({
         type: WebSocketMessageType.SEND_MESSAGE,
@@ -630,7 +635,7 @@ describe('ChatService', () => {
     })
 
     it('retryMessage is a no-op for a message with no pending retry', async () => {
-      await chatService.retryMessage(buildMessage({ id: 12345, conversationId: 20 }))
+      await messageSenderService.retryMessage(buildMessage({ id: 12345, conversationId: 20 }))
 
       expect(webSocketService.send).not.toHaveBeenCalled()
     })
@@ -638,8 +643,8 @@ describe('ChatService', () => {
     it('assigns unique negative ids to placeholders sent in the same tick', async () => {
       const channel = buildChannel({ id: 5, conversationId: 20 })
 
-      const a = await chatService.sendChannelMessage(sessionState.currentUser!, channel, 'one')
-      const b = await chatService.sendChannelMessage(sessionState.currentUser!, channel, 'two')
+      const a = await messageSenderService.sendChannelMessage(sessionState.currentUser!, channel, 'one')
+      const b = await messageSenderService.sendChannelMessage(sessionState.currentUser!, channel, 'two')
 
       expect(a!.id).toBeLessThan(0)
       expect(b!.id).toBeLessThan(0)
@@ -654,7 +659,7 @@ describe('ChatService', () => {
       const newConv = buildDirectConversation({ id: 99, otherUserId: 2 })
       mockApiPost(newConv)
 
-      const result = await chatService.sendMessageAndStartConversation(
+      const result = await messageSenderService.sendMessageAndStartConversation(
         sessionState.currentUser!,
         2,
         'hi',
@@ -676,7 +681,7 @@ describe('ChatService', () => {
       const otherMsg = buildMessage({ id: 6, conversationId: 10 })
       conversationsState.messagesByConversationId.set(10, [msg, otherMsg])
 
-      await chatService.deleteMessage(msg)
+      await messageSenderService.deleteMessage(msg)
 
       expect(webSocketService.send).toHaveBeenCalledWith({
         type: WebSocketMessageType.SEND_DELETE_MESSAGE,
@@ -693,7 +698,7 @@ describe('ChatService', () => {
       vi.mocked(encryptionService.encryptMessage).mockResolvedValue('cipher')
       const msg = buildMessage({ id: 5, conversationId: 10 })
 
-      await chatService.editMessagePrivateMessage(msg, 'new content', 2)
+      await messageSenderService.editMessagePrivateMessage(msg, 'new content', 2)
 
       expect(webSocketService.send).toHaveBeenCalledWith({
         type: WebSocketMessageType.SEND_EDIT_MESSAGE,
@@ -707,7 +712,7 @@ describe('ChatService', () => {
     it('sends plaintext edit', async () => {
       const msg = buildMessage({ id: 5, conversationId: 20 })
 
-      await chatService.editChannelMessage(msg, 'new content')
+      await messageSenderService.editChannelMessage(msg, 'new content')
 
       expect(webSocketService.send).toHaveBeenCalledWith({
         type: WebSocketMessageType.SEND_EDIT_MESSAGE,
@@ -721,7 +726,7 @@ describe('ChatService', () => {
     it('addReaction sends WS message', () => {
       const msg = buildMessage({ id: 5, conversationId: 10 })
 
-      chatService.addReaction(msg, '👍')
+      reactionService.addReaction(msg, '👍')
 
       expect(webSocketService.send).toHaveBeenCalledWith({
         type: WebSocketMessageType.SEND_ADD_REACTION,
@@ -733,7 +738,7 @@ describe('ChatService', () => {
     it('removeReaction sends WS message', () => {
       const msg = buildMessage({ id: 5, conversationId: 10 })
 
-      chatService.removeReaction(msg, '👍')
+      reactionService.removeReaction(msg, '👍')
 
       expect(webSocketService.send).toHaveBeenCalledWith({
         type: WebSocketMessageType.SEND_REMOVE_REACTION,
@@ -750,7 +755,7 @@ describe('ChatService', () => {
       navigationState.view = View.Private
       navigationState.selectedUser = buildUser({ id: 2 })
 
-      chatService.handleIncomingReactionAdded(
+      reactionService.handleIncomingReactionAdded(
         buildReaction({ messageId: 100, userId: 3, emoji: '❤️' })
       )
 
@@ -768,7 +773,7 @@ describe('ChatService', () => {
       navigationState.view = View.Private
       navigationState.selectedUser = buildUser({ id: 2 })
 
-      chatService.handleIncomingReactionAdded(
+      reactionService.handleIncomingReactionAdded(
         buildReaction({ messageId: 100, userId: 3, emoji: '❤️' })
       )
 
@@ -784,7 +789,7 @@ describe('ChatService', () => {
       navigationState.view = View.Private
       navigationState.selectedUser = buildUser({ id: 2 })
 
-      chatService.handleIncomingReactionRemoved(reaction)
+      reactionService.handleIncomingReactionRemoved(reaction)
 
       expect(conversationsState.messagesByConversationId.get(10)![0].reactions).toHaveLength(0)
     })
@@ -795,7 +800,7 @@ describe('ChatService', () => {
       mockApiPost({})
       conversationsState.markUnread(10)
 
-      await chatService.markConversationAsRead(10)
+      await messageLoaderService.markConversationAsRead(10)
 
       expect(api.authenticatedPost).toHaveBeenCalledWith(null, 'conversations/10/read')
       expect(conversationsState.conversationMetaById.get(10)?.unread).toBe(false)
@@ -803,7 +808,7 @@ describe('ChatService', () => {
     })
 
     it('does nothing for falsy conversationId', async () => {
-      await chatService.markConversationAsRead(0)
+      await messageLoaderService.markConversationAsRead(0)
 
       expect(api.authenticatedPost).not.toHaveBeenCalled()
     })
@@ -816,7 +821,7 @@ describe('ChatService', () => {
         fromUser: buildUser({ id: 7 })
       }
 
-      chatService.handleIncomingConversationInvite({
+      inviteService.handleIncomingConversationInvite({
         type: WebSocketMessageType.CONVERSATION_INVITE,
         timestamp: 0,
         payload: invite
@@ -828,7 +833,7 @@ describe('ChatService', () => {
     it('sendConversationInvite posts to API', async () => {
       mockApiPost({})
 
-      await chatService.sendConversationInvite('alice@margin.chat')
+      await inviteService.sendConversationInvite('alice@margin.chat')
 
       expect(api.authenticatedPost).toHaveBeenCalledWith(
         { email: 'alice@margin.chat', encrypted: false },
@@ -843,7 +848,7 @@ describe('ChatService', () => {
       const invite = { conversation: conv, fromUser }
       conversationInviteService.addPendingInvite(invite)
 
-      await chatService.acceptConversationInvite(invite)
+      await inviteService.acceptConversationInvite(invite)
 
       expect(conversationInviteService.pendingInvites).toHaveLength(0)
       expect(usersState.byId.get(7)).toEqual(fromUser)
@@ -867,7 +872,7 @@ describe('ChatService', () => {
       const invite = { conversation: conv, fromUser }
       conversationInviteService.addPendingInvite(invite)
 
-      await chatService.acceptConversationInvite(invite)
+      await inviteService.acceptConversationInvite(invite)
 
       const stored = conversationsState.byId.get(50) as DirectConversation
       expect(stored.otherUserId).toBe(7)
@@ -881,7 +886,7 @@ describe('ChatService', () => {
       }
       conversationInviteService.addPendingInvite(invite)
 
-      await chatService.declineConversationInvite(50)
+      await inviteService.declineConversationInvite(50)
 
       expect(conversationInviteService.pendingInvites).toHaveLength(0)
     })
@@ -899,42 +904,9 @@ describe('ChatService', () => {
       ]
       mockApiGet(invites)
 
-      await chatService.loadPendingInvites()
+      await inviteService.loadPendingInvites()
 
       expect(conversationInviteService.pendingInvites).toHaveLength(2)
-    })
-  })
-
-  describe('selectContent', () => {
-    it('calls navigationService.setView with the new view', () => {
-      chatService.selectContent(View.Margin)
-
-      expect(navigationService.setView).toHaveBeenCalledWith(View.Margin)
-    })
-
-    it('clears selectedUser when changing views', () => {
-      navigationState.view = View.Private
-      navigationState.selectedUser = buildUser({ id: 2 })
-
-      chatService.selectContent(View.Margin)
-
-      expect(navigationState.selectedUser).toBeNull()
-    })
-
-    it('does not clear selectedUser when selecting the same view', () => {
-      navigationState.view = View.Private
-      const user = buildUser({ id: 2 })
-      navigationState.selectedUser = user
-
-      chatService.selectContent(View.Private)
-
-      expect(navigationState.selectedUser).toEqual(user)
-    })
-
-    it('always clears selected channel', () => {
-      chatService.selectContent(View.Margin)
-
-      expect(channelService.select).toHaveBeenCalledWith(null)
     })
   })
 
@@ -945,7 +917,7 @@ describe('ChatService', () => {
       navigationState.view = View.Private
       navigationState.selectedUser = buildUser({ id: 2 })
 
-      chatService.setConversationReadAt(10, 'new')
+      messageLoaderService.setConversationReadAt(10, 'new')
 
       const stored = conversationsState.byId.get(10) as DirectConversation
       expect(stored.otherUserReadAt).toBe('new')
@@ -957,7 +929,7 @@ describe('ChatService', () => {
       navigationState.view = View.Private
       navigationState.selectedUser = buildUser({ id: 2 })
 
-      chatService.setConversationReadAt(99, 'new')
+      messageLoaderService.setConversationReadAt(99, 'new')
 
       const stored = conversationsState.byId.get(10) as DirectConversation
       expect(stored.otherUserReadAt).toBe('old')
@@ -968,7 +940,7 @@ describe('ChatService', () => {
       conversationsState.byId.set(10, conv)
       navigationState.selectedChannel = buildChannel({ conversationId: 10 })
 
-      expect(() => chatService.setConversationReadAt(10, 'new')).not.toThrow()
+      expect(() => messageLoaderService.setConversationReadAt(10, 'new')).not.toThrow()
     })
   })
 
@@ -993,7 +965,7 @@ describe('ChatService', () => {
       conversationsState.messagesByConversationId.set(10, [optimistic])
       const real = buildMessage({ id: 5, conversationType: 'DIRECT', conversationId: 10, user: me })
 
-      await chatService.handleIncomingMessage({
+      await messageRouter.handleIncomingMessage({
         type: WebSocketMessageType.RECEIVE_MESSAGE,
         timestamp: 0,
         payload: real
@@ -1019,7 +991,7 @@ describe('ChatService', () => {
       conversationsState.messagesByConversationId.set(10, [optimistic])
       const real = buildMessage({ id: 5, conversationType: 'DIRECT', conversationId: 10, user: me })
 
-      await chatService.handleIncomingMessage({
+      await messageRouter.handleIncomingMessage({
         type: WebSocketMessageType.RECEIVE_MESSAGE,
         timestamp: 0,
         payload: real
@@ -1046,7 +1018,7 @@ describe('ChatService', () => {
         user: me
       })
 
-      await chatService.handleIncomingMessage({
+      await messageRouter.handleIncomingMessage({
         type: WebSocketMessageType.RECEIVE_MESSAGE,
         timestamp: 0,
         payload: real
@@ -1069,7 +1041,7 @@ describe('ChatService', () => {
         buildMessage({ id: 2 })
       ])
 
-      await chatService.loadConversationForUser(buildUser({ id: 2 }))
+      await messageLoaderService.loadConversationForUser(buildUser({ id: 2 }))
 
       expect(api.authenticatedPost).not.toHaveBeenCalled()
     })
@@ -1080,7 +1052,7 @@ describe('ChatService', () => {
       const conv = buildDirectConversation({ id: 10, otherUserId: 2 })
       mockApiGet({ conversation: conv, messages: [buildMessage({ id: 1 })] })
 
-      await chatService.loadConversationForUser(buildUser({ id: 2 }))
+      await messageLoaderService.loadConversationForUser(buildUser({ id: 2 }))
 
       expect(api.authenticatedPost).not.toHaveBeenCalled()
     })
@@ -1093,7 +1065,7 @@ describe('ChatService', () => {
         buildMessage({ id: 2 })
       ])
 
-      await chatService.loadConversationForChannel(channel)
+      await messageLoaderService.loadConversationForChannel(channel)
 
       expect(api.authenticatedPost).not.toHaveBeenCalled()
     })
@@ -1106,7 +1078,7 @@ describe('ChatService', () => {
         messages: [buildMessage({ id: 1 })]
       })
 
-      await chatService.loadConversationForChannel(channel)
+      await messageLoaderService.loadConversationForChannel(channel)
 
       expect(api.authenticatedPost).not.toHaveBeenCalled()
     })
@@ -1128,7 +1100,7 @@ describe('ChatService', () => {
       })
       mockApiPost({})
 
-      await chatService.loadConversationForUser(buildUser({ id: 2 }))
+      await messageLoaderService.loadConversationForUser(buildUser({ id: 2 }))
 
       expect(conversationsState.conversationMetaById.get(10)?.unread).toBe(true)
     })
@@ -1141,7 +1113,7 @@ describe('ChatService', () => {
       const fullPage = Array.from({ length: 30 }, (_, i) => buildMessage({ id: i + 100 }))
       mockApiGet({ conversation: conv, messages: fullPage })
 
-      const result = await chatService.fetchMessagesBefore(conv, 200)
+      const result = await messageLoaderService.fetchMessagesBefore(conv, 200)
 
       expect(result.messages).toHaveLength(30)
       expect(result.hasMore).toBe(true)
@@ -1152,7 +1124,7 @@ describe('ChatService', () => {
       const conv = buildDirectConversation({ id: 10, otherUserId: 2 })
       mockApiGet({ conversation: conv, messages: [buildMessage({ id: 1 })] })
 
-      const result = await chatService.fetchMessagesBefore(conv, 200)
+      const result = await messageLoaderService.fetchMessagesBefore(conv, 200)
 
       expect(result.hasMore).toBe(false)
     })
@@ -1164,7 +1136,7 @@ describe('ChatService', () => {
       conversationsState.messagesByConversationId.set(10, existing)
       mockApiGet({ conversation: conv, messages: [buildMessage({ id: 1, content: 'older' })] })
 
-      await chatService.fetchMessagesBefore(conv, 200)
+      await messageLoaderService.fetchMessagesBefore(conv, 200)
 
       expect(conversationsState.messagesByConversationId.get(10)).toEqual(existing)
     })
@@ -1173,7 +1145,7 @@ describe('ChatService', () => {
       const conv = buildDirectConversation({ id: 10, otherUserId: 2 })
       mockApiGet({}, false)
 
-      const result = await chatService.fetchMessagesBefore(conv, 200)
+      const result = await messageLoaderService.fetchMessagesBefore(conv, 200)
 
       expect(result.messages).toEqual([])
       expect(result.hasMore).toBe(false)

@@ -1,6 +1,7 @@
 <script lang="ts">
   import { conversationsState, defaultMeta } from '$src/states/ConversationsState.svelte.js'
-  import { chatService } from '$src/services/ChatService'
+  import { messageLoaderService } from '$src/services/MessageLoaderService'
+  import { messageSenderService } from '$src/services/MessageSenderService'
   import { isGroupConversation } from '$src/interfaces/Conversation'
   import ChatInput from '$src/components/common/chat/input/ChatInput.svelte'
   import MessagesContainer from '$src/components/common/chat/MessagesContainer.svelte'
@@ -30,7 +31,7 @@
     const group = navigationState.selectedGroupConversation
     if (group) {
       untrack(() => {
-        chatService.loadConversationForGroup(group)
+        messageLoaderService.loadConversationForGroup(group)
       })
     }
   })
@@ -58,14 +59,19 @@
     const messageContent = gifUrl ? `${messageInput}\n${gifUrl}`.trim() : messageInput
     messageInput = ''
 
-    await chatService.sendGroupMessage(sessionState.currentUser, group, messageContent, inlineFiles)
+    await messageSenderService.sendGroupMessage(
+      sessionState.currentUser,
+      group,
+      messageContent,
+      inlineFiles
+    )
   }
 </script>
 
 <svelte:window
   onfocus={() => {
     if (activeGroup) {
-      chatService.markConversationAsRead(activeGroup.id)
+      messageLoaderService.markConversationAsRead(activeGroup.id)
       chatInputRef?.focus()
     }
   }}
