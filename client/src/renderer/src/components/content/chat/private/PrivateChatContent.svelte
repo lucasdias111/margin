@@ -10,6 +10,8 @@
   import { navigationState } from '$src/states/NavigationState.svelte'
   import { sessionState } from '$src/states/SessionState.svelte'
   import { subscriptionState } from '$src/states/SubscriptionState.svelte'
+  import { typingIndicatorService } from '$src/services/TypingIndicatorService'
+  import { typingIndicatorState } from '$src/states/TypingIndicatorState.svelte'
   import { untrack } from 'svelte'
   import { usersState } from '$src/states/UsersState.svelte'
   import type { User } from '$src/interfaces/User'
@@ -34,12 +36,28 @@
     conversationsState.conversationMetaById.get(activeConversation?.id) ?? defaultMeta()
   )
 
+  const typingUsers = $derived(
+    activeConversation
+      ? (typingIndicatorState.byConversationId.get(activeConversation.id) ?? [])
+      : []
+  )
+
   $effect(() => {
     const user = selectedUser
     if (user) {
       untrack(() => {
         messageLoaderService.loadConversationForUser(user)
       })
+    }
+  })
+
+  $effect(() => {
+    const id = activeConversation?.id
+    if (!id) return
+    if (messageInput.length > 0) {
+      typingIndicatorService.notifyTyping(id)
+    } else {
+      typingIndicatorService.stopTyping(id)
     }
   })
 
@@ -134,6 +152,7 @@
         messages={activeMessages}
         isLoading={activeMeta.isLoading}
         isDirectMessage={true}
+        {typingUsers}
       />
     </div>
     <ChatInput

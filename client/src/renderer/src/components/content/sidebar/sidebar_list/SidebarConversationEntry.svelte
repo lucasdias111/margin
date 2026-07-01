@@ -121,12 +121,14 @@
     display: inline-flex;
     align-items: center;
     gap: 5px;
+    min-width: 0;
   }
 
   .bottom-row {
     display: inline-flex;
     justify-content: space-between;
     align-items: center;
+    min-width: 0;
   }
 
   .name {

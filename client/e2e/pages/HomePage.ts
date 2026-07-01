@@ -61,4 +61,8 @@ export class HomePage {
   onboardingTooltip(): Locator {
     return this.page.locator('.tooltip.ready')
   }
+
+  typingIndicator(): Locator {
+    return this.page.locator('.typing-indicator')
+  }
 }

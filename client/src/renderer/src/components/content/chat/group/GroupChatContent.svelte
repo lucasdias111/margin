@@ -8,6 +8,8 @@
   import GroupChatHeader from '$src/components/content/chat/group/GroupChatHeader.svelte'
   import { navigationState } from '$src/states/NavigationState.svelte'
   import { sessionState } from '$src/states/SessionState.svelte'
+  import { typingIndicatorService } from '$src/services/TypingIndicatorService'
+  import { typingIndicatorState } from '$src/states/TypingIndicatorState.svelte'
   import { untrack } from 'svelte'
 
   let messageInput = $state('')
@@ -27,12 +29,26 @@
     conversationsState.conversationMetaById.get(activeGroup?.id) ?? defaultMeta()
   )
 
+  const typingUsers = $derived(
+    activeGroup ? (typingIndicatorState.byConversationId.get(activeGroup.id) ?? []) : []
+  )
+
   $effect(() => {
     const group = navigationState.selectedGroupConversation
     if (group) {
       untrack(() => {
         messageLoaderService.loadConversationForGroup(group)
       })
+    }
+  })
+
+  $effect(() => {
+    const id = activeGroup?.id
+    if (!id) return
+    if (messageInput.length > 0) {
+      typingIndicatorService.notifyTyping(id)
+    } else {
+      typingIndicatorService.stopTyping(id)
     }
   })
 
@@ -86,6 +102,7 @@
         messages={activeMessages}
         isLoading={activeMeta.isLoading}
         isDirectMessage={false}
+        {typingUsers}
       />
     </div>
 

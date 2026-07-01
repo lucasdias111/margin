@@ -24,6 +24,7 @@
   import { webSocketService } from '$src/services/WebSocketService'
   import { usersService } from '$src/services/UsersService'
   import { presenceService } from '$src/services/PrecenseService.js'
+  import { typingIndicatorService } from '$src/services/TypingIndicatorService'
   import NoMarginEmptyState from '$src/components/content/margin/NoMarginEmptyState.svelte'
   import { encryptionService } from '$src/services/EncryptionService'
   import { marginService } from '$src/services/MarginService'
@@ -137,9 +138,12 @@
     ) => {
       messageLoaderService.setConversationReadAt(msg.payload.conversationId, msg.payload.readAt)
     },
+    [WebSocketMessageType.RECEIVE_TYPING_INDICATOR]: typingIndicatorService.handleIncoming,
     [WebSocketMessageType.CONVERSATION_INVITE]: inviteService.handleIncomingConversationInvite,
     [WebSocketMessageType.CONVERSATION_INVITE_ACCEPTED]:
       inviteService.handleConversationInviteAccepted,
+    [WebSocketMessageType.CONVERSATION_INVITE_DECLINED]:
+      inviteService.handleConversationInviteDeclined,
     [WebSocketMessageType.SUBSCRIPTION_UPDATED]: (msg: WebSocketMessage<Subscription>) => {
       subscriptionState.set(msg.payload)
     }
@@ -172,6 +176,7 @@
     await loadUnreadMessages()
     await loadRecentUsers()
     await inviteService.loadPendingInvites()
+    await inviteService.loadSentInvites()
     await notificationService.loadAll()
     await marginService.loadMarginsForUser()
   }

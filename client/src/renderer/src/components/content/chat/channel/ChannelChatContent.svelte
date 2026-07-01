@@ -10,6 +10,8 @@
   import { sessionState } from '$src/states/SessionState.svelte'
   import { conversationsState, defaultMeta } from '$src/states/ConversationsState.svelte'
   import { subscriptionState } from '$src/states/SubscriptionState.svelte'
+  import { typingIndicatorService } from '$src/services/TypingIndicatorService'
+  import { typingIndicatorState } from '$src/states/TypingIndicatorState.svelte'
   import { untrack } from 'svelte'
 
   let messageInput = $state('')
@@ -29,12 +31,26 @@
       : defaultMeta()
   )
 
+  const typingUsers = $derived(
+    activeConvId ? (typingIndicatorState.byConversationId.get(activeConvId) ?? []) : []
+  )
+
   $effect(() => {
     const channel = navigationState.selectedChannel
     if (channel) {
       untrack(() => {
         messageLoaderService.loadConversationForChannel(channel)
       })
+    }
+  })
+
+  $effect(() => {
+    const id = activeConvId
+    if (!id) return
+    if (messageInput.length > 0) {
+      typingIndicatorService.notifyTyping(id)
+    } else {
+      typingIndicatorService.stopTyping(id)
     }
   })
 
@@ -90,7 +106,11 @@
 
   <div class="chat-body">
     <div class="pane chat-background">
-      <MessagesContainer messages={activeMessages} isLoading={activeMeta.isLoading} />
+      <MessagesContainer
+        messages={activeMessages}
+        isLoading={activeMeta.isLoading}
+        {typingUsers}
+      />
     </div>
     <ChannelSidebar channel={navigationState.selectedChannel} bind:isOpen={sidebarOpen} />
   </div>
