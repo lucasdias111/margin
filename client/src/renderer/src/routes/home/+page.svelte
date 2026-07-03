@@ -189,6 +189,10 @@
       conversationsState.markUnread(id)
     }
 
+    for (const id of unread.groupConversationIds ?? []) {
+      conversationsState.markUnread(id)
+    }
+
     for (const ch of unread.channelUnreads) {
       if (!conversationsState.byId.has(ch.conversationId)) {
         conversationsState.byId.set(ch.conversationId, {
