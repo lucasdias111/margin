@@ -7,6 +7,8 @@
   import { marginService } from '$src/services/MarginService'
   import Icon from '$src/components/common/icons/Icon.svelte'
   import { marginInviteService } from '$src/services/MarginInviteService'
+  import { inviteService as conversationInviteService } from '$src/services/ConversationInviteService'
+  import { conversationInviteService as conversationInviteState } from '$src/states/UserListState.svelte'
   import { notificationState } from '$src/states/NotificationState.svelte'
   import { View } from '$src/interfaces/View'
   import { usersService } from '$src/services/UsersService'
@@ -38,6 +40,35 @@
     }
   }
 
+  async function handleAcceptConversationInviteFromNotification(
+    notification: Notification
+  ): Promise<void> {
+    try {
+      const invite = conversationInviteState.pendingInvites.find(
+        (i) => i.conversation.id === notification.referenceId
+      )
+      if (invite) {
+        await conversationInviteService.acceptConversationInvite(invite)
+      }
+      await notificationService.markNotificationAsSeen(notification)
+      notificationState.markNotificationSeen(notification.notificationId)
+    } catch (e) {
+      console.error('Failed to accept conversation invite:', e)
+    }
+  }
+
+  async function handleDeclineConversationInviteFromNotification(
+    notification: Notification
+  ): Promise<void> {
+    try {
+      await conversationInviteService.declineConversationInvite(notification.referenceId)
+      await notificationService.markNotificationAsSeen(notification)
+      notificationState.markNotificationSeen(notification.notificationId)
+    } catch (e) {
+      console.error('Failed to decline conversation invite:', e)
+    }
+  }
+
   async function handleClick(notification: Notification): Promise<void> {
     if (!notification.seen) {
       await notificationService.markNotificationAsSeen(notification)
@@ -54,6 +85,13 @@
     } else if (notification.type === NotificationType.ADDED_TO_MARGIN) {
       marginService.select(await marginService.getMargin(notification.marginId))
       navigationService.setView(View.Margin)
+    } else if (notification.type === NotificationType.MESSAGE_REACTION) {
+      // Only channel reactions carry a marginId; DIRECT/GROUP reactions have no
+      // reliable conversation reference to navigate to (referenceId is the message ID).
+      if (notification.marginId) {
+        marginService.select(await marginService.getMargin(notification.marginId))
+        navigationService.setView(View.Margin)
+      }
     } else if (
       notification.type === NotificationType.SUBSCRIPTION_UPGRADED ||
       notification.type === NotificationType.SUBSCRIPTION_PAYMENT_FAILED ||
@@ -75,6 +113,10 @@
         return '👥'
       case NotificationType.INVITED_TO_MARGIN:
         return '✉️'
+      case NotificationType.CONVERSATION_INVITE:
+        return '💬'
+      case NotificationType.MESSAGE_REACTION:
+        return '👍'
       case NotificationType.SUBSCRIPTION_UPGRADED:
         return '✨'
       case NotificationType.SUBSCRIPTION_PAYMENT_FAILED:
@@ -96,6 +138,10 @@
         return `${notification.sender?.displayName ?? 'Someone'} added you to a margin`
       case NotificationType.INVITED_TO_MARGIN:
         return `${notification.sender?.displayName ?? 'Someone'} invited you to join a margin`
+      case NotificationType.CONVERSATION_INVITE:
+        return `${notification.sender?.displayName ?? 'Someone'} invited you to a conversation`
+      case NotificationType.MESSAGE_REACTION:
+        return `${notification.sender?.displayName ?? 'Someone'} reacted to your message`
       case NotificationType.SUBSCRIPTION_UPGRADED:
         return 'Your workspace plan was upgraded'
       case NotificationType.SUBSCRIPTION_PAYMENT_FAILED:
@@ -142,6 +188,28 @@
               <button
                 class="decline-btn"
                 onclick={() => handleDeclineFromNotification(notification)}
+              >Decline
+              </button>
+            </div>
+          </div>
+        {:else if notification.type === NotificationType.CONVERSATION_INVITE && !notification.seen}
+          <div class="notification-item unseen invite-notification">
+            <div class="notification-icon">
+              {getNotificationIcon(notification.type)}
+            </div>
+            <div class="notification-body">
+              <div class="notification-title">{getNotificationTitle(notification)}</div>
+              <div class="notification-date">{formatTimestamp(notification.createdAt)}</div>
+            </div>
+            <div class="invite-actions">
+              <button
+                class="accept-btn"
+                onclick={() => handleAcceptConversationInviteFromNotification(notification)}
+              >Accept
+              </button>
+              <button
+                class="decline-btn"
+                onclick={() => handleDeclineConversationInviteFromNotification(notification)}
               >Decline
               </button>
             </div>
