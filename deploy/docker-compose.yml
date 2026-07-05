@@ -122,16 +122,19 @@ services:
     volumes:
       - /etc/letsencrypt:/etc/letsencrypt
       - certbot_webroot:/var/www/certbot
-    entrypoint: >
-      sh -c "certbot certonly --webroot -w /var/www/certbot
-             --email ${ADMIN_EMAIL} --agree-tos --no-eff-email
-             -d ${DOMAIN} -d www.${DOMAIN} &&
-             certbot certonly --webroot -w /var/www/certbot
-             --email ${ADMIN_EMAIL} --agree-tos --no-eff-email
-             -d files.${DOMAIN} &&
-             certbot certonly --webroot -w /var/www/certbot
-             --email ${ADMIN_EMAIL} --agree-tos --no-eff-email
-             -d updates.${DOMAIN}"
+    entrypoint:
+      - sh
+      - -c
+      - >-
+        certbot certonly --webroot -w /var/www/certbot
+        --email ${ADMIN_EMAIL} --agree-tos --no-eff-email
+        -d ${DOMAIN} -d www.${DOMAIN} &&
+        certbot certonly --webroot -w /var/www/certbot
+        --email ${ADMIN_EMAIL} --agree-tos --no-eff-email
+        -d files.${DOMAIN} &&
+        certbot certonly --webroot -w /var/www/certbot
+        --email ${ADMIN_EMAIL} --agree-tos --no-eff-email
+        -d updates.${DOMAIN}
     profiles:
       - certbot
 
