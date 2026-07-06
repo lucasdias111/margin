@@ -1,7 +1,8 @@
 <script lang="ts">
   import ChatInput from '$src/components/common/chat/input/ChatInput.svelte'
   import MessagesContainer from '$src/components/common/chat/MessagesContainer.svelte'
-  import { chatService } from '$src/services/ChatService'
+  import { messageLoaderService } from '$src/services/MessageLoaderService'
+  import { messageSenderService } from '$src/services/MessageSenderService'
   import ChannelSidebar from '$src/components/content/chat/channel/sidebar/ChannelSidebar.svelte'
   import ChannelChatHeader from '$src/components/content/chat/channel/ChannelChatHeader.svelte'
   import { channelService } from '$src/services/ChannelService'
@@ -9,6 +10,8 @@
   import { sessionState } from '$src/states/SessionState.svelte'
   import { conversationsState, defaultMeta } from '$src/states/ConversationsState.svelte'
   import { subscriptionState } from '$src/states/SubscriptionState.svelte'
+  import { typingIndicatorService } from '$src/services/TypingIndicatorService'
+  import { typingIndicatorState } from '$src/states/TypingIndicatorState.svelte'
   import { untrack } from 'svelte'
 
   let messageInput = $state('')
@@ -28,12 +31,26 @@
       : defaultMeta()
   )
 
+  const typingUsers = $derived(
+    activeConvId ? (typingIndicatorState.byConversationId.get(activeConvId) ?? []) : []
+  )
+
   $effect(() => {
     const channel = navigationState.selectedChannel
     if (channel) {
       untrack(() => {
-        chatService.loadConversationForChannel(channel)
+        messageLoaderService.loadConversationForChannel(channel)
       })
+    }
+  })
+
+  $effect(() => {
+    const id = activeConvId
+    if (!id) return
+    if (messageInput.length > 0) {
+      typingIndicatorService.notifyTyping(id)
+    } else {
+      typingIndicatorService.stopTyping(id)
     }
   })
 
@@ -54,7 +71,7 @@
     const messageContent = gifUrl ? `${messageInput}\n${gifUrl}`.trim() : messageInput
     messageInput = ''
 
-    await chatService.sendChannelMessage(
+    await messageSenderService.sendChannelMessage(
       sessionState.currentUser,
       navigationState.selectedChannel,
       messageContent,
@@ -71,7 +88,7 @@
 <svelte:window
   onfocus={() => {
     if (activeConvId) {
-      chatService.markConversationAsRead(activeConvId)
+      messageLoaderService.markConversationAsRead(activeConvId)
     }
   }}
 />
@@ -89,7 +106,11 @@
 
   <div class="chat-body">
     <div class="pane chat-background">
-      <MessagesContainer messages={activeMessages} isLoading={activeMeta.isLoading} />
+      <MessagesContainer
+        messages={activeMessages}
+        isLoading={activeMeta.isLoading}
+        {typingUsers}
+      />
     </div>
     <ChannelSidebar channel={navigationState.selectedChannel} bind:isOpen={sidebarOpen} />
   </div>

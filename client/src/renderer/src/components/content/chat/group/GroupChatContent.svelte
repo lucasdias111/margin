@@ -1,12 +1,15 @@
 <script lang="ts">
   import { conversationsState, defaultMeta } from '$src/states/ConversationsState.svelte.js'
-  import { chatService } from '$src/services/ChatService'
+  import { messageLoaderService } from '$src/services/MessageLoaderService'
+  import { messageSenderService } from '$src/services/MessageSenderService'
   import { isGroupConversation } from '$src/interfaces/Conversation'
   import ChatInput from '$src/components/common/chat/input/ChatInput.svelte'
   import MessagesContainer from '$src/components/common/chat/MessagesContainer.svelte'
   import GroupChatHeader from '$src/components/content/chat/group/GroupChatHeader.svelte'
   import { navigationState } from '$src/states/NavigationState.svelte'
   import { sessionState } from '$src/states/SessionState.svelte'
+  import { typingIndicatorService } from '$src/services/TypingIndicatorService'
+  import { typingIndicatorState } from '$src/states/TypingIndicatorState.svelte'
   import { untrack } from 'svelte'
 
   let messageInput = $state('')
@@ -26,12 +29,26 @@
     conversationsState.conversationMetaById.get(activeGroup?.id) ?? defaultMeta()
   )
 
+  const typingUsers = $derived(
+    activeGroup ? (typingIndicatorState.byConversationId.get(activeGroup.id) ?? []) : []
+  )
+
   $effect(() => {
     const group = navigationState.selectedGroupConversation
     if (group) {
       untrack(() => {
-        chatService.loadConversationForGroup(group)
+        messageLoaderService.loadConversationForGroup(group)
       })
+    }
+  })
+
+  $effect(() => {
+    const id = activeGroup?.id
+    if (!id) return
+    if (messageInput.length > 0) {
+      typingIndicatorService.notifyTyping(id)
+    } else {
+      typingIndicatorService.stopTyping(id)
     }
   })
 
@@ -58,14 +75,19 @@
     const messageContent = gifUrl ? `${messageInput}\n${gifUrl}`.trim() : messageInput
     messageInput = ''
 
-    await chatService.sendGroupMessage(sessionState.currentUser, group, messageContent, inlineFiles)
+    await messageSenderService.sendGroupMessage(
+      sessionState.currentUser,
+      group,
+      messageContent,
+      inlineFiles
+    )
   }
 </script>
 
 <svelte:window
   onfocus={() => {
     if (activeGroup) {
-      chatService.markConversationAsRead(activeGroup.id)
+      messageLoaderService.markConversationAsRead(activeGroup.id)
       chatInputRef?.focus()
     }
   }}
@@ -80,6 +102,7 @@
         messages={activeMessages}
         isLoading={activeMeta.isLoading}
         isDirectMessage={false}
+        {typingUsers}
       />
     </div>
 

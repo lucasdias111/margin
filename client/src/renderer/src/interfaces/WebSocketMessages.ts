@@ -30,3 +30,13 @@ export interface ChannelVoiceParticipantPayload {
   channelId: number
   user: User
 }
+
+export interface TypingIndicatorPayload {
+  isTyping: boolean
+}
+
+export interface TypingIndicatorEventPayload {
+  userId: number
+  displayName: string
+  isTyping: boolean
+}

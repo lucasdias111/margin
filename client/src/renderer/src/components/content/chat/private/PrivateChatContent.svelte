@@ -1,6 +1,7 @@
 <script lang="ts">
   import { conversationsState, defaultMeta } from '$src/states/ConversationsState.svelte.js'
-  import { chatService } from '$src/services/ChatService'
+  import { messageLoaderService } from '$src/services/MessageLoaderService'
+  import { messageSenderService } from '$src/services/MessageSenderService'
   import type { DirectConversation } from '$src/interfaces/Conversation'
   import { callService } from '$src/services/call/CallService'
   import ChatInput from '$src/components/common/chat/input/ChatInput.svelte'
@@ -9,6 +10,8 @@
   import { navigationState } from '$src/states/NavigationState.svelte'
   import { sessionState } from '$src/states/SessionState.svelte'
   import { subscriptionState } from '$src/states/SubscriptionState.svelte'
+  import { typingIndicatorService } from '$src/services/TypingIndicatorService'
+  import { typingIndicatorState } from '$src/states/TypingIndicatorState.svelte'
   import { untrack } from 'svelte'
   import { usersState } from '$src/states/UsersState.svelte'
   import type { User } from '$src/interfaces/User'
@@ -33,12 +36,28 @@
     conversationsState.conversationMetaById.get(activeConversation?.id) ?? defaultMeta()
   )
 
+  const typingUsers = $derived(
+    activeConversation
+      ? (typingIndicatorState.byConversationId.get(activeConversation.id) ?? [])
+      : []
+  )
+
   $effect(() => {
     const user = selectedUser
     if (user) {
       untrack(() => {
-        chatService.loadConversationForUser(user)
+        messageLoaderService.loadConversationForUser(user)
       })
+    }
+  })
+
+  $effect(() => {
+    const id = activeConversation?.id
+    if (!id) return
+    if (messageInput.length > 0) {
+      typingIndicatorService.notifyTyping(id)
+    } else {
+      typingIndicatorService.stopTyping(id)
     }
   })
 
@@ -74,21 +93,21 @@
     messageInput = ''
 
     if (activeConversation) {
-      await chatService.sendDirectMessage(
+      await messageSenderService.sendDirectMessage(
         sessionState.currentUser,
         activeConversation as DirectConversation,
         messageContent,
         inlineFiles
       )
     } else {
-      const { conversation, message } = await chatService.sendMessageAndStartConversation(
+      const { conversation, message } = await messageSenderService.sendMessageAndStartConversation(
         sessionState.currentUser,
         selectedUser.id,
         messageContent
       )
       conversationsState.appendMessage(message, false)
       if (inlineFiles.length > 0) {
-        await chatService.sendDirectMessage(
+        await messageSenderService.sendDirectMessage(
           sessionState.currentUser,
           conversation as DirectConversation,
           '',
@@ -114,7 +133,7 @@
 <svelte:window
   onfocus={() => {
     if (activeConversation) {
-      chatService.markConversationAsRead(activeConversation.id)
+      messageLoaderService.markConversationAsRead(activeConversation.id)
       focusInput()
     }
   }}
@@ -133,6 +152,7 @@
         messages={activeMessages}
         isLoading={activeMeta.isLoading}
         isDirectMessage={true}
+        {typingUsers}
       />
     </div>
     <ChatInput

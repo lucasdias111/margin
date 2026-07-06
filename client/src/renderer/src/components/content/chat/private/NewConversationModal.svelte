@@ -4,7 +4,7 @@
   import Button from '$src/components/common/buttons/Button.svelte'
   import Icon from '$src/components/common/icons/Icon.svelte'
   import { authenticatedGet } from '$src/services/api'
-  import { chatService } from '$src/services/ChatService'
+  import { inviteService } from '$src/services/ConversationInviteService'
   import type { User } from '$src/interfaces/User'
 
   interface Props {
@@ -53,7 +53,7 @@
   async function sendInvite(): Promise<void> {
     if (!foundUser) return
     try {
-      await chatService.sendConversationInvite(email.trim(), encrypted)
+      await inviteService.sendConversationInvite(email.trim(), encrypted, foundUser)
       sent = true
     } catch {
       error = 'Failed to send invite. The user may already have a conversation with you.'

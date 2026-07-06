@@ -18,10 +18,13 @@
   import Navigation from '$src/components/content/Navigation.svelte'
   import ManageWindow from '$src/components/content/manage/ManageWindow.svelte'
   import { useWebsocketSvelte } from '$src/composables/useWebsocket.svelte'
-  import { chatService } from '$src/services/ChatService'
+  import { messageRouter } from '$src/services/MessageRouter'
+  import { messageLoaderService } from '$src/services/MessageLoaderService'
+  import { inviteService } from '$src/services/ConversationInviteService'
   import { webSocketService } from '$src/services/WebSocketService'
   import { usersService } from '$src/services/UsersService'
   import { presenceService } from '$src/services/PrecenseService.js'
+  import { typingIndicatorService } from '$src/services/TypingIndicatorService'
   import NoMarginEmptyState from '$src/components/content/margin/NoMarginEmptyState.svelte'
   import { encryptionService } from '$src/services/EncryptionService'
   import { marginService } from '$src/services/MarginService'
@@ -104,7 +107,7 @@
   })
 
   useWebsocketSvelte({
-    [WebSocketMessageType.RECEIVE_MESSAGE]: chatService.handleIncomingMessage,
+    [WebSocketMessageType.RECEIVE_MESSAGE]: messageRouter.handleIncomingMessage,
     [WebSocketMessageType.CALL_OFFER]: handleIncomingCallOffer,
     [WebSocketMessageType.CALL_END]: handleRemoteCallEnd,
     [WebSocketMessageType.USER_LOGIN]: (data: WebSocketMessage<User>) =>
@@ -133,11 +136,14 @@
     [WebSocketMessageType.CONVERSATION_READ]: (
       msg: WebSocketMessage<{ conversationId: number; readAt: string }>
     ) => {
-      chatService.setConversationReadAt(msg.payload.conversationId, msg.payload.readAt)
+      messageLoaderService.setConversationReadAt(msg.payload.conversationId, msg.payload.readAt)
     },
-    [WebSocketMessageType.CONVERSATION_INVITE]: chatService.handleIncomingConversationInvite,
+    [WebSocketMessageType.RECEIVE_TYPING_INDICATOR]: typingIndicatorService.handleIncoming,
+    [WebSocketMessageType.CONVERSATION_INVITE]: inviteService.handleIncomingConversationInvite,
     [WebSocketMessageType.CONVERSATION_INVITE_ACCEPTED]:
-      chatService.handleConversationInviteAccepted,
+      inviteService.handleConversationInviteAccepted,
+    [WebSocketMessageType.CONVERSATION_INVITE_DECLINED]:
+      inviteService.handleConversationInviteDeclined,
     [WebSocketMessageType.SUBSCRIPTION_UPDATED]: (msg: WebSocketMessage<Subscription>) => {
       subscriptionState.set(msg.payload)
     }
@@ -169,7 +175,8 @@
     await sessionHandler.getCurrentUser()
     await loadUnreadMessages()
     await loadRecentUsers()
-    await chatService.loadPendingInvites()
+    await inviteService.loadPendingInvites()
+    await inviteService.loadSentInvites()
     await notificationService.loadAll()
     await marginService.loadMarginsForUser()
   }
@@ -179,6 +186,10 @@
     const unread: UnreadConversations = await response.json()
 
     for (const id of unread.directConversationIds) {
+      conversationsState.markUnread(id)
+    }
+
+    for (const id of unread.groupConversationIds ?? []) {
       conversationsState.markUnread(id)
     }
 
@@ -257,9 +268,9 @@
     await loadRecentUsers()
 
     if (navigationState.view === View.Private && navigationState.selectedUser) {
-      await chatService.loadConversationForUser(navigationState.selectedUser, true)
+      await messageLoaderService.loadConversationForUser(navigationState.selectedUser, true)
     } else if (navigationState.selectedChannel) {
-      await chatService.loadConversationForChannel(navigationState.selectedChannel, true)
+      await messageLoaderService.loadConversationForChannel(navigationState.selectedChannel, true)
     }
   }
 </script>

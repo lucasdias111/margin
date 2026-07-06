@@ -3,7 +3,8 @@
   import UserAvatar from '$src/components/common/user/UserAvatar.svelte'
   import type { Message } from '$src/interfaces/Messages'
   import type { StoredFile } from '$src/interfaces/StoredFile'
-  import { chatService } from '$src/services/ChatService'
+  import { messageSenderService } from '$src/services/MessageSenderService'
+  import { reactionService } from '$src/services/ReactionService'
   import { fileStorageService } from '$src/services/FileStorageService'
   import { imageService } from '$src/services/ImageService'
   import Icon from '$src/components/common/icons/Icon.svelte'
@@ -44,7 +45,7 @@
   let isFailed = $derived(message.status === 'error')
 
   function retrySend(): void {
-    chatService.retryMessage(message)
+    messageSenderService.retryMessage(message)
   }
 
   const EMOJI_ONLY = /^(\p{Extended_Pictographic}|‍|️|[\u{1F3FB}-\u{1F3FF}]|\s)+$/u
@@ -83,6 +84,16 @@
     return /\.(gif|png|jpe?g|webp)(\?|$)/i.test(url) || /static\.klipy\.com/i.test(url)
   }
 
+  let isMediaOnly = $derived(
+    !hasAttachments &&
+      parsedContent.some((part) => part.type === 'link') &&
+      parsedContent.every(
+        (part) =>
+          (part.type === 'text' && part.content.trim().length === 0) ||
+          (part.type === 'link' && !!part.href && isInlineImageUrl(part.href))
+      )
+  )
+
   let isSent = $derived(message.user.id === sessionState.currentUser?.id)
   let checkmarkIcon: IconName = $derived(isRead ? 'checkmarkFilled' : 'checkmark')
 
@@ -96,9 +107,9 @@
       (r) => r.emoji === emoji && r.userId === sessionState.currentUser?.id
     )
     if (alreadyReacted) {
-      chatService.removeReaction(message, emoji)
+      reactionService.removeReaction(message, emoji)
     } else {
-      chatService.addReaction(message, emoji)
+      reactionService.addReaction(message, emoji)
     }
   }
 
@@ -137,7 +148,13 @@
       <span class="handle">{message.user.displayName}</span>
     {/if}
 
-    <div class="bubble" class:sent={isSent} class:sending={isSending} class:failed={isFailed}>
+    <div
+      class="bubble"
+      class:sent={isSent}
+      class:sending={isSending}
+      class:failed={isFailed}
+      class:media-only={isMediaOnly}
+    >
       {#if isEditing}
         <div class="editactions">
           <button class="editbut" onclick={handleSaveEdit}>Save</button>
@@ -300,6 +317,13 @@
     background: #ff843c;
     color: #2d2d2d;
     border-bottom-right-radius: 4px;
+  }
+
+  .bubble.media-only,
+  .bubble.media-only.sent {
+    background: none;
+    padding: 0;
+    border-radius: 10px;
   }
 
   .handle {
@@ -497,6 +521,10 @@
     border-radius: 10px;
     margin: 4px 0;
     overflow: hidden;
+  }
+
+  .bubble.media-only :global(.inline-media) {
+    margin: 0;
   }
 
   :global(.inline-media:not(.is-loaded)) {

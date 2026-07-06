@@ -6,20 +6,26 @@
   import type { WebSocketMessage } from '$src/interfaces/WebSocketMessages'
   import { encryptionService } from '$src/services/EncryptionService'
   import MessageBubble from '$src/components/common/chat/MessageBubble.svelte'
-  import { chatService } from '$src/services/ChatService'
+  import { reactionService } from '$src/services/ReactionService'
+  import { messageSenderService } from '$src/services/MessageSenderService'
+  import { messageLoaderService } from '$src/services/MessageLoaderService'
   import { conversationsState, defaultMeta } from '$src/states/ConversationsState.svelte.js'
   import { sessionState } from '$src/states/SessionState.svelte'
   import Spinner from '$src/components/common/Spinner.svelte'
+  import TypingIndicator from '$src/components/common/chat/TypingIndicator.svelte'
+  import type { TypingUser } from '$src/states/TypingIndicatorState.svelte'
 
   let {
     messages,
     isLoading = false,
     isDirectMessage = false,
+    typingUsers = [],
     messagesContainer = $bindable()
   }: {
     messages: (Message | undefined)[]
     isLoading?: boolean
     isDirectMessage?: boolean
+    typingUsers?: TypingUser[]
     messagesContainer?: HTMLDivElement
   } = $props()
 
@@ -83,10 +89,10 @@
       await handleIncomingDeletedMessage(data)
     },
     [WebSocketMessageType.RECEIVE_ADD_REACTION]: (data: WebSocketMessage<MessageReaction>) => {
-      chatService.handleIncomingReactionAdded(data.payload)
+      reactionService.handleIncomingReactionAdded(data.payload)
     },
     [WebSocketMessageType.RECEIVE_REMOVE_REACTION]: (data: WebSocketMessage<MessageReaction>) => {
-      chatService.handleIncomingReactionRemoved(data.payload)
+      reactionService.handleIncomingReactionRemoved(data.payload)
     }
   })
 
@@ -99,9 +105,9 @@
     const conv = conversationsState.currentConversation
     if (!conv) return
     if (conv.type === 'DIRECT') {
-      chatService.editMessagePrivateMessage(message, editedContent, conv.otherUserId)
+      messageSenderService.editMessagePrivateMessage(message, editedContent, conv.otherUserId)
     } else {
-      chatService.editChannelMessage(message, editedContent)
+      messageSenderService.editChannelMessage(message, editedContent)
     }
   }
 
@@ -132,7 +138,7 @@
     scrollHeightBeforePrepend = messagesContainer.scrollHeight
 
     await tick()
-    const result = await chatService.fetchMessagesBefore(conv, oldestId)
+    const result = await messageLoaderService.fetchMessagesBefore(conv, oldestId)
 
     const existingMessages = conversationsState.messagesByConversationId.get(conv.id) ?? []
     conversationsState.messagesByConversationId.set(conv.id, [
@@ -281,12 +287,18 @@
       {/each}
     </div>
   {/if}
+
+  <TypingIndicator users={typingUsers} />
 </div>
 
 <style>
   .messages-wrapper {
     flex: 1;
+    min-width: 0;
     min-height: 0;
+    display: flex;
+    flex-direction: column;
+    overflow-x: hidden;
     overflow-y: auto;
     scrollbar-width: thin;
     scrollbar-color: rgba(0, 0, 0, 0.15) transparent;
@@ -370,4 +382,10 @@
     background: #ece8e0;
   }
 
+  .messages-wrapper :global(.typing-indicator) {
+    flex-shrink: 0;
+    margin-top: auto;
+    background: #ffffff;
+    padding-top: 4px;
+  }
 </style>

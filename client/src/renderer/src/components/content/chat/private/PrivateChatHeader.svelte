@@ -3,6 +3,7 @@
   import videoCallIcon from '$src/resources/videoCall.png'
   import ChatHeaderShell from '$src/components/common/chat/ChatHeaderShell.svelte'
   import UserAvatar from '$src/components/common/user/UserAvatar.svelte'
+  import Tooltip from '$src/components/common/Tooltip.svelte'
   import { navigationState } from '$src/states/NavigationState.svelte'
   import { usersState } from '$src/states/UsersState.svelte'
   import { clock } from '$src/states/Clock.svelte'
@@ -41,7 +42,12 @@
       <div class="name-row">
         <span class="handle">{selectedUser.displayName}</span>
         {#if isSecret}
-          <span class="secret-badge">Secret</span>
+          <Tooltip
+            text="End-to-end encrypted: only chat members can read these messages"
+            position="bottom"
+          >
+            <span class="secret-badge">Secret</span>
+          </Tooltip>
         {/if}
       </div>
       <span class="status-label" class:online={isOnline}>

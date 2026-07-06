@@ -3,7 +3,7 @@
   import Button from '$src/components/common/buttons/Button.svelte'
   import UserAvatar from '$src/components/common/user/UserAvatar.svelte'
   import { authenticatedGet } from '$src/services/api'
-  import { chatService } from '$src/services/ChatService'
+  import { groupConversationService } from '$src/services/GroupConversationService'
   import type { User } from '$src/interfaces/User'
   import type { GroupConversation } from '$src/interfaces/Conversation'
 
@@ -66,7 +66,7 @@
     adding = true
     error = null
     try {
-      await chatService.addGroupMember(group.id, foundUser.id)
+      await groupConversationService.addGroupMember(group.id, foundUser.id)
       done = true
     } catch {
       error = 'Failed to add member. Try again.'

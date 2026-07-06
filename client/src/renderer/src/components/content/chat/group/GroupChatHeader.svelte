@@ -6,7 +6,7 @@
   import AddGroupMemberModal from '$src/components/content/chat/group/AddGroupMemberModal.svelte'
   import ConfirmationModal from '$src/components/common/modals/ConfirmationModal.svelte'
   import { navigationState } from '$src/states/NavigationState.svelte'
-  import { chatService } from '$src/services/ChatService'
+  import { groupConversationService } from '$src/services/GroupConversationService'
   import { usersState } from '$src/states/UsersState.svelte'
   import { usersService } from '$src/services/UsersService'
   import { clickOutside } from '$src/actions/clickOutside'
@@ -37,7 +37,7 @@
     leaveConfirmOpen = false
     leavePending = true
     try {
-      await chatService.leaveGroup(group.id)
+      await groupConversationService.leaveGroup(group.id)
     } finally {
       leavePending = false
     }
@@ -72,7 +72,12 @@
         <div class="name-row">
           <span class="name">{group.name}</span>
           {#if group.encrypted}
-            <span class="secret-badge">Secret</span>
+            <Tooltip
+              text="End-to-end encrypted: only chat members can read these messages"
+              position="bottom"
+            >
+              <span class="secret-badge">Secret</span>
+            </Tooltip>
           {/if}
         </div>
         <button class="member-count-btn" onclick={openMembers}>

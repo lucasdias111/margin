@@ -3,7 +3,8 @@
   import GroupEntry from '$src/components/content/sidebar/sidebar_list/GroupEntry.svelte'
   import UserAvatar from '$src/components/common/user/UserAvatar.svelte'
   import Icon from '$src/components/common/icons/Icon.svelte'
-  import { chatService } from '$src/services/ChatService'
+  import { inviteService } from '$src/services/ConversationInviteService'
+  import { groupConversationService } from '$src/services/GroupConversationService'
   import { navigationState } from '$src/states/NavigationState.svelte'
   import { conversationsState, defaultMeta } from '$src/states/ConversationsState.svelte.js'
   import { isDirectConversation, isGroupConversation } from '$src/interfaces/Conversation'
@@ -14,6 +15,7 @@
 
   let groupsOpen = $state(true)
   let dmsOpen = $state(true)
+  let sentInvitesOpen = $state(true)
 
   const recentUsers = $derived(
     [...conversationsState.byId.values()]
@@ -53,11 +55,41 @@
   const hasAnyContent = $derived(
     recentUsers.length > 0 ||
       recentGroups.length > 0 ||
-      conversationInviteService.pendingInvites.length > 0
+      conversationInviteService.pendingInvites.length > 0 ||
+      conversationInviteService.sentInvites.length > 0
   )
 </script>
 
 <div class="chat_overview">
+  {#if conversationInviteService.sentInvites.length > 0}
+    <button class="section-header" onclick={() => (sentInvitesOpen = !sentInvitesOpen)}>
+      <span class="section-label">Sent invites</span>
+      <span class="chevron" class:open={sentInvitesOpen}>
+        <Icon name="chevronDown" size={12} />
+      </span>
+    </button>
+    {#if sentInvitesOpen}
+      <ul class="invite-list">
+        {#each conversationInviteService.sentInvites as invite (invite.conversation.id)}
+          <li class="invite-item">
+            <UserAvatar profilePictureUrl={invite.toUser.profilePictureUrl} height={30} />
+
+            <div class="invite-info">
+              <div class="invite-name-row">
+                <span class="invite-name">{invite.toUser.displayName}</span>
+                {#if invite.conversation.type !== 'CHANNEL' && invite.conversation.encrypted}
+                  <span class="secret-label">Secret</span>
+                {/if}
+              </div>
+              <span class="invite-from">Waiting for response</span>
+            </div>
+          </li>
+        {/each}
+      </ul>
+    {/if}
+    <div class="section-divider"></div>
+  {/if}
+
   {#if conversationInviteService.pendingInvites.length > 0}
     <div class="section-header-static">
       <span class="section-label">Pending invites</span>
@@ -96,12 +128,12 @@
           </div>
 
           <div class="invite-actions">
-            <button class="accept-btn" onclick={() => chatService.acceptConversationInvite(invite)}>
+            <button class="accept-btn" onclick={() => inviteService.acceptConversationInvite(invite)}>
               Accept
             </button>
             <button
               class="decline-btn"
-              onclick={() => chatService.declineConversationInvite(invite.conversation.id)}
+              onclick={() => inviteService.declineConversationInvite(invite.conversation.id)}
             >
               Decline
             </button>
@@ -126,7 +158,7 @@
             {group}
             {meta}
             isSelected={navigationState.selectedGroupConversation?.id === group.id}
-            onclick={() => chatService.selectGroupConversation(group)}
+            onclick={() => groupConversationService.selectGroupConversation(group)}
           />
         {/each}
       </ul>
@@ -167,7 +199,9 @@
 <style>
   .chat_overview {
     flex: 1;
+    min-width: 0;
     min-height: 0;
+    overflow-x: hidden;
     overflow-y: auto;
     width: 100%;
   }
