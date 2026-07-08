@@ -52,8 +52,7 @@ vi.mock('$src/services/NotificationService', () => ({
 
 vi.mock('$src/services/NavigationService', () => ({
   navigationService: {
-    setView: vi.fn(),
-    selectContent: vi.fn()
+    setView: vi.fn()
   }
 }))
 
