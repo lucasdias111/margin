@@ -6,7 +6,8 @@ export interface Notification {
   sender: User | null
   type: NotificationType
   referenceId: number
-  marginId: number
+  marginId: number | null
+  conversationId: number | null
   seen: boolean
   createdAt: string
 }
