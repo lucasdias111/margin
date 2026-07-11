@@ -29,6 +29,7 @@ export enum WebSocketMessageType {
   // Channel voice
   USER_JOINED_VOICE = 'USER_JOINED_VOICE',
   USER_LEFT_VOICE = 'USER_LEFT_VOICE',
+  CHANNEL_CALL_INVITE = 'CHANNEL_CALL_INVITE',
 
   // Presence
   USER_LOGIN = 'USER_LOGIN',

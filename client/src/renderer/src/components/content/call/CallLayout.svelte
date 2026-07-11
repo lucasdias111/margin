@@ -1,4 +1,5 @@
 <script lang="ts">
+  import type { Snippet } from 'svelte'
   import { srcObject } from '$src/actions/srcObject'
   import CallParticipantTile from '$src/components/content/call/CallParticipantTile.svelte'
   import CallControls from '$src/components/content/call/CallControls.svelte'
@@ -22,6 +23,9 @@
     onToggleVideo: () => void
     onToggleScreenShare: () => void
     onEndCall: () => void
+    onToggleInvite?: () => void
+    isInviteOpen?: boolean
+    invitePanel?: Snippet
   }
 
   let {
@@ -41,7 +45,10 @@
     onToggleAudio,
     onToggleVideo,
     onToggleScreenShare,
-    onEndCall
+    onEndCall,
+    onToggleInvite,
+    isInviteOpen = false,
+    invitePanel
   }: Props = $props()
 
   const PAGE_SIZE = 6
@@ -135,6 +142,9 @@
     {onToggleVideo}
     {onToggleScreenShare}
     {onEndCall}
+    {onToggleInvite}
+    {isInviteOpen}
+    {invitePanel}
     {showDuration}
   />
 </div>

@@ -31,6 +31,12 @@ export interface ChannelVoiceParticipantPayload {
   user: User
 }
 
+export interface ChannelCallInvitePayload {
+  channelId: number
+  channelName: string
+  fromUser: User
+}
+
 export interface TypingIndicatorPayload {
   isTyping: boolean
 }
