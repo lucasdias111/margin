@@ -3,7 +3,7 @@ import type { User } from '$src/interfaces/User'
 import type { Margin } from '$src/interfaces/Margin'
 import type { Channel } from '$src/interfaces/Channel'
 import type { Space } from '$src/interfaces/Space'
-import type { GroupConversation } from '$src/interfaces/Conversation'
+import type { GroupConversation, ThreadConversation } from '$src/interfaces/Conversation'
 
 export type ManageTab = 'Margin' | 'Spaces' | 'Subscription'
 
@@ -14,6 +14,7 @@ class NavigationState {
   private _selectedMargin = $state<Margin | null>(null)
   private _selectedSpace = $state<Space | null>(null)
   private _selectedChannel = $state<Channel | null>(null)
+  private _selectedThread = $state<ThreadConversation | null>(null)
   private _manageTab = $state<ManageTab>('Margin')
 
   get view(): View {
@@ -29,6 +30,7 @@ class NavigationState {
   }
 
   set selectedUser(value: User) {
+    if (value?.id !== this._selectedUser?.id) this._selectedThread = null
     this._selectedUser = value
   }
 
@@ -37,6 +39,7 @@ class NavigationState {
   }
 
   set selectedGroupConversation(value: GroupConversation | null) {
+    if (value?.id !== this._selectedGroupConversation?.id) this._selectedThread = null
     this._selectedGroupConversation = value
   }
 
@@ -61,7 +64,16 @@ class NavigationState {
   }
 
   set selectedChannel(value: Channel) {
+    if (value?.id !== this._selectedChannel?.id) this._selectedThread = null
     this._selectedChannel = value
+  }
+
+  get selectedThread(): ThreadConversation | null {
+    return this._selectedThread
+  }
+
+  set selectedThread(value: ThreadConversation | null) {
+    this._selectedThread = value
   }
 
   get manageTab(): ManageTab {

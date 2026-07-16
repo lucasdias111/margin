@@ -6,8 +6,12 @@ export interface Channel {
   name: string
   description: string
   spaceId: number
-  type: string
+  channelType: string
   voiceParticipants?: User[]
+}
+
+export function isThreadChannel(channel: Channel | null | undefined): boolean {
+  return channel?.channelType === ChannelType.THREAD
 }
 
 export interface CreateChannel {
@@ -19,5 +23,6 @@ export interface CreateChannel {
 
 export enum ChannelType {
   COMMUNICATION = 'Communication',
-  ANNOUNCEMENT = 'Announcement'
+  ANNOUNCEMENT = 'Announcement',
+  THREAD = 'Thread'
 }

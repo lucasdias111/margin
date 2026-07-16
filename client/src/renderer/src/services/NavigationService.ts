@@ -13,6 +13,7 @@ class NavigationService {
     navigationState.selectedChannel = null
     navigationState.selectedSpace = null
     navigationState.selectedMargin = null
+    navigationState.selectedThread = null
   }
 }
 

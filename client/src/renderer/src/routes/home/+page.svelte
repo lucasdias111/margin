@@ -33,6 +33,8 @@
   import IncomingCallModal from '$src/components/content/call/modal/IncomingCallModal.svelte'
   import type { Notification } from '$src/interfaces/Notification'
   import Notifications from '$src/components/content/notification/Notifications.svelte'
+  import { threadService } from '$src/services/ThreadService'
+  import { threadsState } from '$src/states/ThreadsState.svelte'
   import ChannelCallWindow from '$src/components/content/call/ChannelCallWindow.svelte'
   import { NotificationSounds } from '$src/utils/NotificationSounds'
   import ConnectionBar from '$src/components/common/messages/ConnectionBar.svelte'
@@ -186,6 +188,7 @@
     await inviteService.loadSentInvites()
     await notificationService.loadAll()
     await marginService.loadMarginsForUser()
+    await threadService.loadInbox()
   }
 
   async function loadUnreadMessages(): Promise<void> {
@@ -212,6 +215,10 @@
       }
       conversationsState.markUnread(ch.conversationId)
       conversationsState.setMarginForConversation(ch.conversationId, ch.marginId)
+    }
+
+    for (const id of unread.threadConversationIds ?? []) {
+      threadsState.markUnread(id)
     }
   }
 
@@ -297,6 +304,7 @@
 
     await loadUnreadMessages()
     await loadRecentUsers()
+    await threadService.loadInbox()
 
     if (navigationState.view === View.Private && navigationState.selectedUser) {
       await messageLoaderService.loadConversationForUser(navigationState.selectedUser, true)

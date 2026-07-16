@@ -19,7 +19,7 @@
   $effect(() => {
     channelName = editChannel?.name ?? ''
     description = editChannel?.description ?? ''
-    type = (editChannel?.type as ChannelType) ?? ChannelType.COMMUNICATION
+    type = (editChannel?.channelType as ChannelType) ?? ChannelType.COMMUNICATION
   })
 
   const isEditing = $derived(editChannel != null)

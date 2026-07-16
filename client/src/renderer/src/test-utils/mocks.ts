@@ -2,7 +2,12 @@ import type { User } from '$src/interfaces/User'
 import type { Channel } from '$src/interfaces/Channel'
 import type { Space } from '$src/interfaces/Space'
 import type { Message, MessageReaction } from '$src/interfaces/Messages'
-import type { ChannelConversation, DirectConversation, GroupConversation } from '$src/interfaces/Conversation'
+import type {
+  ChannelConversation,
+  DirectConversation,
+  GroupConversation,
+  ThreadConversation
+} from '$src/interfaces/Conversation'
 import type { RecentChatUser } from '$src/interfaces/RecentChatUser'
 import type { SFUParticipant } from '$src/interfaces/Calls'
 
@@ -109,6 +114,22 @@ export function buildChannelConversation(
     type: 'CHANNEL',
     channelId: 5,
     name: 'general',
+    createdAt: '2025-06-01T12:00:00Z',
+    ...overrides
+  }
+}
+
+export function buildThreadConversation(
+  overrides: Partial<ThreadConversation> = {}
+): ThreadConversation {
+  return {
+    id: 40,
+    type: 'THREAD',
+    parentConversationId: 20,
+    channelId: 5,
+    marginId: 1,
+    title: 'A post',
+    following: false,
     createdAt: '2025-06-01T12:00:00Z',
     ...overrides
   }

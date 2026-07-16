@@ -4,7 +4,8 @@ import {
   type GroupConversation,
   isChannelConversation,
   isDirectConversation,
-  isGroupConversation
+  isGroupConversation,
+  isThreadConversation
 } from '$src/interfaces/Conversation'
 import type { Channel } from '$src/interfaces/Channel'
 import type { User } from '$src/interfaces/User'
@@ -195,6 +196,9 @@ class MessageLoaderService {
     }
     if (isChannelConversation(conversation)) {
       return `conversations/${conversation.channelId}/channel_messages?limit=${MessageLoaderService.PAGE_SIZE}&before=${before}`
+    }
+    if (isThreadConversation(conversation)) {
+      return `conversations/${conversation.id}/messages?limit=${MessageLoaderService.PAGE_SIZE}&before=${before}`
     }
     return null
   }

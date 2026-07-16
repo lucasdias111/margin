@@ -125,7 +125,7 @@
   onmouseenter={() => (showActions = true)}
   onmouseleave={() => (showActions = false)}
 >
-  {#if !isSent && (message.conversationType === 'CHANNEL' || message.conversationType === 'GROUP')}
+  {#if !isSent && (message.conversationType === 'CHANNEL' || message.conversationType === 'GROUP' || message.conversationType === 'THREAD')}
     <div class="avatar">
       <UserAvatar profilePictureUrl={message.user.profilePictureUrl} width={32} height={32} />
     </div>
@@ -144,7 +144,7 @@
   {/if}
 
   <div class="message-column" class:sent={isSent}>
-    {#if showDisplayName && (message.conversationType === 'CHANNEL' || message.conversationType === 'GROUP') && message.user.id !== sessionState.currentUser?.id}
+    {#if showDisplayName && (message.conversationType === 'CHANNEL' || message.conversationType === 'GROUP' || message.conversationType === 'THREAD') && message.user.id !== sessionState.currentUser?.id}
       <span class="handle">{message.user.displayName}</span>
     {/if}
 

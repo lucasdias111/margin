@@ -17,6 +17,7 @@
   import { channelService } from '$src/services/ChannelService'
   import { groupConversationService } from '$src/services/GroupConversationService'
   import { conversationsState } from '$src/states/ConversationsState.svelte'
+  import { threadService } from '$src/services/ThreadService'
 
   const notifications = $derived(notificationState.notifications)
   const isLoading = $derived(!notificationState.notificationsLoaded)
@@ -90,6 +91,10 @@
       navigationService.setView(View.Margin)
     } else if (notification.type === NotificationType.MESSAGE_REACTION) {
       await navigateToReactedMessage(notification)
+    } else if (notification.type === NotificationType.THREAD_REPLY) {
+      if (notification.conversationId) {
+        await threadService.navigateToThreadById(notification.conversationId)
+      }
     } else if (
       notification.type === NotificationType.SUBSCRIPTION_UPGRADED ||
       notification.type === NotificationType.SUBSCRIPTION_PAYMENT_FAILED ||
@@ -143,6 +148,8 @@
         return '💬'
       case NotificationType.MESSAGE_REACTION:
         return '👍'
+      case NotificationType.THREAD_REPLY:
+        return '🧵'
       case NotificationType.SUBSCRIPTION_UPGRADED:
         return '✨'
       case NotificationType.SUBSCRIPTION_PAYMENT_FAILED:
@@ -168,6 +175,8 @@
         return `${notification.sender?.displayName ?? 'Someone'} invited you to a conversation`
       case NotificationType.MESSAGE_REACTION:
         return `${notification.sender?.displayName ?? 'Someone'} reacted to your message`
+      case NotificationType.THREAD_REPLY:
+        return `${notification.sender?.displayName ?? 'Someone'} replied in a thread you follow`
       case NotificationType.SUBSCRIPTION_UPGRADED:
         return 'Your workspace plan was upgraded'
       case NotificationType.SUBSCRIPTION_PAYMENT_FAILED:
