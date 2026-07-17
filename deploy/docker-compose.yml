@@ -56,7 +56,15 @@ services:
       MOLLIE_API_KEY: ${MOLLIE_API_KEY}
       MOLLIE_WEBHOOK_BASE_URL: ${MOLLIE_WEBHOOK_BASE_URL}
       MOLLIE_REDIRECT_BASE_URL: ${MOLLIE_REDIRECT_BASE_URL}
+      FCM_SERVICE_ACCOUNT_FILE: ${FCM_SERVICE_ACCOUNT_FILE:-}
+      APNS_KEY_FILE: ${APNS_KEY_FILE:-}
+      APNS_KEY_ID: ${APNS_KEY_ID:-}
+      APNS_TEAM_ID: ${APNS_TEAM_ID:-}
+      APNS_BUNDLE_ID: ${APNS_BUNDLE_ID:-}
+      APNS_PRODUCTION: ${APNS_PRODUCTION:-false}
       JAVA_TOOL_OPTIONS: -Djava.net.preferIPv4Stack=true
+    volumes:
+      - ./secrets:/run/secrets:ro
     networks:
       - margin-net
     healthcheck:
@@ -134,7 +142,10 @@ services:
         -d files.${DOMAIN} &&
         certbot certonly --webroot -w /var/www/certbot
         --email ${ADMIN_EMAIL} --agree-tos --no-eff-email
-        -d updates.${DOMAIN}
+        -d updates.${DOMAIN} &&
+        certbot certonly --webroot -w /var/www/certbot
+        --email ${ADMIN_EMAIL} --agree-tos --no-eff-email
+        -d analytics.${DOMAIN}
     profiles:
       - certbot
 
