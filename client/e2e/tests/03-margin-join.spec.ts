@@ -52,7 +52,9 @@ test.describe('Join a margin', () => {
 
     // Disappears when addNewMargin() → select() sets isMemberOfAnyMargins = true
     await expect(page.getByText('No margin yet')).not.toBeVisible({ timeout: 10000 })
-    await expect(page.getByText(seed.marginName)).toBeVisible({ timeout: 5000 })
+    await expect(page.getByRole('heading', { name: seed.marginName })).toBeVisible({
+      timeout: 5000,
+    })
   })
 
   test('invalid invite code shows error', async ({ authedPage }) => {

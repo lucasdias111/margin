@@ -21,7 +21,7 @@ class ReactionService {
   }
 
   handleIncomingReactionAdded = (reaction: MessageReaction): void => {
-    const convId = conversationsState.currentConversation.id
+    const convId = reaction.conversationId
     const messages = conversationsState.messagesByConversationId.get(convId)
     if (!messages) return
 
@@ -43,7 +43,7 @@ class ReactionService {
   }
 
   handleIncomingReactionRemoved = (reaction: MessageReaction): void => {
-    const convId = conversationsState.currentConversation.id
+    const convId = reaction.conversationId
     const messages = conversationsState.messagesByConversationId.get(convId)
     if (!messages) return
 

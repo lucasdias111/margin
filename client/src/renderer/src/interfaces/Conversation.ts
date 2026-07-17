@@ -27,7 +27,20 @@ export interface ChannelConversation extends BaseConversation {
   name: string
 }
 
-export type Conversation = DirectConversation | GroupConversation | ChannelConversation
+export interface ThreadConversation extends BaseConversation {
+  type: 'THREAD'
+  parentConversationId: number
+  channelId: number | null
+  marginId: number | null
+  title: string
+  following: boolean
+}
+
+export type Conversation =
+  | DirectConversation
+  | GroupConversation
+  | ChannelConversation
+  | ThreadConversation
 
 export function isDirectConversation(conv: Conversation): conv is DirectConversation {
   return conv.type === 'DIRECT'
@@ -39,4 +52,8 @@ export function isGroupConversation(conv: Conversation): conv is GroupConversati
 
 export function isChannelConversation(conv: Conversation): conv is ChannelConversation {
   return conv.type === 'CHANNEL'
+}
+
+export function isThreadConversation(conv: Conversation): conv is ThreadConversation {
+  return conv.type === 'THREAD'
 }

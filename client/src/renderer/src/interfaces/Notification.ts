@@ -6,7 +6,8 @@ export interface Notification {
   sender: User | null
   type: NotificationType
   referenceId: number
-  marginId: number
+  marginId: number | null
+  conversationId: number | null
   seen: boolean
   createdAt: string
 }
@@ -18,6 +19,7 @@ export enum NotificationType {
   INVITED_TO_MARGIN = 'INVITED_TO_MARGIN',
   CONVERSATION_INVITE = 'CONVERSATION_INVITE',
   MESSAGE_REACTION = 'MESSAGE_REACTION',
+  THREAD_REPLY = 'THREAD_REPLY',
   SUBSCRIPTION_UPGRADED = 'SUBSCRIPTION_UPGRADED',
   SUBSCRIPTION_PAYMENT_FAILED = 'SUBSCRIPTION_PAYMENT_FAILED',
   SUBSCRIPTION_LIMIT_WARNING = 'SUBSCRIPTION_LIMIT_WARNING'

@@ -6,6 +6,7 @@
   import type { WebSocketMessage } from '$src/interfaces/WebSocketMessages'
   import { encryptionService } from '$src/services/EncryptionService'
   import MessageBubble from '$src/components/common/chat/MessageBubble.svelte'
+  import PostBody from '$src/components/common/chat/PostBody.svelte'
   import { reactionService } from '$src/services/ReactionService'
   import { messageSenderService } from '$src/services/MessageSenderService'
   import { messageLoaderService } from '$src/services/MessageLoaderService'
@@ -14,20 +15,27 @@
   import Spinner from '$src/components/common/Spinner.svelte'
   import TypingIndicator from '$src/components/common/chat/TypingIndicator.svelte'
   import type { TypingUser } from '$src/states/TypingIndicatorState.svelte'
+  import type { Conversation } from '$src/interfaces/Conversation'
 
   let {
     messages,
     isLoading = false,
     isDirectMessage = false,
     typingUsers = [],
+    conversation = undefined,
+    postStyle = false,
     messagesContainer = $bindable()
   }: {
     messages: (Message | undefined)[]
     isLoading?: boolean
     isDirectMessage?: boolean
     typingUsers?: TypingUser[]
+    conversation?: Conversation
+    postStyle?: boolean
     messagesContainer?: HTMLDivElement
   } = $props()
+
+  const activeConversation = $derived(conversation ?? conversationsState.currentConversation)
 
   const CLUMP_THRESHOLD_MS = 60_000
 
@@ -41,8 +49,7 @@
   let initialScrollDone = $state(false)
 
   const activeMeta = $derived(
-    conversationsState.conversationMetaById.get(conversationsState.currentConversation?.id) ??
-    defaultMeta()
+    conversationsState.conversationMetaById.get(activeConversation?.id) ?? defaultMeta()
   )
 
   async function handleIncomingEditedMessage(data: WebSocketMessage<Message>): Promise<void> {
@@ -102,7 +109,7 @@
   }
 
   function onEditMessage(message: Message, editedContent: string): void {
-    const conv = conversationsState.currentConversation
+    const conv = activeConversation
     if (!conv) return
     if (conv.type === 'DIRECT') {
       messageSenderService.editMessagePrivateMessage(message, editedContent, conv.otherUserId)
@@ -128,7 +135,7 @@
   async function loadOlderMessages(): Promise<void> {
     if (!messagesContainer || isPrepending) return
 
-    const conv = conversationsState.currentConversation
+    const conv = activeConversation
     if (!conv) return
 
     const oldestId = messages[0]?.id
@@ -159,7 +166,7 @@
   }
 
   $effect(() => {
-    const currentId = conversationsState.currentConversation?.id
+    const currentId = activeConversation?.id
 
     if (currentId !== lastConversationId) {
       lastConversationId = currentId
@@ -224,7 +231,7 @@
   }
 
   function isMessageRead(message: Message): boolean {
-    const conv = conversationsState.currentConversation
+    const conv = activeConversation
     if (conv?.type !== 'DIRECT') return false
     if (message.user.id !== sessionState.currentUser?.id) return false
     if (conv.otherUserReadAt == null) return false
@@ -248,41 +255,56 @@
     </div>
   {:else}
     <div class="messages">
-      <div class="top-status">
-        {#if isPrepending}
-          <div class="top-status__loading">
-            <Spinner size={14} />
-            <span>Loading older messages…</span>
-          </div>
-        {:else if !activeMeta.hasMore}
-          <div class="top-status__start">
-            <span>Beginning of conversation</span>
-          </div>
-        {/if}
-      </div>
+      {#if isPrepending || (!activeMeta.hasMore && !postStyle)}
+        <div class="top-status">
+          {#if isPrepending}
+            <div class="top-status__loading">
+              <Spinner size={14} />
+              <span>Loading older messages…</span>
+            </div>
+          {:else}
+            <div class="top-status__start">
+              <span>Beginning of conversation</span>
+            </div>
+          {/if}
+        </div>
+      {/if}
 
       {#each messages as message, i (message?.id)}
         {#if message}
+          {@const isPostBody = postStyle && !activeMeta.hasMore && i === 0}
           {@const prev = messages[i - 1]}
           {@const next = messages[i + 1]}
           {@const showMeta = shouldShowMeta(message, next)}
           {@const showDisplayName = isFirstInClump(message, prev)}
           {@const isRead = isMessageRead(message)}
 
-          <div
-            class="message-row"
-            class:sent={message.user.id === sessionState.currentUser?.id}
-            class:clumped={!showMeta}
-          >
-            <MessageBubble
-              {message}
-              {showMeta}
-              {showDisplayName}
-              {isRead}
-              {onEditMessage}
-              showReadStatus={isDirectMessage}
-            />
-          </div>
+          {#if isPostBody}
+            <div class="post-body-row">
+              <PostBody {message} {onEditMessage} />
+            </div>
+            <div class="replies-divider">
+              <span>
+                {messages.length - 1}
+                {messages.length - 1 === 1 ? 'reply' : 'replies'}
+              </span>
+            </div>
+          {:else}
+            <div
+              class="message-row"
+              class:sent={message.user.id === sessionState.currentUser?.id}
+              class:clumped={!showMeta}
+            >
+              <MessageBubble
+                {message}
+                {showMeta}
+                {showDisplayName}
+                {isRead}
+                {onEditMessage}
+                showReadStatus={isDirectMessage}
+              />
+            </div>
+          {/if}
         {/if}
       {/each}
     </div>
@@ -326,6 +348,31 @@
     justify-content: flex-start;
     width: 100%;
     padding-bottom: 10px;
+  }
+
+  .post-body-row {
+    width: 100%;
+    padding-bottom: 4px;
+  }
+
+  .replies-divider {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin: 6px 0 12px;
+    color: #aaa;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+  }
+
+  .replies-divider::before,
+  .replies-divider::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: #ece8e0;
   }
 
   .message-row.clumped {

@@ -12,6 +12,8 @@ export type Seed = {
   spaceName: string
   channelId: number
   channelName: string
+  threadChannelId: number
+  threadChannelName: string
   inviteCode: string
 }
 

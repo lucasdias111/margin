@@ -81,7 +81,7 @@ class CallState {
     this.baseState.callId = callId
     this.baseState.status = 'connecting'
     this.baseState.duration = 0
-    this.baseState.isMinimized = true
+    this.baseState.isMinimized = false
 
     this.groupData = {
       channelId,

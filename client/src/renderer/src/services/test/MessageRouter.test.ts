@@ -52,8 +52,7 @@ vi.mock('$src/services/NotificationService', () => ({
 
 vi.mock('$src/services/NavigationService', () => ({
   navigationService: {
-    setView: vi.fn(),
-    selectContent: vi.fn()
+    setView: vi.fn()
   }
 }))
 
@@ -65,7 +64,9 @@ vi.mock('$src/services/ChannelService', () => ({
 
 vi.mock('$src/services/api', () => ({
   authenticatedGet: vi.fn(),
-  authenticatedPost: vi.fn()
+  authenticatedPost: vi.fn(),
+  authenticatedDelete: vi.fn(),
+  setUnauthenticatedHandler: vi.fn()
 }))
 
 vi.mock('$src/services/FileStorageService', () => ({

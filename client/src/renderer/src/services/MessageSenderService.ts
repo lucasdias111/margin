@@ -4,6 +4,7 @@ import {
   type Conversation,
   type DirectConversation,
   type GroupConversation,
+  type ThreadConversation,
   isDirectConversation
 } from '$src/interfaces/Conversation'
 import type { Channel } from '$src/interfaces/Channel'
@@ -139,6 +140,22 @@ class MessageSenderService {
         }
         return { recipientId: conversation.id, content, attachmentIds }
       }
+    )
+    return optimistic
+  }
+
+  async sendThreadMessage(
+    currentUser: User,
+    thread: ThreadConversation,
+    messageText: string
+  ): Promise<Message | null> {
+    if (!this.guardConnected()) return null
+    const optimistic = this.buildOptimisticMessage(currentUser, thread.id, messageText, 'THREAD')
+    conversationsState.appendMessage(optimistic, false)
+    await this.dispatch(
+      optimistic,
+      async () => [],
+      async () => ({ recipientId: thread.id, content: messageText, attachmentIds: [] })
     )
     return optimistic
   }
@@ -294,7 +311,7 @@ class MessageSenderService {
     user: User,
     conversationId: number | null,
     content: string,
-    conversationType: 'DIRECT' | 'CHANNEL' | 'GROUP',
+    conversationType: 'DIRECT' | 'CHANNEL' | 'GROUP' | 'THREAD',
     files: File[] = []
   ): Message {
     return {

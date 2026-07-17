@@ -273,6 +273,17 @@ export default async function globalSetup(_config: FullConfig): Promise<void> {
     })
   }
 
+  let threadChannel = space.channels?.find((c: any) => c.name === 'E2E Thread Channel')
+
+  if (!threadChannel) {
+    threadChannel = await apiPost('channels/create_channel', aliceToken, {
+      name: 'E2E Thread Channel',
+      description: '',
+      spaceId: space.spaceId,
+      channelType: 'Thread'
+    })
+  }
+
   const { inviteCode } = await apiPost(`invites/margins/${margin.marginId}/link`, aliceToken)
 
   await seedDmConversation(aliceToken, bobToken)
@@ -291,6 +302,8 @@ export default async function globalSetup(_config: FullConfig): Promise<void> {
         spaceName: space.spaceName ?? 'E2E Test Space',
         channelId: channel.id,
         channelName: channel.name ?? 'E2E Test Channel',
+        threadChannelId: threadChannel.id,
+        threadChannelName: threadChannel.name ?? 'E2E Thread Channel',
         inviteCode,
         groupName
       },

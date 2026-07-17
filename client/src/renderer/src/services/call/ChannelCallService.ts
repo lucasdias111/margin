@@ -10,6 +10,8 @@ import {
 } from '$src/services/DeviceService'
 import { ICE_SERVERS } from '$src/services/call/iceServers'
 import { sessionState } from '$src/states/SessionState.svelte'
+import { webSocketService } from '$src/services/WebSocketService'
+import { WebSocketMessageType } from '$src/interfaces/WebSocketMessageType'
 
 class ChannelCallService {
   private async connectToWebSocket(wsUrl: string): Promise<WebSocket> {
@@ -176,6 +178,14 @@ class ChannelCallService {
           consumer.kind === 'video' && !isScreenShare ? true : (existing?.isVideoEnabled ?? false),
         isScreenSharing: isScreenShare ? true : (existing?.isScreenSharing ?? false)
       })
+    })
+  }
+
+  inviteToChannelCall(recipientId: number, channelId: number): void {
+    webSocketService.send({
+      type: WebSocketMessageType.CHANNEL_CALL_INVITE,
+      recipientId,
+      payload: String(channelId)
     })
   }
 

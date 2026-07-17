@@ -7,9 +7,11 @@
   import UnreadNotificationBadge from '$src/components/common/chat/UnreadNotificationBadge.svelte'
   import Icon from '$src/components/common/icons/Icon.svelte'
   import { navigationState } from '$src/states/NavigationState.svelte'
+  import { SvelteSet } from 'svelte/reactivity'
+  import { untrack } from 'svelte'
 
   const spaces = $derived(spaceState.spaces)
-  let expandedSpaceId = $state<number | null>(null)
+  let collapsedSpaceIds = new SvelteSet<number>()
   let selectedChannelId = $derived(navigationState.selectedChannel?.id)
 
   $effect(() => {
@@ -20,11 +22,22 @@
   })
 
   $effect(() => {
+    const current = spaces
+    untrack(() => {
+      for (const space of current) {
+        if (!collapsedSpaceIds.has(space.spaceId)) {
+          void spaceService.fetchVoiceParticipantsForSpace(space)
+        }
+      }
+    })
+  })
+
+  $effect(() => {
     const channelId = navigationState.selectedChannel?.id
     if (!channelId) return
     for (const space of spaces) {
       if (space.channels.some((ch) => ch.id === channelId)) {
-        expandedSpaceId = space.spaceId
+        collapsedSpaceIds.delete(space.spaceId)
         return
       }
     }
@@ -32,10 +45,11 @@
 
   async function toggleSpace(space: Space): Promise<void> {
     spaceService.select(space)
-    expandedSpaceId = expandedSpaceId === space.spaceId ? null : space.spaceId
-
-    if (expandedSpaceId === space.spaceId) {
+    if (collapsedSpaceIds.has(space.spaceId)) {
+      collapsedSpaceIds.delete(space.spaceId)
       await spaceService.fetchVoiceParticipantsForSpace(space)
+    } else {
+      collapsedSpaceIds.add(space.spaceId)
     }
   }
 
@@ -69,7 +83,7 @@
   <div class="spaces-stack">
     {#each spaces as space (space.spaceId)}
       {@const color = spaceColor(space.spaceId)}
-      {@const isOpen = expandedSpaceId === space.spaceId}
+      {@const isOpen = !collapsedSpaceIds.has(space.spaceId)}
       {@const unreadCount = notificationService.totalUnreadMessagesForSpace(space)}
 
       <div

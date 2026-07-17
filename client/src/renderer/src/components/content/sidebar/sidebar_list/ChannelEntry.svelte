@@ -1,7 +1,9 @@
 <script lang="ts">
-  import type { Channel } from '$src/interfaces/Channel'
+  import { ChannelType, type Channel } from '$src/interfaces/Channel'
   import { notificationService } from '$src/services/NotificationService'
   import UnreadNotificationBadge from '$src/components/common/chat/UnreadNotificationBadge.svelte'
+  import Icon from '$src/components/common/icons/Icon.svelte'
+  import type { IconName } from '$src/components/common/icons/icons'
   import { channelService } from '$src/services/ChannelService'
 
   interface Props {
@@ -12,6 +14,13 @@
   let { channel, active }: Props = $props()
 
   let hasUnread = $derived(notificationService.isUnread(channel.conversationId))
+  let typeIcon: IconName = $derived(
+    channel.channelType === ChannelType.THREAD
+      ? 'layout'
+      : channel.channelType === ChannelType.ANNOUNCEMENT
+        ? 'announcements'
+        : 'messages'
+  )
 
   function selectChannel(): void {
     channelService.select(channel)
@@ -20,15 +29,18 @@
 
 <li class="channel-item">
   <button class="channel-button" class:active onclick={selectChannel}>
+    <span class="channel-type-icon">
+      <Icon name={typeIcon} size={14} />
+    </span>
+    <span class="channel-name">{channel.name}</span>
+    <UnreadNotificationBadge shouldShow={hasUnread} count={1} variant="inline" />
+    {#if channel.voiceParticipants && channel.voiceParticipants.length > 0}
+      <span class="voice-count">{channel.voiceParticipants.length}</span>
+    {/if}
     <span
       class="voice-indicator-dot"
       class:active={channel.voiceParticipants && channel.voiceParticipants.length > 0}
     ></span>
-    <span class="channel-name">{channel.name}</span>
-    {#if channel.voiceParticipants && channel.voiceParticipants.length > 0}
-      <span class="voice-count">{channel.voiceParticipants.length}</span>
-    {/if}
-    <UnreadNotificationBadge shouldShow={hasUnread} count={1} variant="inline" />
   </button>
 </li>
 
@@ -69,6 +81,17 @@
 
   .channel-name {
     flex: 1;
+  }
+
+  .channel-type-icon {
+    display: flex;
+    align-items: center;
+    flex-shrink: 0;
+    color: #999;
+  }
+
+  .channel-button.active .channel-type-icon {
+    color: #d4621a;
   }
 
   .voice-indicator-dot {

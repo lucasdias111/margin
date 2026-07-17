@@ -49,7 +49,7 @@ describe('CallState', () => {
       expect(callState.isP2PCall).toBe(false)
       expect(callState.callId).toBe(10)
       expect(callState.status).toBe('connecting')
-      expect(callState.isMinimized).toBe(true)
+      expect(callState.isMinimized).toBe(false)
       expect(callState.groupCallState).not.toBeNull()
       expect(callState.groupCallState?.channelId).toBe(5)
       expect(callState.groupCallState?.participants).toStrictEqual([])

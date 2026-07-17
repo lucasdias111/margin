@@ -13,6 +13,7 @@ import { marginState } from '$src/states/MarginState.svelte'
 import { spaceState } from '$src/states/SpaceState.svelte'
 import { notificationState } from '$src/states/NotificationState.svelte'
 import { conversationsState } from '$src/states/ConversationsState.svelte'
+import { threadsState } from '$src/states/ThreadsState.svelte'
 import { subscriptionState } from '$src/states/SubscriptionState.svelte'
 import { conversationInviteService } from '$src/states/UserListState.svelte'
 import { sessionState } from '$src/states/SessionState.svelte'
@@ -188,6 +189,7 @@ class AuthenticationService {
     spaceState.clear()
     notificationState.clear()
     conversationsState.clear()
+    threadsState.clear()
     subscriptionState.clear()
     conversationInviteService.clear()
     sessionState.clear()

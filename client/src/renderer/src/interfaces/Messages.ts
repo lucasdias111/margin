@@ -22,7 +22,7 @@ export interface LocalAttachment {
 export interface Message {
   id: number
   conversationId: number
-  conversationType: 'DIRECT' | 'GROUP' | 'CHANNEL'
+  conversationType: 'DIRECT' | 'GROUP' | 'CHANNEL' | 'THREAD'
   user: User
   content: string
   isEdited: boolean
@@ -33,6 +33,7 @@ export interface Message {
   attachments: StoredFile[]
   status?: MessageStatus
   localAttachments?: LocalAttachment[]
+  parentConversationId?: number | null
 }
 
 export interface ConversationMessagesResponse {

@@ -14,6 +14,10 @@
   import { usersService } from '$src/services/UsersService'
   import { navigationService } from '$src/services/NavigationService'
   import { navigationState } from '$src/states/NavigationState.svelte'
+  import { channelService } from '$src/services/ChannelService'
+  import { groupConversationService } from '$src/services/GroupConversationService'
+  import { conversationsState } from '$src/states/ConversationsState.svelte'
+  import { threadService } from '$src/services/ThreadService'
 
   const notifications = $derived(notificationState.notifications)
   const isLoading = $derived(!notificationState.notificationsLoaded)
@@ -86,11 +90,10 @@
       marginService.select(await marginService.getMargin(notification.marginId))
       navigationService.setView(View.Margin)
     } else if (notification.type === NotificationType.MESSAGE_REACTION) {
-      // Only channel reactions carry a marginId; DIRECT/GROUP reactions have no
-      // reliable conversation reference to navigate to (referenceId is the message ID).
-      if (notification.marginId) {
-        marginService.select(await marginService.getMargin(notification.marginId))
-        navigationService.setView(View.Margin)
+      await navigateToReactedMessage(notification)
+    } else if (notification.type === NotificationType.THREAD_REPLY) {
+      if (notification.conversationId) {
+        await threadService.navigateToThreadById(notification.conversationId)
       }
     } else if (
       notification.type === NotificationType.SUBSCRIPTION_UPGRADED ||
@@ -100,6 +103,34 @@
       marginService.select(await marginService.getMargin(notification.marginId))
       navigationState.manageTab = 'Subscription'
       navigationService.setView(View.Manage)
+    }
+  }
+
+  async function navigateToReactedMessage(notification: Notification): Promise<void> {
+    if (notification.marginId) {
+      marginService.select(await marginService.getMargin(notification.marginId))
+      navigationService.setView(View.Margin)
+      if (notification.conversationId) {
+        try {
+          const channel = await channelService.getChannelById(notification.conversationId)
+          channelService.select(channel)
+        } catch {
+          // Channel was deleted — leave the user on the margin view.
+        }
+      }
+      return
+    }
+
+    const conversation = notification.conversationId
+      ? conversationsState.byId.get(notification.conversationId)
+      : undefined
+    if (conversation?.type === 'GROUP') {
+      groupConversationService.selectGroupConversation(conversation)
+    } else if (notification.sender) {
+      // DIRECT: the reactor is the other member of the conversation.
+      await messageLoaderService.loadConversationForUser(notification.sender)
+      usersService.select(notification.sender)
+      navigationService.setView(View.Private)
     }
   }
 
@@ -117,6 +148,8 @@
         return '💬'
       case NotificationType.MESSAGE_REACTION:
         return '👍'
+      case NotificationType.THREAD_REPLY:
+        return '🧵'
       case NotificationType.SUBSCRIPTION_UPGRADED:
         return '✨'
       case NotificationType.SUBSCRIPTION_PAYMENT_FAILED:
@@ -142,6 +175,8 @@
         return `${notification.sender?.displayName ?? 'Someone'} invited you to a conversation`
       case NotificationType.MESSAGE_REACTION:
         return `${notification.sender?.displayName ?? 'Someone'} reacted to your message`
+      case NotificationType.THREAD_REPLY:
+        return `${notification.sender?.displayName ?? 'Someone'} replied in a thread you follow`
       case NotificationType.SUBSCRIPTION_UPGRADED:
         return 'Your workspace plan was upgraded'
       case NotificationType.SUBSCRIPTION_PAYMENT_FAILED:

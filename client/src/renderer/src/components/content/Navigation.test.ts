@@ -14,8 +14,7 @@ vi.mock('$src/states/NotificationState.svelte.js', () => ({
 
 vi.mock('$src/services/NavigationService', () => ({
   navigationService: {
-    setView: vi.fn(),
-    selectContent: vi.fn()
+    setView: vi.fn()
   }
 }))
 
@@ -77,28 +76,28 @@ describe('Navigation', () => {
     expect(screen.getByRole('button', { name: /spaces/i })).toBeInTheDocument()
   })
 
-  it('calls navigationService.selectContent with "notifications" when notifications button is clicked', async () => {
+  it('calls navigationService.setView with "notifications" when notifications button is clicked', async () => {
     render(Navigation)
 
     await fireEvent.click(screen.getByRole('button', { name: /notifications/i }))
 
-    expect(navigationService.selectContent).toHaveBeenCalledWith('notifications')
+    expect(navigationService.setView).toHaveBeenCalledWith('notifications')
   })
 
-  it('calls navigationService.selectContent with "private" when private conversations button is clicked', async () => {
+  it('calls navigationService.setView with "private" when private conversations button is clicked', async () => {
     render(Navigation)
 
     await fireEvent.click(screen.getByRole('button', { name: /private conversations/i }))
 
-    expect(navigationService.selectContent).toHaveBeenCalledWith('private')
+    expect(navigationService.setView).toHaveBeenCalledWith('private')
   })
 
-  it('calls navigationService.selectContent with "margin" when spaces button is clicked', async () => {
+  it('calls navigationService.setView with "margin" when spaces button is clicked', async () => {
     render(Navigation)
 
     await fireEvent.click(screen.getByRole('button', { name: /spaces/i }))
 
-    expect(navigationService.selectContent).toHaveBeenCalledWith('margin')
+    expect(navigationService.setView).toHaveBeenCalledWith('margin')
   })
 
   it('renders avatar button when user is logged in', () => {
@@ -136,13 +135,13 @@ describe('Navigation', () => {
     expect(screen.getByText('Lucas')).toBeInTheDocument()
   })
 
-  it('calls navigationService.selectContent with "settings" when settings is clicked in dropdown', async () => {
+  it('calls navigationService.setView with "settings" when settings is clicked in dropdown', async () => {
     render(Navigation)
 
     await fireEvent.click(document.querySelector('.avatar-btn')!)
     await fireEvent.click(screen.getByText('Settings'))
 
-    expect(navigationService.selectContent).toHaveBeenCalledWith('settings')
+    expect(navigationService.setView).toHaveBeenCalledWith('settings')
   })
 
   it('calls logoutUser and navigates to / when log out is clicked', async () => {

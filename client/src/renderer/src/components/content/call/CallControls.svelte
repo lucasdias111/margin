@@ -1,4 +1,5 @@
 <script lang="ts">
+  import type { Snippet } from 'svelte'
   import { formatDuration } from '$src/utils/DateUtils'
   import Icon from '$src/components/common/icons/Icon.svelte'
   import CallSettingsPopUp from '$src/components/content/call/CallSettingsPopUp.svelte'
@@ -17,6 +18,9 @@
     onToggleVideo: () => void
     onToggleScreenShare: () => void
     onEndCall: () => void
+    onToggleInvite?: () => void
+    isInviteOpen?: boolean
+    invitePanel?: Snippet
   }
 
   let {
@@ -32,6 +36,9 @@
     onToggleVideo,
     onToggleScreenShare,
     onEndCall,
+    onToggleInvite,
+    isInviteOpen = false,
+    invitePanel,
     showDuration = true
   }: Props = $props()
 
@@ -82,6 +89,23 @@
     >
       <Icon name="screen_share" />
     </button>
+
+    {#if onToggleInvite}
+      <div class="invite-anchor">
+        <button
+          class="control-btn invite-btn"
+          class:active={isInviteOpen}
+          onclick={onToggleInvite}
+          title="Invite to call"
+        >
+          <Icon name="users_plus" size={20} strokeWidth={2.5} />
+        </button>
+
+        {#if isInviteOpen && invitePanel}
+          {@render invitePanel()}
+        {/if}
+      </div>
+    {/if}
 
     <div class="settings-anchor">
       <button
@@ -154,8 +178,21 @@
     gap: 16px;
   }
 
-  .settings-anchor {
+  .settings-anchor,
+  .invite-anchor {
     position: relative;
+  }
+
+  .invite-btn {
+    background: rgba(255, 255, 255, 0.1);
+  }
+
+  .invite-btn:hover {
+    background: rgba(255, 255, 255, 0.2);
+  }
+
+  .invite-btn.active {
+    background: #b47024;
   }
 
   .control-btn {

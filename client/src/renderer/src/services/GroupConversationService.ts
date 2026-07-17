@@ -1,6 +1,5 @@
 import type { GroupConversation } from '$src/interfaces/Conversation'
 import { authenticatedDelete, authenticatedPost } from '$src/services/api'
-import { channelService } from '$src/services/ChannelService'
 import { navigationService } from '$src/services/NavigationService'
 import { sessionState } from '$src/states/SessionState.svelte'
 import { conversationsState, defaultMeta } from '$src/states/ConversationsState.svelte.js'
@@ -31,7 +30,6 @@ class GroupConversationService {
     navigationState.selectedUser = null
     navigationState.selectedGroupConversation = group
     navigationService.setView(View.Private)
-    channelService.select(null)
     messageLoaderService.loadConversationForGroup(group)
   }
 

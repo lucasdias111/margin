@@ -10,9 +10,11 @@
   import { callService } from '$src/services/call/CallService'
   import type {
     CallOfferPayload,
+    ChannelCallInvitePayload,
     ChannelVoiceParticipantPayload,
     WebSocketMessage
   } from '$src/interfaces/WebSocketMessages'
+  import { channelCallService } from '$src/services/call/ChannelCallService'
   import { notificationService } from '$src/services/NotificationService'
   import { notificationState } from '$src/states/NotificationState.svelte'
   import Navigation from '$src/components/content/Navigation.svelte'
@@ -31,6 +33,8 @@
   import IncomingCallModal from '$src/components/content/call/modal/IncomingCallModal.svelte'
   import type { Notification } from '$src/interfaces/Notification'
   import Notifications from '$src/components/content/notification/Notifications.svelte'
+  import { threadService } from '$src/services/ThreadService'
+  import { threadsState } from '$src/states/ThreadsState.svelte'
   import ChannelCallWindow from '$src/components/content/call/ChannelCallWindow.svelte'
   import { NotificationSounds } from '$src/utils/NotificationSounds'
   import ConnectionBar from '$src/components/common/messages/ConnectionBar.svelte'
@@ -57,7 +61,11 @@
     onboardingReady && (isElectron() || viewportWidth > MOBILE_BREAKPOINT)
   )
 
+  const CHANNEL_CALL_INVITE_TIMEOUT_MS = 20000
+
   let incomingCallPayload = $state<CallOfferPayload | null>(null)
+  let channelCallInvite = $state<ChannelCallInvitePayload | null>(null)
+  let channelCallInviteTimer: ReturnType<typeof setTimeout> | null = null
   const ringtone = new Audio(NotificationSounds.INCOMING_CALL)
   ringtone.loop = true
 
@@ -89,7 +97,7 @@
   })
 
   $effect(() => {
-    if (incomingCallPayload) {
+    if (incomingCallPayload || channelCallInvite) {
       ringtone.currentTime = 0
       ringtone.play().catch(() => {})
     } else {
@@ -118,6 +126,7 @@
       notificationState.addNotification(data.payload)
     },
     [WebSocketMessageType.CALL_NO_ANSWER]: () => (incomingCallPayload = null),
+    [WebSocketMessageType.CHANNEL_CALL_INVITE]: handleChannelCallInvite,
     [WebSocketMessageType.USER_JOINED_VOICE]: (
       msg: WebSocketMessage<ChannelVoiceParticipantPayload>
     ) => {
@@ -179,6 +188,7 @@
     await inviteService.loadSentInvites()
     await notificationService.loadAll()
     await marginService.loadMarginsForUser()
+    await threadService.loadInbox()
   }
 
   async function loadUnreadMessages(): Promise<void> {
@@ -205,6 +215,10 @@
       }
       conversationsState.markUnread(ch.conversationId)
       conversationsState.setMarginForConversation(ch.conversationId, ch.marginId)
+    }
+
+    for (const id of unread.threadConversationIds ?? []) {
+      threadsState.markUnread(id)
     }
   }
 
@@ -256,6 +270,30 @@
     callService.endCall(true)
   }
 
+  function handleChannelCallInvite(message: WebSocketMessage<ChannelCallInvitePayload>): void {
+    if (!message.payload) return
+    if (callState.isGroupCall && callState.groupCallState?.channelId === message.payload.channelId)
+      return
+    channelCallInvite = message.payload
+    if (channelCallInviteTimer) clearTimeout(channelCallInviteTimer)
+    channelCallInviteTimer = setTimeout(clearChannelCallInvite, CHANNEL_CALL_INVITE_TIMEOUT_MS)
+  }
+
+  function clearChannelCallInvite(): void {
+    if (channelCallInviteTimer) {
+      clearTimeout(channelCallInviteTimer)
+      channelCallInviteTimer = null
+    }
+    channelCallInvite = null
+  }
+
+  function acceptChannelCallInvite(): void {
+    const invite = channelCallInvite
+    clearChannelCallInvite()
+    if (!invite) return
+    channelCallService.joinVoiceChannel(invite.channelId)
+  }
+
   const RESYNC_COOLDOWN_MS = 2000
   let lastResyncAt = 0
 
@@ -266,6 +304,7 @@
 
     await loadUnreadMessages()
     await loadRecentUsers()
+    await threadService.loadInbox()
 
     if (navigationState.view === View.Private && navigationState.selectedUser) {
       await messageLoaderService.loadConversationForUser(navigationState.selectedUser, true)
@@ -302,7 +341,22 @@
       <ContentWindow />
     </div>
   {/if}
-  <IncomingCallModal payload={incomingCallPayload} onAccept={acceptCall} onDecline={declineCall} />
+  {#if incomingCallPayload}
+    <IncomingCallModal
+      caller={incomingCallPayload.caller}
+      onAccept={acceptCall}
+      onDecline={declineCall}
+    />
+  {:else if channelCallInvite}
+    <IncomingCallModal
+      caller={channelCallInvite.fromUser}
+      subtitle="Channel call invite"
+      channelName={channelCallInvite.channelName}
+      acceptLabel="Join"
+      onAccept={acceptChannelCallInvite}
+      onDecline={clearChannelCallInvite}
+    />
+  {/if}
   {#if showOnboarding}
     <OnboardingOverlay />
   {/if}

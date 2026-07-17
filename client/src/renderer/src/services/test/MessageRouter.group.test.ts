@@ -47,7 +47,9 @@ vi.mock('$src/services/ChannelService', () => ({
 
 vi.mock('$src/services/api', () => ({
   authenticatedGet: vi.fn(),
-  authenticatedPost: vi.fn()
+  authenticatedPost: vi.fn(),
+  authenticatedDelete: vi.fn(),
+  setUnauthenticatedHandler: vi.fn()
 }))
 
 vi.mock('$src/services/FileStorageService', () => ({

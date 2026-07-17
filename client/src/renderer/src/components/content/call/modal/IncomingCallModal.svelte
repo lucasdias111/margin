@@ -1,30 +1,43 @@
 <script lang="ts">
   import UserAvatar from '$src/components/common/user/UserAvatar.svelte'
-  import type { CallOfferPayload } from '$src/interfaces/WebSocketMessages'
+  import type { User } from '$src/interfaces/User'
 
   interface Props {
-    payload: CallOfferPayload | null
+    caller: User | null
+    subtitle?: string
+    channelName?: string | null
+    acceptLabel?: string
     onAccept: () => void
     onDecline: () => void
   }
 
-  let { payload, onAccept, onDecline }: Props = $props()
+  let {
+    caller,
+    subtitle = 'Incoming call',
+    channelName = null,
+    acceptLabel = 'Accept',
+    onAccept,
+    onDecline
+  }: Props = $props()
 </script>
 
-{#if payload}
+{#if caller}
   <div class="backdrop">
     <div class="modal" role="dialog" aria-modal="true">
       <div class="avatar-wrapper">
         <div class="pulse-ring"></div>
-        <UserAvatar profilePictureUrl={payload.caller.profilePictureUrl} width={56} height={56} />
+        <UserAvatar profilePictureUrl={caller.profilePictureUrl} width={56} height={56} />
       </div>
       <div class="info">
-        <p class="name">{payload.caller.displayName}</p>
-        <p class="subtitle">Incoming call</p>
+        <p class="name">{caller.displayName}</p>
+        <p class="subtitle">{subtitle}</p>
+        {#if channelName}
+          <p class="channel-name"># {channelName}</p>
+        {/if}
       </div>
       <div class="actions">
         <button class="decline" onclick={onDecline}>Decline</button>
-        <button class="accept" onclick={onAccept}>Accept</button>
+        <button class="accept" onclick={onAccept}>{acceptLabel}</button>
       </div>
     </div>
   </div>
@@ -90,6 +103,17 @@
     color: #999;
     text-transform: uppercase;
     letter-spacing: 0.05em;
+  }
+
+  .channel-name {
+    margin: 8px 0 0;
+    padding: 3px 10px;
+    display: inline-block;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #b47024;
+    background: rgba(180, 112, 36, 0.1);
+    border-radius: 999px;
   }
 
   .actions {

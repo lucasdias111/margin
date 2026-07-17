@@ -42,7 +42,11 @@ export class HomePage {
   }
 
   async openSpace(spaceName: string): Promise<void> {
-    await this.marginSpaces.locator('.space-row', { hasText: spaceName }).click()
+    const row = this.marginSpaces.locator('.space-row', { hasText: spaceName })
+    await row.waitFor()
+    if ((await row.getAttribute('aria-expanded')) !== 'true') {
+      await row.click()
+    }
   }
 
   async selectChannel(channelName: string): Promise<void> {
