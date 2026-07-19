@@ -17,6 +17,7 @@ import { sessionState } from '$src/states/SessionState.svelte'
 import { conversationsState, defaultMeta } from '$src/states/ConversationsState.svelte.js'
 import { connectionState } from '$src/states/ConnectionState.svelte'
 import { errorService } from '$src/services/ErrorService'
+import { lastMessagePreviewText } from '$src/utils/messagePreview'
 
 class MessageSenderService {
   private optimisticIdSeq = -1
@@ -39,7 +40,7 @@ class MessageSenderService {
     const meta = conversationsState.conversationMetaById.get(msg.conversationId) ?? defaultMeta()
     conversationsState.conversationMetaById.set(msg.conversationId, {
       ...meta,
-      lastMessage: msg.content,
+      lastMessage: lastMessagePreviewText(msg),
       lastMessageTime: msg.createdAt,
       lastMessageIncoming: false
     })

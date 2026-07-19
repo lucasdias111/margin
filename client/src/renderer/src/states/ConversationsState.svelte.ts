@@ -1,5 +1,6 @@
 import type { Message, MessageStatus } from '$src/interfaces/Messages'
 import type { Conversation } from '$src/interfaces/Conversation'
+import { lastMessagePreviewText } from '$src/utils/messagePreview'
 import { navigationState } from '$src/states/NavigationState.svelte'
 import { View } from '$src/interfaces/View'
 import { SvelteMap } from 'svelte/reactivity'
@@ -71,7 +72,7 @@ class ConversationsState {
     const meta = this._conversationMetaById.get(convId) ?? defaultMeta()
     this._conversationMetaById.set(convId, {
       ...meta,
-      lastMessage: msg.content,
+      lastMessage: lastMessagePreviewText(msg),
       lastMessageTime: msg.createdAt,
       lastMessageIncoming: incoming
     })

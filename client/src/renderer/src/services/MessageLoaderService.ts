@@ -14,6 +14,12 @@ import { authenticatedGet, authenticatedPost } from '$src/services/api'
 import { notificationService } from '$src/services/NotificationService'
 import { sessionState } from '$src/states/SessionState.svelte'
 import { conversationsState, defaultMeta } from '$src/states/ConversationsState.svelte.js'
+import { lastMessagePreviewText } from '$src/utils/messagePreview'
+
+function lastMessageOf(messages: Message[]): string | null {
+  const last = messages[messages.length - 1]
+  return last ? lastMessagePreviewText(last) : null
+}
 
 class MessageLoaderService {
   private static readonly PAGE_SIZE = 30
@@ -101,7 +107,7 @@ class MessageLoaderService {
       ...(conversationsState.conversationMetaById.get(conv.id) ?? defaultMeta()),
       isLoading: false,
       hasMore: messages.length >= MessageLoaderService.PAGE_SIZE,
-      lastMessage: messages[messages.length - 1]?.content ?? null,
+      lastMessage: lastMessageOf(messages),
       initialFetchCompleted: true
     })
 
@@ -140,7 +146,7 @@ class MessageLoaderService {
       ...(conversationsState.conversationMetaById.get(convId) ?? defaultMeta()),
       isLoading: false,
       hasMore: messageResponse.messages.length >= MessageLoaderService.PAGE_SIZE,
-      lastMessage: decryptedMessages[decryptedMessages.length - 1]?.content ?? null,
+      lastMessage: lastMessageOf(decryptedMessages),
       initialFetchCompleted: true
     })
 
