@@ -172,9 +172,10 @@ class CallService {
 
   noAnswer(): void {
     this.clearNoAnswer()
-    const callId = callState.callId
+    const call = callState.p2pCallState
+    if (!call) return
     this.noAnswerTimeout = setTimeout(() => {
-      if (callState.status === 'connecting' && callState.callId === callId) {
+      if (callState.status === 'connecting' && callState.p2pCallState === call) {
         callSignalingService.sendNoAnswer()
         this.endCall(true)
       }

@@ -461,9 +461,27 @@ describe('CallService', () => {
       expect(mockCallState.endCall).toHaveBeenCalled()
     })
 
+    it('still fires when callId is assigned after the timeout is scheduled', () => {
+      // Outgoing calls schedule noAnswer() before CALL_CREATED assigns the id.
+      mockCallState.callId = null
+      mockCallState.status = 'connecting'
+      mockCallState.p2pCallState = buildP2PCallState({
+        peerConnection: { close: vi.fn() },
+        localStream: { getTracks: vi.fn().mockReturnValue([]) }
+      })
+
+      callService.noAnswer()
+      mockCallState.callId = 42
+      vi.advanceTimersByTime(20000)
+
+      expect(callSignalingService.sendNoAnswer).toHaveBeenCalled()
+      expect(mockCallState.endCall).toHaveBeenCalled()
+    })
+
     it('does not end call if status changed before timeout', () => {
       mockCallState.callId = 1
       mockCallState.status = 'connecting'
+      mockCallState.p2pCallState = buildP2PCallState()
 
       callService.noAnswer()
       mockCallState.status = 'connected'
@@ -472,12 +490,13 @@ describe('CallService', () => {
       expect(callSignalingService.sendNoAnswer).not.toHaveBeenCalled()
     })
 
-    it('does not end call if callId changed before timeout', () => {
+    it('does not end call if the call session changed before timeout', () => {
       mockCallState.callId = 1
       mockCallState.status = 'connecting'
+      mockCallState.p2pCallState = buildP2PCallState()
 
       callService.noAnswer()
-      mockCallState.callId = 2
+      mockCallState.p2pCallState = buildP2PCallState()
       vi.advanceTimersByTime(20000)
 
       expect(callSignalingService.sendNoAnswer).not.toHaveBeenCalled()
