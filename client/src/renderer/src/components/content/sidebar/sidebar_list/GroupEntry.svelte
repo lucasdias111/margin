@@ -4,7 +4,7 @@
   import Icon from '$src/components/common/icons/Icon.svelte'
   import { defaultMeta } from '$src/states/ConversationsState.svelte'
   import { notificationService } from '$src/services/NotificationService'
-  import { formatTime } from '$src/utils/DateUtils'
+  import { formatConversationTimestamp } from '$src/utils/DateUtils'
   import SidebarConversationEntry from './SidebarConversationEntry.svelte'
 
   interface Props {
@@ -19,7 +19,7 @@
   const displayMeta = $derived(meta ?? defaultMeta())
   const unreadCount = $derived(notificationService.isUnread(group.id) ? 1 : 0)
   const lastMessageTime = $derived(
-    displayMeta.lastMessageTime ? formatTime(displayMeta.lastMessageTime) : null
+    displayMeta.lastMessageTime ? formatConversationTimestamp(displayMeta.lastMessageTime) : null
   )
 </script>
 

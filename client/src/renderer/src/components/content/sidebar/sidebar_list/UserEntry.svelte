@@ -3,7 +3,7 @@
   import type { User } from '$src/interfaces/User'
   import type { ConversationMeta } from '$src/states/ConversationsState.svelte.js'
   import UserAvatar from '$src/components/common/user/UserAvatar.svelte'
-  import { formatTime } from '$src/utils/DateUtils'
+  import { formatConversationTimestamp } from '$src/utils/DateUtils'
   import { usersService } from '$src/services/UsersService'
   import { notificationService } from '$src/services/NotificationService'
   import SidebarConversationEntry from './SidebarConversationEntry.svelte'
@@ -24,7 +24,9 @@
   const chatUser = $derived(recentUser.user)
   const meta = $derived(recentUser.meta)
   const unreadCount = $derived(notificationService.isUnread(recentUser.conversation.id) ? 1 : 0)
-  const lastMessageTime = $derived(meta.lastMessageTime ? formatTime(meta.lastMessageTime) : null)
+  const lastMessageTime = $derived(
+    meta.lastMessageTime ? formatConversationTimestamp(meta.lastMessageTime) : null
+  )
   const isSecret = $derived(
     recentUser.conversation.type !== 'CHANNEL' && recentUser.conversation.encrypted
   )
