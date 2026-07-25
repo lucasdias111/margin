@@ -266,7 +266,11 @@
     incomingCallPayload = null
   }
 
-  function handleRemoteCallEnd(): void {
+  function handleRemoteCallEnd(message: WebSocketMessage<{ callId: number }>): void {
+    if (incomingCallPayload && incomingCallPayload.callId === message.payload?.callId) {
+      incomingCallPayload = null
+      return
+    }
     callService.endCall(true)
   }
 
