@@ -76,6 +76,16 @@ class NavigationState {
     this._selectedThread = value
   }
 
+  /**
+   * Whether the current view has something open in its content pane. Drives the
+   * mobile layout, where the sidebar and the content pane are mutually exclusive.
+   */
+  get hasSelection(): boolean {
+    if (this._view === View.Private) return !!this._selectedUser
+    if (this._view === View.Margin) return !!this._selectedChannel
+    return false
+  }
+
   get manageTab(): ManageTab {
     return this._manageTab
   }
