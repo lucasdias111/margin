@@ -9,7 +9,7 @@ import {
 } from '$src/interfaces/Conversation'
 import type { Channel } from '$src/interfaces/Channel'
 import { encryptionService } from './EncryptionService'
-import { webSocketService } from './WebSocketService'
+import { webSocketService } from '$src/services/websocket/WebSocketService'
 import { WebSocketMessageType } from '$src/interfaces/WebSocketMessageType'
 import { authenticatedGet, authenticatedPost } from '$src/services/api'
 import { fileStorageService } from '$src/services/FileStorageService'

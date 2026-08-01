@@ -2,36 +2,23 @@
   import { onMount } from 'svelte'
   import Sidebar from '$src/components/content/sidebar/Sidebar.svelte'
   import ContentWindow from '$src/components/content/Content.svelte'
-  import type { User } from '$src/interfaces/User'
   import { authenticatedGet } from '$src/services/api'
-  import { WebSocketMessageType } from '$src/interfaces/WebSocketMessageType'
   import { callState } from '$src/states/CallState.svelte'
   import CallWindow from '$src/components/content/call/CallWindow.svelte'
   import { callService } from '$src/services/call/CallService'
-  import type {
-    CallOfferPayload,
-    ChannelCallInvitePayload,
-    ChannelVoiceParticipantPayload,
-    WebSocketMessage
-  } from '$src/interfaces/WebSocketMessages'
   import { channelCallService } from '$src/services/call/ChannelCallService'
   import { notificationService } from '$src/services/NotificationService'
-  import { notificationState } from '$src/states/NotificationState.svelte'
   import Navigation from '$src/components/content/Navigation.svelte'
   import ManageWindow from '$src/components/content/manage/ManageWindow.svelte'
-  import { useWebsocketSvelte } from '$src/composables/useWebsocket.svelte'
-  import { messageRouter } from '$src/services/MessageRouter'
+  import { registerWebSocketHandlers } from '$src/services/websocket/registerHandlers'
   import { messageLoaderService } from '$src/services/MessageLoaderService'
   import { inviteService } from '$src/services/ConversationInviteService'
-  import { webSocketService } from '$src/services/WebSocketService'
+  import { webSocketService } from '$src/services/websocket/WebSocketService'
   import { usersService } from '$src/services/UsersService'
-  import { presenceService } from '$src/services/PrecenseService.js'
-  import { typingIndicatorService } from '$src/services/TypingIndicatorService'
   import NoMarginEmptyState from '$src/components/content/margin/NoMarginEmptyState.svelte'
   import { encryptionService } from '$src/services/EncryptionService'
   import { marginService } from '$src/services/MarginService'
   import IncomingCallModal from '$src/components/content/call/modal/IncomingCallModal.svelte'
-  import type { Notification } from '$src/interfaces/Notification'
   import Notifications from '$src/components/content/notification/Notifications.svelte'
   import { threadService } from '$src/services/ThreadService'
   import { threadsState } from '$src/states/ThreadsState.svelte'
@@ -41,17 +28,14 @@
   import type { UnreadConversations } from '$src/interfaces/UnreadCount'
   import UpdateToast from '$src/components/common/messages/UpdateToast.svelte'
   import { isElectron } from '$src/utils/platformUtils'
-  import { channelService } from '$src/services/ChannelService'
   import { updateService } from '$src/services/UpdateService'
   import { View } from '$src/interfaces/View'
   import { navigationState } from '$src/states/NavigationState.svelte'
   import { marginState } from '$src/states/MarginState.svelte'
-  import { spaceService } from '$src/services/SpaceService'
   import { sessionHandler } from '$src/handlers/SessionHandler'
   import { sessionState } from '$src/states/SessionState.svelte'
   import { conversationsState } from '$src/states/ConversationsState.svelte'
-  import { subscriptionState } from '$src/states/SubscriptionState.svelte'
-  import type { Subscription } from '$src/interfaces/Subscription'
+  import { incomingCallState } from '$src/states/IncomingCallState.svelte'
   import OnboardingOverlay from '$src/components/content/onboarding/OnboardingOverlay.svelte'
 
   const MOBILE_BREAKPOINT = 768
@@ -61,11 +45,6 @@
     onboardingReady && (isElectron() || viewportWidth > MOBILE_BREAKPOINT)
   )
 
-  const CHANNEL_CALL_INVITE_TIMEOUT_MS = 20000
-
-  let incomingCallPayload = $state<CallOfferPayload | null>(null)
-  let channelCallInvite = $state<ChannelCallInvitePayload | null>(null)
-  let channelCallInviteTimer: ReturnType<typeof setTimeout> | null = null
   const ringtone = new Audio(NotificationSounds.INCOMING_CALL)
   ringtone.loop = true
 
@@ -78,9 +57,11 @@
   )
 
   onMount(() => {
+    const unregisterHandlers = registerWebSocketHandlers()
+    const unsubscribeReconnect = webSocketService.onLifecycle('reconnected', resync)
+
     setup().then(() => (onboardingReady = true))
     webSocketService.connect()
-    webSocketService.onReconnect(resync)
 
     const onViewportResize = (): void => {
       viewportWidth = window.innerWidth
@@ -93,11 +74,15 @@
       })
     }
 
-    return () => window.removeEventListener('resize', onViewportResize)
+    return () => {
+      window.removeEventListener('resize', onViewportResize)
+      unsubscribeReconnect()
+      unregisterHandlers()
+    }
   })
 
   $effect(() => {
-    if (incomingCallPayload || channelCallInvite) {
+    if (incomingCallState.isRinging) {
       ringtone.currentTime = 0
       ringtone.play().catch(() => {})
     } else {
@@ -112,50 +97,6 @@
       notificationService.totalUnreadDirectMessages() +
       notificationService.totalUnreadChannelMessages()
     window.api!.setBadgeCount(total)
-  })
-
-  useWebsocketSvelte({
-    [WebSocketMessageType.RECEIVE_MESSAGE]: messageRouter.handleIncomingMessage,
-    [WebSocketMessageType.CALL_OFFER]: handleIncomingCallOffer,
-    [WebSocketMessageType.CALL_END]: handleRemoteCallEnd,
-    [WebSocketMessageType.USER_LOGIN]: (data: WebSocketMessage<User>) =>
-      presenceService.setOnline(data.payload.id),
-    [WebSocketMessageType.USER_LOGOUT]: (data: WebSocketMessage<User>) =>
-      presenceService.setOffline(data.payload.id),
-    [WebSocketMessageType.NOTIFICATION]: (data: WebSocketMessage<Notification>) => {
-      notificationState.addNotification(data.payload)
-    },
-    [WebSocketMessageType.CALL_NO_ANSWER]: () => (incomingCallPayload = null),
-    [WebSocketMessageType.CHANNEL_CALL_INVITE]: handleChannelCallInvite,
-    [WebSocketMessageType.USER_JOINED_VOICE]: (
-      msg: WebSocketMessage<ChannelVoiceParticipantPayload>
-    ) => {
-      channelService.updateVoiceParticipant(msg.payload.channelId, msg.payload.user, true)
-    },
-    [WebSocketMessageType.USER_LEFT_VOICE]: (
-      msg: WebSocketMessage<ChannelVoiceParticipantPayload>
-    ) => {
-      channelService.updateVoiceParticipant(msg.payload.channelId, msg.payload.user, false)
-    },
-    [WebSocketMessageType.USER_JOINED_SPACE]: (
-      msg: WebSocketMessage<{ spaceId: number; user: User }>
-    ) => {
-      spaceService.addMemberToSpace(msg.payload.spaceId, msg.payload.user)
-    },
-    [WebSocketMessageType.CONVERSATION_READ]: (
-      msg: WebSocketMessage<{ conversationId: number; readAt: string }>
-    ) => {
-      messageLoaderService.setConversationReadAt(msg.payload.conversationId, msg.payload.readAt)
-    },
-    [WebSocketMessageType.RECEIVE_TYPING_INDICATOR]: typingIndicatorService.handleIncoming,
-    [WebSocketMessageType.CONVERSATION_INVITE]: inviteService.handleIncomingConversationInvite,
-    [WebSocketMessageType.CONVERSATION_INVITE_ACCEPTED]:
-      inviteService.handleConversationInviteAccepted,
-    [WebSocketMessageType.CONVERSATION_INVITE_DECLINED]:
-      inviteService.handleConversationInviteDeclined,
-    [WebSocketMessageType.SUBSCRIPTION_UPDATED]: (msg: WebSocketMessage<Subscription>) => {
-      subscriptionState.set(msg.payload)
-    }
   })
 
   async function setup(): Promise<void> {
@@ -250,50 +191,26 @@
     usersService.loadRecentConversations(decryptedUsers)
   }
 
-  function handleIncomingCallOffer(message: WebSocketMessage<CallOfferPayload>): void {
-    incomingCallPayload = message.payload
-  }
-
   function acceptCall(): void {
-    if (!incomingCallPayload) return
-    const p = incomingCallPayload
-    incomingCallPayload = null
-    callService.startCall(p.callId, p.caller, true, false, { type: 'offer' as const, sdp: p.sdp })
+    const offer = incomingCallState.offer
+    if (!offer) return
+    incomingCallState.clearOffer()
+    callService.startCall(offer.callId, offer.caller, true, false, {
+      type: 'offer' as const,
+      sdp: offer.sdp
+    })
   }
 
   function declineCall(): void {
-    callService.rejectCall(incomingCallPayload.callId, incomingCallPayload.caller.id)
-    incomingCallPayload = null
-  }
-
-  function handleRemoteCallEnd(message: WebSocketMessage<{ callId: number }>): void {
-    if (incomingCallPayload && incomingCallPayload.callId === message.payload?.callId) {
-      incomingCallPayload = null
-      return
-    }
-    callService.endCall(true)
-  }
-
-  function handleChannelCallInvite(message: WebSocketMessage<ChannelCallInvitePayload>): void {
-    if (!message.payload) return
-    if (callState.isGroupCall && callState.groupCallState?.channelId === message.payload.channelId)
-      return
-    channelCallInvite = message.payload
-    if (channelCallInviteTimer) clearTimeout(channelCallInviteTimer)
-    channelCallInviteTimer = setTimeout(clearChannelCallInvite, CHANNEL_CALL_INVITE_TIMEOUT_MS)
-  }
-
-  function clearChannelCallInvite(): void {
-    if (channelCallInviteTimer) {
-      clearTimeout(channelCallInviteTimer)
-      channelCallInviteTimer = null
-    }
-    channelCallInvite = null
+    const offer = incomingCallState.offer
+    if (!offer) return
+    callService.rejectCall(offer.callId, offer.caller.id)
+    incomingCallState.clearOffer()
   }
 
   function acceptChannelCallInvite(): void {
-    const invite = channelCallInvite
-    clearChannelCallInvite()
+    const invite = incomingCallState.channelInvite
+    incomingCallState.clearChannelInvite()
     if (!invite) return
     channelCallService.joinVoiceChannel(invite.channelId)
   }
@@ -345,20 +262,20 @@
       <ContentWindow />
     </div>
   {/if}
-  {#if incomingCallPayload}
+  {#if incomingCallState.offer}
     <IncomingCallModal
-      caller={incomingCallPayload.caller}
+      caller={incomingCallState.offer.caller}
       onAccept={acceptCall}
       onDecline={declineCall}
     />
-  {:else if channelCallInvite}
+  {:else if incomingCallState.channelInvite}
     <IncomingCallModal
-      caller={channelCallInvite.fromUser}
+      caller={incomingCallState.channelInvite.fromUser}
       subtitle="Channel call invite"
-      channelName={channelCallInvite.channelName}
+      channelName={incomingCallState.channelInvite.channelName}
       acceptLabel="Join"
       onAccept={acceptChannelCallInvite}
-      onDecline={clearChannelCallInvite}
+      onDecline={() => incomingCallState.clearChannelInvite()}
     />
   {/if}
   {#if showOnboarding}

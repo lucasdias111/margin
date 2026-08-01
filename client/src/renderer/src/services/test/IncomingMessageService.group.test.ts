@@ -1,10 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { messageRouter } from '../MessageRouter'
+import { incomingMessageService } from '$src/services/websocket/handlers/IncomingMessageService'
 import { messageSenderService } from '../MessageSenderService'
 import { messageLoaderService } from '../MessageLoaderService'
 import { groupConversationService } from '../GroupConversationService'
 import { encryptionService } from '$src/services/EncryptionService'
-import { webSocketService } from '$src/services/WebSocketService'
+import { webSocketService } from '$src/services/websocket/WebSocketService'
 import { notificationService } from '$src/services/NotificationService'
 import { navigationService } from '$src/services/NavigationService'
 import { channelService } from '$src/services/ChannelService'
@@ -26,7 +26,7 @@ vi.mock('$src/services/EncryptionService', () => ({
   }
 }))
 
-vi.mock('$src/services/WebSocketService', () => ({
+vi.mock('$src/services/websocket/WebSocketService', () => ({
   webSocketService: { send: vi.fn() }
 }))
 
@@ -84,7 +84,7 @@ describe('ChatService group messaging', () => {
         user: buildUser({ id: 2 })
       })
 
-      await messageRouter.handleIncomingMessage({
+      await incomingMessageService.handleIncomingMessage({
         type: WebSocketMessageType.RECEIVE_MESSAGE,
         timestamp: 0,
         payload: msg
@@ -108,7 +108,7 @@ describe('ChatService group messaging', () => {
         user: buildUser({ id: 2 })
       })
 
-      await messageRouter.handleIncomingMessage({
+      await incomingMessageService.handleIncomingMessage({
         type: WebSocketMessageType.RECEIVE_MESSAGE,
         timestamp: 0,
         payload: msg
@@ -136,7 +136,7 @@ describe('ChatService group messaging', () => {
         user: buildUser({ id: 2 })
       })
 
-      await messageRouter.handleIncomingMessage({
+      await incomingMessageService.handleIncomingMessage({
         type: WebSocketMessageType.RECEIVE_MESSAGE,
         timestamp: 0,
         payload: msg
@@ -157,7 +157,7 @@ describe('ChatService group messaging', () => {
         user: buildUser({ id: 2 })
       })
 
-      await messageRouter.handleIncomingMessage({
+      await incomingMessageService.handleIncomingMessage({
         type: WebSocketMessageType.RECEIVE_MESSAGE,
         timestamp: 0,
         payload: msg

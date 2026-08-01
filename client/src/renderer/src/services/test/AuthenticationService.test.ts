@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { authenticationService } from '../AuthenticationService'
 import { encryptionService } from '$src/services/EncryptionService'
 import { errorService } from '$src/services/ErrorService'
-import { webSocketService } from '$src/services/WebSocketService'
+import { webSocketService } from '$src/services/websocket/WebSocketService'
 import { usersState } from '$src/states/UsersState.svelte.js'
 import { callState } from '$src/states/CallState.svelte'
 import * as api from '$src/services/api'
@@ -24,7 +24,7 @@ vi.mock('$src/services/ErrorService', () => ({
   }
 }))
 
-vi.mock('$src/services/WebSocketService', () => ({
+vi.mock('$src/services/websocket/WebSocketService', () => ({
   webSocketService: {
     disconnect: vi.fn()
   }

@@ -1,11 +1,11 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { messageRouter } from '../MessageRouter'
+import { incomingMessageService } from '$src/services/websocket/handlers/IncomingMessageService'
 import { messageSenderService } from '../MessageSenderService'
 import { messageLoaderService } from '../MessageLoaderService'
 import { reactionService } from '../ReactionService'
 import { inviteService } from '../ConversationInviteService'
 import { encryptionService } from '$src/services/EncryptionService'
-import { webSocketService } from '$src/services/WebSocketService'
+import { webSocketService } from '$src/services/websocket/WebSocketService'
 import { notificationService } from '$src/services/NotificationService'
 import { conversationsState, defaultMeta } from '$src/states/ConversationsState.svelte'
 import { navigationState } from '$src/states/NavigationState.svelte'
@@ -37,7 +37,7 @@ vi.mock('$src/services/EncryptionService', () => ({
   }
 }))
 
-vi.mock('$src/services/WebSocketService', () => ({
+vi.mock('$src/services/websocket/WebSocketService', () => ({
   webSocketService: {
     send: vi.fn()
   }
@@ -130,7 +130,7 @@ describe('ChatService', () => {
         user: buildUser({ id: 2 })
       })
 
-      await messageRouter.handleIncomingMessage({
+      await incomingMessageService.handleIncomingMessage({
         type: WebSocketMessageType.RECEIVE_MESSAGE,
         timestamp: 0,
         payload: msg
@@ -148,7 +148,7 @@ describe('ChatService', () => {
       mockApiPost({})
       const msg = buildMessage({ id: 201, conversationType: 'DIRECT', user: sender })
 
-      await messageRouter.handleIncomingMessage({
+      await incomingMessageService.handleIncomingMessage({
         type: WebSocketMessageType.RECEIVE_MESSAGE,
         timestamp: 0,
         payload: msg
@@ -168,7 +168,7 @@ describe('ChatService', () => {
         user: buildUser({ id: 2 })
       })
 
-      await messageRouter.handleIncomingMessage({
+      await incomingMessageService.handleIncomingMessage({
         type: WebSocketMessageType.RECEIVE_MESSAGE,
         timestamp: 0,
         payload: msg
@@ -190,7 +190,7 @@ describe('ChatService', () => {
         user: buildUser({ id: 2 })
       })
 
-      await messageRouter.handleIncomingMessage({
+      await incomingMessageService.handleIncomingMessage({
         type: WebSocketMessageType.RECEIVE_MESSAGE,
         timestamp: 0,
         payload: msg
@@ -215,7 +215,7 @@ describe('ChatService', () => {
         content: 'real content'
       })
 
-      await messageRouter.handleIncomingMessage({
+      await incomingMessageService.handleIncomingMessage({
         type: WebSocketMessageType.RECEIVE_MESSAGE,
         timestamp: 0,
         payload: real
@@ -252,7 +252,7 @@ describe('ChatService', () => {
         content: 'second'
       })
 
-      await messageRouter.handleIncomingMessage({
+      await incomingMessageService.handleIncomingMessage({
         type: WebSocketMessageType.RECEIVE_MESSAGE,
         timestamp: 0,
         payload: echo
@@ -278,7 +278,7 @@ describe('ChatService', () => {
         content: 'cipher'
       })
 
-      await messageRouter.handleIncomingMessage({
+      await incomingMessageService.handleIncomingMessage({
         type: WebSocketMessageType.RECEIVE_MESSAGE,
         timestamp: 0,
         payload: msg
@@ -301,7 +301,7 @@ describe('ChatService', () => {
         user: sender
       })
 
-      await messageRouter.handleIncomingMessage({
+      await incomingMessageService.handleIncomingMessage({
         type: WebSocketMessageType.RECEIVE_MESSAGE,
         timestamp: 0,
         payload: msg
@@ -319,7 +319,7 @@ describe('ChatService', () => {
         user: sessionState.currentUser!
       })
 
-      await messageRouter.handleIncomingMessage({
+      await incomingMessageService.handleIncomingMessage({
         type: WebSocketMessageType.RECEIVE_MESSAGE,
         timestamp: 0,
         payload: msg
@@ -349,7 +349,7 @@ describe('ChatService', () => {
         content: 'enc'
       })
 
-      await messageRouter.handleIncomingMessage({
+      await incomingMessageService.handleIncomingMessage({
         type: WebSocketMessageType.RECEIVE_MESSAGE,
         timestamp: 0,
         payload: real
@@ -365,7 +365,7 @@ describe('ChatService', () => {
       vi.mocked(encryptionService.decryptMessage).mockResolvedValue('hello')
       const msg = buildMessage({ id: 1, conversationType: 'DIRECT', user: sender })
 
-      await messageRouter.handleIncomingMessage({
+      await incomingMessageService.handleIncomingMessage({
         type: WebSocketMessageType.RECEIVE_MESSAGE,
         timestamp: 0,
         payload: msg
@@ -1032,7 +1032,7 @@ describe('ChatService', () => {
       conversationsState.messagesByConversationId.set(10, [optimistic])
       const real = buildMessage({ id: 5, conversationType: 'DIRECT', conversationId: 10, user: me })
 
-      await messageRouter.handleIncomingMessage({
+      await incomingMessageService.handleIncomingMessage({
         type: WebSocketMessageType.RECEIVE_MESSAGE,
         timestamp: 0,
         payload: real
@@ -1058,7 +1058,7 @@ describe('ChatService', () => {
       conversationsState.messagesByConversationId.set(10, [optimistic])
       const real = buildMessage({ id: 5, conversationType: 'DIRECT', conversationId: 10, user: me })
 
-      await messageRouter.handleIncomingMessage({
+      await incomingMessageService.handleIncomingMessage({
         type: WebSocketMessageType.RECEIVE_MESSAGE,
         timestamp: 0,
         payload: real
@@ -1085,7 +1085,7 @@ describe('ChatService', () => {
         user: me
       })
 
-      await messageRouter.handleIncomingMessage({
+      await incomingMessageService.handleIncomingMessage({
         type: WebSocketMessageType.RECEIVE_MESSAGE,
         timestamp: 0,
         payload: real

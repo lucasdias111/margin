@@ -2,10 +2,11 @@ import { authenticatedPost, authenticatedPut, setUnauthenticatedHandler, unauthe
 import { encryptionService } from './EncryptionService'
 import { usersState } from '$src/states/UsersState.svelte.js'
 import { callState } from '$src/states/CallState.svelte'
+import { incomingCallState } from '$src/states/IncomingCallState.svelte'
 import { API_CONFIG } from '$src/shared/config'
 import type { AuthResponse } from '$src/interfaces/AuthResponse'
 import { errorService } from '$src/services/ErrorService'
-import { webSocketService } from '$src/services/WebSocketService'
+import { webSocketService } from '$src/services/websocket/WebSocketService'
 import { push } from 'svelte-spa-router'
 import { isElectron } from '$src/utils/platformUtils'
 import { navigationService } from '$src/services/NavigationService'
@@ -182,6 +183,7 @@ class AuthenticationService {
   public async clear(): Promise<void> {
     webSocketService.disconnect()
     callState.endCall()
+    incomingCallState.clear()
 
     usersState.reset()
     navigationService.reset()

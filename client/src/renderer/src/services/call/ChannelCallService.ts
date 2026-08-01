@@ -10,7 +10,7 @@ import {
 } from '$src/services/DeviceService'
 import { ICE_SERVERS } from '$src/services/call/iceServers'
 import { sessionState } from '$src/states/SessionState.svelte'
-import { webSocketService } from '$src/services/WebSocketService'
+import { webSocketService } from '$src/services/websocket/WebSocketService'
 import { WebSocketMessageType } from '$src/interfaces/WebSocketMessageType'
 
 class ChannelCallService {

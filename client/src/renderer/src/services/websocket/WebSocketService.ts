@@ -3,10 +3,20 @@ import type { WebSocketMessage, WebSocketMessageOut } from '$src/interfaces/WebS
 import { errorService } from '$src/services/ErrorService'
 import { WebSocketMessageType } from '$src/interfaces/WebSocketMessageType'
 import { connectionState } from '$src/states/ConnectionState.svelte'
-import { authenticationService } from '$src/services/AuthenticationService'
-import { push } from 'svelte-spa-router'
 
-type MessageHandler = (data: WebSocketMessage<unknown>) => void
+export type MessageHandler = (data: WebSocketMessage<unknown>) => void
+
+export type LifecycleEvent = 'connected' | 'reconnected' | 'disconnected'
+
+/**
+ * Everything the transport needs from the session layer. Injected rather than
+ * imported so the socket never reaches into auth or routing itself.
+ */
+export interface WebSocketSessionAdapter {
+  getToken(): string | null
+  restoreSession(): Promise<boolean>
+  onSessionInvalid(reason?: string): void
+}
 
 const PING_INTERVAL_MS = 30_000
 const PONG_TIMEOUT_MS = 10_000
@@ -17,6 +27,8 @@ const MAX_RECONNECT_ATTEMPTS = 20
 class WebSocketService {
   private ws: WebSocket | null = null
   private handlers: Map<string, MessageHandler[]> = new Map()
+  private lifecycleListeners: Map<LifecycleEvent, (() => void)[]> = new Map()
+  private session: WebSocketSessionAdapter | null = null
   private reconnectAttempts = 0
   private intentionalDisconnect = false
   private isRestoringSession = false
@@ -25,7 +37,9 @@ class WebSocketService {
   private pongTimeout: ReturnType<typeof setTimeout> | null = null
   private reconnectTimeout: ReturnType<typeof setTimeout> | null = null
 
-  private onReconnectCallback: (() => void) | null = null
+  configureSession(adapter: WebSocketSessionAdapter): void {
+    this.session = adapter
+  }
 
   connect(): void {
     if (this.isRestoringSession) return
@@ -35,7 +49,7 @@ class WebSocketService {
     const token = this.resolveToken()
     if (token === 'restoring') return
     if (!token || token == '') {
-      this.terminateSession()
+      this.invalidateSession()
       return
     }
 
@@ -56,6 +70,7 @@ class WebSocketService {
     }
 
     connectionState.connectionStatus = 'disconnected'
+    this.emit('disconnected')
   }
 
   send<T>(message: WebSocketMessageOut<T>): void {
@@ -86,12 +101,29 @@ class WebSocketService {
     }
   }
 
-  onReconnect(callback: () => void): void {
-    this.onReconnectCallback = callback
+  onLifecycle(event: LifecycleEvent, listener: () => void): () => void {
+    const listeners = this.lifecycleListeners.get(event) ?? []
+    if (!listeners.includes(listener)) {
+      listeners.push(listener)
+    }
+    this.lifecycleListeners.set(event, listeners)
+
+    return () => {
+      const current = this.lifecycleListeners.get(event)
+      if (!current) return
+      const index = current.indexOf(listener)
+      if (index > -1) current.splice(index, 1)
+    }
+  }
+
+  private emit(event: LifecycleEvent): void {
+    const listeners = this.lifecycleListeners.get(event)
+    if (!listeners) return
+    for (const listener of [...listeners]) listener()
   }
 
   private resolveToken(): string | null | 'restoring' {
-    const token = sessionStorage.getItem('authToken')
+    const token = this.session?.getToken() ?? null
 
     if (!token) {
       this.attemptSessionRestore()
@@ -100,8 +132,6 @@ class WebSocketService {
 
     if (this.isTokenExpired(token)) {
       console.warn('JWT expired — clearing session')
-      sessionStorage.removeItem('authToken')
-      sessionStorage.removeItem('privateKey')
       return null
     }
 
@@ -109,16 +139,21 @@ class WebSocketService {
   }
 
   private attemptSessionRestore(): void {
+    if (!this.session) {
+      this.invalidateSession()
+      return
+    }
+
     this.isRestoringSession = true
 
-    authenticationService.tryRestoreSession().then((restored) => {
+    this.session.restoreSession().then((restored) => {
       this.isRestoringSession = false
       if (this.intentionalDisconnect) return
 
       if (restored) {
         this.connect()
       } else {
-        this.terminateSession()
+        this.invalidateSession()
       }
     })
   }
@@ -152,9 +187,8 @@ class WebSocketService {
       connectionState.connectionStatus = 'connected'
       this.startPing()
 
-      if (wasReconnect && this.onReconnectCallback) {
-        this.onReconnectCallback()
-      }
+      this.emit('connected')
+      if (wasReconnect) this.emit('reconnected')
     }
 
     this.ws.onmessage = (event): void => {
@@ -166,6 +200,10 @@ class WebSocketService {
       }
 
       const handlers = this.handlers.get(data.type) || []
+      if (handlers.length === 0) {
+        console.warn('No handler registered for WebSocket message type', data.type)
+        return
+      }
       handlers.forEach((handler) => handler(data))
     }
 
@@ -184,25 +222,23 @@ class WebSocketService {
 
       if (event.code === 4001) {
         console.warn('WebSocket closed due to auth failure — not reconnecting')
-        this.terminateSession('Session expired. Please log in again.')
+        this.invalidateSession('Session expired. Please log in again.')
         return
       }
 
+      this.emit('disconnected')
       this.scheduleReconnect()
     }
   }
 
-  private terminateSession(userMessage?: string): void {
+  private invalidateSession(reason?: string): void {
     this.intentionalDisconnect = true
     this.clearReconnectTimeout()
     this.stopPing()
     connectionState.connectionStatus = 'disconnected'
+    this.emit('disconnected')
 
-    if (userMessage) {
-      errorService.reportError(userMessage)
-    }
-
-    authenticationService.logoutUser().then(() => push('/'))
+    this.session?.onSessionInvalid(reason)
   }
 
   private scheduleReconnect(): void {

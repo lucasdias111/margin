@@ -1,13 +1,8 @@
 <script lang="ts">
-  import type { Message, MessageReaction } from '$src/interfaces/Messages'
+  import type { Message } from '$src/interfaces/Messages'
   import { tick, untrack } from 'svelte'
-  import { useWebsocketSvelte } from '$src/composables/useWebsocket.svelte'
-  import { WebSocketMessageType } from '$src/interfaces/WebSocketMessageType'
-  import type { WebSocketMessage } from '$src/interfaces/WebSocketMessages'
-  import { encryptionService } from '$src/services/EncryptionService'
   import MessageBubble from '$src/components/common/chat/MessageBubble.svelte'
   import PostBody from '$src/components/common/chat/PostBody.svelte'
-  import { reactionService } from '$src/services/ReactionService'
   import { messageSenderService } from '$src/services/MessageSenderService'
   import { messageLoaderService } from '$src/services/MessageLoaderService'
   import { conversationsState, defaultMeta } from '$src/states/ConversationsState.svelte.js'
@@ -51,57 +46,6 @@
   const activeMeta = $derived(
     conversationsState.conversationMetaById.get(activeConversation?.id) ?? defaultMeta()
   )
-
-  async function handleIncomingEditedMessage(data: WebSocketMessage<Message>): Promise<void> {
-    const edited = data.payload
-    const convId = edited.conversationId
-
-    const currentMessages = conversationsState.messagesByConversationId.get(convId)
-    if (!currentMessages) return
-
-    const index = currentMessages.findIndex((m) => m?.id === edited.id)
-    if (index === -1) return
-
-    let newContent = edited.content
-    if (conversationsState.currentConversation?.type === 'DIRECT') {
-      try {
-        newContent = await encryptionService.decryptMessage(
-          edited.content,
-          edited.user.id !== sessionState.currentUser?.id
-        )
-      } catch {
-        newContent = '[Unable to decrypt]'
-      }
-    }
-
-    const updatedMessages = [...currentMessages]
-    updatedMessages[index] = {
-      ...currentMessages[index],
-      content: newContent,
-      isEdited: true
-    }
-
-    conversationsState.messagesByConversationId.set(convId, updatedMessages)
-  }
-
-  async function handleIncomingDeletedMessage(data: WebSocketMessage<Message>): Promise<void> {
-    conversationsState.deleteMessage(data.payload)
-  }
-
-  useWebsocketSvelte({
-    [WebSocketMessageType.RECEIVE_EDIT_MESSAGE]: async (data: WebSocketMessage<Message>) => {
-      await handleIncomingEditedMessage(data)
-    },
-    [WebSocketMessageType.RECEIVE_DELETE_MESSAGE]: async (data: WebSocketMessage<Message>) => {
-      await handleIncomingDeletedMessage(data)
-    },
-    [WebSocketMessageType.RECEIVE_ADD_REACTION]: (data: WebSocketMessage<MessageReaction>) => {
-      reactionService.handleIncomingReactionAdded(data.payload)
-    },
-    [WebSocketMessageType.RECEIVE_REMOVE_REACTION]: (data: WebSocketMessage<MessageReaction>) => {
-      reactionService.handleIncomingReactionRemoved(data.payload)
-    }
-  })
 
   function scrollToBottom(behavior: 'instant' | 'smooth' | 'auto' = 'instant'): void {
     if (!messagesContainer) return

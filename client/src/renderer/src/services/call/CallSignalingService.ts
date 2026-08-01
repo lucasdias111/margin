@@ -1,4 +1,4 @@
-import { webSocketService } from '$src/services/WebSocketService'
+import { webSocketService } from '$src/services/websocket/WebSocketService'
 import { WebSocketMessageType } from '$src/interfaces/WebSocketMessageType'
 import { callState } from '$src/states/CallState.svelte'
 import type { CallResponsePayload } from '$src/interfaces/WebSocketMessages'

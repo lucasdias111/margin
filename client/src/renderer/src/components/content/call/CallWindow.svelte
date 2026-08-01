@@ -5,12 +5,6 @@
   import { cubicInOut } from 'svelte/easing'
   import { callState } from '$src/states/CallState.svelte'
   import { callService } from '$src/services/call/CallService'
-  import {
-    onCallCandidate,
-    onCallCreated,
-    onCallMediaState,
-    onCallResponse
-  } from '$src/composables/useCallWebSocket.svelte'
   import CallPipWidget from '$src/components/content/call/CallPipWidget.svelte'
   import CallLayout from '$src/components/content/call/CallLayout.svelte'
   import { NotificationSounds } from '$src/utils/NotificationSounds'
@@ -44,13 +38,6 @@
     return new MediaStream([videoTrack])
   })
   const isAudioEnabled = $derived(callState.p2pCallState?.isAudioEnabled ?? true)
-
-  onCallCreated((data) => callState.setCallId(data.payload!.callId))
-  onCallResponse(async (data) => await callService.handleCallResponse(data))
-  onCallCandidate(async (data) => await callService.handleCallCandidate(data))
-  onCallMediaState((data) =>
-    callService.handleMediaState(data.payload!.video, data.payload!.screenShare)
-  )
 
   onMount(async () => {
     if (isIncoming) {

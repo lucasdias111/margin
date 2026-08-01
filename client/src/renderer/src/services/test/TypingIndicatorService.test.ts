@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { typingIndicatorService } from '../TypingIndicatorService'
-import { webSocketService } from '$src/services/WebSocketService'
+import { webSocketService } from '$src/services/websocket/WebSocketService'
 import { typingIndicatorState } from '$src/states/TypingIndicatorState.svelte'
 import { WebSocketMessageType } from '$src/interfaces/WebSocketMessageType'
 import type {
@@ -8,7 +8,7 @@ import type {
   WebSocketMessage
 } from '$src/interfaces/WebSocketMessages'
 
-vi.mock('$src/services/WebSocketService', () => ({
+vi.mock('$src/services/websocket/WebSocketService', () => ({
   webSocketService: {
     send: vi.fn()
   }

@@ -1,18 +1,18 @@
 import type { Message } from '$src/interfaces/Messages'
 import { type DirectConversation, type GroupConversation } from '$src/interfaces/Conversation'
-import { encryptionService } from './EncryptionService'
+import { encryptionService } from '$src/services/EncryptionService'
 import type { WebSocketMessage } from '$src/interfaces/WebSocketMessages'
 import { View } from '$src/interfaces/View'
 import { navigationState } from '$src/states/NavigationState.svelte'
 import { sessionState } from '$src/states/SessionState.svelte'
 import { conversationsState } from '$src/states/ConversationsState.svelte.js'
 import { notificationService } from '$src/services/NotificationService'
-import { messageSenderService } from './MessageSenderService'
-import { messageLoaderService } from './MessageLoaderService'
-import { threadService } from './ThreadService'
+import { messageSenderService } from '$src/services/MessageSenderService'
+import { messageLoaderService } from '$src/services/MessageLoaderService'
+import { threadService } from '$src/services/ThreadService'
 import { threadsState } from '$src/states/ThreadsState.svelte'
 
-class MessageRouter {
+class IncomingMessageService {
   handleIncomingMessage = async (data: WebSocketMessage<Message>): Promise<void> => {
     const msg = data.payload
     if (msg.conversationType === 'THREAD') {
@@ -24,6 +24,43 @@ class MessageRouter {
     } else {
       await this.handleIncomingDirectMessage(msg)
     }
+  }
+
+  handleEditedMessage = async (data: WebSocketMessage<Message>): Promise<void> => {
+    const edited = data.payload
+    const convId = edited.conversationId
+
+    const currentMessages = conversationsState.messagesByConversationId.get(convId)
+    if (!currentMessages) return
+
+    const index = currentMessages.findIndex((m) => m?.id === edited.id)
+    if (index === -1) return
+
+    const conv = conversationsState.byId.get(convId) as DirectConversation | undefined
+    let newContent = edited.content
+    if (conv?.type === 'DIRECT' && conv.encrypted) {
+      try {
+        newContent = await encryptionService.decryptMessage(
+          edited.content,
+          edited.user.id !== sessionState.currentUser?.id
+        )
+      } catch {
+        newContent = '[Unable to decrypt]'
+      }
+    }
+
+    const updatedMessages = [...currentMessages]
+    updatedMessages[index] = {
+      ...currentMessages[index],
+      content: newContent,
+      isEdited: true
+    }
+
+    conversationsState.messagesByConversationId.set(convId, updatedMessages)
+  }
+
+  handleDeletedMessage = (data: WebSocketMessage<Message>): void => {
+    conversationsState.deleteMessage(data.payload)
   }
 
   private handleIncomingThreadMessage = async (msg: Message): Promise<void> => {
@@ -164,4 +201,4 @@ class MessageRouter {
   }
 }
 
-export const messageRouter = new MessageRouter()
+export const incomingMessageService = new IncomingMessageService()
