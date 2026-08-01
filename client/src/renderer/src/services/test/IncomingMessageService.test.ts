@@ -484,7 +484,9 @@ describe('ChatService', () => {
     it('does not throw on non-ok response', async () => {
       mockApiGet({}, false)
 
-      await expect(messageLoaderService.loadConversationForUser(buildUser({ id: 2 }))).resolves.not.toThrow()
+      await expect(
+        messageLoaderService.loadConversationForUser(buildUser({ id: 2 }))
+      ).resolves.not.toThrow()
     })
   })
 
@@ -494,7 +496,11 @@ describe('ChatService', () => {
       vi.mocked(encryptionService.encryptMessage).mockResolvedValue('cipher')
       const conv = buildDirectConversation({ id: 10, otherUserId: 2, encrypted: true })
 
-      const msg = await messageSenderService.sendMessage(sessionState.currentUser!, conv, 'plain hello')
+      const msg = await messageSenderService.sendMessage(
+        sessionState.currentUser!,
+        conv,
+        'plain hello'
+      )
 
       expect(encryptionService.encryptMessage).toHaveBeenCalled()
       expect(webSocketService.send).toHaveBeenCalledWith({
@@ -511,7 +517,11 @@ describe('ChatService', () => {
       connectionState.connectionStatus = 'disconnected'
       const conv = buildDirectConversation({ id: 10, otherUserId: 2 })
 
-      const msg = await messageSenderService.sendMessage(sessionState.currentUser!, conv, 'plain hello')
+      const msg = await messageSenderService.sendMessage(
+        sessionState.currentUser!,
+        conv,
+        'plain hello'
+      )
 
       expect(msg).toBeNull()
       expect(encryptionService.encryptMessage).not.toHaveBeenCalled()
@@ -523,7 +533,11 @@ describe('ChatService', () => {
     it('does not encrypt, sends via WebSocket, returns optimistic', async () => {
       const channel = buildChannel({ conversationId: 20 })
 
-      const msg = await messageSenderService.sendChannelMessage(sessionState.currentUser!, channel, 'hi all')
+      const msg = await messageSenderService.sendChannelMessage(
+        sessionState.currentUser!,
+        channel,
+        'hi all'
+      )
 
       expect(encryptionService.encryptMessage).not.toHaveBeenCalled()
       expect(webSocketService.send).toHaveBeenCalledWith({
@@ -540,7 +554,11 @@ describe('ChatService', () => {
       connectionState.connectionStatus = 'reconnecting'
       const channel = buildChannel({ conversationId: 20 })
 
-      const msg = await messageSenderService.sendChannelMessage(sessionState.currentUser!, channel, 'hi')
+      const msg = await messageSenderService.sendChannelMessage(
+        sessionState.currentUser!,
+        channel,
+        'hi'
+      )
 
       expect(msg).toBeNull()
       expect(webSocketService.send).not.toHaveBeenCalled()
@@ -603,7 +621,9 @@ describe('ChatService', () => {
       vi.mocked(fileStorageService.uploadConversationFile).mockResolvedValue(null)
       const conv = buildDirectConversation({ id: 10, otherUserId: 2 })
 
-      await messageSenderService.sendDirectMessage(sessionState.currentUser!, conv, 'hi', [imageFile()])
+      await messageSenderService.sendDirectMessage(sessionState.currentUser!, conv, 'hi', [
+        imageFile()
+      ])
 
       const messages = conversationsState.messagesByConversationId.get(10)!
       expect(messages[0].status).toBe('error')
@@ -643,8 +663,16 @@ describe('ChatService', () => {
     it('assigns unique negative ids to placeholders sent in the same tick', async () => {
       const channel = buildChannel({ id: 5, conversationId: 20 })
 
-      const a = await messageSenderService.sendChannelMessage(sessionState.currentUser!, channel, 'one')
-      const b = await messageSenderService.sendChannelMessage(sessionState.currentUser!, channel, 'two')
+      const a = await messageSenderService.sendChannelMessage(
+        sessionState.currentUser!,
+        channel,
+        'one'
+      )
+      const b = await messageSenderService.sendChannelMessage(
+        sessionState.currentUser!,
+        channel,
+        'two'
+      )
 
       expect(a!.id).toBeLessThan(0)
       expect(b!.id).toBeLessThan(0)

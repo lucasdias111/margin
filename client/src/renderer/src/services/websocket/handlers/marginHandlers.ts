@@ -11,8 +11,5 @@ export const marginHandlers = {
     spaceService.addMemberToSpace(data.payload.spaceId, data.payload.user)
   },
 
-  // The server pushes this when someone is invited to a margin, but the invite
-  // list is REST-driven and only refreshed on load/resync. Explicitly dropped
-  // here so the registry stays exhaustive and the gap stays visible.
   [WebSocketMessageType.MARGIN_INVITE]: () => {}
 } satisfies Partial<Record<WebSocketMessageType, MessageHandler>>

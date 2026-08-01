@@ -54,7 +54,6 @@ describe('IncomingCallService', () => {
       expect(incomingCallState.offer).toBeNull()
     })
 
-    // Used to throw: the old handler dereferenced the payload without a guard.
     it('does nothing when there is no pending offer', () => {
       expect(() => incomingCallService.declineCall()).not.toThrow()
       expect(callService.rejectCall).not.toHaveBeenCalled()

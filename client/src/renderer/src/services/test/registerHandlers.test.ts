@@ -160,9 +160,6 @@ describe('websocket handler registry', () => {
     expect(registeredHandlers(WebSocketMessageType.RECEIVE_MESSAGE)).toHaveLength(1)
   })
 
-  // Regression: these four used to be subscribed by MessagesContainer, so they were
-  // dropped whenever no chat was mounted (Manage / Notifications views). They mutate
-  // global conversation state and must live at session scope.
   describe('message mutations are handled without a chat component mounted', () => {
     const conversationId = 10
     const currentUser = buildUser({ id: 1 })

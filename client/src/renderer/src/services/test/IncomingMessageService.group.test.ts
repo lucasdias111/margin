@@ -194,10 +194,10 @@ describe('ChatService group messaging', () => {
 
       await messageSenderService.sendGroupMessage(currentUser, group, 'secret')
 
-      expect(encryptionService.encryptMessageForGroup).toHaveBeenCalledWith(
-        'secret',
-        { '1': 'key1', '2': 'key2' }
-      )
+      expect(encryptionService.encryptMessageForGroup).toHaveBeenCalledWith('secret', {
+        '1': 'key1',
+        '2': 'key2'
+      })
       expect(webSocketService.send).toHaveBeenCalledWith(
         expect.objectContaining({
           payload: expect.objectContaining({ content: 'encrypted-blob' })
@@ -231,7 +231,11 @@ describe('ChatService group messaging', () => {
       const group = buildGroupConversation({ id: 30, encrypted: true })
       conversationsState.byId.set(30, group)
 
-      const encryptedMsg = buildMessage({ conversationId: 30, conversationType: 'GROUP', content: 'cipher' })
+      const encryptedMsg = buildMessage({
+        conversationId: 30,
+        conversationType: 'GROUP',
+        content: 'cipher'
+      })
       const messagesResponse: ConversationMessagesResponse = {
         conversation: group as any,
         messages: [encryptedMsg]
@@ -244,7 +248,10 @@ describe('ChatService group messaging', () => {
 
       vi.mocked(encryptionService.decryptGroupMessage).mockResolvedValue('plaintext')
 
-      vi.mocked(api.authenticatedPost).mockResolvedValue({ ok: true, json: async () => {} } as Response)
+      vi.mocked(api.authenticatedPost).mockResolvedValue({
+        ok: true,
+        json: async () => {}
+      } as Response)
 
       await messageLoaderService.loadConversationForGroup(group, true)
 

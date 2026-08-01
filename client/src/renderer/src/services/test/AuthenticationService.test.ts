@@ -202,7 +202,10 @@ describe('AuthenticationService', () => {
 
       expect(encryptionService.decryptPrivateKey).not.toHaveBeenCalled()
       expect(encryptionService.generateKeyPair).toHaveBeenCalled()
-      expect(encryptionService.encryptPrivateKey).toHaveBeenCalledWith('new-priv-key', 'password123')
+      expect(encryptionService.encryptPrivateKey).toHaveBeenCalledWith(
+        'new-priv-key',
+        'password123'
+      )
       expect(api.authenticatedPut).toHaveBeenCalledWith(
         {
           publicKey: 'new-pub-key',
@@ -270,11 +273,7 @@ describe('AuthenticationService', () => {
         ok: true
       } as Response)
 
-      const result = await authenticationService.register(
-        'John Doe',
-        'secret123',
-        'john@test.com'
-      )
+      const result = await authenticationService.register('John Doe', 'secret123', 'john@test.com')
 
       expect(encryptionService.generateKeyPair).toHaveBeenCalled()
       expect(encryptionService.encryptPrivateKey).toHaveBeenCalledWith(
@@ -393,7 +392,9 @@ describe('AuthenticationService', () => {
     it('resolves without throwing on ok response', async () => {
       vi.mocked(api.unauthenticatedPost).mockResolvedValue({ ok: true } as Response)
 
-      await expect(authenticationService.forgotPassword('alice@margin.chat')).resolves.toBeUndefined()
+      await expect(
+        authenticationService.forgotPassword('alice@margin.chat')
+      ).resolves.toBeUndefined()
     })
 
     it('throws on non-ok response', async () => {

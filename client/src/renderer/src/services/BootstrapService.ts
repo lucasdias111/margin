@@ -10,24 +10,9 @@ import { usersService } from '$src/services/UsersService'
 
 const RESYNC_COOLDOWN_MS = 2000
 
-/**
- * Owns what the authenticated session needs loaded — once at startup, and again
- * whenever the client has been out of touch (socket reconnect, or the OS
- * reporting the user active again after idle).
- */
 class BootstrapService {
   private lastResyncAt = 0
 
-  /**
-   * Kept sequential deliberately — the order is load-bearing:
-   * - `getCurrentUser` must resolve first; the loads below decrypt with it.
-   * - `loadRecentChatUsers` carries over `meta.unread`, so
-   *   `loadUnreadConversations` has to have run.
-   * - `loadInbox` calls `threadsState.setInbox`, which clears and repopulates
-   *   thread unread from the server, so it has to run *after*
-   *   `loadUnreadConversations` marks threads unread — otherwise those marks
-   *   survive and contradict the inbox.
-   */
   async loadInitialData(): Promise<void> {
     await sessionHandler.getCurrentUser()
     await messageLoaderService.loadUnreadConversations()
@@ -39,7 +24,6 @@ class BootstrapService {
     await threadService.loadInbox()
   }
 
-  /** Re-reads anything that may have drifted, plus the conversation on screen. */
   async resync(): Promise<void> {
     const now = Date.now()
     if (now - this.lastResyncAt < RESYNC_COOLDOWN_MS) return

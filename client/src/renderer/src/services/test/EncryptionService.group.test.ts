@@ -63,6 +63,8 @@ describe('EncryptionService group encryption', () => {
 
     const encrypted = await service.encryptMessageForGroup('hi', { '1': publicKey })
 
-    await expect(service.decryptGroupMessage(encrypted, 1)).rejects.toThrow('No private key available')
+    await expect(service.decryptGroupMessage(encrypted, 1)).rejects.toThrow(
+      'No private key available'
+    )
   })
 })

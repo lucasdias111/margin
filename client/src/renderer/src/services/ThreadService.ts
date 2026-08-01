@@ -15,7 +15,11 @@ import { threadsState } from '$src/states/ThreadsState.svelte'
 class ThreadService {
   private static readonly PAGE_SIZE = 30
 
-  async createPost(channel: Channel, title: string, body: string): Promise<ThreadConversation | null> {
+  async createPost(
+    channel: Channel,
+    title: string,
+    body: string
+  ): Promise<ThreadConversation | null> {
     const response = await authenticatedPost({ title, body }, `channels/${channel.id}/threads`)
     if (!response.ok) return null
     const thread: ThreadConversation = await response.json()

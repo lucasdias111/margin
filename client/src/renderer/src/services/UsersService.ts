@@ -36,7 +36,6 @@ class UsersService {
     return await response.json()
   }
 
-  /** Fetches the recent-chat list, decrypts each preview, and loads it into state. */
   async loadRecentChatUsers(): Promise<void> {
     const users = await this.getRecentChatUsers()
     const decrypted = await Promise.all(users.map((user) => this.decryptLastMessage(user)))

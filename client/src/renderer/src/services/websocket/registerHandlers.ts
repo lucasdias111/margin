@@ -9,11 +9,6 @@ import { messageHandlers } from '$src/services/websocket/handlers/messageHandler
 import { presenceHandlers } from '$src/services/websocket/handlers/presenceHandlers'
 import { voiceHandlers } from '$src/services/websocket/handlers/voiceHandlers'
 
-/**
- * Types the client only ever sends. Everything else must have a handler —
- * `inboundHandlers` below is typed to fail compilation if one is missing, so a
- * new server-pushed message type cannot be added without being handled.
- */
 export const OUTBOUND_ONLY = [
   WebSocketMessageType.SEND_MESSAGE,
   WebSocketMessageType.SEND_EDIT_MESSAGE,
@@ -38,11 +33,6 @@ export const inboundHandlers: Record<InboundMessageType, MessageHandler> = {
   ...accountHandlers
 }
 
-/**
- * Wires the socket to the session layer and subscribes every inbound handler.
- * Must run before `webSocketService.connect()` so no frame arrives before its
- * handler exists. Handlers are session-scoped, not component-scoped.
- */
 export function registerWebSocketHandlers(): () => void {
   webSocketService.configureSession(webSocketSessionAdapter)
 

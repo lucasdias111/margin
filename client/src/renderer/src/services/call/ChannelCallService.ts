@@ -1,6 +1,12 @@
 import { authenticatedPost } from '$src/services/api'
 import { Device } from 'mediasoup-client'
-import type { Producer, RtpCapabilities, RtpParameters, Transport, TransportOptions } from 'mediasoup-client/types'
+import type {
+  Producer,
+  RtpCapabilities,
+  RtpParameters,
+  Transport,
+  TransportOptions
+} from 'mediasoup-client/types'
 import { callState } from '$src/states/CallState.svelte.js'
 import { errorService } from '$src/services/ErrorService'
 import {
@@ -378,7 +384,9 @@ class ChannelCallService {
     callState.setGroupVideoQuality(height)
     if (!session.videoProducer) return
     const effective = height ?? session.maxVideoHeight
-    const constraint: MediaTrackConstraints | boolean = effective ? { height: { max: effective } } : true
+    const constraint: MediaTrackConstraints | boolean = effective
+      ? { height: { max: effective } }
+      : true
     const stream = await navigator.mediaDevices.getUserMedia({ video: constraint })
     const newTrack = stream.getVideoTracks()[0]
     await session.videoProducer.replaceTrack({ track: newTrack })

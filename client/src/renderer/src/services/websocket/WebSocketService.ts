@@ -8,10 +8,6 @@ export type MessageHandler = (data: WebSocketMessage<unknown>) => void
 
 export type LifecycleEvent = 'connected' | 'reconnected' | 'disconnected'
 
-/**
- * Everything the transport needs from the session layer. Injected rather than
- * imported so the socket never reaches into auth or routing itself.
- */
 export interface WebSocketSessionAdapter {
   getToken(): string | null
   restoreSession(): Promise<boolean>

@@ -1,5 +1,10 @@
 import { authenticatedDelete, authenticatedGet, authenticatedPost } from '$src/services/api'
-import type { CheckoutResponse, Subscription, SubscriptionTier, TierPrice } from '$src/interfaces/Subscription'
+import type {
+  CheckoutResponse,
+  Subscription,
+  SubscriptionTier,
+  TierPrice
+} from '$src/interfaces/Subscription'
 
 class SubscriptionService {
   async fetchForMargin(marginId: number): Promise<Subscription> {

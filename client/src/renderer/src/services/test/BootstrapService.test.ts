@@ -43,7 +43,6 @@ vi.mock('$src/services/MarginService', () => ({
   marginService: { loadMarginsForUser: vi.fn() }
 }))
 
-/** Records the order in which the mocked loaders were invoked. */
 function trackCallOrder(): string[] {
   const order: string[] = []
   const record = (name: string) => () => {
@@ -84,10 +83,6 @@ describe('BootstrapService', () => {
       expect(order[0]).toBe('currentUser')
     })
 
-    // Ordering is load-bearing, not incidental:
-    // - loadRecentChatUsers carries over meta.unread, so unread must run first
-    // - threadsState.setInbox clears and repopulates thread unread, so the thread
-    //   inbox must run last or it would be contradicted by loadUnreadConversations
     it('loads unread before recent chats, and the thread inbox after both', async () => {
       const order = trackCallOrder()
 

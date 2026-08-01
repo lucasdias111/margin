@@ -56,8 +56,6 @@ describe('MessageLoaderService.loadUnreadConversations', () => {
     expect(conversationsState.conversationMetaById.get(10)?.unread).toBe(true)
   })
 
-  // The unread dot has to render before the margin is opened, so a channel the
-  // client has not otherwise loaded gets a placeholder conversation.
   it('creates a placeholder conversation for an unloaded channel', async () => {
     respondWith({ channelUnreads: [{ conversationId: 20, marginId: 3 }] })
 
@@ -97,10 +95,6 @@ describe('MessageLoaderService.loadUnreadConversations', () => {
     expect(threadsState.isUnread(40)).toBe(true)
   })
 
-  // ThreadsState.markUnread only records ids the inbox already knows, and
-  // ThreadService.loadInbox clears/repopulates unread from the server. This is
-  // why BootstrapService runs the thread inbox *after* this call — see
-  // BootstrapService.test.ts.
   it('does not record an unread thread the inbox has never seen', async () => {
     respondWith({ threadConversationIds: [40] })
 

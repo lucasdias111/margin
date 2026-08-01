@@ -1,4 +1,3 @@
-/** Matches the `max-width: 768px` breakpoint used throughout the stylesheets. */
 const MOBILE_BREAKPOINT = 768
 
 class ViewportState {
@@ -8,7 +7,6 @@ class ViewportState {
     return this.width <= MOBILE_BREAKPOINT
   }
 
-  /** Tracks window width until the returned teardown is called. */
   observe(): () => void {
     if (typeof window === 'undefined') return () => {}
 

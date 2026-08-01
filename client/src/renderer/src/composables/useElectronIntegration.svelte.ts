@@ -3,14 +3,6 @@ import { notificationService } from '$src/services/NotificationService'
 import { updateService } from '$src/services/UpdateService'
 import { isElectron } from '$src/utils/platformUtils'
 
-/**
- * Wires the renderer to the Electron main process: auto-updater events, the
- * dock/taskbar unread badge, and the OS telling us the user is active again
- * after idle (which is a cue to resync). No-op in the web build.
- *
- * Must be called during component initialisation — it registers an `onMount`
- * and an `$effect`.
- */
 export function useElectronIntegration(onUserActive: () => void): void {
   onMount(() => {
     if (!isElectron()) return

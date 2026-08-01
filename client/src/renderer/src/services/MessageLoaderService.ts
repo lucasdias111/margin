@@ -26,11 +26,6 @@ function lastMessageOf(messages: Message[]): string | null {
 class MessageLoaderService {
   private static readonly PAGE_SIZE = 30
 
-  /**
-   * Seeds unread state for every conversation flavour at startup and on resync.
-   * Channel conversations the client has not otherwise loaded get a placeholder
-   * entry so the unread dot can render before the margin is opened.
-   */
   async loadUnreadConversations(): Promise<void> {
     const response = await authenticatedGet('conversations/unread')
     const unread: UnreadConversations = await response.json()

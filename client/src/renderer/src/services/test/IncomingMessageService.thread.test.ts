@@ -11,7 +11,12 @@ import { WebSocketMessageType } from '$src/interfaces/WebSocketMessageType'
 import * as api from '$src/services/api'
 import { View } from '$src/interfaces/View'
 import type { ThreadSummary } from '$src/interfaces/Thread'
-import { buildMessage, buildReaction, buildThreadConversation, buildUser } from '$src/test-utils/mocks'
+import {
+  buildMessage,
+  buildReaction,
+  buildThreadConversation,
+  buildUser
+} from '$src/test-utils/mocks'
 
 vi.mock('$src/services/EncryptionService', () => ({
   encryptionService: {
