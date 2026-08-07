@@ -36,6 +36,36 @@ class UsersService {
     return await response.json()
   }
 
+  async loadRecentChatUsers(): Promise<void> {
+    const users = await this.getRecentChatUsers()
+    const decrypted = await Promise.all(users.map((user) => this.decryptLastMessage(user)))
+    this.loadRecentConversations(decrypted)
+  }
+
+  private async decryptLastMessage(recentUser: RecentChatUser): Promise<RecentChatUser> {
+    if (!recentUser.lastMessage) return recentUser
+
+    const conversation = recentUser.conversation
+    if (!('encrypted' in conversation) || !conversation.encrypted) return recentUser
+
+    try {
+      recentUser.lastMessage =
+        conversation.type === 'GROUP'
+          ? await encryptionService.decryptGroupMessage(
+              recentUser.lastMessage,
+              sessionState.currentUser.id
+            )
+          : await encryptionService.decryptMessage(
+              recentUser.lastMessage,
+              recentUser.lastMessageIncoming
+            )
+    } catch {
+      recentUser.lastMessage = '[Unable to decrypt]'
+    }
+
+    return recentUser
+  }
+
   async updateUserInfo(formData: FormData): Promise<void> {
     const response = await authenticatedPatchForm(formData, 'users/update_user_info')
     if (!response.ok) throw new Error('Update failed')

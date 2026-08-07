@@ -68,15 +68,17 @@ class ThreadsState {
     }))
   }
 
-  setPostFollowing(channelConversationId: number, threadConversationId: number, following: boolean): void {
+  setPostFollowing(
+    channelConversationId: number,
+    threadConversationId: number,
+    following: boolean
+  ): void {
     const posts = this._postsByChannelConversationId.get(channelConversationId)
     if (!posts) return
     this._postsByChannelConversationId.set(
       channelConversationId,
       posts.map((p) =>
-        p.thread.id === threadConversationId
-          ? { ...p, thread: { ...p.thread, following } }
-          : p
+        p.thread.id === threadConversationId ? { ...p, thread: { ...p.thread, following } } : p
       )
     )
   }
@@ -104,9 +106,7 @@ class ThreadsState {
       if (!posts.some((p) => p.thread.id === threadConversationId)) continue
       this._postsByChannelConversationId.set(
         channelConvId,
-        posts
-          .map((p) => (p.thread.id === threadConversationId ? update(p) : p))
-          .sort(byMostRecent)
+        posts.map((p) => (p.thread.id === threadConversationId ? update(p) : p)).sort(byMostRecent)
       )
     }
   }

@@ -1,5 +1,5 @@
 import type { Message, MessageReaction } from '$src/interfaces/Messages'
-import { webSocketService } from './WebSocketService'
+import { webSocketService } from '$src/services/websocket/WebSocketService'
 import { WebSocketMessageType } from '$src/interfaces/WebSocketMessageType'
 import { conversationsState } from '$src/states/ConversationsState.svelte.js'
 

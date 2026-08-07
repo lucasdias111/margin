@@ -1,11 +1,17 @@
-import { authenticatedPost, authenticatedPut, setUnauthenticatedHandler, unauthenticatedPost } from './api'
+import {
+  authenticatedPost,
+  authenticatedPut,
+  setUnauthenticatedHandler,
+  unauthenticatedPost
+} from './api'
 import { encryptionService } from './EncryptionService'
 import { usersState } from '$src/states/UsersState.svelte.js'
 import { callState } from '$src/states/CallState.svelte'
+import { incomingCallState } from '$src/states/IncomingCallState.svelte'
 import { API_CONFIG } from '$src/shared/config'
 import type { AuthResponse } from '$src/interfaces/AuthResponse'
 import { errorService } from '$src/services/ErrorService'
-import { webSocketService } from '$src/services/WebSocketService'
+import { webSocketService } from '$src/services/websocket/WebSocketService'
 import { push } from 'svelte-spa-router'
 import { isElectron } from '$src/utils/platformUtils'
 import { navigationService } from '$src/services/NavigationService'
@@ -63,7 +69,10 @@ class AuthenticationService {
     password: string
   ): Promise<{ publicKey: string; privateKey: string }> {
     const { publicKey, privateKey } = await encryptionService.generateKeyPair()
-    const { encryptedKey, salt, iv } = await encryptionService.encryptPrivateKey(privateKey, password)
+    const { encryptedKey, salt, iv } = await encryptionService.encryptPrivateKey(
+      privateKey,
+      password
+    )
     await authenticatedPut(
       { publicKey, encryptedPrivateKey: encryptedKey, salt, iv },
       'auth/encryption-keys'
@@ -182,6 +191,7 @@ class AuthenticationService {
   public async clear(): Promise<void> {
     webSocketService.disconnect()
     callState.endCall()
+    incomingCallState.clear()
 
     usersState.reset()
     navigationService.reset()

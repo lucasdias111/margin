@@ -14,6 +14,8 @@ import { authenticatedGet, authenticatedPost } from '$src/services/api'
 import { notificationService } from '$src/services/NotificationService'
 import { sessionState } from '$src/states/SessionState.svelte'
 import { conversationsState, defaultMeta } from '$src/states/ConversationsState.svelte.js'
+import { threadsState } from '$src/states/ThreadsState.svelte'
+import type { UnreadConversations } from '$src/interfaces/UnreadCount'
 import { lastMessagePreviewText } from '$src/utils/messagePreview'
 
 function lastMessageOf(messages: Message[]): string | null {
@@ -23,6 +25,37 @@ function lastMessageOf(messages: Message[]): string | null {
 
 class MessageLoaderService {
   private static readonly PAGE_SIZE = 30
+
+  async loadUnreadConversations(): Promise<void> {
+    const response = await authenticatedGet('conversations/unread')
+    const unread: UnreadConversations = await response.json()
+
+    for (const id of unread.directConversationIds) {
+      conversationsState.markUnread(id)
+    }
+
+    for (const id of unread.groupConversationIds ?? []) {
+      conversationsState.markUnread(id)
+    }
+
+    for (const channel of unread.channelUnreads) {
+      if (!conversationsState.byId.has(channel.conversationId)) {
+        conversationsState.byId.set(channel.conversationId, {
+          id: channel.conversationId,
+          type: 'CHANNEL',
+          channelId: -1,
+          name: '',
+          createdAt: new Date().toISOString()
+        })
+      }
+      conversationsState.markUnread(channel.conversationId)
+      conversationsState.setMarginForConversation(channel.conversationId, channel.marginId)
+    }
+
+    for (const id of unread.threadConversationIds ?? []) {
+      threadsState.markUnread(id)
+    }
+  }
 
   async loadConversationForUser(user: User, force = false): Promise<void> {
     if (!force) {

@@ -1,9 +1,9 @@
 import { describe, expect, it, vi } from 'vitest'
 import { channelCallService } from '../call/ChannelCallService'
-import { webSocketService } from '$src/services/WebSocketService'
+import { webSocketService } from '$src/services/websocket/WebSocketService'
 import { WebSocketMessageType } from '$src/interfaces/WebSocketMessageType'
 
-vi.mock('$src/services/WebSocketService', () => ({
+vi.mock('$src/services/websocket/WebSocketService', () => ({
   webSocketService: {
     send: vi.fn()
   }

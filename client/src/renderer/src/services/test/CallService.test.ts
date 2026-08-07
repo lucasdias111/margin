@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { callService } from '../call/CallService'
 import { callState } from '$src/states/CallState.svelte.js'
 import { callSignalingService } from '$src/services/call/CallSignalingService'
-import { webSocketService } from '$src/services/WebSocketService'
+import { webSocketService } from '$src/services/websocket/WebSocketService'
 import { deviceService } from '$src/services/DeviceService'
 import { WebSocketMessageType } from '$src/interfaces/WebSocketMessageType'
 import type { User } from '$src/interfaces/User'
@@ -84,7 +84,7 @@ vi.mock('$src/services/call/CallSignalingService', () => ({
   }
 }))
 
-vi.mock('$src/services/WebSocketService', () => ({
+vi.mock('$src/services/websocket/WebSocketService', () => ({
   webSocketService: {
     send: vi.fn()
   }

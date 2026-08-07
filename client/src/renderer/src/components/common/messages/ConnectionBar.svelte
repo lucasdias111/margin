@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { webSocketService } from '$src/services/WebSocketService'
+  import { webSocketService } from '$src/services/websocket/WebSocketService'
   import { connectionState } from '$src/states/ConnectionState.svelte'
 </script>
 

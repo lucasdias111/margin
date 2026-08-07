@@ -3,7 +3,7 @@ import { callSignalingService } from '$src/services/call/CallSignalingService'
 import type { User } from '$src/interfaces/User'
 import type { CallResponsePayload, WebSocketMessage } from '$src/interfaces/WebSocketMessages'
 import { errorService } from '$src/services/ErrorService'
-import { webSocketService } from '$src/services/WebSocketService'
+import { webSocketService } from '$src/services/websocket/WebSocketService'
 import { WebSocketMessageType } from '$src/interfaces/WebSocketMessageType'
 import {
   deviceService,

@@ -76,6 +76,12 @@ class NavigationState {
     this._selectedThread = value
   }
 
+  get hasSelection(): boolean {
+    if (this._view === View.Private) return !!this._selectedUser
+    if (this._view === View.Margin) return !!this._selectedChannel
+    return false
+  }
+
   get manageTab(): ManageTab {
     return this._manageTab
   }

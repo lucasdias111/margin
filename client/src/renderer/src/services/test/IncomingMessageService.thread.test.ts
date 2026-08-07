@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { messageRouter } from '../MessageRouter'
+import { incomingMessageService } from '$src/services/websocket/handlers/IncomingMessageService'
 import { reactionService } from '../ReactionService'
 import { notificationService } from '$src/services/NotificationService'
 import { conversationsState } from '$src/states/ConversationsState.svelte'
@@ -11,7 +11,12 @@ import { WebSocketMessageType } from '$src/interfaces/WebSocketMessageType'
 import * as api from '$src/services/api'
 import { View } from '$src/interfaces/View'
 import type { ThreadSummary } from '$src/interfaces/Thread'
-import { buildMessage, buildReaction, buildThreadConversation, buildUser } from '$src/test-utils/mocks'
+import {
+  buildMessage,
+  buildReaction,
+  buildThreadConversation,
+  buildUser
+} from '$src/test-utils/mocks'
 
 vi.mock('$src/services/EncryptionService', () => ({
   encryptionService: {
@@ -21,7 +26,7 @@ vi.mock('$src/services/EncryptionService', () => ({
   }
 }))
 
-vi.mock('$src/services/WebSocketService', () => ({
+vi.mock('$src/services/websocket/WebSocketService', () => ({
   webSocketService: { send: vi.fn() }
 }))
 
@@ -74,7 +79,7 @@ function buildThreadReply(overrides = {}): ReturnType<typeof buildMessage> {
   })
 }
 
-describe('MessageRouter — THREAD messages (posts)', () => {
+describe('IncomingMessageService — THREAD messages (posts)', () => {
   const currentUser = buildUser({ id: 1 })
 
   beforeEach(() => {
@@ -102,7 +107,7 @@ describe('MessageRouter — THREAD messages (posts)', () => {
     conversationsState.byId.set(40, buildThreadConversation({ id: 40 }))
     threadsState.setInbox([buildPostSummary()])
 
-    await messageRouter.handleIncomingMessage({
+    await incomingMessageService.handleIncomingMessage({
       type: WebSocketMessageType.RECEIVE_MESSAGE,
       timestamp: 0,
       payload: buildThreadReply({ createdAt: '2025-06-02T10:00:00Z' })
@@ -122,7 +127,7 @@ describe('MessageRouter — THREAD messages (posts)', () => {
       channelType: 'Thread'
     }
 
-    await messageRouter.handleIncomingMessage({
+    await incomingMessageService.handleIncomingMessage({
       type: WebSocketMessageType.RECEIVE_MESSAGE,
       timestamp: 0,
       payload: buildThreadReply()
@@ -136,7 +141,7 @@ describe('MessageRouter — THREAD messages (posts)', () => {
     conversationsState.messagesByConversationId.set(40, [])
 
     const msg = buildThreadReply()
-    await messageRouter.handleIncomingMessage({
+    await incomingMessageService.handleIncomingMessage({
       type: WebSocketMessageType.RECEIVE_MESSAGE,
       timestamp: 0,
       payload: msg
@@ -150,7 +155,7 @@ describe('MessageRouter — THREAD messages (posts)', () => {
     threadsState.setInbox([buildPostSummary()])
 
     const msg = buildThreadReply()
-    await messageRouter.handleIncomingMessage({
+    await incomingMessageService.handleIncomingMessage({
       type: WebSocketMessageType.RECEIVE_MESSAGE,
       timestamp: 0,
       payload: msg
@@ -163,7 +168,7 @@ describe('MessageRouter — THREAD messages (posts)', () => {
   it('does not notify for posts the user does not follow', async () => {
     conversationsState.byId.set(40, buildThreadConversation({ id: 40 }))
 
-    await messageRouter.handleIncomingMessage({
+    await incomingMessageService.handleIncomingMessage({
       type: WebSocketMessageType.RECEIVE_MESSAGE,
       timestamp: 0,
       payload: buildThreadReply()
@@ -206,7 +211,7 @@ describe('MessageRouter — THREAD messages (posts)', () => {
     threadsState.setInbox([buildPostSummary({ thread })])
     vi.spyOn(document, 'hasFocus').mockReturnValue(true)
 
-    await messageRouter.handleIncomingMessage({
+    await incomingMessageService.handleIncomingMessage({
       type: WebSocketMessageType.RECEIVE_MESSAGE,
       timestamp: 0,
       payload: buildThreadReply()

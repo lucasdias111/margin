@@ -1,5 +1,9 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { webSocketService } from '../WebSocketService'
+import {
+  webSocketService,
+  type LifecycleEvent,
+  type WebSocketSessionAdapter
+} from '$src/services/websocket/WebSocketService'
 import { connectionState } from '$src/states/ConnectionState.svelte'
 import { WebSocketMessageType } from '$src/interfaces/WebSocketMessageType'
 import type { WebSocketMessage } from '$src/interfaces/WebSocketMessages'
@@ -7,13 +11,6 @@ import type { WebSocketMessage } from '$src/interfaces/WebSocketMessages'
 vi.mock('$src/states/ConnectionState.svelte', () => ({
   connectionState: {
     connectionStatus: 'disconnected'
-  }
-}))
-
-vi.mock('$src/services/AuthenticationService', () => ({
-  authenticationService: {
-    tryRestoreSession: vi.fn(),
-    logoutUser: vi.fn().mockResolvedValue(undefined)
   }
 }))
 
@@ -29,10 +26,6 @@ vi.mock('$src/shared/config', () => ({
   }
 }))
 
-vi.mock('svelte-spa-router', () => ({
-  push: vi.fn()
-}))
-
 interface MockWebSocket {
   readyState: number
   send: ReturnType<typeof vi.fn>
@@ -44,6 +37,20 @@ interface MockWebSocket {
 }
 
 let lastCreatedWs: MockWebSocket | null = null
+let session: WebSocketSessionAdapter & {
+  getToken: ReturnType<typeof vi.fn>
+  restoreSession: ReturnType<typeof vi.fn>
+  onSessionInvalid: ReturnType<typeof vi.fn>
+}
+
+function installSessionStub(): void {
+  session = {
+    getToken: vi.fn().mockReturnValue(null),
+    restoreSession: vi.fn().mockResolvedValue(false),
+    onSessionInvalid: vi.fn()
+  }
+  webSocketService.configureSession(session)
+}
 
 function installWebSocketMock(): void {
   globalThis.WebSocket = vi.fn(function () {
@@ -78,16 +85,16 @@ function resetInternalState(): void {
   setInternalWs(null)
   const service = webSocketService as unknown as {
     handlers: Map<string, ((data: WebSocketMessage<unknown>) => void)[]>
+    lifecycleListeners: Map<LifecycleEvent, (() => void)[]>
     reconnectAttempts: number
     intentionalDisconnect: boolean
-    isConnecting: boolean
-    onReconnectCallback: (() => void) | null
+    isRestoringSession: boolean
   }
   service.handlers.clear()
+  service.lifecycleListeners.clear()
   service.reconnectAttempts = 0
   service.intentionalDisconnect = false
-  service.isConnecting = false
-  service.onReconnectCallback = null
+  service.isRestoringSession = false
 }
 
 function createFakeToken(expiresInMs: number = 3600_000): string {
@@ -97,7 +104,7 @@ function createFakeToken(expiresInMs: number = 3600_000): string {
 }
 
 function connectWithToken(): MockWebSocket {
-  sessionStorage.setItem('authToken', createFakeToken())
+  session.getToken.mockReturnValue(createFakeToken())
   webSocketService.connect()
   lastCreatedWs!.readyState = WebSocket.OPEN
   lastCreatedWs!.onopen?.({} as Event)
@@ -106,8 +113,8 @@ function connectWithToken(): MockWebSocket {
 
 describe('WebSocketService', () => {
   beforeEach(() => {
-    sessionStorage.clear()
     installWebSocketMock()
+    installSessionStub()
     resetInternalState()
     connectionState.connectionStatus = 'disconnected'
     lastCreatedWs = null
@@ -254,15 +261,51 @@ describe('WebSocketService', () => {
     })
   })
 
-  describe('onReconnect', () => {
-    it('stores the reconnect callback', () => {
-      const callback = vi.fn()
+  describe('onLifecycle', () => {
+    it('notifies every listener for an event, not just the last one', () => {
+      const first = vi.fn()
+      const second = vi.fn()
+      webSocketService.onLifecycle('reconnected', first)
+      webSocketService.onLifecycle('reconnected', second)
 
-      webSocketService.onReconnect(callback)
+      const service = webSocketService as unknown as { reconnectAttempts: number }
+      service.reconnectAttempts = 1
+      connectWithToken()
 
-      const stored = (webSocketService as unknown as { onReconnectCallback: (() => void) | null })
-        .onReconnectCallback
-      expect(stored).toBe(callback)
+      expect(first).toHaveBeenCalled()
+      expect(second).toHaveBeenCalled()
+    })
+
+    it('stops notifying after the returned unsubscribe is called', () => {
+      const listener = vi.fn()
+      const unsubscribe = webSocketService.onLifecycle('reconnected', listener)
+
+      unsubscribe()
+
+      const service = webSocketService as unknown as { reconnectAttempts: number }
+      service.reconnectAttempts = 1
+      connectWithToken()
+
+      expect(listener).not.toHaveBeenCalled()
+    })
+
+    it('emits connected on a successful open', () => {
+      const listener = vi.fn()
+      webSocketService.onLifecycle('connected', listener)
+
+      connectWithToken()
+
+      expect(listener).toHaveBeenCalled()
+    })
+
+    it('emits disconnected on an intentional disconnect', () => {
+      connectWithToken()
+      const listener = vi.fn()
+      webSocketService.onLifecycle('disconnected', listener)
+
+      webSocketService.disconnect()
+
+      expect(listener).toHaveBeenCalled()
     })
   })
 
@@ -324,41 +367,32 @@ describe('WebSocketService', () => {
       expect(connectionState.connectionStatus).toBe('connected')
     })
 
-    it('fires reconnect callback when reconnecting successfully', () => {
-      const callback = vi.fn()
-      webSocketService.onReconnect(callback)
+    it('hands an expired token back to the session layer instead of connecting', () => {
+      session.getToken.mockReturnValue(createFakeToken(-1000))
 
-      const service = webSocketService as unknown as { reconnectAttempts: number }
-      service.reconnectAttempts = 1
-
-      sessionStorage.setItem('authToken', createFakeToken())
-      webSocketService.connect()
-      lastCreatedWs!.readyState = WebSocket.OPEN
-      lastCreatedWs!.onopen?.({} as Event)
-
-      expect(callback).toHaveBeenCalled()
-    })
-
-    it('does not fire reconnect callback on first connect', () => {
-      const callback = vi.fn()
-      webSocketService.onReconnect(callback)
-
-      connectWithToken()
-
-      expect(callback).not.toHaveBeenCalled()
-    })
-
-    it('clears session and logs out when token is expired', async () => {
-      const { authenticationService } = await import('$src/services/AuthenticationService')
-
-      sessionStorage.setItem('authToken', createFakeToken(-1000))
       webSocketService.connect()
 
       expect(lastCreatedWs).toBeNull()
-      expect(sessionStorage.getItem('authToken')).toBeNull()
-      expect(sessionStorage.getItem('privateKey')).toBeNull()
       expect(connectionState.connectionStatus).toBe('disconnected')
-      expect(authenticationService.logoutUser).toHaveBeenCalled()
+      expect(session.onSessionInvalid).toHaveBeenCalled()
+    })
+
+    it('asks the session layer to restore when no token is present', async () => {
+      session.getToken.mockReturnValue(null)
+      session.restoreSession.mockResolvedValue(false)
+
+      webSocketService.connect()
+      await vi.waitFor(() => expect(session.onSessionInvalid).toHaveBeenCalled())
+
+      expect(lastCreatedWs).toBeNull()
+    })
+
+    it('reports an auth-failure close to the session layer with a reason', () => {
+      const mockWs = connectWithToken()
+
+      mockWs.onclose?.({ code: 4001, reason: 'unauthorized' } as CloseEvent)
+
+      expect(session.onSessionInvalid).toHaveBeenCalledWith('Session expired. Please log in again.')
     })
   })
 })

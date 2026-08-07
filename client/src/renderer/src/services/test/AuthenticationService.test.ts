@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { authenticationService } from '../AuthenticationService'
 import { encryptionService } from '$src/services/EncryptionService'
 import { errorService } from '$src/services/ErrorService'
-import { webSocketService } from '$src/services/WebSocketService'
+import { webSocketService } from '$src/services/websocket/WebSocketService'
 import { usersState } from '$src/states/UsersState.svelte.js'
 import { callState } from '$src/states/CallState.svelte'
 import * as api from '$src/services/api'
@@ -24,7 +24,7 @@ vi.mock('$src/services/ErrorService', () => ({
   }
 }))
 
-vi.mock('$src/services/WebSocketService', () => ({
+vi.mock('$src/services/websocket/WebSocketService', () => ({
   webSocketService: {
     disconnect: vi.fn()
   }
@@ -202,7 +202,10 @@ describe('AuthenticationService', () => {
 
       expect(encryptionService.decryptPrivateKey).not.toHaveBeenCalled()
       expect(encryptionService.generateKeyPair).toHaveBeenCalled()
-      expect(encryptionService.encryptPrivateKey).toHaveBeenCalledWith('new-priv-key', 'password123')
+      expect(encryptionService.encryptPrivateKey).toHaveBeenCalledWith(
+        'new-priv-key',
+        'password123'
+      )
       expect(api.authenticatedPut).toHaveBeenCalledWith(
         {
           publicKey: 'new-pub-key',
@@ -270,11 +273,7 @@ describe('AuthenticationService', () => {
         ok: true
       } as Response)
 
-      const result = await authenticationService.register(
-        'John Doe',
-        'secret123',
-        'john@test.com'
-      )
+      const result = await authenticationService.register('John Doe', 'secret123', 'john@test.com')
 
       expect(encryptionService.generateKeyPair).toHaveBeenCalled()
       expect(encryptionService.encryptPrivateKey).toHaveBeenCalledWith(
@@ -393,7 +392,9 @@ describe('AuthenticationService', () => {
     it('resolves without throwing on ok response', async () => {
       vi.mocked(api.unauthenticatedPost).mockResolvedValue({ ok: true } as Response)
 
-      await expect(authenticationService.forgotPassword('alice@margin.chat')).resolves.toBeUndefined()
+      await expect(
+        authenticationService.forgotPassword('alice@margin.chat')
+      ).resolves.toBeUndefined()
     })
 
     it('throws on non-ok response', async () => {

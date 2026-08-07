@@ -42,7 +42,7 @@
 
   const fieldHints: Record<string, string> = {
     displayName: 'This is how others see you in Margin. You can change it any time.',
-    email: 'Used to sign in and recover your account. You\'ll need to verify it.',
+    email: "Used to sign in and recover your account. You'll need to verify it.",
     password: 'At least 8 characters.',
     repeatPassword: 'Re-enter your password to confirm they match.'
   }
@@ -227,7 +227,10 @@
             placeholder="••••••••"
             bind:value={password}
             onfocus={() => (focusedField = 'password')}
-            onblur={() => { passwordTouched = true; focusedField = null }}
+            onblur={() => {
+              passwordTouched = true
+              focusedField = null
+            }}
             required
             autocomplete="new-password"
           />
@@ -248,7 +251,10 @@
             placeholder="••••••••"
             bind:value={repeatPassword}
             onfocus={() => (focusedField = 'repeatPassword')}
-            onblur={() => { repeatPasswordTouched = true; focusedField = null }}
+            onblur={() => {
+              repeatPasswordTouched = true
+              focusedField = null
+            }}
             required
             autocomplete="new-password"
           />
