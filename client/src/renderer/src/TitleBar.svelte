@@ -1,6 +1,8 @@
 <script lang="ts">
   let { title }: { title: string } = $props()
 
+  const isMac = window.api?.platform === 'darwin'
+
   function minimize(): void {
     window.api?.minimizeWindow()
   }
@@ -14,27 +16,29 @@
   }
 </script>
 
-<div class="titlebar">
+<div class="titlebar" class:mac={isMac}>
   <div class="titlebar-drag">
     <span class="title">{title}</span>
   </div>
-  <div class="window-controls">
-    <button class="window-button minimize" onclick={minimize} title="Minimize">
-      <svg width="10" height="10" viewBox="0 0 10 10">
-        <path d="M0,5 L10,5" stroke="currentColor" stroke-width="1" />
-      </svg>
-    </button>
-    <button class="window-button maximize" onclick={maximize} title="Maximize">
-      <svg width="10" height="10" viewBox="0 0 10 10">
-        <path d="M0,0 L10,0 L10,10 L0,10 Z" stroke="currentColor" stroke-width="1" fill="none" />
-      </svg>
-    </button>
-    <button class="window-button close" onclick={close} title="Close">
-      <svg width="10" height="10" viewBox="0 0 10 10">
-        <path d="M0,0 L10,10 M10,0 L0,10" stroke="currentColor" stroke-width="1" />
-      </svg>
-    </button>
-  </div>
+  {#if !isMac}
+    <div class="window-controls">
+      <button class="window-button minimize" onclick={minimize} title="Minimize">
+        <svg width="10" height="10" viewBox="0 0 10 10">
+          <path d="M0,5 L10,5" stroke="currentColor" stroke-width="1" />
+        </svg>
+      </button>
+      <button class="window-button maximize" onclick={maximize} title="Maximize">
+        <svg width="10" height="10" viewBox="0 0 10 10">
+          <path d="M0,0 L10,0 L10,10 L0,10 Z" stroke="currentColor" stroke-width="1" fill="none" />
+        </svg>
+      </button>
+      <button class="window-button close" onclick={close} title="Close">
+        <svg width="10" height="10" viewBox="0 0 10 10">
+          <path d="M0,0 L10,10 M10,0 L0,10" stroke="currentColor" stroke-width="1" />
+        </svg>
+      </button>
+    </div>
+  {/if}
 </div>
 
 <style>
@@ -57,10 +61,21 @@
     -webkit-app-region: drag;
   }
 
+  .titlebar.mac .titlebar-drag {
+    position: relative;
+    justify-content: center;
+  }
+
   .title {
     font-size: 13px;
     font-weight: 500;
     color: #333;
+  }
+
+  .titlebar.mac .title {
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
   }
 
   .window-controls {

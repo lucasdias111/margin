@@ -191,6 +191,7 @@ function createWindow(): void {
     show: false,
     frame: false,
     titleBarStyle: 'hidden',
+    ...(process.platform === 'darwin' ? { trafficLightPosition: { x: 12, y: 10 } } : {}),
     transparent: process.platform !== 'linux',
     hasShadow: true,
     ...(process.platform === 'linux' ? { icon } : {}),
