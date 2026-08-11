@@ -86,17 +86,6 @@ class SpaceService {
     return response.json()
   }
 
-  async fetchVoiceParticipantsForSpace(space: Space): Promise<void> {
-    await Promise.all(
-      space.channels.map(async (c) => {
-        const res = await authenticatedGet(`sfu/voice_participants/${c.id}`)
-        const participants: User[] = res.ok ? await res.json() : []
-        for (const user of participants) usersState.add(user)
-        c.voiceParticipants = participants
-      })
-    )
-  }
-
   async removeSpaceMember(member: SpaceMember): Promise<void> {
     await authenticatedDelete(member, 'spaces/remove_space_member')
   }

@@ -14,9 +14,54 @@ vi.mock('$src/states/ChatState.svelte', () => ({
 
 describe('SpaceState', () => {
   beforeEach(() => {
-    spaceState.setSpaces([])
+    spaceState.clear()
     navigationState.selectedSpace = null
     navigationState.selectedChannel = null
+  })
+
+  describe('expandedSpaceIds', () => {
+    it('reports every space as collapsed by default', () => {
+      spaceState.setSpaces([buildSpace({ spaceId: 1 }), buildSpace({ spaceId: 2 })])
+
+      expect(spaceState.isExpanded(1)).toBe(false)
+      expect(spaceState.isExpanded(2)).toBe(false)
+    })
+
+    it('toggles a space open and closed again', () => {
+      spaceState.toggleExpanded(1)
+      expect(spaceState.isExpanded(1)).toBe(true)
+
+      spaceState.toggleExpanded(1)
+      expect(spaceState.isExpanded(1)).toBe(false)
+    })
+
+    it('expands without toggling an already open space shut', () => {
+      spaceState.expand(1)
+      spaceState.expand(1)
+
+      expect(spaceState.isExpanded(1)).toBe(true)
+    })
+
+    // The sidebar unmounts whenever the user leaves the margin view, so which
+    // spaces were open has to outlive the component that renders them.
+    it('remembers which spaces were open across a spaces reload', () => {
+      spaceState.setSpaces([buildSpace({ spaceId: 1 }), buildSpace({ spaceId: 2 })])
+      spaceState.toggleExpanded(2)
+
+      spaceState.setSpaces([])
+      spaceState.setSpaces([buildSpace({ spaceId: 1 }), buildSpace({ spaceId: 2 })])
+
+      expect(spaceState.isExpanded(2)).toBe(true)
+      expect(spaceState.isExpanded(1)).toBe(false)
+    })
+
+    it('forgets which spaces were open on logout', () => {
+      spaceState.toggleExpanded(1)
+
+      spaceState.clear()
+
+      expect(spaceState.isExpanded(1)).toBe(false)
+    })
   })
 
   describe('setSpaces', () => {

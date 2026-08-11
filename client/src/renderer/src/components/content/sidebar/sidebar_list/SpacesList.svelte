@@ -7,11 +7,8 @@
   import UnreadNotificationBadge from '$src/components/common/chat/UnreadNotificationBadge.svelte'
   import Icon from '$src/components/common/icons/Icon.svelte'
   import { navigationState } from '$src/states/NavigationState.svelte'
-  import { SvelteSet } from 'svelte/reactivity'
-  import { untrack } from 'svelte'
 
   const spaces = $derived(spaceState.spaces)
-  let collapsedSpaceIds = new SvelteSet<number>()
   let selectedChannelId = $derived(navigationState.selectedChannel?.id)
 
   $effect(() => {
@@ -22,47 +19,19 @@
   })
 
   $effect(() => {
-    const current = spaces
-    untrack(() => {
-      for (const space of current) {
-        if (!collapsedSpaceIds.has(space.spaceId)) {
-          void spaceService.fetchVoiceParticipantsForSpace(space)
-        }
-      }
-    })
-  })
-
-  $effect(() => {
     const channelId = navigationState.selectedChannel?.id
     if (!channelId) return
     for (const space of spaces) {
       if (space.channels.some((ch) => ch.id === channelId)) {
-        collapsedSpaceIds.delete(space.spaceId)
+        spaceState.expand(space.spaceId)
         return
       }
     }
   })
 
-  async function toggleSpace(space: Space): Promise<void> {
+  function toggleSpace(space: Space): void {
     spaceService.select(space)
-    if (collapsedSpaceIds.has(space.spaceId)) {
-      collapsedSpaceIds.delete(space.spaceId)
-      await spaceService.fetchVoiceParticipantsForSpace(space)
-    } else {
-      collapsedSpaceIds.add(space.spaceId)
-    }
-  }
-
-  const SPACE_COLORS = [
-    { bg: '#FFF0E6', dot: '#E8712A', text: '#C45A18' },
-    { bg: '#E8F4F8', dot: '#4A9EBF', text: '#2E7A96' },
-    { bg: '#EEF6EE', dot: '#5BAD6F', text: '#3D8A52' },
-    { bg: '#F3EEF8', dot: '#9B72CF', text: '#7850AD' },
-    { bg: '#FDF5E6', dot: '#C9A227', text: '#9E7D10' }
-  ]
-
-  function spaceColor(spaceId: number) {
-    return SPACE_COLORS[spaceId % SPACE_COLORS.length]
+    spaceState.toggleExpanded(space.spaceId)
   }
 
   function spaceInitials(name: string): string {
@@ -82,23 +51,18 @@
 
   <div class="spaces-stack">
     {#each spaces as space (space.spaceId)}
-      {@const color = spaceColor(space.spaceId)}
-      {@const isOpen = !collapsedSpaceIds.has(space.spaceId)}
+      {@const isOpen = spaceState.isExpanded(space.spaceId)}
       {@const unreadCount = notificationService.totalUnreadMessagesForSpace(space)}
 
-      <div
-        class="space-card"
-        class:is-open={isOpen}
-        style="--dot: {color.dot}; --card-bg: {color.bg}; --text: {color.text};"
-      >
+      <div class="space-group" class:is-open={isOpen}>
         <button class="space-row" onclick={() => toggleSpace(space)} aria-expanded={isOpen}>
-          <span class="space-avatar" style="background: {color.bg}; color: {color.text};">
-            {spaceInitials(space.spaceName)}
-          </span>
+          <span class="space-avatar">{spaceInitials(space.spaceName)}</span>
 
           <span class="space-info">
             <span class="space-name">{space.spaceName}</span>
-            <span class="space-meta">{space.spaceDescription}</span>
+            {#if space.spaceDescription}
+              <span class="space-meta">{space.spaceDescription}</span>
+            {/if}
           </span>
 
           {#if !isOpen}
@@ -111,14 +75,11 @@
         </button>
 
         {#if isOpen}
-          <div class="channels-zone">
-            <div class="channels-divider"></div>
-            <ul class="channels">
-              {#each space.channels as channel (channel.id)}
-                <ChannelEntry {channel} active={selectedChannelId === channel.id} />
-              {/each}
-            </ul>
-          </div>
+          <ul class="channels">
+            {#each space.channels as channel (channel.id)}
+              <ChannelEntry {channel} active={selectedChannelId === channel.id} />
+            {/each}
+          </ul>
         {/if}
       </div>
     {/each}
@@ -134,53 +95,38 @@
     display: flex;
     align-items: center;
     gap: 6px;
-    padding: 8px 18px 4px;
+    padding: 8px 20px 6px;
   }
 
   .header-label {
     font-size: 11px;
     font-weight: 600;
     text-transform: uppercase;
-    letter-spacing: 0.05em;
-    color: #aaa;
+    letter-spacing: 0.06em;
+    color: #b0b0ae;
   }
 
   .header-count {
-    font-size: 10px;
+    font-size: 11px;
     font-weight: 600;
-    color: #bbb;
-    background: #f2f2f2;
-    border-radius: 20px;
-    padding: 1px 6px;
-    line-height: 1.5;
+    color: #b0b0ae;
   }
 
   .spaces-stack {
     display: flex;
     flex-direction: column;
-    gap: 6px;
+    gap: 2px;
     padding: 0 10px;
   }
 
-  .space-card {
-    border-radius: 12px;
-    border: 1px solid transparent;
-    background: #fafafa;
-    transition:
-      border-color 0.15s,
-      box-shadow 0.15s;
-    overflow: hidden;
+  .space-group {
+    border-radius: 10px;
+    transition: background 0.15s;
   }
 
-  .space-card:hover {
-    border-color: #ebebeb;
-    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
-  }
-
-  .space-card.is-open {
-    border-color: var(--dot);
-    background: white;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.07);
+  .space-group.is-open {
+    background: rgba(0, 0, 0, 0.022);
+    padding-bottom: 6px;
   }
 
   .space-row {
@@ -188,23 +134,40 @@
     display: flex;
     align-items: center;
     gap: 10px;
-    padding: 9px 12px 9px 10px;
+    padding: 8px 10px;
     background: none;
     border: none;
+    border-radius: 10px;
     cursor: pointer;
     text-align: left;
+    transition: background 0.12s;
+  }
+
+  .space-row:hover {
+    background: rgba(0, 0, 0, 0.04);
   }
 
   .space-avatar {
-    position: relative;
     flex-shrink: 0;
-    width: 34px;
-    height: 34px;
-    border-radius: 9px;
+    width: 28px;
+    height: 28px;
+    border-radius: 8px;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 13px;
+    background: #efeeec;
+    color: #7a7a76;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    transition:
+      background 0.15s,
+      color 0.15s;
+  }
+
+  .space-group.is-open .space-avatar {
+    background: rgba(228, 113, 42, 0.12);
+    color: #ff843c;
   }
 
   .space-info {
@@ -218,47 +181,57 @@
   .space-name {
     font-size: 14px;
     font-weight: 550;
-    color: #2a2a2a;
+    color: #6a6a66;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
     line-height: 1.3;
+    transition: color 0.15s;
+  }
+
+  .space-row:hover .space-name,
+  .space-group.is-open .space-name {
+    color: #2a2a2a;
   }
 
   .space-meta {
     font-size: 12px;
-    color: #c1c1c1;
+    color: #b8b8b4;
     font-weight: 400;
     line-height: 1.2;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 
   .chevron {
     flex-shrink: 0;
-    color: #ccc;
+    color: #c4c4c0;
     display: flex;
     align-items: center;
-    transition:
-      transform 0.2s ease,
-      color 0.15s;
+    transition: transform 0.2s ease;
   }
 
   .chevron.rotated {
     transform: rotate(180deg);
-    color: var(--dot);
-  }
-
-  .channels-zone {
-    background: rgba(0, 0, 0, 0.025);
-    border-top: 1px solid rgba(0, 0, 0, 0.06);
-    padding-bottom: 8px;
   }
 
   .channels {
     position: relative;
-    padding: 10px 10px 0 25px;
+    margin: 2px 0 0 23px;
+    padding: 0 10px 0 11px;
     display: flex;
     flex-direction: column;
     gap: 1px;
-    margin: 0;
+  }
+
+  .channels::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 3px;
+    bottom: 3px;
+    width: 1px;
+    background: rgba(0, 0, 0, 0.08);
   }
 </style>
