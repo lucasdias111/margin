@@ -2,6 +2,7 @@ import express from 'express'
 import mediasoup, {types as MediasoupTypes} from 'mediasoup'
 import {Room} from './types.js'
 import {getOrCreateRoom} from './roomHelpers.js'
+import {peersByRoom} from './peerHelpers.js'
 import {initMediaSoupServer} from './mediaSoupHelper.js'
 import {requireInternalApiKey} from "./authorizationHelper.js";
 
@@ -40,6 +41,10 @@ app.post('/rooms/:roomId', requireInternalApiKey, async (req, res) => {
         rtpCapabilities: room.router.rtpCapabilities,
         maxParticipants: room.maxParticipants
     })
+})
+
+app.get('/rooms/peers', requireInternalApiKey, (_req, res) => {
+    res.json({rooms: peersByRoom(rooms)})
 })
 
 app.get('/rooms/:roomId/peers', requireInternalApiKey, (req, res) => {
