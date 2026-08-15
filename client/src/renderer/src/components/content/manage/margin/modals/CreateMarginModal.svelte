@@ -40,7 +40,7 @@
   }
 </script>
 
-<AppModal {open} title="Create Margin" {onClose}>
+<AppModal {open} title="Create a margin" {onClose}>
   <div class="avatar-row">
     <UserAvatar profilePictureUrl={previewUrl} width={72} height={72} rounded={false} />
     <UploadImageButton
@@ -55,7 +55,7 @@
 
   <input
     type="text"
-    placeholder="Margin name"
+    placeholder="Name"
     bind:value={marginName}
     onkeydown={(e) => e.key === 'Enter' && handleSubmit()}
   />

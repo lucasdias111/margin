@@ -8,11 +8,12 @@
 
   interface Props {
     open: boolean
+    marginName: string
     onClose: () => void
     onInviteUser: (email: string) => Promise<void>
   }
 
-  let { open, onClose, onInviteUser }: Props = $props()
+  let { open, marginName, onClose, onInviteUser }: Props = $props()
 
   let userToInvite = $state<User | undefined>(undefined)
   let exactEmail = $state('')
@@ -20,8 +21,9 @@
   let exactLookupError = $state<string | null>(null)
   let inviteSent = $state(false)
 
-  const initialTitle = 'Invite User To Margin'
-  let title = $state<string>(initialTitle)
+  let title = $derived(
+    userToInvite ? `Invite ${userToInvite.displayName} to ${marginName}?` : `Invite to ${marginName}`
+  )
 
   async function handleExactLookup(): Promise<void> {
     if (!exactEmail.trim()) return
@@ -38,7 +40,6 @@
       }
       const user: User = await response.json()
       userToInvite = user
-      title = `Invite ${user.displayName} to margin?`
     } catch (e) {
       exactLookupError = 'Lookup failed. Try again.'
     } finally {
@@ -63,7 +64,6 @@
 
   function clear(): void {
     userToInvite = undefined
-    title = initialTitle
     exactEmail = ''
     exactLookupError = null
     exactLookupLoading = false
@@ -94,7 +94,6 @@
         class="cancel"
         onclick={() => {
           userToInvite = undefined
-          title = initialTitle
         }}>Back</button
       >
       <button class="confirm" onclick={handleSubmit}>Send Invite</button>

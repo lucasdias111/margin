@@ -76,7 +76,7 @@
 
   <div class="info-row">
     <div class="info-fields">
-      <label for="margin-name-input">Margin name</label>
+      <label for="margin-name-input">Name</label>
       <input
         id="margin-name-input"
         type="text"

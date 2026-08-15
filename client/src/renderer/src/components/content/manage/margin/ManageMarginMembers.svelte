@@ -139,7 +139,12 @@
   </div>
 {/if}
 
-<AddMarginMemberModal open={addMemberOpen} onClose={() => (addMemberOpen = false)} {onInviteUser} />
+<AddMarginMemberModal
+  open={addMemberOpen}
+  marginName={margin.marginName}
+  onClose={() => (addMemberOpen = false)}
+  {onInviteUser}
+/>
 
 <style>
   .margin-members {
