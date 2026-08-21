@@ -1,6 +1,7 @@
 import {
   authenticatedPost,
   authenticatedPut,
+  setTokenRefresher,
   setUnauthenticatedHandler,
   unauthenticatedPost
 } from './api'
@@ -38,6 +39,7 @@ class AuthenticationService {
     }
 
     sessionStorage.setItem('authToken', authResponse.token)
+    sessionStorage.setItem('refreshToken', authResponse.refreshToken)
 
     let privateKey: string | undefined
     let publicKey: string | undefined = authResponse.publicKey ?? undefined
@@ -61,8 +63,38 @@ class AuthenticationService {
     }
 
     if (keepLoggedIn) {
-      await this.saveSession(authResponse.token, privateKey)
+      await this.saveSession(authResponse.token, privateKey, authResponse.refreshToken)
     }
+  }
+
+  async refreshTokens(): Promise<boolean> {
+    const refreshToken = sessionStorage.getItem('refreshToken')
+    if (!refreshToken) return false
+
+    try {
+      const response = await unauthenticatedPost({ refreshToken }, 'auth/refresh')
+      if (!response.ok) return false
+
+      const authResponse: AuthResponse = await response.json()
+      if (!authResponse.success || !authResponse.token) return false
+
+      sessionStorage.setItem('authToken', authResponse.token)
+      sessionStorage.setItem('refreshToken', authResponse.refreshToken)
+
+      if (await this.hasPersistedSession()) {
+        const privateKey = sessionStorage.getItem('privateKey')
+        if (privateKey) {
+          await this.saveSession(authResponse.token, privateKey, authResponse.refreshToken)
+        }
+      }
+      return true
+    } catch {
+      return false
+    }
+  }
+
+  private async hasPersistedSession(): Promise<boolean> {
+    return (await this.loadSession()) !== null
   }
 
   private async regenerateEncryptionKeys(
@@ -87,26 +119,41 @@ class AuthenticationService {
 
     sessionStorage.setItem('authToken', stored.token)
     sessionStorage.setItem('privateKey', stored.privateKey)
+    if (stored.refreshToken) {
+      sessionStorage.setItem('refreshToken', stored.refreshToken)
+    }
+
+    if (!stored.refreshToken) return false
+
     return true
   }
 
-  private async saveSession(token: string, privateKey: string): Promise<void> {
+  private async saveSession(
+    token: string,
+    privateKey: string,
+    refreshToken: string
+  ): Promise<void> {
     if (isElectron()) {
-      await window.secureStorage!.saveSession(token, privateKey)
+      await window.secureStorage!.saveSession(token, privateKey, refreshToken)
     } else {
       localStorage.setItem('session_token', token)
       localStorage.setItem('session_privateKey', privateKey)
+      localStorage.setItem('session_refreshToken', refreshToken)
     }
   }
 
-  private async loadSession(): Promise<{ token: string; privateKey: string } | null> {
+  private async loadSession(): Promise<{
+    token: string
+    privateKey: string
+    refreshToken: string | null
+  } | null> {
     if (isElectron()) {
       return window.secureStorage!.loadSession()
     }
     const token = localStorage.getItem('session_token')
     const privateKey = localStorage.getItem('session_privateKey')
     if (!token || !privateKey) return null
-    return { token, privateKey }
+    return { token, privateKey, refreshToken: localStorage.getItem('session_refreshToken') }
   }
 
   private async clearSession(): Promise<void> {
@@ -115,6 +162,7 @@ class AuthenticationService {
     } else {
       localStorage.removeItem('session_token')
       localStorage.removeItem('session_privateKey')
+      localStorage.removeItem('session_refreshToken')
     }
   }
 
@@ -177,11 +225,13 @@ class AuthenticationService {
   clearToken(): void {
     if (typeof window !== 'undefined') {
       sessionStorage.removeItem('authToken')
+      sessionStorage.removeItem('refreshToken')
     }
   }
 
   async logoutUser(): Promise<void> {
-    const response = await authenticatedPost({}, 'auth/logout')
+    const refreshToken = sessionStorage.getItem('refreshToken')
+    const response = await authenticatedPost({ refreshToken }, 'auth/logout')
     if (!response.ok) {
       errorService.reportError('Failed to log out.')
     }
@@ -215,3 +265,4 @@ class AuthenticationService {
 export const authenticationService = new AuthenticationService()
 
 setUnauthenticatedHandler(() => authenticationService.clear())
+setTokenRefresher(() => authenticationService.refreshTokens())

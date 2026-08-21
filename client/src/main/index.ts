@@ -11,6 +11,7 @@ import { setupPresence } from './presence'
 const { autoUpdater } = pkg
 const SECURE_FILE = join(app.getPath('userData'), 'secure.bin')
 const TOKEN_FILE = join(app.getPath('userData'), 'session.bin')
+const REFRESH_FILE = join(app.getPath('userData'), 'refresh.bin')
 
 const badgeImage = nativeImage.createFromPath(notificationBadge)
 
@@ -45,21 +46,26 @@ function readEncrypted(filePath: string): string | null {
   return safeStorage.decryptString(encrypted)
 }
 
-ipcMain.handle('secure:saveSession', (_event, token: string, privateKey: string) => {
-  writeEncrypted(TOKEN_FILE, token)
-  writeEncrypted(SECURE_FILE, privateKey)
-})
+ipcMain.handle(
+  'secure:saveSession',
+  (_event, token: string, privateKey: string, refreshToken: string) => {
+    writeEncrypted(TOKEN_FILE, token)
+    writeEncrypted(SECURE_FILE, privateKey)
+    writeEncrypted(REFRESH_FILE, refreshToken)
+  }
+)
 
 ipcMain.handle('secure:loadSession', () => {
   const token = readEncrypted(TOKEN_FILE)
   const privateKey = readEncrypted(SECURE_FILE)
   if (!token || !privateKey) return null
-  return { token, privateKey }
+  return { token, privateKey, refreshToken: readEncrypted(REFRESH_FILE) }
 })
 
 ipcMain.handle('secure:clearSession', () => {
   if (existsSync(TOKEN_FILE)) unlinkSync(TOKEN_FILE)
   if (existsSync(SECURE_FILE)) unlinkSync(SECURE_FILE)
+  if (existsSync(REFRESH_FILE)) unlinkSync(REFRESH_FILE)
 })
 
 ipcMain.handle('open-external', (_event, url: string) => {

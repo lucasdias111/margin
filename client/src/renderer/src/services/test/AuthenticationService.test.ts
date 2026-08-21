@@ -51,6 +51,7 @@ vi.mock('$src/states/CallState.svelte', () => ({
 vi.mock('$src/services/api', () => ({
   authenticatedPost: vi.fn(),
   authenticatedPut: vi.fn(),
+  setTokenRefresher: vi.fn(),
   setUnauthenticatedHandler: vi.fn(),
   unauthenticatedPost: vi.fn()
 }))
@@ -69,6 +70,7 @@ function buildAuthResponse(overrides: Partial<AuthResponse> = {}): AuthResponse 
   return {
     success: true,
     token: 'jwt-token-123',
+    refreshToken: 'refresh-token-123',
     message: '',
     publicKey: 'pub-key-base64',
     encryptedPrivateKey: 'enc-priv-key',
@@ -147,7 +149,8 @@ describe('AuthenticationService', () => {
 
       expect(secureStorage.saveSession).toHaveBeenCalledWith(
         'jwt-token-123',
-        'decrypted-private-key'
+        'decrypted-private-key',
+        'refresh-token-123'
       )
     })
 
@@ -237,7 +240,8 @@ describe('AuthenticationService', () => {
     it('restores session from secure storage and returns true', async () => {
       secureStorage.loadSession.mockResolvedValue({
         token: 'stored-token',
-        privateKey: 'stored-key'
+        privateKey: 'stored-key',
+        refreshToken: 'stored-refresh-token'
       })
 
       const result = await authenticationService.tryRestoreSession()
@@ -245,6 +249,19 @@ describe('AuthenticationService', () => {
       expect(result).toBe(true)
       expect(sessionStorage.getItem('authToken')).toBe('stored-token')
       expect(sessionStorage.getItem('privateKey')).toBe('stored-key')
+      expect(sessionStorage.getItem('refreshToken')).toBe('stored-refresh-token')
+    })
+
+    it('refuses a session stored before refresh tokens existed', async () => {
+      // Its access token is long expired and there is nothing to renew it with, so treating it
+      // as restorable would just strand the user on a dead session.
+      secureStorage.loadSession.mockResolvedValue({
+        token: 'stored-token',
+        privateKey: 'stored-key',
+        refreshToken: null
+      })
+
+      expect(await authenticationService.tryRestoreSession()).toBe(false)
     })
 
     it('returns false when no stored session exists', async () => {
@@ -345,11 +362,16 @@ describe('AuthenticationService', () => {
   describe('logoutUser', () => {
     it('disconnects websocket, posts logout, resets all state, and navigates to /', async () => {
       vi.mocked(api.authenticatedPost).mockResolvedValue({ ok: true } as Response)
+      sessionStorage.setItem('refreshToken', 'refresh-token-123')
 
       await authenticationService.logoutUser()
 
       expect(webSocketService.disconnect).toHaveBeenCalled()
-      expect(api.authenticatedPost).toHaveBeenCalledWith({}, 'auth/logout')
+      // The refresh token scopes the logout to this device rather than every device.
+      expect(api.authenticatedPost).toHaveBeenCalledWith(
+        { refreshToken: 'refresh-token-123' },
+        'auth/logout'
+      )
       expect(usersState.reset).toHaveBeenCalled()
       expect(navigationService.reset).toHaveBeenCalled()
       expect(callState.endCall).toHaveBeenCalled()

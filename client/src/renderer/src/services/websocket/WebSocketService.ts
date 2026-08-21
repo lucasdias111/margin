@@ -11,6 +11,7 @@ export type LifecycleEvent = 'connected' | 'reconnected' | 'disconnected'
 export interface WebSocketSessionAdapter {
   getToken(): string | null
   restoreSession(): Promise<boolean>
+  refreshTokens(): Promise<boolean>
   onSessionInvalid(reason?: string): void
 }
 
@@ -28,6 +29,7 @@ class WebSocketService {
   private reconnectAttempts = 0
   private intentionalDisconnect = false
   private isRestoringSession = false
+  private isRefreshingTokens = false
 
   private pingInterval: ReturnType<typeof setInterval> | null = null
   private pongTimeout: ReturnType<typeof setTimeout> | null = null
@@ -43,7 +45,7 @@ class WebSocketService {
       return
 
     const token = this.resolveToken()
-    if (token === 'restoring') return
+    if (token === 'recovering') return
     if (!token || token == '') {
       this.invalidateSession()
       return
@@ -118,17 +120,17 @@ class WebSocketService {
     for (const listener of [...listeners]) listener()
   }
 
-  private resolveToken(): string | null | 'restoring' {
+  private resolveToken(): string | null | 'recovering' {
     const token = this.session?.getToken() ?? null
 
     if (!token) {
       this.attemptSessionRestore()
-      return 'restoring'
+      return 'recovering'
     }
 
     if (this.isTokenExpired(token)) {
-      console.warn('JWT expired — clearing session')
-      return null
+      void this.reconnectWithFreshTokens()
+      return 'recovering'
     }
 
     return token
@@ -217,13 +219,30 @@ class WebSocketService {
       }
 
       if (event.code === 4001) {
-        console.warn('WebSocket closed due to auth failure — not reconnecting')
-        this.invalidateSession('Session expired. Please log in again.')
+        void this.reconnectWithFreshTokens()
         return
       }
 
       this.emit('disconnected')
       this.scheduleReconnect()
+    }
+  }
+
+  private async reconnectWithFreshTokens(): Promise<void> {
+    if (this.isRefreshingTokens) return
+    this.isRefreshingTokens = true
+
+    try {
+      const refreshed = (await this.session?.refreshTokens()) ?? false
+      if (!refreshed) {
+        console.warn('WebSocket closed due to auth failure and refresh failed — not reconnecting')
+        this.invalidateSession('Session expired. Please log in again.')
+        return
+      }
+      if (this.intentionalDisconnect) return
+      this.connect()
+    } finally {
+      this.isRefreshingTokens = false
     }
   }
 

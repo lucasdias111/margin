@@ -5,6 +5,7 @@ import {
   authenticatedPatchForm,
   authenticatedPost,
   authenticatedPostForm,
+  setTokenRefresher,
   setUnauthenticatedHandler,
   unauthenticatedPost
 } from '../api'
@@ -382,6 +383,82 @@ describe('API helpers', () => {
       mockFetchOk()
 
       await expect(authenticatedGet('users/me')).resolves.toBeDefined()
+    })
+  })
+
+  describe('token refresh', () => {
+    beforeEach(() => {
+      setTokenRefresher(undefined as unknown as () => Promise<boolean>)
+    })
+
+    it('renews an expired token and sends the new one', async () => {
+      sessionStorage.setItem('authToken', expiredJwt())
+      const fresh = makeJwt({ exp: Math.floor(Date.now() / 1000) + 900 })
+      setTokenRefresher(async () => {
+        sessionStorage.setItem('authToken', fresh)
+        return true
+      })
+      mockFetchOk()
+
+      await authenticatedGet('users/me')
+
+      expect(fetchSpy).toHaveBeenCalledWith(
+        'http://localhost:8080/users/me',
+        expect.objectContaining({
+          headers: expect.objectContaining({ Authorization: `Bearer ${fresh}` })
+        })
+      )
+      expect(unauthenticatedHandler).not.toHaveBeenCalled()
+    })
+
+    it('logs out when the expired token cannot be renewed', async () => {
+      sessionStorage.setItem('authToken', expiredJwt())
+      setTokenRefresher(async () => false)
+      mockFetchOk()
+
+      await authenticatedGet('users/me')
+
+      expect(unauthenticatedHandler).toHaveBeenCalled()
+    })
+
+    it('collapses concurrent renewals onto a single exchange', async () => {
+      // Refresh tokens rotate server-side, so a second parallel exchange would present a token
+      // the server has already consumed — which it reads as a replay and punishes by revoking
+      // every session the user has.
+      sessionStorage.setItem('authToken', expiredJwt())
+      const refresher = vi.fn(async () => {
+        await new Promise((r) => setTimeout(r, 5))
+        sessionStorage.setItem('authToken', validJwt())
+        return true
+      })
+      setTokenRefresher(refresher)
+      mockFetchOk()
+
+      await Promise.all([authenticatedGet('a'), authenticatedGet('b'), authenticatedGet('c')])
+
+      expect(refresher).toHaveBeenCalledTimes(1)
+    })
+
+    it('recovers a 401 by renewing rather than logging out', async () => {
+      sessionStorage.setItem('authToken', validJwt())
+      setTokenRefresher(async () => true)
+      mockFetchError(401, { detail: 'Token rejected' })
+
+      const response = await authenticatedGet('users/me')
+
+      // The 401 still comes back to the caller — the renewal only spares the session.
+      expect(response.status).toBe(401)
+      expect(unauthenticatedHandler).not.toHaveBeenCalled()
+    })
+
+    it('logs out on a 401 that renewing cannot fix', async () => {
+      sessionStorage.setItem('authToken', validJwt())
+      setTokenRefresher(async () => false)
+      mockFetchError(401, { detail: 'Token rejected' })
+
+      await authenticatedGet('users/me')
+
+      expect(unauthenticatedHandler).toHaveBeenCalled()
     })
   })
 })

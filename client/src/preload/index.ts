@@ -13,8 +13,8 @@ if (process.contextIsolated) {
   try {
     contextBridge.exposeInMainWorld('api', api)
     contextBridge.exposeInMainWorld('secureStorage', {
-      saveSession: (token: string, privateKey: string) =>
-        ipcRenderer.invoke('secure:saveSession', token, privateKey),
+      saveSession: (token: string, privateKey: string, refreshToken: string) =>
+        ipcRenderer.invoke('secure:saveSession', token, privateKey, refreshToken),
       loadSession: () => ipcRenderer.invoke('secure:loadSession'),
       clearSession: () => ipcRenderer.invoke('secure:clearSession')
     })

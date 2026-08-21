@@ -7,6 +7,8 @@ export const webSocketSessionAdapter: WebSocketSessionAdapter = {
 
   restoreSession: () => authenticationService.tryRestoreSession(),
 
+  refreshTokens: () => authenticationService.refreshTokens(),
+
   onSessionInvalid: (reason) => {
     if (reason) errorService.reportError(reason)
     void authenticationService.clear()

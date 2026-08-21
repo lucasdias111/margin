@@ -40,6 +40,7 @@ let lastCreatedWs: MockWebSocket | null = null
 let session: WebSocketSessionAdapter & {
   getToken: ReturnType<typeof vi.fn>
   restoreSession: ReturnType<typeof vi.fn>
+  refreshTokens: ReturnType<typeof vi.fn>
   onSessionInvalid: ReturnType<typeof vi.fn>
 }
 
@@ -47,6 +48,7 @@ function installSessionStub(): void {
   session = {
     getToken: vi.fn().mockReturnValue(null),
     restoreSession: vi.fn().mockResolvedValue(false),
+    refreshTokens: vi.fn().mockResolvedValue(false),
     onSessionInvalid: vi.fn()
   }
   webSocketService.configureSession(session)
@@ -367,14 +369,24 @@ describe('WebSocketService', () => {
       expect(connectionState.connectionStatus).toBe('connected')
     })
 
-    it('hands an expired token back to the session layer instead of connecting', () => {
+    it('renews an expired token instead of connecting with it', async () => {
       session.getToken.mockReturnValue(createFakeToken(-1000))
+      session.refreshTokens.mockResolvedValue(false)
 
       webSocketService.connect()
+      await vi.waitFor(() => expect(session.refreshTokens).toHaveBeenCalled())
 
       expect(lastCreatedWs).toBeNull()
+    })
+
+    it('ends the session when an expired token cannot be renewed', async () => {
+      session.getToken.mockReturnValue(createFakeToken(-1000))
+      session.refreshTokens.mockResolvedValue(false)
+
+      webSocketService.connect()
+      await vi.waitFor(() => expect(session.onSessionInvalid).toHaveBeenCalled())
+
       expect(connectionState.connectionStatus).toBe('disconnected')
-      expect(session.onSessionInvalid).toHaveBeenCalled()
     })
 
     it('asks the session layer to restore when no token is present', async () => {
@@ -387,12 +399,50 @@ describe('WebSocketService', () => {
       expect(lastCreatedWs).toBeNull()
     })
 
-    it('reports an auth-failure close to the session layer with a reason', () => {
+    it('renews and reconnects when the server rejects the token with 4001', async () => {
       const mockWs = connectWithToken()
+      // The renewal succeeds and hands back a token that is still valid.
+      session.refreshTokens.mockImplementation(async () => {
+        session.getToken.mockReturnValue(createFakeToken(60_000))
+        return true
+      })
+
+      mockWs.onclose?.({ code: 4001, reason: 'unauthorized' } as CloseEvent)
+      await vi.waitFor(() => expect(session.refreshTokens).toHaveBeenCalled())
+
+      expect(session.onSessionInvalid).not.toHaveBeenCalled()
+      await vi.waitFor(() => expect(connectionState.connectionStatus).toBe('connected'))
+    })
+
+    it('ends the session when a 4001 cannot be recovered by renewing', async () => {
+      const mockWs = connectWithToken()
+      session.refreshTokens.mockResolvedValue(false)
 
       mockWs.onclose?.({ code: 4001, reason: 'unauthorized' } as CloseEvent)
 
-      expect(session.onSessionInvalid).toHaveBeenCalledWith('Session expired. Please log in again.')
+      await vi.waitFor(() =>
+        expect(session.onSessionInvalid).toHaveBeenCalledWith(
+          'Session expired. Please log in again.'
+        )
+      )
+    })
+
+    it('does not start a second renewal while one is already running', async () => {
+      const mockWs = connectWithToken()
+      let resolveRefresh: (value: boolean) => void = () => {}
+      session.refreshTokens.mockReturnValue(
+        new Promise<boolean>((resolve) => {
+          resolveRefresh = resolve
+        })
+      )
+
+      mockWs.onclose?.({ code: 4001, reason: 'unauthorized' } as CloseEvent)
+      mockWs.onclose?.({ code: 4001, reason: 'unauthorized' } as CloseEvent)
+      await vi.waitFor(() => expect(session.refreshTokens).toHaveBeenCalledTimes(1))
+
+      // Rotation makes a concurrent second exchange look like a replayed token to the server,
+      // which would revoke every session the user has.
+      resolveRefresh(false)
     })
   })
 })

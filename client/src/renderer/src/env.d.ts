@@ -2,8 +2,12 @@
 /// <reference types="vite/client" />
 interface Window {
   secureStorage?: {
-    saveSession(token: string, privateKey: string): Promise<void>
-    loadSession(): Promise<{ token: string; privateKey: string } | null>
+    saveSession(token: string, privateKey: string, refreshToken: string): Promise<void>
+    loadSession(): Promise<{
+      token: string
+      privateKey: string
+      refreshToken: string | null
+    } | null>
     clearSession(): Promise<void>
   }
   updater?: {

@@ -4,9 +4,24 @@ import { upgradeState } from '$src/states/UpgradeState.svelte'
 
 let unauthenticatedHandler: (() => Promise<void>) | null = null
 let unauthenticatedInFlight: Promise<void> | null = null
+let tokenRefresher: (() => Promise<boolean>) | null = null
+let refreshInFlight: Promise<boolean> | null = null
 
 export function setUnauthenticatedHandler(handler: () => Promise<void>): void {
   unauthenticatedHandler = handler
+}
+
+export function setTokenRefresher(refresher: () => Promise<boolean>): void {
+  tokenRefresher = refresher
+}
+
+async function refreshAccessToken(): Promise<boolean> {
+  if (refreshInFlight) return refreshInFlight
+  if (!tokenRefresher) return false
+  refreshInFlight = tokenRefresher().finally(() => {
+    refreshInFlight = null
+  })
+  return refreshInFlight
 }
 
 async function handleUnauthenticated(): Promise<void> {
@@ -19,11 +34,18 @@ async function handleUnauthenticated(): Promise<void> {
 }
 
 async function getAuthHeaders(extra: Record<string, string> = {}): Promise<Record<string, string>> {
-  const token = sessionStorage.getItem('authToken')
+  let token = sessionStorage.getItem('authToken')
+
   if (!token || isJwtExpired(token)) {
-    await handleUnauthenticated()
-    errorService.reportError('Session expired - logging out')
+    const renewed = (await refreshAccessToken()) ? sessionStorage.getItem('authToken') : null
+    if (renewed) {
+      token = renewed
+    } else {
+      await handleUnauthenticated()
+      errorService.reportError('Session expired - logging out')
+    }
   }
+
   return {
     Authorization: `Bearer ${token}`,
     ...extra
@@ -81,12 +103,13 @@ export async function unauthenticatedPost<T>(body: T, url: string): Promise<Resp
 }
 
 async function isResponseUnauthenticated(response: Response): Promise<boolean> {
-  if (response.status === 401) {
-    await handleUnauthenticated()
-    errorService.reportError('Session expired - logging out')
-    return true
-  }
-  return false
+  if (response.status !== 401) return false
+
+  if (await refreshAccessToken()) return true
+
+  await handleUnauthenticated()
+  errorService.reportError('Session expired - logging out')
+  return true
 }
 
 async function handleNonOkResponse(response: Response): Promise<never> {
