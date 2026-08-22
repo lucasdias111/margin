@@ -16,8 +16,12 @@
     isSecret?: boolean
   }
 
-  let { handleStartCall, handleStartVideoCall, isLoading = false, isSecret = false }: Props =
-    $props()
+  let {
+    handleStartCall,
+    handleStartVideoCall,
+    isLoading = false,
+    isSecret = false
+  }: Props = $props()
 
   function handleBack(): void {
     navigationState.selectedUser = null
@@ -32,7 +36,7 @@
   })
 </script>
 
-<ChatHeaderShell {isLoading} onBack={handleBack}>
+<ChatHeaderShell {isLoading} onBack={handleBack} identity={selectedUser?.id}>
   {#snippet left()}
     <div class="avatar-wrapper">
       <UserAvatar profilePictureUrl={selectedUser.profilePictureUrl} width={38} height={38} />

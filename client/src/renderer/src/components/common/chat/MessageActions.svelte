@@ -2,6 +2,7 @@
   import type { Message } from '$src/interfaces/Messages'
   import { messageSenderService } from '$src/services/MessageSenderService'
   import Icon from '$src/components/common/icons/Icon.svelte'
+  import { pressable, scaleFade } from '$src/animations'
 
   const QUICK_EMOJIS = ['👍', '❤️', '😂', '😮', '😢']
 
@@ -23,6 +24,7 @@
   <button
     class="btn emoji-btn"
     title="React"
+    use:pressable={{ scale: 0.85 }}
     onclick={() => {
       showEmojiPicker = !showEmojiPicker
       showMenu = false
@@ -32,11 +34,13 @@
   </button>
 
   {#if isSent}
-    <button class="btn" onclick={() => (showMenu = !showMenu)}>⋮</button>
+    <button class="btn" onclick={() => (showMenu = !showMenu)} use:pressable={{ scale: 0.85 }}>
+      ⋮
+    </button>
   {/if}
 
   {#if showEmojiPicker}
-    <div class="emoji-picker">
+    <div class="emoji-picker" transition:scaleFade={{ start: 0.85, origin: 'bottom center' }}>
       {#each QUICK_EMOJIS as emoji (emoji)}
         {@const reacted = (message.reactions ?? []).some(
           (r) => r.emoji === emoji && r.userId === currentUserId
@@ -49,7 +53,7 @@
   {/if}
 
   {#if showMenu}
-    <div class="menu">
+    <div class="menu" transition:scaleFade={{ start: 0.88, origin: 'center right' }}>
       <button
         class="menu-item edit"
         onclick={() => {
@@ -86,8 +90,8 @@
     line-height: 1;
     border-radius: 7px;
     transition:
-      background 0.12s,
-      color 0.12s;
+      background var(--motion-fast) var(--ease-standard),
+      color var(--motion-fast) var(--ease-standard);
   }
 
   .btn:hover {
@@ -99,7 +103,8 @@
     position: absolute;
     bottom: calc(100% + 6px);
     left: 50%;
-    transform: translateX(-50%);
+    /* Centring lives on `translate` so `transform` stays free for transitions. */
+    translate: -50% 0;
     display: flex;
     gap: 2px;
     background: white;
@@ -118,13 +123,20 @@
     font-size: 18px;
     padding: 2px 3px;
     border-radius: 8px;
-    transition: transform 0.1s;
+    transition:
+      transform var(--motion-base) var(--ease-spring),
+      background var(--motion-fast) var(--ease-standard);
     line-height: 1;
   }
 
   .emoji-option:hover {
     transform: scale(1.25);
     background: rgba(0, 0, 0, 0.04);
+  }
+
+  .emoji-option:active {
+    transform: scale(1.05);
+    transition-duration: var(--motion-instant);
   }
 
   .emoji-option.reacted {
@@ -135,7 +147,8 @@
     position: absolute;
     right: calc(100% + 6px);
     top: 50%;
-    transform: translateY(-50%);
+    /* Centring lives on `translate` so `transform` stays free for transitions. */
+    translate: 0 -50%;
     display: flex;
     flex-direction: column;
     background: white;
@@ -162,8 +175,8 @@
     align-items: center;
     gap: 8px;
     transition:
-      background 0.12s,
-      color 0.12s;
+      background var(--motion-fast) var(--ease-standard),
+      color var(--motion-fast) var(--ease-standard);
   }
 
   .edit {

@@ -4,6 +4,7 @@
   import { onMount } from 'svelte'
   import { push } from 'svelte-spa-router'
   import { authenticationService } from '$src/services/AuthenticationService'
+  import PageTransition from '$src/components/common/motion/PageTransition.svelte'
 
   onMount(async () => {
     const restored = await authenticationService.tryRestoreSession()
@@ -13,10 +14,12 @@
   })
 </script>
 
-<div class="container">
-  <img class="marginlogo" src={marginLogo} alt="Margin logo" />
-  <Login />
-</div>
+<PageTransition>
+  <div class="container">
+    <img class="marginlogo" src={marginLogo} alt="Margin logo" />
+    <Login />
+  </div>
+</PageTransition>
 
 <style>
   .container {

@@ -20,7 +20,7 @@
   }: Props = $props()
 </script>
 
-<ChatHeaderShell {isLoading} {onToggleSidebar} {sidebarOpen} {onBack}>
+<ChatHeaderShell {isLoading} {onToggleSidebar} {sidebarOpen} {onBack} identity={name}>
   {#snippet left()}
     <div class="channel-info">
       <span class="channel-name">{name}</span>

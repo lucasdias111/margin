@@ -18,6 +18,7 @@
   import { groupConversationService } from '$src/services/GroupConversationService'
   import { conversationsState } from '$src/states/ConversationsState.svelte'
   import { threadService } from '$src/services/ThreadService'
+  import { viewIn } from '$src/animations'
 
   const notifications = $derived(notificationState.notifications)
   const isLoading = $derived(!notificationState.notificationsLoaded)
@@ -180,7 +181,7 @@
       case NotificationType.SUBSCRIPTION_UPGRADED:
         return 'Your workspace plan was upgraded'
       case NotificationType.SUBSCRIPTION_PAYMENT_FAILED:
-        return 'Payment for your workspace plan didn\'t go through'
+        return "Payment for your workspace plan didn't go through"
       case NotificationType.SUBSCRIPTION_LIMIT_WARNING:
         return 'Your workspace is approaching its member limit'
       default:
@@ -189,7 +190,7 @@
   }
 </script>
 
-<div class="pane notifications-page">
+<div class="pane notifications-page" in:viewIn>
   <div class="notifications-header">
     <h1 class="page-title">Notifications</h1>
     {#if unread > 0}
@@ -218,12 +219,12 @@
             </div>
             <div class="invite-actions">
               <button class="accept-btn" onclick={() => handleAcceptFromNotification(notification)}
-              >Accept
+                >Accept
               </button>
               <button
                 class="decline-btn"
                 onclick={() => handleDeclineFromNotification(notification)}
-              >Decline
+                >Decline
               </button>
             </div>
           </div>
@@ -240,12 +241,12 @@
               <button
                 class="accept-btn"
                 onclick={() => handleAcceptConversationInviteFromNotification(notification)}
-              >Accept
+                >Accept
               </button>
               <button
                 class="decline-btn"
                 onclick={() => handleDeclineConversationInviteFromNotification(notification)}
-              >Decline
+                >Decline
               </button>
             </div>
           </div>

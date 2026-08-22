@@ -12,12 +12,14 @@
     isOpen: boolean
   } = $props()
 
+  import { pressable, slidingIndicator, viewIn, viewOut } from '$src/animations'
+
   let activeTab = $state<'voice' | 'files'>('voice')
   let fileCount = $state(0)
 </script>
 
 <aside class="pane sidebar" class:closed={!isOpen || !channel}>
-  <div class="tab-bar">
+  <div class="tab-bar" use:slidingIndicator={{ active: '.tab-btn.active', key: activeTab }}>
     <button
       class="tab-btn"
       class:active={activeTab === 'voice'}
@@ -37,17 +39,27 @@
         <span class="tab-badge">{fileCount}</span>
       {/if}
     </button>
-    <button class="close-btn" onclick={() => (isOpen = false)} aria-label="Close sidebar">
+    <button
+      class="close-btn"
+      onclick={() => (isOpen = false)}
+      aria-label="Close sidebar"
+      use:pressable={{ scale: 0.85 }}
+    >
       <Icon name="x" size={12} strokeWidth={1.8} />
     </button>
+    <span class="motion-indicator"></span>
   </div>
 
   <div class="sidebar-scroll">
-    {#if activeTab === 'voice'}
-      <ChannelSidebarVoiceTab {channel} />
-    {:else}
-      <ChannelSidebarFilesTab {channel} bind:fileCount />
-    {/if}
+    {#key activeTab}
+      <div class="tab-panel" in:viewIn out:viewOut>
+        {#if activeTab === 'voice'}
+          <ChannelSidebarVoiceTab {channel} />
+        {:else}
+          <ChannelSidebarFilesTab {channel} bind:fileCount />
+        {/if}
+      </div>
+    {/key}
   </div>
 </aside>
 
@@ -70,10 +82,23 @@
   }
 
   .tab-bar {
+    position: relative;
     display: flex;
     border-bottom: 1px solid rgba(0, 0, 0, 0.07);
     background: white;
     flex-shrink: 0;
+    color: #555;
+  }
+
+  .tab-panel {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+  }
+
+  .tab-panel:not(:only-child) {
+    position: absolute;
+    inset: 0;
   }
 
   .tab-btn {
@@ -92,16 +117,11 @@
     text-transform: uppercase;
     letter-spacing: 0.06em;
     color: #bbb;
-    border-bottom: 2px solid transparent;
-    margin-bottom: -1px;
-    transition:
-      color 0.15s,
-      border-color 0.15s;
+    transition: color var(--motion-fast) var(--ease-standard);
   }
 
   .tab-btn.active {
     color: #555;
-    border-bottom-color: #555;
   }
 
   .tab-btn:hover:not(.active) {
@@ -138,6 +158,7 @@
   }
 
   .sidebar-scroll {
+    position: relative;
     flex: 1;
     overflow-y: auto;
     padding: 12px 14px;

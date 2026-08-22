@@ -6,6 +6,8 @@
   import { authenticatedGet } from '$src/services/api'
   import { groupConversationService } from '$src/services/GroupConversationService'
   import type { User } from '$src/interfaces/User'
+  import { flip } from 'svelte/animate'
+  import { DURATION, EASING, popIn, pressable, scaleFade } from '$src/animations'
 
   interface Props {
     open: boolean
@@ -170,10 +172,19 @@
       {#if members.length > 0}
         <ul class="member-list">
           {#each members as member (member.user.id)}
-            <li class="member-chip">
+            <li
+              class="member-chip"
+              animate:flip={{ duration: DURATION.base, easing: EASING.standard }}
+              in:popIn={{ start: 0.7 }}
+              out:scaleFade={{ start: 0.7, duration: 'fast' }}
+            >
               <UserAvatar profilePictureUrl={member.user.profilePictureUrl} height={22} />
               <span class="chip-name">{member.user.displayName}</span>
-              <button class="remove-btn" onclick={() => removeMember(member.user.id)}>×</button>
+              <button
+                class="remove-btn"
+                onclick={() => removeMember(member.user.id)}
+                use:pressable={{ scale: 0.8 }}>×</button
+              >
             </li>
           {/each}
         </ul>
@@ -181,7 +192,7 @@
     </div>
 
     {#if error}
-      <span class="lookup-error">{error}</span>
+      <span class="lookup-error motion-shake">{error}</span>
     {/if}
 
     <div class="actions">

@@ -1,6 +1,7 @@
 <script lang="ts">
   import UserAvatar from '$src/components/common/user/UserAvatar.svelte'
   import type { User } from '$src/interfaces/User'
+  import { backdrop, modalIn, pressable } from '$src/animations'
 
   interface Props {
     caller: User | null
@@ -22,8 +23,8 @@
 </script>
 
 {#if caller}
-  <div class="backdrop">
-    <div class="modal" role="dialog" aria-modal="true">
+  <div class="backdrop" transition:backdrop>
+    <div class="modal" role="dialog" aria-modal="true" transition:modalIn={{ start: 0.9 }}>
       <div class="avatar-wrapper">
         <div class="pulse-ring"></div>
         <UserAvatar profilePictureUrl={caller.profilePictureUrl} width={56} height={56} />
@@ -36,8 +37,8 @@
         {/if}
       </div>
       <div class="actions">
-        <button class="decline" onclick={onDecline}>Decline</button>
-        <button class="accept" onclick={onAccept}>{acceptLabel}</button>
+        <button class="decline" onclick={onDecline} use:pressable>Decline</button>
+        <button class="accept" onclick={onAccept} use:pressable>{acceptLabel}</button>
       </div>
     </div>
   </div>
@@ -53,7 +54,6 @@
     align-items: center;
     justify-content: center;
     z-index: 500;
-    animation: fade-in 0.2s ease;
   }
 
   .modal {
@@ -66,7 +66,6 @@
     gap: 12px;
     box-shadow: 0 12px 40px rgba(0, 0, 0, 0.12);
     min-width: 260px;
-    animation: slide-up 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
   }
 
   .avatar-wrapper {
@@ -82,7 +81,7 @@
     height: 72px;
     border-radius: 50%;
     border: 2px solid rgba(180, 112, 36, 0.35);
-    animation: pulse 1.8s ease-out infinite;
+    animation: pulse 1.8s var(--ease-standard) infinite;
     pointer-events: none;
   }
 
@@ -154,26 +153,6 @@
   .accept {
     background: #b47024;
     color: white;
-  }
-
-  @keyframes fade-in {
-    from {
-      opacity: 0;
-    }
-    to {
-      opacity: 1;
-    }
-  }
-
-  @keyframes slide-up {
-    from {
-      opacity: 0;
-      transform: translateY(12px) scale(0.97);
-    }
-    to {
-      opacity: 1;
-      transform: translateY(0) scale(1);
-    }
   }
 
   @keyframes pulse {

@@ -10,6 +10,7 @@
   import Button from '$src/components/common/buttons/Button.svelte'
   import { navigationState } from '$src/states/NavigationState.svelte'
   import { marginState } from '$src/states/MarginState.svelte'
+  import { pressable, scaleFade } from '$src/animations'
 
   let open = $state(false)
   let createMarginOpen = $state(false)
@@ -59,7 +60,7 @@
 </script>
 
 <div class="switcher-wrapper" data-tour="margin-switcher" use:clickOutside={() => (open = false)}>
-  <button class="switcher-btn" onclick={() => (open = !open)}>
+  <button class="switcher-btn" onclick={() => (open = !open)} use:pressable={{ scale: 0.98 }}>
     <Icon name="grid" size={14} />
     Switch margin
     <span class="chevron" class:rotated={open}>
@@ -68,7 +69,7 @@
   </button>
 
   {#if open}
-    <div class="dropdown">
+    <div class="dropdown" transition:scaleFade={{ start: 0.94, distance: -6, origin: 'top left' }}>
       <div class="margin-list">
         {#each marginState.margins as margin (margin.marginId)}
           {@const unread = unreadPerMargin.get(margin.marginId) ?? 0}

@@ -65,15 +65,22 @@
     font-family: inherit;
     font-weight: bold;
     transition:
-      background-color 0.15s ease,
-      border-color 0.15s ease,
-      box-shadow 0.15s ease,
-      transform 0.05s ease,
-      opacity 0.15s ease;
+      background-color var(--motion-fast) var(--ease-standard),
+      border-color var(--motion-fast) var(--ease-standard),
+      box-shadow var(--motion-fast) var(--ease-standard),
+      opacity var(--motion-fast) var(--ease-standard),
+      transform var(--motion-base) var(--ease-spring);
   }
 
   .but:active:not(:disabled) {
-    transform: scale(0.97);
+    transform: scale(0.96);
+    transition-duration: var(--motion-instant);
+    transition-timing-function: var(--ease-standard);
+  }
+
+  .but:focus-visible {
+    outline: 2px solid #ff843c;
+    outline-offset: 2px;
   }
 
   .but.primary {
@@ -84,7 +91,8 @@
 
   .but.primary:hover:not(:disabled) {
     background-color: #e06d2b;
-    box-shadow: 0 2px 8px rgba(244, 126, 58, 0.3);
+    box-shadow: 0 4px 14px rgba(244, 126, 58, 0.35);
+    transform: translate3d(0, -1px, 0);
   }
 
   .but.secondary {
@@ -128,7 +136,8 @@
 
   .but.delete:hover:not(:disabled) {
     background-color: #a93226;
-    box-shadow: 0 2px 8px rgba(192, 57, 43, 0.3);
+    box-shadow: 0 4px 14px rgba(192, 57, 43, 0.35);
+    transform: translate3d(0, -1px, 0);
   }
 
   .but.list {
@@ -144,7 +153,8 @@
 
   .but.list:hover:not(:disabled) {
     border-color: #ebebeb;
-    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    transform: translate3d(0, -1px, 0);
   }
 
   .but.small {

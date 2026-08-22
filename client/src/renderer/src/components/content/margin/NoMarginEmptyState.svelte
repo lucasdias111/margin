@@ -5,6 +5,7 @@
   import Icon from '$src/components/common/icons/Icon.svelte'
   import { marginInviteService } from '$src/services/MarginInviteService'
   import Button from '$src/components/common/buttons/Button.svelte'
+  import { viewIn } from '$src/animations'
 
   let modalOpen = $state(false)
   let joinCode = $state('')
@@ -32,7 +33,7 @@
   }
 </script>
 
-<div class="empty-state">
+<div class="empty-state" in:viewIn>
   <div class="icon">
     <Icon name="layout" size={48} strokeWidth={1.5} color="#d9d9d9" />
   </div>

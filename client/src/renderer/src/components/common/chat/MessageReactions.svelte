@@ -2,6 +2,8 @@
   import type { Message } from '$src/interfaces/Messages'
   import { sessionState } from '$src/states/SessionState.svelte'
   import { conversationsState } from '$src/states/ConversationsState.svelte.ts'
+  import { flip } from 'svelte/animate'
+  import { DURATION, EASING, popIn, pressable, scaleFade } from '$src/animations'
 
   interface Props {
     message: Message
@@ -41,6 +43,10 @@
         class:mine={isMine}
         title={data.names.join(', ')}
         onclick={() => onToggleReaction(emoji)}
+        animate:flip={{ duration: DURATION.base, easing: EASING.standard }}
+        in:popIn={{ start: 0.5 }}
+        out:scaleFade={{ start: 0.6, duration: 'fast' }}
+        use:pressable={{ scale: 0.9 }}
       >
         {emoji} <span class="count">{data.count}</span>
       </button>
@@ -68,14 +74,16 @@
     font-size: 13px;
     cursor: pointer;
     transition:
-      background 0.12s,
-      border-color 0.12s;
+      background var(--motion-fast) var(--ease-standard),
+      border-color var(--motion-fast) var(--ease-standard),
+      box-shadow var(--motion-fast) var(--ease-standard);
     line-height: 1.4;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
   }
 
   .pill:hover {
     background: #f5ece0;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.16);
   }
 
   .pill.mine {

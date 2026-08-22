@@ -11,6 +11,7 @@
   import type { IconName } from '$src/components/common/icons/icons'
   import { openExternalLink, parseLinks } from '$src/utils/LinksUtils'
   import MessageActions from '$src/components/common/chat/MessageActions.svelte'
+  import { scaleFade } from '$src/animations'
   import MessageReactions from '$src/components/common/chat/MessageReactions.svelte'
   import ImagePreviewModal from '$src/components/common/modals/ImagePreviewModal.svelte'
   import LoadingImage from '$src/components/common/media/LoadingImage.svelte'
@@ -50,9 +51,7 @@
 
   const EMOJI_ONLY = /^(\p{Extended_Pictographic}|‍|️|[\u{1F3FB}-\u{1F3FF}]|\s)+$/u
   let isEmojiOnly = $derived(
-    !hasAttachments &&
-      message.content.trim().length > 0 &&
-      EMOJI_ONLY.test(message.content)
+    !hasAttachments && message.content.trim().length > 0 && EMOJI_ONLY.test(message.content)
   )
 
   function isImage(file: StoredFile): boolean {
@@ -132,7 +131,7 @@
   {/if}
 
   {#if showActions}
-    <div class="actions-wrapper">
+    <div class="actions-wrapper" transition:scaleFade={{ start: 0.85, duration: 'instant' }}>
       <MessageActions
         {message}
         {isSent}

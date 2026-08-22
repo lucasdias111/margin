@@ -8,9 +8,12 @@
   import { conversationsState, defaultMeta } from '$src/states/ConversationsState.svelte.js'
   import { sessionState } from '$src/states/SessionState.svelte'
   import Spinner from '$src/components/common/Spinner.svelte'
+  import MessagesSkeleton from '$src/components/common/chat/MessagesSkeleton.svelte'
   import TypingIndicator from '$src/components/common/chat/TypingIndicator.svelte'
   import type { TypingUser } from '$src/states/TypingIndicatorState.svelte'
   import type { Conversation } from '$src/interfaces/Conversation'
+  import type { TransitionConfig } from 'svelte/transition'
+  import { listItemIn, viewOut } from '$src/animations'
 
   let {
     messages,
@@ -42,6 +45,12 @@
   let lastMessageCount = 0
   let lastConversationId = $state<number | undefined>(undefined)
   let initialScrollDone = $state(false)
+  /**
+   * The conversation whose list has finished settling. Compared against the
+   * active id rather than kept as a bare boolean so visibility flips the
+   * instant you switch chats, instead of one effect-tick later.
+   */
+  let readyConversationId = $state<number | undefined>(undefined)
 
   const activeMeta = $derived(
     conversationsState.conversationMetaById.get(activeConversation?.id) ?? defaultMeta()
@@ -121,21 +130,33 @@
     const hasMessages = messages.length > 0
     const ready = !isLoading && !isPrepending
 
-    if (ready && hasMessages && !initialScrollDone) {
-      untrack(() => {
-        tick().then(() => {
-          requestAnimationFrame(() => {
-            if (messagesContainer) {
-              scrollToBottom('instant')
-              initialScrollDone = true
-              autoFollow = true
-              lastScrollTop = messagesContainer.scrollTop
-              lastMessageCount = messages.length
-            }
-          })
+    if (!ready || initialScrollDone) return
+
+    // Nothing to scroll to — reveal straight away.
+    if (!hasMessages) {
+      initialScrollDone = true
+      readyConversationId = currentId
+      return
+    }
+
+    untrack(() => {
+      tick().then(() => {
+        requestAnimationFrame(() => {
+          if (messagesContainer) {
+            scrollToBottom('instant')
+            autoFollow = true
+            lastScrollTop = messagesContainer.scrollTop
+          }
+
+          // Reveal even if the container went away: the list being hidden is a
+          // presentation detail, and a missed callback must never be able to
+          // leave the chat permanently blank.
+          lastMessageCount = messages.length
+          initialScrollDone = true
+          readyConversationId = currentId
         })
       })
-    }
+    })
   })
 
   $effect(() => {
@@ -190,75 +211,121 @@
       CLUMP_THRESHOLD_MS
     )
   }
+
+  /**
+   * The list stays hidden until the initial scroll-to-bottom for *this*
+   * conversation has landed, which hides the paint-then-jump. Keyed on the id so
+   * it goes false the moment you switch, cached conversations included.
+   */
+  const contentVisible = $derived(activeConversation?.id === readyConversationId)
+
+  /**
+   * Rise-in for messages that arrive while you're watching. Deliberately inert
+   * during the initial paint and while older history is being prepended — a
+   * whole backlog animating at once reads as jank, not life.
+   */
+  function messageIn(node: Element): TransitionConfig {
+    // `contentVisible`, not `initialScrollDone`: the latter is reset by an
+    // effect that runs *after* the keyed remount, so the whole backlog would
+    // animate on every switch.
+    if (!contentVisible || isPrepending) return {}
+    return listItemIn(node, { distance: 10 })
+  }
 </script>
 
 <div class="messages-wrapper" bind:this={messagesContainer} onscroll={onScroll}>
   {#if isLoading}
-    <div class="full-loader">
-      <Spinner size={24} />
+    <div class="full-loader" out:viewOut>
+      <MessagesSkeleton />
     </div>
   {:else}
-    <div class="messages">
-      {#if isPrepending || (!activeMeta.hasMore && !postStyle)}
-        <div class="top-status">
-          {#if isPrepending}
-            <div class="top-status__loading">
-              <Spinner size={14} />
-              <span>Loading older messages…</span>
-            </div>
-          {:else}
-            <div class="top-status__start">
-              <span>Beginning of conversation</span>
-            </div>
-          {/if}
-        </div>
-      {/if}
-
-      {#each messages as message, i (message?.id)}
-        {#if message}
-          {@const isPostBody = postStyle && !activeMeta.hasMore && i === 0}
-          {@const prev = messages[i - 1]}
-          {@const next = messages[i + 1]}
-          {@const showMeta = shouldShowMeta(message, next)}
-          {@const showDisplayName = isFirstInClump(message, prev)}
-          {@const isRead = isMessageRead(message)}
-
-          {#if isPostBody}
-            <div class="post-body-row">
-              <PostBody {message} {onEditMessage} />
-            </div>
-            <div class="replies-divider">
-              <span>
-                {messages.length - 1}
-                {messages.length - 1 === 1 ? 'reply' : 'replies'}
-              </span>
-            </div>
-          {:else}
-            <div
-              class="message-row"
-              class:sent={message.user.id === sessionState.currentUser?.id}
-              class:clumped={!showMeta}
-            >
-              <MessageBubble
-                {message}
-                {showMeta}
-                {showDisplayName}
-                {isRead}
-                {onEditMessage}
-                showReadStatus={isDirectMessage}
-              />
-            </div>
-          {/if}
+    <!--
+      Keyed so switching chats builds a fresh list. Without the remount the same
+      element just has a class toggled off and on, and the browser reverses the
+      in-flight fade instead of replaying it.
+    -->
+    {#key activeConversation?.id}
+      <div class="messages" class:visible={contentVisible}>
+        {#if isPrepending || (!activeMeta.hasMore && !postStyle)}
+          <div class="top-status">
+            {#if isPrepending}
+              <div class="top-status__loading">
+                <Spinner size={14} />
+                <span>Loading older messages…</span>
+              </div>
+            {:else}
+              <div class="top-status__start">
+                <span>Beginning of conversation</span>
+              </div>
+            {/if}
+          </div>
         {/if}
-      {/each}
-    </div>
+
+        {#each messages as message, i (message?.id)}
+          {#if message}
+            {@const isPostBody = postStyle && !activeMeta.hasMore && i === 0}
+            {@const prev = messages[i - 1]}
+            {@const next = messages[i + 1]}
+            {@const showMeta = shouldShowMeta(message, next)}
+            {@const showDisplayName = isFirstInClump(message, prev)}
+            {@const isRead = isMessageRead(message)}
+
+            {#if isPostBody}
+              <div class="post-body-row">
+                <PostBody {message} {onEditMessage} />
+              </div>
+              <div class="replies-divider">
+                <span>
+                  {messages.length - 1}
+                  {messages.length - 1 === 1 ? 'reply' : 'replies'}
+                </span>
+              </div>
+            {:else}
+              <div
+                class="message-row"
+                class:sent={message.user.id === sessionState.currentUser?.id}
+                class:clumped={!showMeta}
+                in:messageIn
+              >
+                <MessageBubble
+                  {message}
+                  {showMeta}
+                  {showDisplayName}
+                  {isRead}
+                  {onEditMessage}
+                  showReadStatus={isDirectMessage}
+                />
+              </div>
+            {/if}
+          {/if}
+        {/each}
+      </div>
+    {/key}
   {/if}
 
   <TypingIndicator users={typingUsers} />
 </div>
 
 <style>
+  /**
+   * Fade the list in once it's scrolled where it belongs. The transform nudge
+   * gives the reveal a little travel so it doesn't just blink on.
+   */
+  .messages {
+    opacity: 0;
+    transform: translate3d(0, 6px, 0);
+    transition:
+      opacity var(--motion-slow) var(--ease-standard),
+      transform var(--motion-slow) var(--ease-standard);
+  }
+
+  .messages.visible {
+    opacity: 1;
+    transform: none;
+  }
+
   .messages-wrapper {
+    position: relative;
     flex: 1;
     min-width: 0;
     min-height: 0;
@@ -328,12 +395,19 @@
     justify-content: flex-end;
   }
 
+  /**
+   * The skeleton is layered over the pane rather than sitting in the flow, so
+   * the real list can mount underneath and fade up while the skeleton leaves.
+   */
   .full-loader {
+    position: absolute;
+    inset: 0;
+    z-index: 1;
     display: flex;
-    align-items: center;
-    justify-content: center;
-    height: 100%;
+    flex-direction: column;
+    justify-content: flex-end;
     min-height: 200px;
+    pointer-events: none;
   }
 
   .top-status {

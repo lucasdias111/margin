@@ -63,7 +63,7 @@
 </script>
 
 <div class="header-wrapper">
-  <ChatHeaderShell onBack={handleBack}>
+  <ChatHeaderShell onBack={handleBack} identity={group.id}>
     {#snippet left()}
       <div class="group-avatar">
         <Icon name="users" size={16} />

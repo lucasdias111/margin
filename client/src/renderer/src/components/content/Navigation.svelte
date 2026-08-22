@@ -14,6 +14,7 @@
   import { sessionState } from '$src/states/SessionState.svelte'
   import { notificationService } from '$src/services/NotificationService'
   import { navigationService } from '$src/services/NavigationService'
+  import { pressable, scaleFade } from '$src/animations'
 
   function onContentSelected(selectedContent: View): void {
     navigationService.setView(selectedContent)
@@ -39,6 +40,7 @@
       <button
         class="avatar-btn"
         data-tour="avatar-btn"
+        use:pressable={{ scale: 0.92 }}
         onclick={() => {
           showDropdown = !showDropdown
         }}
@@ -50,7 +52,10 @@
         />
       </button>
       {#if showDropdown}
-        <div class="dropdown">
+        <div
+          class="dropdown"
+          transition:scaleFade={{ start: 0.92, distance: -6, origin: 'top left' }}
+        >
           <div class="dropdown-header">
             <span class="dropdown-displayname">{sessionState.currentUser.displayName}</span>
           </div>
@@ -117,6 +122,7 @@
   <div class="button-group">
     <button
       class="nav-btn"
+      use:pressable={{ scale: 0.88 }}
       onclick={() => onContentSelected(View.Notifications)}
       class:selected={navigationState.view === View.Notifications}
       aria-label="Notifications"
@@ -129,6 +135,7 @@
     <button
       class="nav-btn"
       data-tour="nav-private"
+      use:pressable={{ scale: 0.88 }}
       onclick={() => onContentSelected(View.Private)}
       class:selected={navigationState.view === View.Private}
       aria-label="Private conversations"
@@ -141,6 +148,7 @@
     <button
       class="nav-btn"
       data-tour="nav-margin"
+      use:pressable={{ scale: 0.88 }}
       onclick={() => onContentSelected(View.Margin)}
       class:selected={navigationState.view === View.Margin}
       aria-label="Spaces"
@@ -215,25 +223,14 @@
     cursor: pointer;
     border: none;
     border-radius: 50%;
-    transition: transform 0.2s ease,
-    opacity 0.2s ease;
+    transition:
+      transform var(--motion-base) var(--ease-spring),
+      opacity var(--motion-fast) var(--ease-standard);
     opacity: 0.85;
   }
 
   .avatar-btn:hover {
-    transform: scale(1.08);
     opacity: 1;
-  }
-
-  @keyframes dropdownIn {
-    from {
-      opacity: 0;
-      transform: scale(0.95) translateY(-4px);
-    }
-    to {
-      opacity: 1;
-      transform: scale(1) translateY(0);
-    }
   }
 
   .dropdown {
@@ -250,7 +247,6 @@
     min-width: 200px;
     box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
     z-index: 100;
-    animation: dropdownIn 0.15s ease-out;
     transform-origin: top left;
   }
 
@@ -278,7 +274,9 @@
     justify-content: space-between;
     padding: 6px 10px;
     border-radius: 8px;
-    transition: background-color 0.15s ease;
+    transition:
+      background-color var(--motion-fast) var(--ease-standard),
+      transform var(--motion-fast) var(--ease-standard);
     cursor: pointer;
     width: 100%;
     box-sizing: border-box;
@@ -287,6 +285,12 @@
 
   .dropdown-item:hover {
     background-color: rgba(255, 255, 255, 0.06);
+    transform: translate3d(2px, 0, 0);
+  }
+
+  .dropdown-item:active {
+    transform: scale(0.98);
+    transition-duration: var(--motion-instant);
   }
 
   .item-label {
@@ -331,13 +335,49 @@
     gap: 4px;
   }
 
+  /* Soft pill that grows in behind the icon of the active tab. */
+  .nav-btn::before {
+    content: '';
+    position: absolute;
+    top: -8px;
+    left: 50%;
+    width: 48px;
+    height: 44px;
+    border-radius: 14px;
+    background-color: rgba(255, 132, 60, 0.14);
+    z-index: -1;
+    transform: translate3d(-50%, 0, 0) scale(0.6);
+    opacity: 0;
+    pointer-events: none;
+    transition:
+      transform var(--motion-base) var(--ease-spring),
+      opacity var(--motion-fast) var(--ease-standard);
+  }
+
+  .nav-btn.selected::before {
+    transform: translate3d(-50%, 0, 0) scale(1);
+    opacity: 1;
+  }
+
+  .nav-btn :global(svg) {
+    transition:
+      color var(--motion-fast) var(--ease-standard),
+      transform var(--motion-base) var(--ease-spring);
+  }
+
+  .nav-btn.selected :global(svg) {
+    transform: translate3d(0, -1px, 0) scale(1.06);
+  }
+
   .nav-label {
     font-size: 9px;
     font-weight: 500;
     letter-spacing: 0.4px;
     text-transform: uppercase;
     color: #666;
-    transition: color 0.15s ease;
+    transition:
+      color var(--motion-fast) var(--ease-standard),
+      font-weight var(--motion-fast) var(--ease-standard);
   }
 
   .nav-btn:hover .nav-label,
@@ -348,7 +388,7 @@
   button :global(svg) {
     display: block;
     color: #888;
-    transition: color 0.15s ease;
+    transition: color var(--motion-fast) var(--ease-standard);
   }
 
   button:hover :global(svg),

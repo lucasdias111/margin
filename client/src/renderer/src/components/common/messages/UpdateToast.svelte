@@ -2,6 +2,7 @@
   import { updateState } from '$src/states/UpdateState.svelte'
   import Icon from '$src/components/common/icons/Icon.svelte'
   import { updateService } from '$src/services/UpdateService'
+  import { toastIn, toastOut } from '$src/animations'
 
   function accept(): void {
     updateService.setIsDownloading(true)
@@ -22,7 +23,7 @@
 </script>
 
 {#if updateState.error}
-  <div class="toast" role="alert">
+  <div class="toast" role="alert" in:toastIn out:toastOut>
     <div class="toast-icon toast-icon--error">
       <Icon name="x" size={14} strokeWidth={2.5} />
     </div>
@@ -35,7 +36,7 @@
     </button>
   </div>
 {:else if updateState.updateDownloaded}
-  <div class="toast" role="alert">
+  <div class="toast" role="alert" in:toastIn out:toastOut>
     <div class="toast-icon toast-icon--success">
       <Icon name="checkCircle" size={14} strokeWidth={2.5} />
     </div>
@@ -46,7 +47,7 @@
     <button class="toast-action" onclick={install}>Restart</button>
   </div>
 {:else if updateState.updateAvailable}
-  <div class="toast" role="alert">
+  <div class="toast" role="alert" in:toastIn out:toastOut>
     <div class="toast-icon toast-icon--update">
       <Icon name="arrowUpCircle" size={14} strokeWidth={2.5} />
     </div>
@@ -80,7 +81,6 @@
     width: 320px;
     overflow: hidden;
     z-index: 9999;
-    animation: slideIn 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
     box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
   }
 
@@ -167,16 +167,5 @@
 
   .toast-close:hover {
     color: #2c2c2a;
-  }
-
-  @keyframes slideIn {
-    from {
-      transform: translateY(-12px);
-      opacity: 0;
-    }
-    to {
-      transform: translateY(0);
-      opacity: 1;
-    }
   }
 </style>

@@ -1,4 +1,8 @@
 <script lang="ts">
+  import { flip } from 'svelte/animate'
+  import { slide as slideCollapse } from 'svelte/transition'
+  import { DURATION, EASING, listItemIn, listItemOut } from '$src/animations'
+
   import UserEntry from '$src/components/content/sidebar/sidebar_list/UserEntry.svelte'
   import GroupEntry from '$src/components/content/sidebar/sidebar_list/GroupEntry.svelte'
   import UserAvatar from '$src/components/common/user/UserAvatar.svelte'
@@ -58,6 +62,7 @@
       conversationInviteService.pendingInvites.length > 0 ||
       conversationInviteService.sentInvites.length > 0
   )
+  const sectionSlide = { duration: DURATION.base, easing: EASING.standard }
 </script>
 
 <div class="chat_overview">
@@ -69,9 +74,14 @@
       </span>
     </button>
     {#if sentInvitesOpen}
-      <ul class="invite-list">
+      <ul class="invite-list" transition:slideCollapse={sectionSlide}>
         {#each conversationInviteService.sentInvites as invite (invite.conversation.id)}
-          <li class="invite-item">
+          <li
+            class="invite-item"
+            animate:flip={{ duration: DURATION.base, easing: EASING.standard }}
+            in:listItemIn
+            out:listItemOut
+          >
             <UserAvatar profilePictureUrl={invite.toUser.profilePictureUrl} height={30} />
 
             <div class="invite-info">
@@ -96,7 +106,12 @@
     </div>
     <ul class="invite-list">
       {#each conversationInviteService.pendingInvites as invite (invite.conversation.id)}
-        <li class="invite-item">
+        <li
+          class="invite-item"
+          animate:flip={{ duration: DURATION.base, easing: EASING.standard }}
+          in:listItemIn
+          out:listItemOut
+        >
           {#if invite.conversation.type === 'GROUP'}
             <div class="group-invite-avatar">
               <Icon name="users" size={13} />
@@ -128,7 +143,10 @@
           </div>
 
           <div class="invite-actions">
-            <button class="accept-btn" onclick={() => inviteService.acceptConversationInvite(invite)}>
+            <button
+              class="accept-btn"
+              onclick={() => inviteService.acceptConversationInvite(invite)}
+            >
               Accept
             </button>
             <button
@@ -152,14 +170,21 @@
       </span>
     </button>
     {#if groupsOpen}
-      <ul>
+      <ul transition:slideCollapse={sectionSlide}>
         {#each recentGroups as { group, meta } (group.id)}
-          <GroupEntry
-            {group}
-            {meta}
-            isSelected={navigationState.selectedGroupConversation?.id === group.id}
-            onclick={() => groupConversationService.selectGroupConversation(group)}
-          />
+          <li
+            class="entry-row"
+            animate:flip={{ duration: DURATION.base, easing: EASING.standard }}
+            in:listItemIn
+            out:listItemOut
+          >
+            <GroupEntry
+              {group}
+              {meta}
+              isSelected={navigationState.selectedGroupConversation?.id === group.id}
+              onclick={() => groupConversationService.selectGroupConversation(group)}
+            />
+          </li>
         {/each}
       </ul>
     {/if}
@@ -176,13 +201,20 @@
       </span>
     </button>
     {#if dmsOpen}
-      <ul>
+      <ul transition:slideCollapse={sectionSlide}>
         {#each recentUsers as recentUser (recentUser.user.id)}
-          <UserEntry
-            isOnline={recentUser.user.isOnline}
-            isSelected={navigationState.selectedUser?.id === recentUser.user.id}
-            {recentUser}
-          />
+          <li
+            class="entry-row"
+            animate:flip={{ duration: DURATION.base, easing: EASING.standard }}
+            in:listItemIn
+            out:listItemOut
+          >
+            <UserEntry
+              isOnline={recentUser.user.isOnline}
+              isSelected={navigationState.selectedUser?.id === recentUser.user.id}
+              {recentUser}
+            />
+          </li>
         {/each}
       </ul>
     {/if}
@@ -204,6 +236,13 @@
     overflow-x: hidden;
     overflow-y: auto;
     width: 100%;
+  }
+
+  /* Wrapper that lets a conversation row be reordered with animate:flip. */
+  .entry-row {
+    display: flex;
+    width: 100%;
+    min-width: 0;
   }
 
   .chat_overview ul {
@@ -247,6 +286,14 @@
     color: #888;
   }
 
+  .section-header:hover .chevron {
+    color: #999;
+  }
+
+  .section-label {
+    transition: color var(--motion-fast) var(--ease-standard);
+  }
+
   .section-label {
     font-size: 11px;
     font-weight: 600;
@@ -259,7 +306,7 @@
     color: #ccc;
     display: flex;
     align-items: center;
-    transition: transform 0.15s ease;
+    transition: transform var(--motion-base) var(--ease-spring);
     transform: rotate(-90deg);
   }
 

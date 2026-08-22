@@ -15,12 +15,11 @@
   import { untrack } from 'svelte'
   import { usersState } from '$src/states/UsersState.svelte'
   import type { User } from '$src/interfaces/User'
+  import { riseIn } from '$src/animations'
 
   let messageInput = $state('')
   let chatInputRef = $state<ChatInput | null>(null)
-  const canUploadFiles = $derived(
-    (subscriptionState.subscription?.limits.maxStorageGb ?? 1) > 0
-  )
+  const canUploadFiles = $derived((subscriptionState.subscription?.limits.maxStorageGb ?? 1) > 0)
   const activeConversation = $derived(
     conversationsState.currentConversation
       ? conversationsState.byId.get(conversationsState.currentConversation.id)
@@ -164,7 +163,7 @@
       fileUploadEnabled={canUploadFiles}
     />
   {:else}
-    <div class="empty-state">
+    <div class="empty-state" in:riseIn={{ distance: 10 }}>
       <p>Select a conversation or start a new one</p>
     </div>
   {/if}

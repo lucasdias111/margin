@@ -1,6 +1,7 @@
 <script lang="ts">
   import type { Snippet } from 'svelte'
   import Icon from '$src/components/common/icons/Icon.svelte'
+  import { pressable, riseIn } from '$src/animations'
 
   interface Props {
     isLoading?: boolean
@@ -8,6 +9,12 @@
     sidebarOpen?: boolean
 
     onBack?(): void
+    /**
+     * Identifies the conversation being shown. Change it and the header
+     * contents re-play their entrance, so switching chats reads as a change of
+     * subject rather than a text substitution.
+     */
+    identity?: unknown
     left: Snippet
     right?: Snippet
   }
@@ -17,9 +24,12 @@
     onToggleSidebar,
     sidebarOpen = true,
     onBack,
+    identity,
     left,
     right
   }: Props = $props()
+
+  const enter = { distance: 6, duration: 'base' as const }
 </script>
 
 <div class="pane chat-header">
@@ -38,24 +48,35 @@
         tabindex="0"
         title="Back"
         aria-label="Back to list"
+        use:pressable={{ scale: 0.88 }}
       >
         <Icon name="chevronLeft" size={22} color="#1a1a1a" strokeWidth={2.5} />
       </div>
     {/if}
     {#if isLoading}
-      <div class="skeleton avatar"></div>
-      <div class="skeleton-info">
-        <div class="skeleton name"></div>
-        <div class="skeleton status"></div>
+      <div class="header-slot" in:riseIn={enter}>
+        <div class="skeleton avatar"></div>
+        <div class="skeleton-info">
+          <div class="skeleton name"></div>
+          <div class="skeleton status"></div>
+        </div>
       </div>
     {:else}
-      {@render left()}
+      {#key identity}
+        <div class="header-slot" in:riseIn={enter}>
+          {@render left()}
+        </div>
+      {/key}
     {/if}
   </div>
 
   <div class="header-right">
     {#if !isLoading && right}
-      {@render right()}
+      {#key identity}
+        <div class="header-slot" in:riseIn={enter}>
+          {@render right()}
+        </div>
+      {/key}
     {/if}
 
     {#if onToggleSidebar}
@@ -63,6 +84,7 @@
         class="icon-btn"
         class:active={sidebarOpen}
         onclick={onToggleSidebar}
+        use:pressable={{ scale: 0.88 }}
         title="Toggle member list"
         aria-label="Toggle sidebar"
       >
@@ -95,11 +117,24 @@
     display: flex;
     align-items: center;
     gap: 12px;
+    min-width: 0;
+  }
+
+  /* Wrapper that lets the header's contents animate as one unit. */
+  .header-slot {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-width: 0;
   }
 
   .header-right {
     display: flex;
     align-items: center;
+    gap: 6px;
+  }
+
+  .header-right .header-slot {
     gap: 6px;
   }
 
@@ -113,8 +148,8 @@
     cursor: pointer;
     color: #aaa;
     transition:
-      background 0.15s ease,
-      color 0.15s ease;
+      background var(--motion-fast) var(--ease-standard),
+      color var(--motion-fast) var(--ease-standard);
   }
 
   .back-btn {
@@ -130,6 +165,12 @@
     color: #555;
     margin-right: 2px;
     flex-shrink: 0;
+  }
+
+  .back-btn {
+    transition:
+      background var(--motion-fast) var(--ease-standard),
+      color var(--motion-fast) var(--ease-standard);
   }
 
   .back-btn:hover {
@@ -166,7 +207,7 @@
   .skeleton {
     background: linear-gradient(90deg, #f5ede3 25%, #edddd0 50%, #f5ede3 75%);
     background-size: 200% 100%;
-    animation: shimmer 1.2s ease-in-out infinite;
+    animation: shimmer 1.2s var(--ease-in-out) infinite;
     border-radius: 6px;
   }
 

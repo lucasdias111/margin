@@ -3,6 +3,7 @@
   import UnreadNotificationBadge from '$src/components/common/chat/UnreadNotificationBadge.svelte'
   import Icon from '$src/components/common/icons/Icon.svelte'
   import Tooltip from '$src/components/common/Tooltip.svelte'
+  import { pressable } from '$src/animations'
 
   interface Props {
     name: string
@@ -29,7 +30,12 @@
   }: Props = $props()
 </script>
 
-<button class="entry {extraClass ?? ''}" class:selected={isSelected} {onclick}>
+<button
+  class="entry {extraClass ?? ''}"
+  class:selected={isSelected}
+  {onclick}
+  use:pressable={{ scale: 0.985 }}
+>
   <span class="avatar-wrap">
     {@render avatar()}
   </span>
@@ -70,7 +76,9 @@
     cursor: pointer;
     font-family: inherit;
     color: #0f0f0f;
-    transition: background 0.15s ease;
+    transition:
+      background var(--motion-fast) var(--ease-standard),
+      transform var(--motion-base) var(--ease-spring);
     user-select: none;
   }
 
@@ -80,6 +88,12 @@
 
   .entry.selected {
     background: #fff0eb;
+  }
+
+  .entry .name,
+  .entry .timestamp,
+  .entry .last-message {
+    transition: color var(--motion-fast) var(--ease-standard);
   }
 
   .entry.selected .name {
@@ -107,6 +121,16 @@
 
   .entry.selected .avatar-wrap {
     background: #ffd8c8;
+  }
+
+  .avatar-wrap {
+    transition:
+      background var(--motion-fast) var(--ease-standard),
+      transform var(--motion-base) var(--ease-spring);
+  }
+
+  .entry:hover .avatar-wrap {
+    transform: scale(1.06);
   }
 
   .info {

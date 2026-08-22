@@ -17,6 +17,7 @@
   import { navigationService } from '$src/services/NavigationService'
   import { marginState } from '$src/states/MarginState.svelte'
   import { clickOutside } from '$src/actions/clickOutside'
+  import { scaleFade, viewIn, viewOut } from '$src/animations'
 
   let selectedContent = $derived<View>(navigationState.view)
   let newPrivateChatOpen = $state(false)
@@ -45,83 +46,94 @@
 </script>
 
 <div class="sidebar">
-  {#if selectedContent === 'private'}
-    <div class="pane panel" data-tour="private-sidebar">
-      <div class="panel-header">
-        <div class="search-row">
-          <UserSearchBar {onSelectUser} showSharedMargins={true} />
-          <div class="new-chat-wrapper" use:clickOutside={() => (dropdownOpen = false)}>
-            <Button buttonType="secondary" size="small" class="new-chat-btn" onClick={() => (dropdownOpen = !dropdownOpen)}>
-              {#snippet children()}
-                <Icon name="plus" size={14} />
-              {/snippet}
-            </Button>
-            {#if dropdownOpen}
-              <div class="dropdown">
-                <button class="dropdown-item" onclick={openPrivateChat}>
-                  <Icon name="messages" size={13} />
-                  <span class="item-text">
-                    <span class="item-title">Private chat</span>
-                    <span class="item-hint">1-on-1, optional Secret Chat</span>
-                  </span>
-                </button>
-                <button class="dropdown-item" onclick={openGroupChat}>
-                  <Icon name="users" size={13} />
-                  <span class="item-text">
-                    <span class="item-title">Group chat</span>
-                    <span class="item-hint">Multiple people, optional Secret Group</span>
-                  </span>
-                </button>
-              </div>
-            {/if}
+  {#key selectedContent}
+    {#if selectedContent === 'private'}
+      <div class="pane panel" data-tour="private-sidebar" in:viewIn out:viewOut>
+        <div class="panel-header">
+          <div class="search-row">
+            <UserSearchBar {onSelectUser} showSharedMargins={true} />
+            <div class="new-chat-wrapper" use:clickOutside={() => (dropdownOpen = false)}>
+              <Button
+                buttonType="secondary"
+                size="small"
+                class="new-chat-btn"
+                onClick={() => (dropdownOpen = !dropdownOpen)}
+              >
+                {#snippet children()}
+                  <Icon name="plus" size={14} />
+                {/snippet}
+              </Button>
+              {#if dropdownOpen}
+                <div
+                  class="dropdown"
+                  transition:scaleFade={{ start: 0.9, distance: -6, origin: 'top right' }}
+                >
+                  <button class="dropdown-item" onclick={openPrivateChat}>
+                    <Icon name="messages" size={13} />
+                    <span class="item-text">
+                      <span class="item-title">Private chat</span>
+                      <span class="item-hint">1-on-1, optional Secret Chat</span>
+                    </span>
+                  </button>
+                  <button class="dropdown-item" onclick={openGroupChat}>
+                    <Icon name="users" size={13} />
+                    <span class="item-text">
+                      <span class="item-title">Group chat</span>
+                      <span class="item-hint">Multiple people, optional Secret Group</span>
+                    </span>
+                  </button>
+                </div>
+              {/if}
+            </div>
           </div>
         </div>
+        <div class="panel-content">
+          <UsersList />
+        </div>
       </div>
-      <div class="panel-content">
-        <UsersList />
-      </div>
-    </div>
-  {:else if selectedContent === 'margin' && marginState.isMemberOfAnyMargins}
-    <div class="pane panel">
-      <div class="panel-divider"></div>
+    {:else if selectedContent === 'margin' && marginState.isMemberOfAnyMargins}
+      <div class="pane panel" in:viewIn out:viewOut>
+        <div class="panel-divider"></div>
 
-      <div class="panel-nav">
-        <MarginNavigationItem label="Home" active={isHome} onclick={goHome} icon={homeIcon} />
-        {#snippet homeIcon()}
-          <Icon name="home" size={14} />
-        {/snippet}
-        <MarginSwitcher />
-      </div>
+        <div class="panel-nav">
+          <MarginNavigationItem label="Home" active={isHome} onclick={goHome} icon={homeIcon} />
+          {#snippet homeIcon()}
+            <Icon name="home" size={14} />
+          {/snippet}
+          <MarginSwitcher />
+        </div>
 
-      <div class="panel-divider"></div>
+        <div class="panel-divider"></div>
 
-      <div class="panel-content">
-        <SpacesList />
+        <div class="panel-content">
+          <SpacesList />
+        </div>
       </div>
-    </div>
-  {:else if selectedContent === 'settings'}
-    <div class="pane panel">
-      <Settings />
-    </div>
-  {/if}
+    {:else if selectedContent === 'settings'}
+      <div class="pane panel" in:viewIn out:viewOut>
+        <Settings />
+      </div>
+    {/if}
+  {/key}
 </div>
 
-<NewConversationModal
-  open={newPrivateChatOpen}
-  onClose={() => (newPrivateChatOpen = false)}
-/>
-<NewGroupChatModal
-  open={newGroupChatOpen}
-  onClose={() => (newGroupChatOpen = false)}
-/>
+<NewConversationModal open={newPrivateChatOpen} onClose={() => (newPrivateChatOpen = false)} />
+<NewGroupChatModal open={newGroupChatOpen} onClose={() => (newGroupChatOpen = false)} />
 
 <style>
   .sidebar {
+    position: relative;
     display: flex;
     flex-direction: column;
     width: 300px;
     min-height: 0;
     gap: 10px;
+  }
+
+  /* Outgoing pane leaves the flow so the incoming one doesn't get squashed. */
+  .panel:not(:only-child) {
+    position: absolute;
+    inset: 0;
   }
 
   @media (max-width: 768px) {

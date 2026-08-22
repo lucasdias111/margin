@@ -2,10 +2,11 @@
   import { errorState } from '$src/states/ErrorState.svelte'
   import Icon from '$src/components/common/icons/Icon.svelte'
   import { errorService } from '$src/services/ErrorService'
+  import { pressable, toastIn, toastOut } from '$src/animations'
 </script>
 
 {#if errorState.hasError}
-  <div class="toast" role="alert">
+  <div class="toast" role="alert" in:toastIn out:toastOut>
     <div class="toast-icon">
       <Icon name="alertCircle" size={14} strokeWidth={2.5} />
     </div>
@@ -13,7 +14,12 @@
       <span class="toast-title">Something went wrong</span>
       <span class="toast-msg">{errorState.errorMessage}</span>
     </div>
-    <button class="toast-close" aria-label="Dismiss" onclick={() => errorService.clearError()}>
+    <button
+      class="toast-close"
+      aria-label="Dismiss"
+      onclick={() => errorService.clearError()}
+      use:pressable={{ scale: 0.85 }}
+    >
       <Icon name="x" size={12} strokeWidth={2.5} />
     </button>
     <div class="toast-progress"></div>
@@ -35,7 +41,6 @@
     width: 320px;
     overflow: hidden;
     z-index: 9999;
-    animation: slideIn 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
     box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
   }
 
@@ -100,17 +105,6 @@
     border-radius: 0 0 10px 10px;
     animation: shrink 3s linear forwards;
     transform-origin: left;
-  }
-
-  @keyframes slideIn {
-    from {
-      transform: translateY(-12px);
-      opacity: 0;
-    }
-    to {
-      transform: translateY(0);
-      opacity: 1;
-    }
   }
 
   @keyframes shrink {

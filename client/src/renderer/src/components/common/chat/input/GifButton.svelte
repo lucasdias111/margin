@@ -2,6 +2,7 @@
   import { clickOutside } from '$src/actions/clickOutside'
   import GifPicker from '$src/components/common/chat/GifPicker.svelte'
   import type { Gif } from '$src/services/GifService'
+  import { pressable, scaleFade } from '$src/animations'
 
   let { onSelect }: { onSelect: (gif: Gif) => void } = $props()
 
@@ -14,15 +15,16 @@
 </script>
 
 <div class="emoji-wrapper" use:clickOutside={() => (showGifPicker = false)}>
-  <div class="picker-container" class:visible={showGifPicker}>
-    {#if showGifPicker}
+  {#if showGifPicker}
+    <div class="picker-container" transition:scaleFade={{ start: 0.94, origin: 'bottom right' }}>
       <GifPicker onSelect={handleSelect} />
-    {/if}
-  </div>
+    </div>
+  {/if}
   <button
     class="secondary-button gif-button"
     type="button"
     onclick={() => (showGifPicker = !showGifPicker)}
+    use:pressable={{ scale: 0.9 }}
     aria-label="Insert GIF"
     title="Insert GIF"
   >
@@ -36,15 +38,10 @@
   }
 
   .picker-container {
-    display: none;
     position: absolute;
     bottom: 55px;
     right: 0;
     z-index: 100;
-  }
-
-  .picker-container.visible {
-    display: block;
   }
 
   .secondary-button {
@@ -59,7 +56,9 @@
     cursor: pointer;
     flex-shrink: 0;
     padding: 0;
-    transition: background-color 0.2s;
+    transition:
+      background-color var(--motion-fast) var(--ease-standard),
+      border-color var(--motion-fast) var(--ease-standard);
   }
 
   .secondary-button:hover {

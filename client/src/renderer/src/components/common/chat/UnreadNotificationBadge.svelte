@@ -1,4 +1,6 @@
 <script lang="ts">
+  import { popIn } from '$src/animations'
+
   let {
     shouldShow,
     count,
@@ -7,7 +9,10 @@
 </script>
 
 {#if shouldShow}
-  <span class="badge {variant}">{count > 99 ? '99+' : count}</span>
+  <!-- Keyed on the count so an incrementing badge re-plays the pop. -->
+  {#key count}
+    <span class="badge {variant}" in:popIn={{ start: 0.4 }}>{count > 99 ? '99+' : count}</span>
+  {/key}
 {/if}
 
 <style>

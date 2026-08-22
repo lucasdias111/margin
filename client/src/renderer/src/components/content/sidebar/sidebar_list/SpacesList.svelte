@@ -1,4 +1,7 @@
 <script lang="ts">
+  import { flip } from 'svelte/animate'
+  import { slide as slideCollapse } from 'svelte/transition'
+  import { DURATION, EASING, listItemIn, listItemOut, pressable } from '$src/animations'
   import { spaceState } from '$src/states/SpaceState.svelte.js'
   import type { Space } from '$src/interfaces/Space'
   import { spaceService } from '$src/services/SpaceService'
@@ -41,6 +44,9 @@
       .map((w) => w[0]?.toUpperCase() ?? '')
       .join('')
   }
+
+  const collapse = { duration: DURATION.base, easing: EASING.standard }
+  const reorder = { duration: DURATION.base, easing: EASING.standard }
 </script>
 
 <div class="spaces-list" data-tour="margin-spaces">
@@ -54,8 +60,19 @@
       {@const isOpen = spaceState.isExpanded(space.spaceId)}
       {@const unreadCount = notificationService.totalUnreadMessagesForSpace(space)}
 
-      <div class="space-group" class:is-open={isOpen}>
-        <button class="space-row" onclick={() => toggleSpace(space)} aria-expanded={isOpen}>
+      <div
+        class="space-group"
+        class:is-open={isOpen}
+        animate:flip={reorder}
+        in:listItemIn
+        out:listItemOut
+      >
+        <button
+          class="space-row"
+          onclick={() => toggleSpace(space)}
+          aria-expanded={isOpen}
+          use:pressable={{ scale: 0.98 }}
+        >
           <span class="space-avatar">{spaceInitials(space.spaceName)}</span>
 
           <span class="space-info">
@@ -75,9 +92,16 @@
         </button>
 
         {#if isOpen}
-          <ul class="channels">
-            {#each space.channels as channel (channel.id)}
-              <ChannelEntry {channel} active={selectedChannelId === channel.id} />
+          <ul class="channels" transition:slideCollapse={collapse}>
+            {#each space.channels as channel, i (channel.id)}
+              <li
+                class="channel-row"
+                animate:flip={reorder}
+                in:listItemIn={{ index: i, stagger: 22 }}
+                out:listItemOut
+              >
+                <ChannelEntry {channel} active={selectedChannelId === channel.id} />
+              </li>
             {/each}
           </ul>
         {/if}
@@ -209,11 +233,21 @@
     color: #c4c4c0;
     display: flex;
     align-items: center;
-    transition: transform 0.2s ease;
+    transition:
+      transform var(--motion-base) var(--ease-spring),
+      color var(--motion-fast) var(--ease-standard);
   }
 
   .chevron.rotated {
     transform: rotate(180deg);
+  }
+
+  /* Wrapper so a channel can be reordered with animate:flip. */
+  .channel-row {
+    display: flex;
+    width: 100%;
+    min-width: 0;
+    list-style: none;
   }
 
   .channels {

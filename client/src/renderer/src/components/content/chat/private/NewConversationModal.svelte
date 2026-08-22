@@ -6,6 +6,7 @@
   import { authenticatedGet } from '$src/services/api'
   import { inviteService } from '$src/services/ConversationInviteService'
   import type { User } from '$src/interfaces/User'
+  import { stepIn } from '$src/animations'
 
   interface Props {
     open: boolean
@@ -73,103 +74,110 @@
     sent = false
     encryptionMode = 'standard'
   }
+  /** Which pane of the invite flow is showing; drives the step transition. */
+  const step = $derived(sent ? 'sent' : foundUser ? 'confirm' : 'lookup')
 </script>
 
 <AppModal {open} {title} onClose={close}>
-  {#if sent}
-    <div class="success">
-      <span
-        >Invite sent to {foundUser?.displayName}. They'll need to accept before you can chat.</span
-      >
-      {#if encrypted}
-        <p class="enc-note">
-          <Icon name="lock" size={12} />
-          This will be a Secret Chat — end-to-end encrypted.
-        </p>
-      {/if}
-    </div>
-    <div class="actions">
-      <Button buttonType="primary" onClick={close} text="Done" />
-    </div>
-  {:else if foundUser}
-    <div class="selected-user">
-      <UserAvatar profilePictureUrl={foundUser.profilePictureUrl} />
-      <span class="name">{foundUser.displayName}</span>
-      {#if encrypted}
-        <span class="secret-badge">
-          <Icon name="lock" size={11} />
-          Secret
-        </span>
-      {/if}
-    </div>
-    {#if error}
-      <span class="lookup-error">{error}</span>
-    {/if}
-    <div class="actions">
-      <Button
-        buttonType="secondary"
-        onClick={() => {
-          foundUser = undefined
-        }}
-        size="medium"
-        text="Back"
-      />
-      <Button
-        buttonType="primary"
-        onClick={sendInvite}
-        size="medium"
-        text="Send Invite"
-      />
-    </div>
-  {:else}
-    <div class="lookup">
-      <label class="field-label" for="email-input">Email</label>
-      <div class="lookup-row">
-        <input
-          id="email-input"
-          class="lookup-input"
-          type="email"
-          placeholder="Enter email for user..."
-          bind:value={email}
-          maxlength="255"
-          onkeydown={(e) => {
-            if (e.key === 'Enter') lookup()
-          }}
-        />
-        <Button
-          buttonType="primary"
-          size="small"
-          onClick={lookup}
-          text="Find"
-          disabled={loading || !email.trim()}
-        />
-      </div>
+  {#key step}
+    <div class="step" in:stepIn>
+      {#if sent}
+        <div class="success">
+          <span
+            >Invite sent to {foundUser?.displayName}. They'll need to accept before you can chat.</span
+          >
+          {#if encrypted}
+            <p class="enc-note">
+              <Icon name="lock" size={12} />
+              This will be a Secret Chat — end-to-end encrypted.
+            </p>
+          {/if}
+        </div>
+        <div class="actions">
+          <Button buttonType="primary" onClick={close} text="Done" />
+        </div>
+      {:else if foundUser}
+        <div class="selected-user">
+          <UserAvatar profilePictureUrl={foundUser.profilePictureUrl} />
+          <span class="name">{foundUser.displayName}</span>
+          {#if encrypted}
+            <span class="secret-badge">
+              <Icon name="lock" size={11} />
+              Secret
+            </span>
+          {/if}
+        </div>
+        {#if error}
+          <span class="lookup-error motion-shake">{error}</span>
+        {/if}
+        <div class="actions">
+          <Button
+            buttonType="secondary"
+            onClick={() => {
+              foundUser = undefined
+            }}
+            size="medium"
+            text="Back"
+          />
+          <Button buttonType="primary" onClick={sendInvite} size="medium" text="Send Invite" />
+        </div>
+      {:else}
+        <div class="lookup">
+          <label class="field-label" for="email-input">Email</label>
+          <div class="lookup-row">
+            <input
+              id="email-input"
+              class="lookup-input"
+              type="email"
+              placeholder="Enter email for user..."
+              bind:value={email}
+              maxlength="255"
+              onkeydown={(e) => {
+                if (e.key === 'Enter') lookup()
+              }}
+            />
+            <Button
+              buttonType="primary"
+              size="small"
+              onClick={lookup}
+              text="Find"
+              disabled={loading || !email.trim()}
+            />
+          </div>
 
-      <div class="encryption-options">
-        <label class="radio-option" class:selected={encryptionMode === 'standard'}>
-          <input type="radio" name="chat-enc" value="standard" bind:group={encryptionMode} />
-          <span class="radio-content">
-            <span class="radio-title">Standard</span>
-            <span class="radio-hint">Messages stored on server</span>
-          </span>
-        </label>
-        <label class="radio-option" class:selected={encryptionMode === 'secret'}>
-          <input type="radio" name="chat-enc" value="secret" bind:group={encryptionMode} />
-          <span class="radio-content">
-            <span class="radio-title"><Icon name="lock" size={11} /> Secret Chat</span>
-            <span class="radio-hint">End-to-end encrypted</span>
-          </span>
-        </label>
-      </div>
+          <div class="encryption-options">
+            <label class="radio-option" class:selected={encryptionMode === 'standard'}>
+              <input type="radio" name="chat-enc" value="standard" bind:group={encryptionMode} />
+              <span class="radio-content">
+                <span class="radio-title">Standard</span>
+                <span class="radio-hint">Messages stored on server</span>
+              </span>
+            </label>
+            <label class="radio-option" class:selected={encryptionMode === 'secret'}>
+              <input type="radio" name="chat-enc" value="secret" bind:group={encryptionMode} />
+              <span class="radio-content">
+                <span class="radio-title"><Icon name="lock" size={11} /> Secret Chat</span>
+                <span class="radio-hint">End-to-end encrypted</span>
+              </span>
+            </label>
+          </div>
 
-      {#if error}
-        <span class="lookup-error">{error}</span>
+          {#if error}
+            <span class="lookup-error motion-shake">{error}</span>
+          {/if}
+        </div>
       {/if}
     </div>
-  {/if}
+  {/key}
 </AppModal>
 
 <style>
+  .step {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
   .lookup {
     display: flex;
     flex-direction: column;
@@ -321,5 +329,4 @@
     gap: 8px;
     padding: 5% 0 1%;
   }
-
 </style>

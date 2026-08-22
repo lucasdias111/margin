@@ -13,6 +13,7 @@
   import Button from '$src/components/common/buttons/Button.svelte'
   import Tooltip from '$src/components/common/Tooltip.svelte'
   import Spinner from '$src/components/common/Spinner.svelte'
+  import PageTransition from '$src/components/common/motion/PageTransition.svelte'
 
   let displayName = $state('')
   let password = $state('')
@@ -134,190 +135,192 @@
   }
 </script>
 
-<div class="page">
-  {#if registrationComplete}
-    <div class="card success-card">
-      <img src={marginLogo} alt="margin" class="logo" />
-      <div class="mail-icon" aria-hidden="true">
-        <svg
-          width="28"
-          height="28"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          stroke-width="2"
-          stroke-linecap="round"
-          stroke-linejoin="round"
-        >
-          <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
-          <polyline points="22,6 12,13 2,6" />
-        </svg>
-      </div>
-      <h1 class="success-title">Check your email</h1>
-      <p class="success-body">
-        We've sent an activation link to <strong>{registeredEmail}</strong>. Click the link in the
-        email to activate your account before signing in.
-      </p>
-      <p class="success-hint">Didn't get it? Check your spam folder.</p>
-      <Button
-        buttonType="primary"
-        size="medium"
-        text="Back to sign in"
-        fullWidth
-        onClick={goBack}
-      />
-    </div>
-  {:else}
-    <div class="card">
-      <img src={marginLogo} alt="margin" class="logo" />
-
-      <div class="avatar-row">
-        {#if previewUrl}
-          <UserAvatar profilePictureUrl={previewUrl} width={72} height={72} />
-        {/if}
-        <div class="avatar-meta">
-          <p class="avatar-label">Profile picture</p>
-          <UploadImageButton {onFileChange} {onPreviewUrlChange} />
+<PageTransition>
+  <div class="page">
+    {#if registrationComplete}
+      <div class="card success-card">
+        <img src={marginLogo} alt="margin" class="logo" />
+        <div class="mail-icon" aria-hidden="true">
+          <svg
+            width="28"
+            height="28"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
+            <polyline points="22,6 12,13 2,6" />
+          </svg>
         </div>
-      </div>
-
-      <form class="form" onsubmit={handleRegistration}>
-        <div class="field">
-          <label class="label" for="display-name">Display name</label>
-          <input
-            id="display-name"
-            class="input"
-            type="text"
-            name="displayName"
-            placeholder="Your Name"
-            bind:value={displayName}
-            required
-            autocomplete="name"
-            onfocus={() => (focusedField = 'displayName')}
-            onblur={() => (focusedField = null)}
-          />
-          <Tooltip open={focusedField === 'displayName'} text={fieldHints.displayName} />
-        </div>
-
-        <div class="field">
-          <label class="label" for="email">Email</label>
-          <input
-            id="email"
-            class="input"
-            type="email"
-            name="email"
-            placeholder="you@example.com"
-            bind:value={email}
-            required
-            autocomplete="email"
-            onfocus={() => (focusedField = 'email')}
-            onblur={() => (focusedField = null)}
-          />
-          <Tooltip open={focusedField === 'email'} text={fieldHints.email} />
-        </div>
-
-        <div class="field">
-          <label class="label" for="password">Password</label>
-          <input
-            id="password"
-            class="input"
-            class:input-error={passwordTouched && passwordError}
-            type="password"
-            name="password"
-            placeholder="••••••••"
-            bind:value={password}
-            onfocus={() => (focusedField = 'password')}
-            onblur={() => {
-              passwordTouched = true
-              focusedField = null
-            }}
-            required
-            autocomplete="new-password"
-          />
-          <Tooltip open={focusedField === 'password'} text={fieldHints.password} />
-          {#if passwordTouched && passwordError}
-            <span class="error-text">{passwordError}</span>
-          {/if}
-        </div>
-
-        <div class="field">
-          <label class="label" for="repeatPassword">Confirm password</label>
-          <input
-            id="repeatPassword"
-            class="input"
-            class:input-error={repeatPasswordTouched && repeatPasswordError}
-            type="password"
-            name="repeatPassword"
-            placeholder="••••••••"
-            bind:value={repeatPassword}
-            onfocus={() => (focusedField = 'repeatPassword')}
-            onblur={() => {
-              repeatPasswordTouched = true
-              focusedField = null
-            }}
-            required
-            autocomplete="new-password"
-          />
-          <Tooltip open={focusedField === 'repeatPassword'} text={fieldHints.repeatPassword} />
-          {#if repeatPasswordTouched && repeatPasswordError}
-            <span class="error-text">{repeatPasswordError}</span>
-          {/if}
-        </div>
-
-        <div class="legal-checkboxes">
-          <label class="checkbox-row">
-            <input type="checkbox" bind:checked={acceptedTerms} />
-            <span>
-              I agree to the
-              <button type="button" class="link" onclick={() => openPolicy('terms')}>
-                Terms of Service
-              </button>
-            </span>
-          </label>
-          {#if termsError}
-            <span class="error-text">{termsError}</span>
-          {/if}
-
-          <label class="checkbox-row">
-            <input type="checkbox" bind:checked={acceptedPrivacy} />
-            <span>
-              I agree to the
-              <button type="button" class="link" onclick={() => openPolicy('privacy')}>
-                Privacy Policy
-              </button>
-            </span>
-          </label>
-          {#if privacyError}
-            <span class="error-text">{privacyError}</span>
-          {/if}
-        </div>
-
+        <h1 class="success-title">Check your email</h1>
+        <p class="success-body">
+          We've sent an activation link to <strong>{registeredEmail}</strong>. Click the link in the
+          email to activate your account before signing in.
+        </p>
+        <p class="success-hint">Didn't get it? Check your spam folder.</p>
         <Button
           buttonType="primary"
           size="medium"
-          text="Create account"
+          text="Back to sign in"
           fullWidth
-          onClick={handleRegistration}
+          onClick={goBack}
         />
-        {#if isLoading}
-          <Spinner size={16} color="#ffffff" />
-        {/if}
-      </form>
-
-      <div class="divider">
-        <span>or</span>
       </div>
+    {:else}
+      <div class="card">
+        <img src={marginLogo} alt="margin" class="logo" />
 
-      <Button
-        buttonType="secondary"
-        size="medium"
-        text="Back to sign in"
-        fullWidth
-        onClick={goBack}
-      />
-    </div>
-  {/if}
-</div>
+        <div class="avatar-row">
+          {#if previewUrl}
+            <UserAvatar profilePictureUrl={previewUrl} width={72} height={72} />
+          {/if}
+          <div class="avatar-meta">
+            <p class="avatar-label">Profile picture</p>
+            <UploadImageButton {onFileChange} {onPreviewUrlChange} />
+          </div>
+        </div>
+
+        <form class="form" onsubmit={handleRegistration}>
+          <div class="field">
+            <label class="label" for="display-name">Display name</label>
+            <input
+              id="display-name"
+              class="input"
+              type="text"
+              name="displayName"
+              placeholder="Your Name"
+              bind:value={displayName}
+              required
+              autocomplete="name"
+              onfocus={() => (focusedField = 'displayName')}
+              onblur={() => (focusedField = null)}
+            />
+            <Tooltip open={focusedField === 'displayName'} text={fieldHints.displayName} />
+          </div>
+
+          <div class="field">
+            <label class="label" for="email">Email</label>
+            <input
+              id="email"
+              class="input"
+              type="email"
+              name="email"
+              placeholder="you@example.com"
+              bind:value={email}
+              required
+              autocomplete="email"
+              onfocus={() => (focusedField = 'email')}
+              onblur={() => (focusedField = null)}
+            />
+            <Tooltip open={focusedField === 'email'} text={fieldHints.email} />
+          </div>
+
+          <div class="field">
+            <label class="label" for="password">Password</label>
+            <input
+              id="password"
+              class="input"
+              class:input-error={passwordTouched && passwordError}
+              type="password"
+              name="password"
+              placeholder="••••••••"
+              bind:value={password}
+              onfocus={() => (focusedField = 'password')}
+              onblur={() => {
+                passwordTouched = true
+                focusedField = null
+              }}
+              required
+              autocomplete="new-password"
+            />
+            <Tooltip open={focusedField === 'password'} text={fieldHints.password} />
+            {#if passwordTouched && passwordError}
+              <span class="error-text">{passwordError}</span>
+            {/if}
+          </div>
+
+          <div class="field">
+            <label class="label" for="repeatPassword">Confirm password</label>
+            <input
+              id="repeatPassword"
+              class="input"
+              class:input-error={repeatPasswordTouched && repeatPasswordError}
+              type="password"
+              name="repeatPassword"
+              placeholder="••••••••"
+              bind:value={repeatPassword}
+              onfocus={() => (focusedField = 'repeatPassword')}
+              onblur={() => {
+                repeatPasswordTouched = true
+                focusedField = null
+              }}
+              required
+              autocomplete="new-password"
+            />
+            <Tooltip open={focusedField === 'repeatPassword'} text={fieldHints.repeatPassword} />
+            {#if repeatPasswordTouched && repeatPasswordError}
+              <span class="error-text">{repeatPasswordError}</span>
+            {/if}
+          </div>
+
+          <div class="legal-checkboxes">
+            <label class="checkbox-row">
+              <input type="checkbox" bind:checked={acceptedTerms} />
+              <span>
+                I agree to the
+                <button type="button" class="link" onclick={() => openPolicy('terms')}>
+                  Terms of Service
+                </button>
+              </span>
+            </label>
+            {#if termsError}
+              <span class="error-text">{termsError}</span>
+            {/if}
+
+            <label class="checkbox-row">
+              <input type="checkbox" bind:checked={acceptedPrivacy} />
+              <span>
+                I agree to the
+                <button type="button" class="link" onclick={() => openPolicy('privacy')}>
+                  Privacy Policy
+                </button>
+              </span>
+            </label>
+            {#if privacyError}
+              <span class="error-text">{privacyError}</span>
+            {/if}
+          </div>
+
+          <Button
+            buttonType="primary"
+            size="medium"
+            text="Create account"
+            fullWidth
+            onClick={handleRegistration}
+          />
+          {#if isLoading}
+            <Spinner size={16} color="#ffffff" />
+          {/if}
+        </form>
+
+        <div class="divider">
+          <span>or</span>
+        </div>
+
+        <Button
+          buttonType="secondary"
+          size="medium"
+          text="Back to sign in"
+          fullWidth
+          onClick={goBack}
+        />
+      </div>
+    {/if}
+  </div>
+</PageTransition>
 
 <PolicyModal
   open={policyModalOpen}

@@ -2,7 +2,7 @@
   import { authenticationService } from '$src/services/AuthenticationService'
   import { push } from 'svelte-spa-router'
   import { onMount } from 'svelte'
-  import { riseIn } from '$src/animations/riseIn'
+  import { riseIn } from '$src/animations'
   import Button from '$src/components/common/buttons/Button.svelte'
   import Spinner from '$src/components/common/Spinner.svelte'
 
@@ -65,18 +65,12 @@
 
 <div class="page">
   <div class="card" in:riseIn={{ distance: 32, duration: 500 }}>
-    <div
-      class="header"
-      in:riseIn={{ delay: STAGGER_DELAY, index: 0, stagger: STAGGER_STEP }}
-    >
+    <div class="header" in:riseIn={{ delay: STAGGER_DELAY, index: 0, stagger: STAGGER_STEP }}>
       <h1 class="title">Welcome back</h1>
     </div>
 
     <form class="form" onsubmit={handleLogin}>
-      <div
-        class="field"
-        in:riseIn={{ delay: STAGGER_DELAY, index: 1, stagger: STAGGER_STEP }}
-      >
+      <div class="field" in:riseIn={{ delay: STAGGER_DELAY, index: 1, stagger: STAGGER_STEP }}>
         <label class="label" for="email">Email</label>
         <input
           id="email"
@@ -89,10 +83,7 @@
         />
       </div>
 
-      <div
-        class="field"
-        in:riseIn={{ delay: STAGGER_DELAY, index: 2, stagger: STAGGER_STEP }}
-      >
+      <div class="field" in:riseIn={{ delay: STAGGER_DELAY, index: 2, stagger: STAGGER_STEP }}>
         <label class="label" for="password">Password</label>
         <input
           id="password"
@@ -105,17 +96,13 @@
         />
       </div>
 
-      <div
-        class="forgot-row"
-        in:riseIn={{ delay: STAGGER_DELAY, index: 3, stagger: STAGGER_STEP }}
-      >
-        <button class="forgot-link" type="button" onclick={goToForgotPassword}>Forgot password?</button>
+      <div class="forgot-row" in:riseIn={{ delay: STAGGER_DELAY, index: 3, stagger: STAGGER_STEP }}>
+        <button class="forgot-link" type="button" onclick={goToForgotPassword}
+          >Forgot password?</button
+        >
       </div>
 
-      <div
-        class="checkboxes"
-        in:riseIn={{ delay: STAGGER_DELAY, index: 4, stagger: STAGGER_STEP }}
-      >
+      <div class="checkboxes" in:riseIn={{ delay: STAGGER_DELAY, index: 4, stagger: STAGGER_STEP }}>
         <label class="check">
           <input type="checkbox" bind:checked={rememberMe} />
           <span class="checkmark"></span>
@@ -147,10 +134,7 @@
       {/if}
     </form>
 
-    <div
-      class="divider"
-      in:riseIn={{ delay: STAGGER_DELAY, index: 6, stagger: STAGGER_STEP }}
-    >
+    <div class="divider" in:riseIn={{ delay: STAGGER_DELAY, index: 6, stagger: STAGGER_STEP }}>
       <span>or</span>
     </div>
     <div in:riseIn={{ delay: STAGGER_DELAY, index: 7, stagger: STAGGER_STEP }}>

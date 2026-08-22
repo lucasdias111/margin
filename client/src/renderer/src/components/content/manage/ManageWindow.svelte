@@ -6,11 +6,11 @@
   import { navigationState } from '$src/states/NavigationState.svelte'
   import { sessionState } from '$src/states/SessionState.svelte'
   import { MarginRole } from '$src/interfaces/Margin'
+  import { viewIn } from '$src/animations'
 
   const isOwner = $derived(
-    navigationState.selectedMargin?.members.find(
-      (m) => m.user.id === sessionState.currentUser?.id
-    )?.role === MarginRole.OWNER
+    navigationState.selectedMargin?.members.find((m) => m.user.id === sessionState.currentUser?.id)
+      ?.role === MarginRole.OWNER
   )
 
   $effect(() => {
@@ -20,7 +20,7 @@
   })
 </script>
 
-<div class="pane manage-window">
+<div class="pane manage-window" in:viewIn>
   <ManageHeader
     activeTab={navigationState.manageTab}
     onTabChange={(tab) => (navigationState.manageTab = tab)}

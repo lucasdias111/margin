@@ -1,5 +1,6 @@
 <script lang="ts">
   import Icon from '$src/components/common/icons/Icon.svelte'
+  import { backdrop, modalIn, pressable } from '$src/animations'
 
   interface Props {
     open: boolean
@@ -24,20 +25,34 @@
 
 {#if open}
   <!-- svelte-ignore a11y_no_static_element_interactions -->
-  <div class="backdrop" onclick={handleBackdropClick} onkeydown={() => {}}>
+  <div class="backdrop" onclick={handleBackdropClick} onkeydown={() => {}} transition:backdrop>
     <div class="topbar">
       <span class="filename" title={fileName}>{fileName}</span>
       <div class="actions">
-        <button class="action-btn" type="button" onclick={onDownload} title="Download" aria-label="Download">
+        <button
+          class="action-btn"
+          type="button"
+          onclick={onDownload}
+          title="Download"
+          aria-label="Download"
+          use:pressable
+        >
           <Icon name="download" size={16} strokeWidth={2} color="white" />
         </button>
-        <button class="action-btn" type="button" onclick={onClose} title="Close" aria-label="Close">
+        <button
+          class="action-btn"
+          type="button"
+          onclick={onClose}
+          title="Close"
+          aria-label="Close"
+          use:pressable
+        >
           <Icon name="close" size={16} strokeWidth={2} color="white" />
         </button>
       </div>
     </div>
 
-    <img class="preview" {src} alt={fileName} />
+    <img class="preview" {src} alt={fileName} transition:modalIn={{ start: 0.9 }} />
   </div>
 {/if}
 

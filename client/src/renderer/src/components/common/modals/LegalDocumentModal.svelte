@@ -1,4 +1,6 @@
 <script lang="ts">
+  import { backdrop, modalIn, pressable } from '$src/animations'
+
   let {
     open,
     title,
@@ -18,12 +20,32 @@
 
 {#if open}
   <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
-  <div class="overlay" role="dialog" aria-modal="true" aria-label={title} onkeydown={handleKeydown}>
-    <div class="modal">
+  <div
+    class="overlay"
+    role="dialog"
+    aria-modal="true"
+    aria-label={title}
+    onkeydown={handleKeydown}
+    transition:backdrop
+  >
+    <div class="modal" transition:modalIn>
       <div class="modal-header">
         <h2 class="modal-title">{title}</h2>
-        <button class="close-btn" onclick={onClose} aria-label="Close">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+        <button
+          class="close-btn"
+          onclick={onClose}
+          aria-label="Close"
+          use:pressable={{ scale: 0.85 }}
+        >
+          <svg
+            width="18"
+            height="18"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2.5"
+            stroke-linecap="round"
+          >
             <line x1="18" y1="6" x2="6" y2="18" />
             <line x1="6" y1="6" x2="18" y2="18" />
           </svg>
@@ -86,7 +108,9 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: color 0.15s, background 0.15s;
+    transition:
+      color 0.15s,
+      background 0.15s;
   }
 
   .close-btn:hover {

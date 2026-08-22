@@ -1,14 +1,19 @@
 <script lang="ts">
   import { webSocketService } from '$src/services/websocket/WebSocketService'
   import { connectionState } from '$src/states/ConnectionState.svelte'
+  import { pressable, slide } from '$src/animations'
+
+  const drop = { from: 'top' as const, distance: 40 }
 </script>
 
 {#if connectionState.connectionStatus === 'reconnecting'}
-  <div class="connection-banner">Reconnecting to server...</div>
+  <div class="connection-banner" transition:slide={drop}>Reconnecting to server...</div>
 {:else if connectionState.connectionStatus === 'disconnected'}
-  <div class="connection-banner">
+  <div class="connection-banner" transition:slide={drop}>
     Connection lost.
-    <button onclick={() => webSocketService.connect()}>Retry</button>
+    <button onclick={() => webSocketService.connect()} use:pressable={{ scale: 0.93 }}>
+      Retry
+    </button>
   </div>
 {/if}
 

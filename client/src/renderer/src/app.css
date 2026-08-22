@@ -1,4 +1,7 @@
-html, body {
+@import './animations/motion.css';
+
+html,
+body {
   margin: 0;
   padding: 0;
   overflow: hidden;
@@ -10,7 +13,10 @@ html, body {
   background: transparent !important;
 }
 
-input, textarea, button, select {
+input,
+textarea,
+button,
+select {
   font: inherit;
 }
 
@@ -25,7 +31,9 @@ button {
   border: 1px solid #e4cbb2;
   border-radius: 20px;
   outline: none;
-  transition: border-color 0.15s, background-color 0.15s;
+  transition:
+    border-color 0.15s,
+    background-color 0.15s;
 }
 
 @media (prefers-color-scheme: dark) {

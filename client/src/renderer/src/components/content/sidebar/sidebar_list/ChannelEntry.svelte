@@ -5,6 +5,7 @@
   import Icon from '$src/components/common/icons/Icon.svelte'
   import type { IconName } from '$src/components/common/icons/icons'
   import { channelService } from '$src/services/ChannelService'
+  import { pressable } from '$src/animations'
 
   interface Props {
     channel: Channel
@@ -27,25 +28,19 @@
   }
 </script>
 
-<li class="channel-item">
-  <button class="channel-button" class:active onclick={selectChannel}>
-    <span class="channel-type-icon">
-      <Icon name={typeIcon} size={14} />
-    </span>
-    <span class="channel-name">{channel.name}</span>
-    <UnreadNotificationBadge shouldShow={hasUnread} count={1} variant="inline" />
-    {#if channel.voiceParticipants && channel.voiceParticipants.length > 0}
-      <span class="voice-count">{channel.voiceParticipants.length}</span>
-      <span class="voice-indicator-dot"></span>
-    {/if}
-  </button>
-</li>
+<button class="channel-button" class:active onclick={selectChannel} use:pressable={{ scale: 0.98 }}>
+  <span class="channel-type-icon">
+    <Icon name={typeIcon} size={14} />
+  </span>
+  <span class="channel-name">{channel.name}</span>
+  <UnreadNotificationBadge shouldShow={hasUnread} count={1} variant="inline" />
+  {#if channel.voiceParticipants && channel.voiceParticipants.length > 0}
+    <span class="voice-count">{channel.voiceParticipants.length}</span>
+    <span class="voice-indicator-dot"></span>
+  {/if}
+</button>
 
 <style>
-  .channel-item {
-    list-style: none;
-  }
-
   .channel-button {
     position: relative;
     width: 100%;
@@ -61,8 +56,8 @@
     cursor: pointer;
     text-align: left;
     transition:
-      background 0.12s,
-      color 0.12s;
+      background var(--motion-fast) var(--ease-standard),
+      color var(--motion-fast) var(--ease-standard);
   }
 
   .channel-button:hover {
@@ -85,6 +80,7 @@
     align-items: center;
     flex-shrink: 0;
     color: #b4b4ae;
+    transition: color var(--motion-fast) var(--ease-standard);
   }
 
   .channel-button:hover .channel-type-icon,

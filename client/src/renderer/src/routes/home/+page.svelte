@@ -22,6 +22,7 @@
   import { navigationState } from '$src/states/NavigationState.svelte'
   import { viewportState } from '$src/states/ViewportState.svelte'
   import { isElectron } from '$src/utils/platformUtils'
+  import PageTransition from '$src/components/common/motion/PageTransition.svelte'
 
   let bootstrapped = $state(false)
   const showOnboarding = $derived(bootstrapped && (isElectron() || !viewportState.isMobile))
@@ -46,38 +47,40 @@
   })
 </script>
 
-<div class="window">
-  <ConnectionBar />
-  <UpdateToast />
-  {#if callState.isP2PCall}
-    <div class="call-overlay" class:minimized={callState.isMinimized}>
-      <CallWindow />
-    </div>
-  {:else if callState.isGroupCall}
-    <div class="call-overlay" class:minimized={callState.isMinimized}>
-      <ChannelCallWindow />
-    </div>
-  {/if}
-  <Navigation />
-  {#if navigationState.view === View.Manage}
-    <ManageWindow />
-  {:else if navigationState.view === View.Margin && !marginState.isMemberOfAnyMargins}
-    <NoMarginEmptyState />
-  {:else if navigationState.view === View.Notifications}
-    <Notifications />
-  {:else}
-    <div class="sidebar-pane" class:mobile-hidden={navigationState.hasSelection}>
-      <Sidebar />
-    </div>
-    <div class="content-pane" class:mobile-hidden={!navigationState.hasSelection}>
-      <ContentWindow />
-    </div>
-  {/if}
-  <IncomingCallLayer />
-  {#if showOnboarding}
-    <OnboardingOverlay />
-  {/if}
-</div>
+<PageTransition>
+  <div class="window">
+    <ConnectionBar />
+    <UpdateToast />
+    {#if callState.isP2PCall}
+      <div class="call-overlay" class:minimized={callState.isMinimized}>
+        <CallWindow />
+      </div>
+    {:else if callState.isGroupCall}
+      <div class="call-overlay" class:minimized={callState.isMinimized}>
+        <ChannelCallWindow />
+      </div>
+    {/if}
+    <Navigation />
+    {#if navigationState.view === View.Manage}
+      <ManageWindow />
+    {:else if navigationState.view === View.Margin && !marginState.isMemberOfAnyMargins}
+      <NoMarginEmptyState />
+    {:else if navigationState.view === View.Notifications}
+      <Notifications />
+    {:else}
+      <div class="sidebar-pane" class:mobile-hidden={navigationState.hasSelection}>
+        <Sidebar />
+      </div>
+      <div class="content-pane" class:mobile-hidden={!navigationState.hasSelection}>
+        <ContentWindow />
+      </div>
+    {/if}
+    <IncomingCallLayer />
+    {#if showOnboarding}
+      <OnboardingOverlay />
+    {/if}
+  </div>
+</PageTransition>
 
 <style>
   .window {
