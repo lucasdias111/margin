@@ -1,28 +1,10 @@
-/**
- * Svelte actions for motion that reacts to input rather than to mount/unmount.
- *
- * These drive CSS transforms directly instead of animating through Svelte, so
- * they stay on the compositor and keep working while a component re-renders.
- */
-
 import { CSS_EASING, DURATION, prefersReducedMotion } from './motion'
 
 export interface PressableParams {
-  /** Scale at the bottom of the press. */
   scale?: number
-  /** Turn the effect off without removing the action. */
   disabled?: boolean
 }
 
-/**
- * The iOS press: the surface dips under your finger and springs back when you
- * let go. Attach to any clickable element.
- *
- * ```svelte
- * <button use:pressable>…</button>
- * <div use:pressable={{ scale: 0.98 }}>…</div>
- * ```
- */
 export function pressable(
   node: HTMLElement,
   params: PressableParams = {}
@@ -72,25 +54,11 @@ export function pressable(
 }
 
 export interface StaggerParams {
-  /** Delay added per child, in ms. */
   step?: number
-  /** Delay before the first child, in ms. */
   delay?: number
-  /** Cap the cascade so a long list doesn't take seconds to finish. */
   max?: number
 }
 
-/**
- * Sets `--stagger-delay` on each child so a CSS `animation-delay` (see the
- * `.motion-cascade` helper in `motion.css`) cascades down the list. Re-runs
- * whenever children are added or removed.
- *
- * ```svelte
- * <ul use:stagger={{ step: 40 }}>
- *   {#each items as item}<li class="motion-cascade">…</li>{/each}
- * </ul>
- * ```
- */
 export function stagger(
   node: HTMLElement,
   params: StaggerParams = {}
@@ -126,17 +94,11 @@ export function stagger(
 }
 
 export interface HoverLiftParams {
-  /** How far the element rises on hover, in px. */
   lift?: number
-  /** Optional scale applied alongside the lift. */
   scale?: number
   disabled?: boolean
 }
 
-/**
- * Lifts an element towards the cursor on hover. Use on cards and tiles — not on
- * dense list rows, where a background change reads better than movement.
- */
 export function hoverLift(
   node: HTMLElement,
   params: HoverLiftParams = {}
@@ -175,28 +137,11 @@ export function hoverLift(
 }
 
 export interface SlidingIndicatorParams {
-  /** CSS selector for the currently active item inside the container. */
   active?: string
-  /** Which edge the bar sits on. */
   axis?: 'horizontal' | 'vertical'
-  /** Re-run the measurement when this value changes (pass your tab state). */
   key?: unknown
 }
 
-/**
- * Slides a single bar under whichever item is currently active, instead of
- * flicking a border on and off. Put a `.motion-indicator` element inside the
- * container and mark the active item however you already do:
- *
- * ```svelte
- * <div class="tab-bar" use:slidingIndicator={{ active: '.tab-btn.active', key: activeTab }}>
- *   <button class="tab-btn" class:active={…}>…</button>
- *   <span class="motion-indicator"></span>
- * </div>
- * ```
- *
- * The container needs `position: relative`; `motion.css` styles the bar itself.
- */
 export function slidingIndicator(
   node: HTMLElement,
   params: SlidingIndicatorParams = {}
@@ -215,7 +160,6 @@ export function slidingIndicator(
       return
     }
 
-    // First placement jumps into position; later ones glide.
     bar.style.transitionDuration = measured ? `${DURATION.base}ms` : '0ms'
     bar.style.transitionTimingFunction = CSS_EASING.standard
     bar.style.opacity = '1'
@@ -231,7 +175,6 @@ export function slidingIndicator(
     measured = true
   }
 
-  // Wait a frame so layout has settled before the first measurement.
   requestAnimationFrame(position)
 
   const resizeObserver = new ResizeObserver(position)
@@ -241,7 +184,6 @@ export function slidingIndicator(
     update(next: SlidingIndicatorParams) {
       active = next.active ?? '[aria-selected="true"], .active'
       axis = next.axis ?? 'horizontal'
-      // `key` is only here to make Svelte re-run this on a tab change.
       void next.key
       requestAnimationFrame(position)
     },
@@ -252,21 +194,10 @@ export function slidingIndicator(
 }
 
 export interface AutoHeightParams {
-  /** Turn the morph off without removing the action. */
   disabled?: boolean
-  /** Duration override in ms. */
   duration?: number
 }
 
-/**
- * Smoothly morphs a container's height when its contents change size — a modal
- * moving between steps, a panel revealing a section.
- *
- * The container must have exactly one element child, which is what gets
- * measured. `overflow: hidden` is applied *only* while the height is in motion
- * and cleared as soon as it settles, so popovers and dropdowns inside the
- * container are never clipped at rest.
- */
 export function autoHeight(
   node: HTMLElement,
   params: AutoHeightParams = {}
@@ -282,7 +213,6 @@ export function autoHeight(
   }
 
   const settle = (): void => {
-    // Back to `auto` so the container keeps tracking its content on its own.
     node.style.height = 'auto'
     node.style.overflow = ''
     node.style.transition = ''
@@ -296,11 +226,10 @@ export function autoHeight(
 
     clearTimeout(settleTimer)
 
-    // Pin the height we're leaving before animating to the new one.
     node.style.overflow = 'hidden'
     node.style.transition = 'none'
     node.style.height = `${current ?? next}px`
-    void node.offsetHeight // force the pinned height to take effect
+    void node.offsetHeight
 
     node.style.transition = `height ${duration}ms ${CSS_EASING.standard}`
     node.style.height = `${next}px`
@@ -314,7 +243,7 @@ export function autoHeight(
     if (next == null) return
     const rounded = Math.round(next)
     if (current === null) {
-      current = rounded // first measurement: adopt it without animating
+      current = rounded
       return
     }
     if (rounded === current) return

@@ -174,7 +174,6 @@ describe('Navigation', () => {
     await fireEvent.click(avatarButton)
     expect(document.querySelector('.dropdown')).toBeInTheDocument()
 
-    // The dropdown plays an exit transition, so it leaves the DOM a beat later.
     await fireEvent.click(avatarButton)
     await waitFor(() => expect(document.querySelector('.dropdown')).not.toBeInTheDocument())
   })

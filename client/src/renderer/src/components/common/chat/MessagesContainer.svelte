@@ -45,11 +45,6 @@
   let lastMessageCount = 0
   let lastConversationId = $state<number | undefined>(undefined)
   let initialScrollDone = $state(false)
-  /**
-   * The conversation whose list has finished settling. Compared against the
-   * active id rather than kept as a bare boolean so visibility flips the
-   * instant you switch chats, instead of one effect-tick later.
-   */
   let readyConversationId = $state<number | undefined>(undefined)
 
   const activeMeta = $derived(
@@ -132,7 +127,6 @@
 
     if (!ready || initialScrollDone) return
 
-    // Nothing to scroll to — reveal straight away.
     if (!hasMessages) {
       initialScrollDone = true
       readyConversationId = currentId
@@ -148,9 +142,6 @@
             lastScrollTop = messagesContainer.scrollTop
           }
 
-          // Reveal even if the container went away: the list being hidden is a
-          // presentation detail, and a missed callback must never be able to
-          // leave the chat permanently blank.
           lastMessageCount = messages.length
           initialScrollDone = true
           readyConversationId = currentId
@@ -212,22 +203,9 @@
     )
   }
 
-  /**
-   * The list stays hidden until the initial scroll-to-bottom for *this*
-   * conversation has landed, which hides the paint-then-jump. Keyed on the id so
-   * it goes false the moment you switch, cached conversations included.
-   */
   const contentVisible = $derived(activeConversation?.id === readyConversationId)
 
-  /**
-   * Rise-in for messages that arrive while you're watching. Deliberately inert
-   * during the initial paint and while older history is being prepended — a
-   * whole backlog animating at once reads as jank, not life.
-   */
   function messageIn(node: Element): TransitionConfig {
-    // `contentVisible`, not `initialScrollDone`: the latter is reset by an
-    // effect that runs *after* the keyed remount, so the whole backlog would
-    // animate on every switch.
     if (!contentVisible || isPrepending) return {}
     return listItemIn(node, { distance: 10 })
   }
@@ -239,11 +217,6 @@
       <MessagesSkeleton />
     </div>
   {:else}
-    <!--
-      Keyed so switching chats builds a fresh list. Without the remount the same
-      element just has a class toggled off and on, and the browser reverses the
-      in-flight fade instead of replaying it.
-    -->
     {#key activeConversation?.id}
       <div class="messages" class:visible={contentVisible}>
         {#if isPrepending || (!activeMeta.hasMore && !postStyle)}
@@ -307,10 +280,6 @@
 </div>
 
 <style>
-  /**
-   * Fade the list in once it's scrolled where it belongs. The transform nudge
-   * gives the reveal a little travel so it doesn't just blink on.
-   */
   .messages {
     opacity: 0;
     transform: translate3d(0, 6px, 0);
@@ -395,10 +364,6 @@
     justify-content: flex-end;
   }
 
-  /**
-   * The skeleton is layered over the pane rather than sitting in the flow, so
-   * the real list can mount underneath and fade up while the skeleton leaves.
-   */
   .full-loader {
     position: absolute;
     inset: 0;

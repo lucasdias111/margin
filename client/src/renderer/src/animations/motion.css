@@ -1,10 +1,3 @@
-/**
- * Motion tokens as CSS custom properties, plus a few helpers.
- *
- * Mirrors `motion.ts` — change a curve in one and change it in the other.
- * Prefer these variables over hand-written durations so the whole app shares
- * one sense of timing.
- */
 
 :root {
   /* Durations */

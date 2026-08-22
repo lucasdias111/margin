@@ -335,7 +335,6 @@
     gap: 4px;
   }
 
-  /* Soft pill that grows in behind the icon of the active tab. */
   .nav-btn::before {
     content: '';
     position: absolute;

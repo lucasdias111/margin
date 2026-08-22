@@ -28,7 +28,6 @@ describe('MessagesContainer reveal', () => {
   beforeEach(() => {
     sessionState.clear()
     conversationsState.clear()
-    // jsdom has no scrolling; the component only needs the call to not throw.
     Element.prototype.scrollTo = vi.fn() as unknown as Element['scrollTo']
   })
 
@@ -47,11 +46,9 @@ describe('MessagesContainer reveal', () => {
 
     await waitFor(() => expect(container.querySelector('.messages')).toHaveClass('visible'))
 
-    // Switching to an already-cached conversation must hide the list again...
     await rerender({ messages: [message(2, 20)], conversation: conversation(20) })
     expect(container.querySelector('.messages')).not.toHaveClass('visible')
 
-    // ...and then reveal it, so the transition plays a second time.
     await waitFor(() => expect(container.querySelector('.messages')).toHaveClass('visible'))
   })
 

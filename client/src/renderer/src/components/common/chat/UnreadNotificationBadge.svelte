@@ -9,7 +9,6 @@
 </script>
 
 {#if shouldShow}
-  <!-- Keyed on the count so an incrementing badge re-plays the pop. -->
   {#key count}
     <span class="badge {variant}" in:popIn={{ start: 0.4 }}>{count > 99 ? '99+' : count}</span>
   {/key}

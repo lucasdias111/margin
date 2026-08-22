@@ -130,7 +130,6 @@
     gap: 10px;
   }
 
-  /* Outgoing pane leaves the flow so the incoming one doesn't get squashed. */
   .panel:not(:only-child) {
     position: absolute;
     inset: 0;

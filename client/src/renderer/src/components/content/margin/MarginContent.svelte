@@ -9,10 +9,6 @@
   let hasSelectedChannel = $derived(!!navigationState.selectedChannel)
   let showThreadChannel = $derived(isThreadChannel(navigationState.selectedChannel))
 
-  /**
-   * Keyed on the kind of pane, not the channel id — moving between channels is
-   * handled inside the chat itself, so only a genuine change of pane crossfades.
-   */
   let paneKey = $derived(hasSelectedChannel ? (showThreadChannel ? 'thread' : 'channel') : 'home')
 </script>
 

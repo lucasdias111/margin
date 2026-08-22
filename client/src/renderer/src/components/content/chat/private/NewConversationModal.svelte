@@ -74,7 +74,6 @@
     sent = false
     encryptionMode = 'standard'
   }
-  /** Which pane of the invite flow is showing; drives the step transition. */
   const step = $derived(sent ? 'sent' : foundUser ? 'confirm' : 'lookup')
 </script>
 

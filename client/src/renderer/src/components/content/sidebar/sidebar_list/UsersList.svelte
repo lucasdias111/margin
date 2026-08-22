@@ -238,7 +238,6 @@
     width: 100%;
   }
 
-  /* Wrapper that lets a conversation row be reordered with animate:flip. */
   .entry-row {
     display: flex;
     width: 100%;

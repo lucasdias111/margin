@@ -11,10 +11,6 @@
     selectedContent === 'private' && navigationState.selectedGroupConversation !== null
   )
 
-  /**
-   * One key per distinct pane, so switching sections cross-fades but staying
-   * inside a section (e.g. picking another conversation) doesn't.
-   */
   let paneKey = $derived(
     selectedContent === 'private' ? (showingGroup ? 'group' : 'private') : selectedContent
   )
@@ -50,10 +46,6 @@
     gap: 10px;
   }
 
-  /**
-   * Both panes exist for the length of the cross-fade. The outgoing one is
-   * pulled out of flow so it can't push the incoming one around.
-   */
   .pane-swap {
     display: flex;
     flex: 1;

@@ -34,7 +34,6 @@
           use:pressable={{ scale: 0.85 }}>✕</button
         >
       </div>
-      <!-- Morphs between step heights instead of snapping. -->
       <div class="modal-body" use:autoHeight>
         <div class="modal-body-content">
           {@render children()}

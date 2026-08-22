@@ -1,14 +1,3 @@
-/**
- * margin's motion system.
- *
- *  - `motion`      — duration/easing tokens and reduced-motion helpers
- *  - `transitions` — `svelte/transition` functions for mount & unmount
- *  - `actions`     — `use:` actions for input-driven motion
- *
- * The matching CSS custom properties and helper classes live in `motion.css`,
- * imported once from `app.css`.
- */
-
 export {
   BEZIER,
   CSS_EASING,

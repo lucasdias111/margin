@@ -242,7 +242,6 @@
     transform: rotate(180deg);
   }
 
-  /* Wrapper so a channel can be reordered with animate:flip. */
   .channel-row {
     display: flex;
     width: 100%;

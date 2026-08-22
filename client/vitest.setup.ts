@@ -1,12 +1,5 @@
 import '@testing-library/jest-dom/vitest'
 
-/**
- * jsdom ships no Web Animations API, and Svelte 5 drives every `transition:` /
- * `animate:` through it. The stub below is deliberately more than a no-op: it
- * resolves on the animation's own schedule so *outro* transitions actually
- * complete and the element gets removed from the DOM, which is what a test
- * asserting "the menu closed" is waiting for.
- */
 if (!Element.prototype.animate) {
   Element.prototype.animate = function (
     _keyframes: Keyframe[] | PropertyIndexedKeyframes | null,
@@ -50,7 +43,6 @@ if (!Element.prototype.animate) {
       },
       set onfinish(handler) {
         onfinish = handler
-        // A handler attached after the animation already settled still fires.
         if (finished) handler?.call(animation as Animation, {} as AnimationPlaybackEvent)
       },
       cancel: () => {

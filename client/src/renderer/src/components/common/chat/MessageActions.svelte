@@ -103,7 +103,6 @@
     position: absolute;
     bottom: calc(100% + 6px);
     left: 50%;
-    /* Centring lives on `translate` so `transform` stays free for transitions. */
     translate: -50% 0;
     display: flex;
     gap: 2px;
@@ -147,7 +146,6 @@
     position: absolute;
     right: calc(100% + 6px);
     top: 50%;
-    /* Centring lives on `translate` so `transform` stays free for transitions. */
     translate: 0 -50%;
     display: flex;
     flex-direction: column;

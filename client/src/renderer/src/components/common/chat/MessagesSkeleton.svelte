@@ -1,22 +1,12 @@
 <script lang="ts">
-  /**
-   * Message-shaped placeholders shown while a conversation loads.
-   *
-   * A shaped skeleton beats a spinner here: the pane keeps the silhouette of a
-   * conversation, so the switch reads as "this is filling in" rather than
-   * "everything vanished". The widths are fixed rather than random so the
-   * placeholder doesn't reshuffle on every re-render.
-   */
   import { riseIn } from '$src/animations'
 
   interface Props {
-    /** How many placeholder rows to draw. */
     rows?: number
   }
 
   let { rows = 7 }: Props = $props()
 
-  /** Repeating widths + sides, so the stack looks like a real back-and-forth. */
   const SHAPES = [
     { width: 62, sent: false },
     { width: 40, sent: false },

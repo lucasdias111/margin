@@ -9,11 +9,6 @@
     sidebarOpen?: boolean
 
     onBack?(): void
-    /**
-     * Identifies the conversation being shown. Change it and the header
-     * contents re-play their entrance, so switching chats reads as a change of
-     * subject rather than a text substitution.
-     */
     identity?: unknown
     left: Snippet
     right?: Snippet
@@ -120,7 +115,6 @@
     min-width: 0;
   }
 
-  /* Wrapper that lets the header's contents animate as one unit. */
   .header-slot {
     display: flex;
     align-items: center;
