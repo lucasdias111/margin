@@ -34,6 +34,10 @@ test.describe('Channel messages', () => {
     await bobHome.openSpace(seed.spaceName)
     await bobHome.selectChannel(seed.channelName)
 
+    await expect(
+      bobPage.locator('.chat .channel-name', { hasText: seed.channelName }).first()
+    ).toBeVisible()
+
     await aliceHome.sendMessage(msg)
 
     await expect(bobPage.locator('.bubble p.text', { hasText: msg })).toBeVisible({
