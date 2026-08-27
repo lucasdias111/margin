@@ -7,6 +7,7 @@
   import { meetingCallService } from '$src/services/call/MeetingCallService'
   import { meetingService } from '$src/services/MeetingService'
   import CallLayout from '$src/components/content/call/CallLayout.svelte'
+  import MeetingAdmitPanel from '$src/components/content/call/MeetingAdmitPanel.svelte'
   import CallPipWidget from '$src/components/content/call/CallPipWidget.svelte'
   import type { CallParticipant } from '$src/interfaces/Calls'
   import { sessionState } from '$src/states/SessionState.svelte'
@@ -110,6 +111,9 @@
       in:fade={{ duration: 200, easing: cubicInOut }}
       out:scale={{ duration: 250, start: 0.95, easing: cubicInOut, opacity: 0 }}
     >
+      {#if meetingCode}
+        <MeetingAdmitPanel code={meetingCode} />
+      {/if}
       <CallLayout
         {localParticipant}
         {remoteParticipants}

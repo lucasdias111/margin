@@ -6,6 +6,7 @@
   import { meetingCallService } from '$src/services/call/MeetingCallService'
   import { meetingService } from '$src/services/MeetingService'
   import { meetingGuestService } from '$src/services/MeetingGuestService'
+  import { meetingLobbySocket } from '$src/services/MeetingLobbySocket'
   import MeetingCallWindow from '$src/components/content/call/MeetingCallWindow.svelte'
   import MeetingLobby from '$src/components/content/call/MeetingLobby.svelte'
   import type { Meeting } from '$src/interfaces/Meetings'
@@ -52,10 +53,22 @@
 
   function onKnocked(): void {
     phase = 'knocking'
+    meetingLobbySocket.connect((signal) => {
+      if (signal === 'admitted') {
+        meetingLobbySocket.disconnect()
+        join()
+        return
+      }
+      meetingLobbySocket.disconnect()
+      phase = 'unavailable'
+      message =
+        signal === 'denied' ? 'The host did not let you in.' : 'You were removed from this meeting.'
+    })
   }
 
   function leave(): void {
     if (isGuest) {
+      meetingLobbySocket.disconnect()
       meetingGuestService.endSession()
       phase = 'unavailable'
       message = 'You have left the meeting.'

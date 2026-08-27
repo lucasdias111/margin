@@ -13,5 +13,8 @@ export const routes = {
   }),
   '/forgot-password': wrap({
     asyncComponent: () => import('$src/routes/forgot-password/+page.svelte')
+  }),
+  '/meet/:code': wrap({
+    asyncComponent: () => import('$src/routes/meet/+page.svelte')
   })
 }

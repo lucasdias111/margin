@@ -3,6 +3,7 @@ export type MeetingRole = 'HOST' | 'COHOST' | 'PARTICIPANT'
 export type ParticipantState = 'KNOCKING' | 'ADMITTED' | 'DENIED' | 'JOINED' | 'LEFT' | 'REMOVED'
 
 export interface MeetingParticipantInfo {
+  participantId: number
   userId: number | null
   displayName: string
   guest: boolean
