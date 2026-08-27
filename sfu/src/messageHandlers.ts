@@ -9,17 +9,17 @@ export async function handleGetRouterRtpCapabilities(
     ws: WebSocket,
     rooms: Map<string, Room>
 ): Promise<{ peer: Peer; room: Room }> {
-    verifyRoomToken(msg.token, msg.roomId)
+    const claims = verifyRoomToken(msg.token, msg.roomId, msg.peerId)
 
     const room = rooms.get(msg.roomId)
     if (!room) throw new Error('Room does not exist')
 
-    const existingPeer = room.peers.get(msg.peerId)
+    const existingPeer = room.peers.get(claims.userId)
     if (existingPeer) {
         existingPeer.transports.forEach(t => t.close())
         existingPeer.producers.forEach(p => p.close())
         existingPeer.consumers.forEach(c => c.close())
-        room.peers.delete(msg.peerId)
+        room.peers.delete(claims.userId)
     }
 
     if (room.peers.size >= room.maxParticipants) {
@@ -29,17 +29,18 @@ export async function handleGetRouterRtpCapabilities(
     }
 
     const peer: Peer = {
-        id: msg.peerId,
-        displayName: msg.displayName,
+        id: claims.userId,
+        displayName: claims.displayName ?? msg.displayName,
         ws,
         transports: new Map(),
         producers: new Map(),
         consumers: new Map()
     }
     room.peers.set(peer.id, peer)
+    room.lastEmptyAt = null
     console.log(`Peer ${peer.id} joined room ${msg.roomId} (${room.peers.size} peers)`)
 
-    notifyPeerJoined(msg.roomId, msg.peerId).catch(err =>
+    notifyPeerJoined(msg.roomId, peer.id).catch(err =>
         console.error('Failed to notify Spring of peer joining:', err)
     )
 
