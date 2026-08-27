@@ -43,6 +43,7 @@ services:
       SFU_URL: http://margin-sfu:3000
       SFU_PUBLIC_URL: ${SFU_PUBLIC_URL}
       SFU_SECRET: ${SFU_SECRET}
+      MEETING_GUEST_TOKEN_SECRET: ${MEETING_GUEST_TOKEN_SECRET}
       INTERNAL_API_KEY: ${INTERNAL_API_KEY}
       STORAGE_TYPE: ${STORAGE_TYPE:-s3}
       HETZNER_S3_ENDPOINT: ${HETZNER_S3_ENDPOINT}
@@ -138,18 +139,23 @@ services:
       - >-
         certbot certonly --webroot -w /var/www/certbot
         --email ${ADMIN_EMAIL} --agree-tos --no-eff-email
+        --keep-until-expiring --non-interactive
         -d ${DOMAIN} -d www.${DOMAIN} &&
         certbot certonly --webroot -w /var/www/certbot
         --email ${ADMIN_EMAIL} --agree-tos --no-eff-email
+        --keep-until-expiring --non-interactive
         -d files.${DOMAIN} &&
         certbot certonly --webroot -w /var/www/certbot
         --email ${ADMIN_EMAIL} --agree-tos --no-eff-email
+        --keep-until-expiring --non-interactive
         -d updates.${DOMAIN} &&
         certbot certonly --webroot -w /var/www/certbot
         --email ${ADMIN_EMAIL} --agree-tos --no-eff-email
+        --keep-until-expiring --non-interactive
         -d analytics.${DOMAIN} &&
         certbot certonly --webroot -w /var/www/certbot
         --email ${ADMIN_EMAIL} --agree-tos --no-eff-email
+        --keep-until-expiring --non-interactive
         -d grafana.${DOMAIN}
     profiles:
       - certbot
