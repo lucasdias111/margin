@@ -1,3 +1,4 @@
+import { push } from 'svelte-spa-router'
 import { callService } from '$src/services/call/CallService'
 import { channelCallService } from '$src/services/call/ChannelCallService'
 import { incomingCallState } from '$src/states/IncomingCallState.svelte'
@@ -32,6 +33,13 @@ class IncomingCallService {
 
   declineChannelInvite(): void {
     incomingCallState.clearChannelInvite()
+  }
+
+  acceptMeetingInvite(): void {
+    const invite = incomingCallState.meetingInvite
+    if (!invite) return
+    incomingCallState.clearMeetingInvite()
+    push(`/meet/${invite.code}`)
   }
 }
 

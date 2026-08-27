@@ -51,5 +51,12 @@ export const callHandlers = {
     if (!invite) return
     if (callState.isGroupCall && callState.groupCallState?.channelId === invite.channelId) return
     incomingCallState.setChannelInvite(invite)
+  },
+
+  [WebSocketMessageType.MEETING_INVITE]: (data: WebSocketMessage<MeetingInvitePayload>) => {
+    const invite = data.payload
+    if (!invite) return
+    if (callState.isGroupCall && callState.groupCallState?.meetingCode === invite.code) return
+    incomingCallState.setMeetingInvite(invite)
   }
 } satisfies Partial<Record<WebSocketMessageType, MessageHandler>>

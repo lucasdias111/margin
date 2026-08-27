@@ -51,5 +51,6 @@ export enum WebSocketMessageType {
   NOTIFICATION = 'NOTIFICATION',
 
   PING = 'PING',
-  PONG = 'PONG'
+  PONG = 'PONG',
+  MEETING_INVITE = 'MEETING_INVITE'
 }

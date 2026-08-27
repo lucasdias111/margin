@@ -31,7 +31,9 @@
     color: #888;
     cursor: pointer;
     text-align: left;
-    transition: background 0.12s, color 0.12s;
+    transition:
+      background 0.12s,
+      color 0.12s;
   }
 
   .nav-item:hover:not(.active) {

@@ -34,7 +34,9 @@ describe('ForgotPasswordComponent', () => {
     vi.mocked(authenticationService.forgotPassword).mockResolvedValue(undefined)
     render(ForgotPasswordComponent)
 
-    await fireEvent.input(screen.getByLabelText('Email'), { target: { value: 'alice@margin.chat' } })
+    await fireEvent.input(screen.getByLabelText('Email'), {
+      target: { value: 'alice@margin.chat' }
+    })
     await submitForm()
 
     expect(authenticationService.forgotPassword).toHaveBeenCalledWith('alice@margin.chat')
@@ -44,7 +46,9 @@ describe('ForgotPasswordComponent', () => {
     vi.mocked(authenticationService.forgotPassword).mockResolvedValue(undefined)
     render(ForgotPasswordComponent)
 
-    await fireEvent.input(screen.getByLabelText('Email'), { target: { value: 'alice@margin.chat' } })
+    await fireEvent.input(screen.getByLabelText('Email'), {
+      target: { value: 'alice@margin.chat' }
+    })
     await submitForm()
 
     await waitFor(() => {
@@ -56,7 +60,9 @@ describe('ForgotPasswordComponent', () => {
     vi.mocked(authenticationService.forgotPassword).mockResolvedValue(undefined)
     render(ForgotPasswordComponent)
 
-    await fireEvent.input(screen.getByLabelText('Email'), { target: { value: 'alice@margin.chat' } })
+    await fireEvent.input(screen.getByLabelText('Email'), {
+      target: { value: 'alice@margin.chat' }
+    })
     await submitForm()
 
     await waitFor(() => {
@@ -68,7 +74,9 @@ describe('ForgotPasswordComponent', () => {
     vi.mocked(authenticationService.forgotPassword).mockResolvedValue(undefined)
     render(ForgotPasswordComponent)
 
-    await fireEvent.input(screen.getByLabelText('Email'), { target: { value: 'alice@margin.chat' } })
+    await fireEvent.input(screen.getByLabelText('Email'), {
+      target: { value: 'alice@margin.chat' }
+    })
     await submitForm()
 
     await waitFor(() => {
@@ -80,7 +88,9 @@ describe('ForgotPasswordComponent', () => {
     vi.mocked(authenticationService.forgotPassword).mockRejectedValue(new Error('Request failed'))
     render(ForgotPasswordComponent)
 
-    await fireEvent.input(screen.getByLabelText('Email'), { target: { value: 'alice@margin.chat' } })
+    await fireEvent.input(screen.getByLabelText('Email'), {
+      target: { value: 'alice@margin.chat' }
+    })
     await submitForm()
 
     await waitFor(() => {

@@ -22,7 +22,9 @@
   let inviteSent = $state(false)
 
   let title = $derived(
-    userToInvite ? `Invite ${userToInvite.displayName} to ${marginName}?` : `Invite to ${marginName}`
+    userToInvite
+      ? `Invite ${userToInvite.displayName} to ${marginName}?`
+      : `Invite to ${marginName}`
   )
 
   async function handleExactLookup(): Promise<void> {

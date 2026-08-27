@@ -105,7 +105,12 @@
       <span>Delete margin</span>
       <p>Permanently delete this margin, all its spaces, channels, and members.</p>
     </div>
-    <Button buttonType="delete" size="small" text="Delete margin" onClick={() => (showDeleteConfirm = true)} />
+    <Button
+      buttonType="delete"
+      size="small"
+      text="Delete margin"
+      onClick={() => (showDeleteConfirm = true)}
+    />
   </div>
 </div>
 

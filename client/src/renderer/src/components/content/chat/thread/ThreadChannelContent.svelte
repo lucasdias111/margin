@@ -15,9 +15,7 @@
   let newPostOpen = $state(false)
 
   const channel = $derived(navigationState.selectedChannel)
-  const posts = $derived(
-    channel ? threadsState.postsForChannel(channel.conversationId) : undefined
-  )
+  const posts = $derived(channel ? threadsState.postsForChannel(channel.conversationId) : undefined)
   const openThread = $derived(navigationState.selectedThread)
 
   $effect(() => {
@@ -82,7 +80,11 @@
             >
               <div class="post-avatar">
                 {#if post.author}
-                  <UserAvatar profilePictureUrl={post.author.profilePictureUrl} width={36} height={36} />
+                  <UserAvatar
+                    profilePictureUrl={post.author.profilePictureUrl}
+                    width={36}
+                    height={36}
+                  />
                 {:else}
                   <Icon name="messages" size={18} />
                 {/if}

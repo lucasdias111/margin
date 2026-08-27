@@ -1,4 +1,6 @@
 import { authenticatedGet, authenticatedPost } from '$src/services/api'
+import { webSocketService } from '$src/services/websocket/WebSocketService'
+import { WebSocketMessageType } from '$src/interfaces/WebSocketMessageType'
 import type { EligibleMargin, Meeting, MeetingJoinInfo } from '$src/interfaces/Meetings'
 
 class MeetingService {
@@ -28,6 +30,14 @@ class MeetingService {
 
   async end(code: string): Promise<void> {
     await authenticatedPost(null, `meetings/${code}/end`)
+  }
+
+  invite(recipientId: number, code: string): void {
+    webSocketService.send({
+      type: WebSocketMessageType.MEETING_INVITE,
+      recipientId,
+      payload: code
+    })
   }
 
   shareLink(code: string): string {

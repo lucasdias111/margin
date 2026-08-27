@@ -1,9 +1,11 @@
 <script lang="ts">
   import { srcObject } from '$src/actions/srcObject'
-  import { onDestroy } from 'svelte'
+  import { onDestroy, onMount } from 'svelte'
   import { fade, scale } from 'svelte/transition'
   import { cubicInOut } from 'svelte/easing'
   import { callState } from '$src/states/CallState.svelte'
+  import { marginState } from '$src/states/MarginState.svelte'
+  import type { Meeting } from '$src/interfaces/Meetings'
   import { meetingCallService } from '$src/services/call/MeetingCallService'
   import { meetingService } from '$src/services/MeetingService'
   import CallLayout from '$src/components/content/call/CallLayout.svelte'
@@ -74,6 +76,30 @@
     onLeave?.()
   }
 
+  let invitedUserIds = $state<number[]>([])
+  let meeting = $state<Meeting | null>(null)
+
+  onMount(async () => {
+    if (meetingCode) meeting = await meetingService.getMeeting(meetingCode)
+  })
+
+  const invitableMembers = $derived.by(() => {
+    const meetingMargin = marginState.margins.find((m) => m.marginId === meeting?.marginId)
+    if (!meetingMargin) return []
+    const inCall = new Set(
+      (callState.groupCallState?.participants ?? []).map((p) => Number(p.peerId))
+    )
+    return meetingMargin.members
+      .filter((m) => m.userId !== sessionState.currentUser?.id)
+      .filter((m) => !inCall.has(m.userId))
+  })
+
+  function ringMember(userId: number): void {
+    if (!meetingCode) return
+    meetingService.invite(userId, meetingCode)
+    invitedUserIds = [...invitedUserIds, userId]
+  }
+
   onDestroy(() => meetingCallService.endMeetingCall())
 </script>
 
@@ -84,6 +110,21 @@
     <button class="copy-link-btn" onclick={copyLink}>
       {linkCopied ? 'Link copied' : 'Copy meeting link'}
     </button>
+
+    {#if invitableMembers.length > 0}
+      <div class="invite-panel-list">
+        {#each invitableMembers as member (member.userId)}
+          <div class="invite-panel-row">
+            <p class="invite-panel-name">{member.displayName}</p>
+            {#if invitedUserIds.includes(member.userId)}
+              <span class="invite-sent">Invited</span>
+            {:else}
+              <button class="invite-btn" onclick={() => ringMember(member.userId)}>Ring</button>
+            {/if}
+          </div>
+        {/each}
+      </div>
+    {/if}
   </div>
 {/snippet}
 
