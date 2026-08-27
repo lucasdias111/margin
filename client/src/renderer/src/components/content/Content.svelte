@@ -2,6 +2,7 @@
   import PrivateChatContent from '$src/components/content/chat/private/PrivateChatContent.svelte'
   import GroupChatContent from '$src/components/content/chat/group/GroupChatContent.svelte'
   import MarginContent from '$src/components/content/margin/MarginContent.svelte'
+  import MeetingsContent from '$src/components/content/meetings/MeetingsContent.svelte'
   import SettingsContent from '$src/components/content/settings/SettingsContent.svelte'
   import { navigationState } from '$src/states/NavigationState.svelte'
   import { viewIn, viewOut } from '$src/animations'
@@ -27,6 +28,8 @@
         {/if}
       {:else if selectedContent === 'margin'}
         <MarginContent />
+      {:else if selectedContent === 'meetings'}
+        <MeetingsContent />
       {:else if selectedContent === 'settings'}
         <SettingsContent />
       {/if}
