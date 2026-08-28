@@ -2,6 +2,8 @@
   import { onMount, onDestroy } from 'svelte'
   import { srcObject } from '$src/actions/srcObject'
   import { meetingGuestService, type MeetingPreview } from '$src/services/MeetingGuestService'
+  import Button from '$src/components/common/buttons/Button.svelte'
+  import Icon from '$src/components/common/icons/Icon.svelte'
 
   const {
     code,
@@ -82,6 +84,15 @@
     localStream?.getAudioTracks().forEach((t) => (t.enabled = micOn))
   }
 
+  function goBack(): void {
+    stopPreviewStream()
+    if (window.history.length > 1) {
+      window.history.back()
+      return
+    }
+    window.location.hash = '#/'
+  }
+
   async function joinAsGuest(): Promise<void> {
     if (phase === 'joining') return
     phase = 'joining'
@@ -103,6 +114,10 @@
 </script>
 
 <div class="lobby">
+  <button class="back-btn" onclick={goBack} aria-label="Back" title="Back">
+    <Icon name="chevronLeft" size={22} color="#1a1a1a" strokeWidth={2.5} />
+  </button>
+
   {#if phase === 'loading'}
     <p class="muted">Loading…</p>
   {:else if phase === 'unavailable'}
@@ -125,12 +140,18 @@
     </div>
 
     <div class="device-row">
-      <button class="device-btn" class:off={!micOn} onclick={toggleMic}>
-        {micOn ? 'Mic on' : 'Mic off'}
-      </button>
-      <button class="device-btn" class:off={!cameraOn} onclick={toggleCamera}>
-        {cameraOn ? 'Camera on' : 'Camera off'}
-      </button>
+      <Button
+        buttonType={micOn ? 'secondary' : 'list'}
+        size="small"
+        text={micOn ? 'Mic on' : 'Mic off'}
+        onClick={toggleMic}
+      />
+      <Button
+        buttonType={cameraOn ? 'secondary' : 'list'}
+        size="small"
+        text={cameraOn ? 'Camera on' : 'Camera off'}
+        onClick={toggleCamera}
+      />
     </div>
 
     <label class="field">
@@ -142,9 +163,14 @@
       <p class="muted">{message}</p>
     {/if}
 
-    <button class="primary-btn" onclick={joinAsGuest} disabled={phase === 'joining'}>
-      {phase === 'joining' ? 'Joining…' : 'Join as guest'}
-    </button>
+    <Button
+      buttonType="primary"
+      size="large"
+      fullWidth
+      disabled={phase === 'joining'}
+      text={phase === 'joining' ? 'Joining…' : 'Join as guest'}
+      onClick={joinAsGuest}
+    />
 
     <p class="muted small">
       {preview?.requireAdmission
@@ -156,6 +182,8 @@
 
 <style>
   .lobby {
+    position: relative;
+    color: #2d2d2d;
     min-height: 100vh;
     display: flex;
     flex-direction: column;
@@ -164,6 +192,26 @@
     gap: 12px;
     padding: 24px;
     background-color: #f2eee8;
+  }
+
+  .back-btn {
+    color: #1a1a1a;
+    position: absolute;
+    top: 20px;
+    left: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border: 1px solid rgba(0, 0, 0, 0.12);
+    border-radius: 50%;
+    background: white;
+    cursor: pointer;
+  }
+
+  .back-btn:hover {
+    background: rgba(0, 0, 0, 0.04);
   }
 
   .title {
@@ -209,20 +257,6 @@
     gap: 8px;
   }
 
-  .device-btn {
-    padding: 6px 14px;
-    border: 1px solid rgba(0, 0, 0, 0.15);
-    border-radius: 999px;
-    background: white;
-    cursor: pointer;
-    font-size: 13px;
-  }
-
-  .device-btn.off {
-    background: rgba(0, 0, 0, 0.06);
-    opacity: 0.7;
-  }
-
   .field {
     display: flex;
     flex-direction: column;
@@ -241,21 +275,5 @@
     border-radius: 6px;
     font-size: 14px;
     background: white;
-  }
-
-  .primary-btn {
-    padding: 10px 22px;
-    border: none;
-    border-radius: 6px;
-    background-color: #f47e3a;
-    color: white;
-    cursor: pointer;
-    font-size: 15px;
-    width: 320px;
-  }
-
-  .primary-btn:disabled {
-    opacity: 0.6;
-    cursor: default;
   }
 </style>

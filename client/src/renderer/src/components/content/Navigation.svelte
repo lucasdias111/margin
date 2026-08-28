@@ -147,17 +147,6 @@
     </button>
     <button
       class="nav-btn"
-      use:pressable={{ scale: 0.88 }}
-      onclick={() => onContentSelected(View.Meetings)}
-      class:selected={navigationState.view === View.Meetings}
-      aria-label="Meetings"
-      title="Meetings"
-    >
-      <Icon name="video" size={28} />
-      <span class="nav-label">Meetings</span>
-    </button>
-    <button
-      class="nav-btn"
       data-tour="nav-margin"
       use:pressable={{ scale: 0.88 }}
       onclick={() => onContentSelected(View.Margin)}
@@ -168,6 +157,17 @@
       <Icon name="users" size={28} />
       <UnreadNotificationBadge shouldShow={channelUnread > 0} count={channelUnread} />
       <span class="nav-label">Margins</span>
+    </button>
+    <button
+      class="nav-btn"
+      use:pressable={{ scale: 0.88 }}
+      onclick={() => onContentSelected(View.Meetings)}
+      class:selected={navigationState.view === View.Meetings}
+      aria-label="Meetings"
+      title="Meetings"
+    >
+      <Icon name="calendar" size={28} />
+      <span class="nav-label">Meetings</span>
     </button>
   </div>
   <div class="avatar-space"></div>

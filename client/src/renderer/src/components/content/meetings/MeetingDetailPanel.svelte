@@ -5,6 +5,7 @@
   import { sessionState } from '$src/states/SessionState.svelte'
   import { formatMeetingWhen } from '$src/utils/DateUtils'
   import type { MeetingInvitee, MeetingSummary } from '$src/interfaces/Meetings'
+  import Button from '$src/components/common/buttons/Button.svelte'
 
   const {
     meeting,
@@ -72,22 +73,29 @@
 
   <div class="detail-actions">
     {#if canJoin}
-      <button class="primary-btn" onclick={() => push(`/meet/${meeting.code}`)}>
-        {isHost && meeting.status === 'SCHEDULED' ? 'Start' : 'Join'}
-      </button>
+      <Button
+        buttonType="primary"
+        size="small"
+        text={isHost && meeting.status === 'SCHEDULED' ? 'Start' : 'Join'}
+        onClick={() => push(`/meet/${meeting.code}`)}
+      />
     {/if}
-    <button class="secondary-btn" onclick={copyLink}>
-      {linkCopied ? 'Copied' : 'Copy link'}
-    </button>
+    <Button
+      buttonType="secondary"
+      size="small"
+      text={linkCopied ? 'Copied' : 'Copy link'}
+      onClick={copyLink}
+    />
     {#if isHost && meeting.status === 'SCHEDULED'}
-      <button class="secondary-btn" onclick={onEdit}>Edit</button>
-      <button class="danger-btn" onclick={cancel}>Cancel meeting</button>
+      <Button buttonType="secondary" size="small" text="Edit" onClick={onEdit} />
+      <Button buttonType="danger" size="small" text="Cancel meeting" onClick={cancel} />
     {/if}
   </div>
 </div>
 
 <style>
   .detail {
+    color: #2d2d2d;
     display: flex;
     flex-direction: column;
     gap: 10px;
@@ -109,6 +117,7 @@
   }
 
   .close-btn {
+    color: #1a1a1a;
     border: none;
     background: transparent;
     font-size: 20px;
@@ -150,34 +159,5 @@
     flex-wrap: wrap;
     gap: 8px;
     margin-top: 4px;
-  }
-
-  .primary-btn {
-    padding: 7px 16px;
-    border: none;
-    border-radius: 6px;
-    background-color: #f47e3a;
-    color: white;
-    cursor: pointer;
-    font-size: 13px;
-  }
-
-  .secondary-btn {
-    padding: 7px 14px;
-    border: 1px solid rgba(0, 0, 0, 0.15);
-    border-radius: 6px;
-    background: transparent;
-    cursor: pointer;
-    font-size: 13px;
-  }
-
-  .danger-btn {
-    padding: 7px 14px;
-    border: 1px solid rgba(192, 57, 43, 0.4);
-    border-radius: 6px;
-    background: transparent;
-    color: #c0392b;
-    cursor: pointer;
-    font-size: 13px;
   }
 </style>

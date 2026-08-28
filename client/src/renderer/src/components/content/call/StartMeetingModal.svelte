@@ -2,6 +2,7 @@
   import { onMount } from 'svelte'
   import { meetingService } from '$src/services/MeetingService'
   import type { EligibleMargin } from '$src/interfaces/Meetings'
+  import Button from '$src/components/common/buttons/Button.svelte'
 
   const { onClose, onStarted }: { onClose: () => void; onStarted: (code: string) => void } =
     $props()
@@ -36,7 +37,7 @@
       <p class="hint">
         Upgrade a margin you belong to to start meetings and invite people from outside Margin.
       </p>
-      <button class="primary-btn" onclick={onClose}>Got it</button>
+      <Button buttonType="primary" size="medium" text="Got it" onClick={onClose} />
     {:else}
       <h2 class="modal-title">Start a meeting</h2>
 
@@ -59,10 +60,14 @@
       </label>
 
       <div class="actions">
-        <button class="secondary-btn" onclick={onClose}>Cancel</button>
-        <button class="primary-btn" onclick={start} disabled={starting}>
-          {starting ? 'Starting…' : 'Start meeting'}
-        </button>
+        <Button buttonType="secondary" size="medium" text="Cancel" onClick={onClose} />
+        <Button
+          buttonType="primary"
+          size="medium"
+          disabled={starting}
+          text={starting ? 'Starting…' : 'Start meeting'}
+          onClick={start}
+        />
       </div>
     {/if}
   </div>
@@ -80,6 +85,7 @@
   }
 
   .modal {
+    color: #2d2d2d;
     background: #f2eee8;
     border-radius: 10px;
     padding: 24px;
@@ -124,29 +130,5 @@
     display: flex;
     justify-content: flex-end;
     gap: 8px;
-  }
-
-  .primary-btn {
-    padding: 8px 16px;
-    border: none;
-    border-radius: 6px;
-    background-color: #f47e3a;
-    color: white;
-    cursor: pointer;
-    font-size: 14px;
-  }
-
-  .primary-btn:disabled {
-    opacity: 0.6;
-    cursor: default;
-  }
-
-  .secondary-btn {
-    padding: 8px 16px;
-    border: 1px solid rgba(0, 0, 0, 0.15);
-    border-radius: 6px;
-    background: transparent;
-    cursor: pointer;
-    font-size: 14px;
   }
 </style>
