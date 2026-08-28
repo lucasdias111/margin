@@ -2,7 +2,6 @@ import type { User } from '$src/interfaces/User'
 
 export interface Notification {
   notificationId: number
-  recipient: User
   sender: User | null
   type: NotificationType
   referenceId: number

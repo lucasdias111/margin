@@ -90,6 +90,13 @@
     } else if (notification.type === NotificationType.ADDED_TO_MARGIN) {
       marginService.select(await marginService.getMargin(notification.marginId))
       navigationService.setView(View.Margin)
+    } else if (notification.type === NotificationType.INVITED_TO_MARGIN) {
+      if (notification.marginId) {
+        marginService.select(await marginService.getMargin(notification.marginId))
+        navigationService.setView(View.Margin)
+      }
+    } else if (notification.type === NotificationType.CONVERSATION_INVITE) {
+      await navigateToInvitedConversation(notification)
     } else if (notification.type === NotificationType.MESSAGE_REACTION) {
       await navigateToReactedMessage(notification)
     } else if (notification.type === NotificationType.THREAD_REPLY) {
@@ -104,6 +111,17 @@
       marginService.select(await marginService.getMargin(notification.marginId))
       navigationState.manageTab = 'Subscription'
       navigationService.setView(View.Manage)
+    }
+  }
+
+  async function navigateToInvitedConversation(notification: Notification): Promise<void> {
+    const conversation = conversationsState.byId.get(notification.referenceId)
+    if (conversation?.type === 'GROUP') {
+      groupConversationService.selectGroupConversation(conversation)
+    } else if (notification.sender) {
+      await messageLoaderService.loadConversationForUser(notification.sender)
+      usersService.select(notification.sender)
+      navigationService.setView(View.Private)
     }
   }
 

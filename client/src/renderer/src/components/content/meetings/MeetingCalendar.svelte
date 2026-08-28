@@ -76,9 +76,7 @@
     <Button buttonType="secondary" size="small" text="‹" onClick={() => step(-1)} />
     <span class="month-label">{monthLabel}</span>
     <Button buttonType="secondary" size="small" text="›" onClick={() => step(1)} />
-    <div class="today-slot">
-      <Button buttonType="secondary" size="small" text="Today" onClick={goToToday} />
-    </div>
+    <Button buttonType="secondary" size="small" text="Today" onClick={goToToday} />
   </div>
 
   <div class="weekday-row">
@@ -132,11 +130,8 @@
   .month-label {
     font-size: 15px;
     font-weight: 600;
-    min-width: 150px;
-  }
-
-  .today-slot {
-    margin-left: auto;
+    min-width: 160px;
+    text-align: center;
   }
 
   .weekday-row {

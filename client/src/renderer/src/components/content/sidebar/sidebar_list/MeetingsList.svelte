@@ -1,57 +1,66 @@
 <script lang="ts">
   import { onMount } from 'svelte'
   import { flip } from 'svelte/animate'
+  import { slide as slideCollapse } from 'svelte/transition'
+  import Icon from '$src/components/common/icons/Icon.svelte'
+  import MeetingEntry from '$src/components/content/sidebar/sidebar_list/MeetingEntry.svelte'
   import { meetingsState } from '$src/states/MeetingsState.svelte'
-  import { formatMeetingWhen } from '$src/utils/DateUtils'
   import { DURATION, EASING, listItemIn, listItemOut } from '$src/animations'
+
+  let upcomingOpen = $state(true)
+  let pastOpen = $state(false)
+
+  const sectionSlide = { duration: DURATION.base, easing: EASING.standard }
 
   onMount(() => meetingsState.load())
 </script>
 
 <div class="meetings-list">
-  <p class="list-label">Upcoming</p>
+  <button class="section-header" onclick={() => (upcomingOpen = !upcomingOpen)}>
+    <span class="section-label">Upcoming</span>
+    <span class="chevron" class:open={upcomingOpen}>
+      <Icon name="chevronDown" size={12} />
+    </span>
+  </button>
 
   {#if meetingsState.loading}
     <p class="muted">Loading…</p>
   {:else if meetingsState.upcoming.length === 0}
     <p class="muted">Nothing planned yet.</p>
-  {:else}
-    {#each meetingsState.upcoming as meeting (meeting.code)}
-      <button
-        animate:flip={{ duration: DURATION.base, easing: EASING.standard }}
-        in:listItemIn
-        out:listItemOut
-        class="entry"
-        class:active={meetingsState.selectedCode === meeting.code}
-        onclick={() => meetingsState.select(meeting.code)}
-      >
-        <span class="entry-title">{meeting.title ?? 'Meeting'}</span>
-        <span class="entry-when">
-          {meeting.scheduledAt
-            ? formatMeetingWhen(meeting.scheduledAt, meeting.organizerTimezone)
-            : 'In progress'}
-        </span>
-      </button>
-    {/each}
+  {:else if upcomingOpen}
+    <div class="section-items" transition:slideCollapse={sectionSlide}>
+      {#each meetingsState.upcoming as meeting (meeting.code)}
+        <div
+          animate:flip={{ duration: DURATION.base, easing: EASING.standard }}
+          in:listItemIn
+          out:listItemOut
+        >
+          <MeetingEntry {meeting} active={meetingsState.selectedCode === meeting.code} />
+        </div>
+      {/each}
+    </div>
   {/if}
 
   {#if meetingsState.past.length > 0}
-    <p class="list-label">Past</p>
-    {#each meetingsState.past as meeting (meeting.code)}
-      <button
-        animate:flip={{ duration: DURATION.base, easing: EASING.standard }}
-        in:listItemIn
-        out:listItemOut
-        class="entry past"
-        class:active={meetingsState.selectedCode === meeting.code}
-        onclick={() => meetingsState.select(meeting.code)}
-      >
-        <span class="entry-title">{meeting.title ?? 'Meeting'}</span>
-        <span class="entry-when">
-          {meeting.status === 'CANCELLED' ? 'Cancelled' : 'Ended'}
-        </span>
-      </button>
-    {/each}
+    <button class="section-header" onclick={() => (pastOpen = !pastOpen)}>
+      <span class="section-label">Past</span>
+      <span class="chevron" class:open={pastOpen}>
+        <Icon name="chevronDown" size={12} />
+      </span>
+    </button>
+    {#if pastOpen}
+      <div class="section-items" transition:slideCollapse={sectionSlide}>
+        {#each meetingsState.past as meeting (meeting.code)}
+          <div
+            animate:flip={{ duration: DURATION.base, easing: EASING.standard }}
+            in:listItemIn
+            out:listItemOut
+          >
+            <MeetingEntry {meeting} active={meetingsState.selectedCode === meeting.code} />
+          </div>
+        {/each}
+      </div>
+    {/if}
   {/if}
 </div>
 
@@ -59,58 +68,64 @@
   .meetings-list {
     display: flex;
     flex-direction: column;
-    gap: 4px;
+    gap: 2px;
+    padding-top: 14px;
     overflow-y: auto;
     color: #2d2d2d;
   }
 
-  .list-label {
-    margin: 10px 0 2px;
-    font-size: 12px;
-    opacity: 0.6;
+  .section-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    background: none;
+    border: none;
+    padding: 8px 18px 4px;
+    cursor: pointer;
+    font-family: inherit;
+  }
+
+  .section-header:hover .section-label {
+    color: #888;
+  }
+
+  .section-header:hover .chevron {
+    color: #999;
+  }
+
+  .section-label {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #aaa;
+    transition: color var(--motion-fast) var(--ease-standard);
+  }
+
+  .chevron {
+    color: #ccc;
+    display: flex;
+    align-items: center;
+    transition: transform var(--motion-base) var(--ease-spring);
+    transform: rotate(-90deg);
+  }
+
+  .chevron.open {
+    transform: rotate(0deg);
+  }
+
+  .section-items {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: 0 8px;
   }
 
   .muted {
     margin: 0;
+    padding: 4px 18px;
     font-size: 13px;
-    opacity: 0.7;
-  }
-
-  .entry {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 2px;
-    padding: 8px 10px;
-    border: 1px solid transparent;
-    border-radius: 8px;
-    background: transparent;
-    cursor: pointer;
-    text-align: left;
-    width: 100%;
-    color: inherit;
-  }
-
-  .entry:hover {
-    background: rgba(0, 0, 0, 0.04);
-  }
-
-  .entry.active {
-    background: rgba(255, 132, 60, 0.12);
-    border-color: rgba(255, 132, 60, 0.5);
-  }
-
-  .entry.past {
-    opacity: 0.6;
-  }
-
-  .entry-title {
-    font-size: 14px;
-    font-weight: 600;
-  }
-
-  .entry-when {
-    font-size: 12px;
     opacity: 0.7;
   }
 </style>

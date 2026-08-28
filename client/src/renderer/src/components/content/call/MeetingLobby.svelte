@@ -4,6 +4,7 @@
   import { meetingGuestService, type MeetingPreview } from '$src/services/MeetingGuestService'
   import Button from '$src/components/common/buttons/Button.svelte'
   import Icon from '$src/components/common/icons/Icon.svelte'
+  import { riseIn } from '$src/animations'
 
   const {
     code,
@@ -96,6 +97,7 @@
   async function joinAsGuest(): Promise<void> {
     if (phase === 'joining') return
     phase = 'joining'
+    message = ''
 
     const session = await meetingGuestService.startSession(code, displayName.trim())
     if (!session) {
@@ -114,125 +116,166 @@
 </script>
 
 <div class="lobby">
-  <button class="back-btn" onclick={goBack} aria-label="Back" title="Back">
-    <Icon name="chevronLeft" size={22} color="#1a1a1a" strokeWidth={2.5} />
-  </button>
+  <div class="card" in:riseIn>
+    <div class="card-header">
+      <button class="back-btn" onclick={goBack} aria-label="Back" title="Back">
+        <Icon name="chevronLeft" size={20} color="#77776f" strokeWidth={2.2} />
+      </button>
+      <div class="header-text">
+        {#if phase === 'unavailable'}
+          <h1 class="title">Meeting unavailable</h1>
+        {:else}
+          <h1 class="title">{preview?.title || 'Meeting'}</h1>
+          {#if preview}
+            <p class="subtitle">
+              {preview.hostDisplayName} invited you · {preview.marginName}
+            </p>
+          {/if}
+        {/if}
+      </div>
+    </div>
 
-  {#if phase === 'loading'}
-    <p class="muted">Loading…</p>
-  {:else if phase === 'unavailable'}
-    <h1 class="title">Meeting unavailable</h1>
-    <p class="muted">{message}</p>
-  {:else}
-    <h1 class="title">{preview?.title || 'Meeting'}</h1>
-    <p class="muted">
-      {preview?.hostDisplayName} invited you · {preview?.marginName}
-    </p>
+    {#if phase === 'loading'}
+      <p class="note">Loading…</p>
+    {:else if phase === 'unavailable'}
+      <p class="note">{message}</p>
+    {:else}
+      <div class="stage">
+        {#if cameraOn && localStream}
+          <video use:srcObject={localStream} autoplay playsinline muted class="preview"></video>
+        {:else}
+          <div class="preview placeholder">
+            <span>{(displayName.trim() || 'You').charAt(0).toUpperCase()}</span>
+          </div>
+        {/if}
+      </div>
 
-    <div class="stage">
-      {#if cameraOn && localStream}
-        <video use:srcObject={localStream} autoplay playsinline muted class="preview"></video>
-      {:else}
-        <div class="preview placeholder">
-          <span>{(displayName.trim() || 'You').charAt(0).toUpperCase()}</span>
-        </div>
+      <div class="device-row">
+        <Button
+          buttonType={micOn ? 'secondary' : 'list'}
+          size="small"
+          text={micOn ? 'Mic on' : 'Mic off'}
+          onClick={toggleMic}
+        />
+        <Button
+          buttonType={cameraOn ? 'secondary' : 'list'}
+          size="small"
+          text={cameraOn ? 'Camera on' : 'Camera off'}
+          onClick={toggleCamera}
+        />
+      </div>
+
+      <label class="field">
+        <span class="field-label">Your name</span>
+        <input type="text" bind:value={displayName} placeholder="Guest" maxlength="50" />
+      </label>
+
+      {#if message}
+        <p class="note error">{message}</p>
       {/if}
-    </div>
 
-    <div class="device-row">
       <Button
-        buttonType={micOn ? 'secondary' : 'list'}
-        size="small"
-        text={micOn ? 'Mic on' : 'Mic off'}
-        onClick={toggleMic}
+        buttonType="primary"
+        size="large"
+        fullWidth
+        disabled={phase === 'joining'}
+        text={phase === 'joining' ? 'Joining…' : 'Join as guest'}
+        onClick={joinAsGuest}
       />
-      <Button
-        buttonType={cameraOn ? 'secondary' : 'list'}
-        size="small"
-        text={cameraOn ? 'Camera on' : 'Camera off'}
-        onClick={toggleCamera}
-      />
-    </div>
 
-    <label class="field">
-      <span class="field-label">Your name</span>
-      <input type="text" bind:value={displayName} placeholder="Guest" maxlength="50" />
-    </label>
-
-    {#if message}
-      <p class="muted">{message}</p>
+      <p class="note">
+        {preview?.requireAdmission
+          ? 'The host will let you in.'
+          : 'You will join the meeting straight away.'}
+      </p>
     {/if}
-
-    <Button
-      buttonType="primary"
-      size="large"
-      fullWidth
-      disabled={phase === 'joining'}
-      text={phase === 'joining' ? 'Joining…' : 'Join as guest'}
-      onClick={joinAsGuest}
-    />
-
-    <p class="muted small">
-      {preview?.requireAdmission
-        ? 'The host will let you in.'
-        : 'You will join the meeting straight away.'}
-    </p>
-  {/if}
+  </div>
 </div>
 
 <style>
   .lobby {
-    position: relative;
-    color: #2d2d2d;
-    min-height: 100vh;
+    flex: 1;
+    min-height: 0;
     display: flex;
-    flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: 12px;
     padding: 24px;
-    background-color: #f2eee8;
+    color: #2d2d2d;
+  }
+
+  .card {
+    width: 380px;
+    max-width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    padding: 24px;
+    background: #ffffff;
+    border: 1px solid #ebebeb;
+    border-radius: 12px;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.05);
+  }
+
+  .card-header {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
   }
 
   .back-btn {
-    color: #1a1a1a;
-    position: absolute;
-    top: 20px;
-    left: 20px;
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 36px;
-    height: 36px;
-    border: 1px solid rgba(0, 0, 0, 0.12);
-    border-radius: 50%;
-    background: white;
+    width: 32px;
+    height: 32px;
+    flex-shrink: 0;
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    border-radius: 8px;
+    background: #fafafa;
+    color: #77776f;
     cursor: pointer;
+    transition: background var(--motion-fast) var(--ease-standard);
   }
 
   .back-btn:hover {
-    background: rgba(0, 0, 0, 0.04);
+    background: rgba(0, 0, 0, 0.05);
+  }
+
+  .header-text {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
   }
 
   .title {
     margin: 0;
-    font-size: 22px;
+    font-size: 18px;
+    font-weight: 700;
+    color: #2d2d2d;
+    letter-spacing: -0.2px;
   }
 
-  .muted {
+  .subtitle {
     margin: 0;
-    font-size: 13px;
-    opacity: 0.75;
+    font-size: 12px;
+    color: #77776f;
+  }
+
+  .note {
+    margin: 0;
+    font-size: 12px;
+    color: #77776f;
     text-align: center;
   }
 
-  .small {
-    font-size: 12px;
+  .note.error {
+    color: #c0392b;
   }
 
   .stage {
-    width: 320px;
-    height: 200px;
+    width: 100%;
+    height: 180px;
     border-radius: 10px;
     overflow: hidden;
     background: #1d1d1f;
@@ -248,32 +291,40 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    color: white;
-    font-size: 42px;
+    color: #ffffff;
+    font-size: 40px;
+    font-weight: 600;
   }
 
   .device-row {
     display: flex;
     gap: 8px;
+    justify-content: center;
   }
 
   .field {
     display: flex;
     flex-direction: column;
     gap: 4px;
-    width: 320px;
   }
 
   .field-label {
     font-size: 12px;
-    opacity: 0.75;
+    color: #77776f;
   }
 
   .field input {
-    padding: 8px;
+    padding: 10px;
     border: 1px solid rgba(0, 0, 0, 0.15);
-    border-radius: 6px;
+    border-radius: 8px;
     font-size: 14px;
+    font-family: inherit;
+    color: #2d2d2d;
     background: white;
+  }
+
+  .field input:focus {
+    outline: 2px solid #ff843c;
+    outline-offset: 1px;
   }
 </style>

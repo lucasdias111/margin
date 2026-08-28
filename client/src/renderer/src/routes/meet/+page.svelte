@@ -4,6 +4,7 @@
   import { authenticationService } from '$src/services/AuthenticationService'
   import { sessionHandler } from '$src/handlers/SessionHandler'
   import { meetingCallService } from '$src/services/call/MeetingCallService'
+  import { callState } from '$src/states/CallState.svelte'
   import { meetingService } from '$src/services/MeetingService'
   import { meetingGuestService } from '$src/services/MeetingGuestService'
   import { meetingLobbySocket } from '$src/services/MeetingLobbySocket'
@@ -22,9 +23,13 @@
   let isGuest = $state(false)
 
   onMount(async () => {
-    const restored = await authenticationService.tryRestoreSession()
+    // A token already in this tab means we are signed in; tryRestoreSession only recovers a
+    // saved session, so on its own it treats a signed-in creator as a guest.
+    const signedIn =
+      sessionStorage.getItem('authToken') !== null ||
+      (await authenticationService.tryRestoreSession())
 
-    if (!restored) {
+    if (!signedIn) {
       isGuest = true
       phase = 'lobby'
       return
@@ -49,6 +54,12 @@
   async function join(): Promise<void> {
     phase = 'in-call'
     await meetingCallService.joinMeeting(code)
+
+    // joinMeeting reports its own error; if no call came up, fall back to where the user was
+    // rather than leaving them on an empty call window.
+    if (!callState.isGroupCall) {
+      phase = isGuest ? 'lobby' : 'ready'
+    }
   }
 
   function onKnocked(): void {
