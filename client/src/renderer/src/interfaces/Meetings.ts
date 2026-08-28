@@ -40,3 +40,36 @@ export interface MeetingJoinInfo {
   roomToken: string
   maxVideoHeight: number | null
 }
+
+export interface MeetingSummary {
+  id: number
+  code: string
+  title: string | null
+  status: MeetingStatus
+  marginId: number
+  marginName: string
+  hostUserId: number
+  scheduledAt: string | null
+  durationMinutes: number | null
+  organizerTimezone: string | null
+  startedAt: string | null
+  endedAt: string | null
+  inviteeCount: number
+}
+
+export interface MeetingInvitee {
+  inviteId: number
+  userId: number | null
+  displayName: string | null
+  email: string | null
+  status: 'PENDING' | 'ACCEPTED' | 'DECLINED'
+}
+
+export interface ScheduleMeetingInput {
+  marginId: number
+  title: string | null
+  scheduledAt: string
+  durationMinutes: number
+  organizerTimezone: string
+  invitees: { userId: number | null; email: string | null }[]
+}

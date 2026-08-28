@@ -1,7 +1,14 @@
-import { authenticatedGet, authenticatedPost } from '$src/services/api'
+import { authenticatedGet, authenticatedPatch, authenticatedPost } from '$src/services/api'
 import { webSocketService } from '$src/services/websocket/WebSocketService'
 import { WebSocketMessageType } from '$src/interfaces/WebSocketMessageType'
-import type { EligibleMargin, Meeting, MeetingJoinInfo } from '$src/interfaces/Meetings'
+import type {
+  EligibleMargin,
+  Meeting,
+  MeetingInvitee,
+  MeetingJoinInfo,
+  MeetingSummary,
+  ScheduleMeetingInput
+} from '$src/interfaces/Meetings'
 
 class MeetingService {
   async loadEligibleMargins(): Promise<EligibleMargin[]> {
@@ -38,6 +45,43 @@ class MeetingService {
       recipientId,
       payload: code
     })
+  }
+
+  async myMeetings(): Promise<MeetingSummary[]> {
+    const response = await authenticatedGet('meetings')
+    if (!response.ok) return []
+    return response.json()
+  }
+
+  async schedule(input: ScheduleMeetingInput): Promise<MeetingSummary | null> {
+    const response = await authenticatedPost(input, 'meetings/schedule')
+    if (!response.ok) return null
+    return response.json()
+  }
+
+  async reschedule(
+    code: string,
+    scheduledAt: string,
+    durationMinutes: number,
+    title: string | null
+  ): Promise<MeetingSummary | null> {
+    const response = await authenticatedPatch(
+      { scheduledAt, durationMinutes, title },
+      `meetings/${code}`
+    )
+    if (!response.ok) return null
+    return response.json()
+  }
+
+  async cancel(code: string): Promise<boolean> {
+    const response = await authenticatedPost(null, `meetings/${code}/cancel`)
+    return response.ok
+  }
+
+  async invitees(code: string): Promise<MeetingInvitee[]> {
+    const response = await authenticatedGet(`meetings/${code}/invitees`)
+    if (!response.ok) return []
+    return response.json()
   }
 
   shareLink(code: string): string {
