@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { backdrop, modalIn } from '$src/animations'
   import { onMount } from 'svelte'
   import { meetingService } from '$src/services/MeetingService'
   import { viewerTimeZone, toLocalInputValue } from '$src/utils/DateUtils'
@@ -89,8 +90,13 @@
   }
 </script>
 
-<div class="backdrop" role="presentation" onclick={onClose}>
-  <div class="modal" role="dialog" onclick={(e) => e.stopPropagation()}>
+<div class="backdrop" role="presentation" onclick={onClose} transition:backdrop>
+  <div
+    class="modal"
+    role="dialog"
+    onclick={(e) => e.stopPropagation()}
+    transition:modalIn={{ start: 0.94 }}
+  >
     {#if loading}
       <p class="hint">Loading…</p>
     {:else if !isEdit && margins.length === 0}

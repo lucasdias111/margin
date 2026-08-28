@@ -1,7 +1,6 @@
 <script lang="ts">
   import { onMount } from 'svelte'
   import { push } from 'svelte-spa-router'
-  import { meetingService } from '$src/services/MeetingService'
   import ScheduleMeetingModal from '$src/components/content/meetings/ScheduleMeetingModal.svelte'
   import MeetingDetailPanel from '$src/components/content/meetings/MeetingDetailPanel.svelte'
   import MeetingCalendar from '$src/components/content/meetings/MeetingCalendar.svelte'
@@ -14,11 +13,11 @@
   let showStartNow = $state(false)
   let editing = $state<MeetingSummary | null>(null)
 
-  onMount(refresh)
+  onMount(() => meetingsState.load())
 
   async function refresh(): Promise<void> {
-    meetingsState.setMeetings(await meetingService.myMeetings())
-    meetingsState.loading = false
+    meetingsState.loading = true
+    await meetingsState.load()
   }
 </script>
 

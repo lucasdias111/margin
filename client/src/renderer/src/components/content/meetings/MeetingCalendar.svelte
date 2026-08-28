@@ -2,6 +2,8 @@
   import { viewerTimeZone } from '$src/utils/DateUtils'
   import type { MeetingSummary } from '$src/interfaces/Meetings'
   import Button from '$src/components/common/buttons/Button.svelte'
+  import { DURATION, EASING, listItemIn, listItemOut, viewIn } from '$src/animations'
+  import { flip } from 'svelte/animate'
 
   const {
     meetings,
@@ -85,25 +87,30 @@
     {/each}
   </div>
 
-  <div class="grid">
-    {#each cells as cell (cell.key)}
-      <div class="cell" class:outside={!cell.inMonth} class:today={cell.today}>
-        <span class="day-number">{cell.day}</span>
-        {#each cell.meetings as meeting (meeting.code)}
-          <button
-            class="chip"
-            class:selected={selectedCode === meeting.code}
-            class:cancelled={meeting.status === 'CANCELLED'}
-            onclick={() => onSelect(meeting)}
-            title={meeting.title ?? 'Meeting'}
-          >
-            <span class="chip-time">{timeOf(meeting)}</span>
-            <span class="chip-title">{meeting.title ?? 'Meeting'}</span>
-          </button>
-        {/each}
-      </div>
-    {/each}
-  </div>
+  {#key `${cursorYear}-${cursorMonth}`}
+    <div class="grid" in:viewIn>
+      {#each cells as cell (cell.key)}
+        <div class="cell" class:outside={!cell.inMonth} class:today={cell.today}>
+          <span class="day-number">{cell.day}</span>
+          {#each cell.meetings as meeting (meeting.code)}
+            <button
+              class="chip"
+              class:selected={selectedCode === meeting.code}
+              class:cancelled={meeting.status === 'CANCELLED'}
+              onclick={() => onSelect(meeting)}
+              title={meeting.title ?? 'Meeting'}
+              animate:flip={{ duration: DURATION.base, easing: EASING.standard }}
+              in:listItemIn
+              out:listItemOut
+            >
+              <span class="chip-time">{timeOf(meeting)}</span>
+              <span class="chip-title">{meeting.title ?? 'Meeting'}</span>
+            </button>
+          {/each}
+        </div>
+      {/each}
+    </div>
+  {/key}
 </div>
 
 <style>

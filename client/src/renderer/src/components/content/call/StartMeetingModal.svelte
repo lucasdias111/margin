@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { backdrop, modalIn } from '$src/animations'
   import { onMount } from 'svelte'
   import { meetingService } from '$src/services/MeetingService'
   import type { EligibleMargin } from '$src/interfaces/Meetings'
@@ -28,8 +29,13 @@
   }
 </script>
 
-<div class="backdrop" role="presentation" onclick={onClose}>
-  <div class="modal" role="dialog" onclick={(e) => e.stopPropagation()}>
+<div class="backdrop" role="presentation" onclick={onClose} transition:backdrop>
+  <div
+    class="modal"
+    role="dialog"
+    onclick={(e) => e.stopPropagation()}
+    transition:modalIn={{ start: 0.94 }}
+  >
     {#if loading}
       <p class="hint">Loading…</p>
     {:else if margins.length === 0}

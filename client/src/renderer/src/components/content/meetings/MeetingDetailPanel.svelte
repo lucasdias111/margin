@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { backdrop, modalIn } from '$src/animations'
   import { onMount } from 'svelte'
   import { push } from 'svelte-spa-router'
   import { meetingService } from '$src/services/MeetingService'
@@ -40,8 +41,13 @@
   }
 </script>
 
-<div class="backdrop" role="presentation" onclick={onClose}>
-  <div class="detail" role="dialog" onclick={(e) => e.stopPropagation()}>
+<div class="backdrop" role="presentation" onclick={onClose} transition:backdrop>
+  <div
+    class="detail"
+    role="dialog"
+    onclick={(e) => e.stopPropagation()}
+    transition:modalIn={{ start: 0.94 }}
+  >
     <div class="detail-header">
       <h2 class="detail-title">{meeting.title ?? 'Meeting'}</h2>
       <button class="close-btn" onclick={onClose} aria-label="Close">×</button>

@@ -1,6 +1,11 @@
 <script lang="ts">
+  import { onMount } from 'svelte'
+  import { flip } from 'svelte/animate'
   import { meetingsState } from '$src/states/MeetingsState.svelte'
   import { formatMeetingWhen } from '$src/utils/DateUtils'
+  import { DURATION, EASING, listItemIn, listItemOut } from '$src/animations'
+
+  onMount(() => meetingsState.load())
 </script>
 
 <div class="meetings-list">
@@ -13,6 +18,9 @@
   {:else}
     {#each meetingsState.upcoming as meeting (meeting.code)}
       <button
+        animate:flip={{ duration: DURATION.base, easing: EASING.standard }}
+        in:listItemIn
+        out:listItemOut
         class="entry"
         class:active={meetingsState.selectedCode === meeting.code}
         onclick={() => meetingsState.select(meeting.code)}
@@ -31,6 +39,9 @@
     <p class="list-label">Past</p>
     {#each meetingsState.past as meeting (meeting.code)}
       <button
+        animate:flip={{ duration: DURATION.base, easing: EASING.standard }}
+        in:listItemIn
+        out:listItemOut
         class="entry past"
         class:active={meetingsState.selectedCode === meeting.code}
         onclick={() => meetingsState.select(meeting.code)}
