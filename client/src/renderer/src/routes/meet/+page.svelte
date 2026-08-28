@@ -10,6 +10,9 @@
   import { meetingLobbySocket } from '$src/services/MeetingLobbySocket'
   import MeetingCallWindow from '$src/components/content/call/MeetingCallWindow.svelte'
   import MeetingLobby from '$src/components/content/call/MeetingLobby.svelte'
+  import Button from '$src/components/common/buttons/Button.svelte'
+  import Icon from '$src/components/common/icons/Icon.svelte'
+  import { riseIn } from '$src/animations'
   import type { Meeting } from '$src/interfaces/Meetings'
 
   const { params }: { params?: { code?: string } } = $props()
@@ -77,6 +80,18 @@
     })
   }
 
+  function goBack(): void {
+    if (isGuest) {
+      meetingLobbySocket.disconnect()
+      meetingGuestService.endSession()
+    }
+    if (window.history.length > 1) {
+      window.history.back()
+      return
+    }
+    push('/home')
+  }
+
   function leave(): void {
     if (isGuest) {
       meetingLobbySocket.disconnect()
@@ -90,68 +105,97 @@
 </script>
 
 <div class="meet-page">
-  {#if phase === 'loading'}
-    <p class="meet-status">Loading meeting…</p>
-  {:else if phase === 'unavailable'}
-    <div class="meet-card">
-      <h1 class="meet-title">Meeting unavailable</h1>
-      <p class="meet-status">{message}</p>
-      {#if !isGuest}
-        <button class="meet-btn" onclick={() => push('/home')}>Back to Margin</button>
-      {/if}
-    </div>
+  {#if phase === 'in-call'}
+    <MeetingCallWindow onLeave={leave} />
   {:else if phase === 'lobby'}
     <MeetingLobby {code} onAdmitted={join} {onKnocked} />
-  {:else if phase === 'knocking'}
-    <div class="meet-card">
-      <h1 class="meet-title">Waiting to be let in</h1>
-      <p class="meet-status">The host has been notified. Keep this page open.</p>
-    </div>
-  {:else if phase === 'ready'}
-    <div class="meet-card">
-      <h1 class="meet-title">{meeting?.title ?? 'Meeting'}</h1>
-      <p class="meet-status">Hosted in {meeting?.marginName}</p>
-      <button class="meet-btn" onclick={join}>Join meeting</button>
-    </div>
   {:else}
-    <MeetingCallWindow onLeave={leave} />
+    <div class="meet-card" in:riseIn>
+      <div class="card-header">
+        <Button buttonType="secondary" size="small" onClick={goBack}>
+          <Icon name="chevronLeft" size={16} strokeWidth={2.2} />
+          Back
+        </Button>
+        <div class="header-text">
+          {#if phase === 'loading'}
+            <h1 class="meet-title">Meeting</h1>
+          {:else if phase === 'unavailable'}
+            <h1 class="meet-title">Meeting unavailable</h1>
+          {:else if phase === 'knocking'}
+            <h1 class="meet-title">Waiting to be let in</h1>
+          {:else}
+            <h1 class="meet-title">{meeting?.title ?? 'Meeting'}</h1>
+            {#if meeting}
+              <p class="meet-subtitle">Hosted in {meeting.marginName}</p>
+            {/if}
+          {/if}
+        </div>
+      </div>
+
+      {#if phase === 'loading'}
+        <p class="meet-status">Loading meeting…</p>
+      {:else if phase === 'unavailable'}
+        <p class="meet-status">{message}</p>
+      {:else if phase === 'knocking'}
+        <p class="meet-status">The host has been notified. Keep this page open.</p>
+      {:else}
+        <Button buttonType="primary" size="large" fullWidth text="Join meeting" onClick={join} />
+      {/if}
+    </div>
   {/if}
 </div>
 
 <style>
   .meet-page {
     flex: 1;
+    min-height: 0;
     display: flex;
     align-items: center;
     justify-content: center;
+    padding: 24px;
     background-color: #f2eee8;
+    color: #2d2d2d;
   }
 
   .meet-card {
+    width: 380px;
+    max-width: 100%;
     display: flex;
     flex-direction: column;
-    align-items: center;
+    gap: 14px;
+    padding: 24px;
+    background: #ffffff;
+    border: 1px solid #ebebeb;
+    border-radius: 12px;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.05);
+  }
+
+  .card-header {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
     gap: 12px;
-    padding: 32px;
+  }
+
+  .header-text {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
   }
 
   .meet-title {
     margin: 0;
-    font-size: 22px;
+    font-size: 18px;
+    font-weight: 700;
+    color: #2d2d2d;
+    letter-spacing: -0.2px;
   }
 
+  .meet-subtitle,
   .meet-status {
     margin: 0;
-    opacity: 0.75;
-  }
-
-  .meet-btn {
-    padding: 10px 20px;
-    border: none;
-    border-radius: 6px;
-    background-color: #f47e3a;
-    color: white;
-    font-size: 15px;
-    cursor: pointer;
+    font-size: 12px;
+    color: #77776f;
   }
 </style>

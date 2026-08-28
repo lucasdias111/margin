@@ -118,9 +118,10 @@
 <div class="lobby">
   <div class="card" in:riseIn>
     <div class="card-header">
-      <button class="back-btn" onclick={goBack} aria-label="Back" title="Back">
-        <Icon name="chevronLeft" size={20} color="#77776f" strokeWidth={2.2} />
-      </button>
+      <Button buttonType="secondary" size="small" onClick={goBack}>
+        <Icon name="chevronLeft" size={16} strokeWidth={2.2} />
+        Back
+      </Button>
       <div class="header-text">
         {#if phase === 'unavailable'}
           <h1 class="title">Meeting unavailable</h1>
@@ -218,27 +219,9 @@
 
   .card-header {
     display: flex;
+    flex-direction: column;
     align-items: flex-start;
-    gap: 10px;
-  }
-
-  .back-btn {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 32px;
-    height: 32px;
-    flex-shrink: 0;
-    border: 1px solid rgba(0, 0, 0, 0.1);
-    border-radius: 8px;
-    background: #fafafa;
-    color: #77776f;
-    cursor: pointer;
-    transition: background var(--motion-fast) var(--ease-standard);
-  }
-
-  .back-btn:hover {
-    background: rgba(0, 0, 0, 0.05);
+    gap: 12px;
   }
 
   .header-text {
