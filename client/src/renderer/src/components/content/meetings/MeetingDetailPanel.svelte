@@ -40,68 +40,82 @@
   }
 </script>
 
-<div class="detail">
-  <div class="detail-header">
-    <h2 class="detail-title">{meeting.title ?? 'Meeting'}</h2>
-    <button class="close-btn" onclick={onClose} aria-label="Close">×</button>
-  </div>
-
-  {#if meeting.scheduledAt}
-    <p class="detail-when">
-      {formatMeetingWhen(meeting.scheduledAt, meeting.organizerTimezone)}
-    </p>
-  {/if}
-
-  <p class="detail-meta">
-    {meeting.marginName}{meeting.durationMinutes ? ` · ${meeting.durationMinutes} min` : ''}
-    {#if meeting.status === 'CANCELLED'}· Cancelled{/if}
-    {#if meeting.status === 'ENDED'}· Ended{/if}
-    {#if meeting.status === 'LIVE'}· In progress{/if}
-  </p>
-
-  {#if invitees.length > 0}
-    <div class="invitee-list">
-      <p class="section-label">Invited</p>
-      {#each invitees as invitee (invitee.inviteId)}
-        <div class="invitee-row">
-          <span class="invitee-name">{invitee.displayName ?? invitee.email}</span>
-          <span class="invitee-status">{invitee.status.toLowerCase()}</span>
-        </div>
-      {/each}
+<div class="backdrop" role="presentation" onclick={onClose}>
+  <div class="detail" role="dialog" onclick={(e) => e.stopPropagation()}>
+    <div class="detail-header">
+      <h2 class="detail-title">{meeting.title ?? 'Meeting'}</h2>
+      <button class="close-btn" onclick={onClose} aria-label="Close">×</button>
     </div>
-  {/if}
 
-  <div class="detail-actions">
-    {#if canJoin}
+    {#if meeting.scheduledAt}
+      <p class="detail-when">
+        {formatMeetingWhen(meeting.scheduledAt, meeting.organizerTimezone)}
+      </p>
+    {/if}
+
+    <p class="detail-meta">
+      {meeting.marginName}{meeting.durationMinutes ? ` · ${meeting.durationMinutes} min` : ''}
+      {#if meeting.status === 'CANCELLED'}· Cancelled{/if}
+      {#if meeting.status === 'ENDED'}· Ended{/if}
+      {#if meeting.status === 'LIVE'}· In progress{/if}
+    </p>
+
+    {#if invitees.length > 0}
+      <div class="invitee-list">
+        <p class="section-label">Invited</p>
+        {#each invitees as invitee (invitee.inviteId)}
+          <div class="invitee-row">
+            <span class="invitee-name">{invitee.displayName ?? invitee.email}</span>
+            <span class="invitee-status">{invitee.status.toLowerCase()}</span>
+          </div>
+        {/each}
+      </div>
+    {/if}
+
+    <div class="detail-actions">
+      {#if canJoin}
+        <Button
+          buttonType="primary"
+          size="small"
+          text={isHost && meeting.status === 'SCHEDULED' ? 'Start' : 'Join'}
+          onClick={() => push(`/meet/${meeting.code}`)}
+        />
+      {/if}
       <Button
-        buttonType="primary"
+        buttonType="secondary"
         size="small"
-        text={isHost && meeting.status === 'SCHEDULED' ? 'Start' : 'Join'}
-        onClick={() => push(`/meet/${meeting.code}`)}
+        text={linkCopied ? 'Copied' : 'Copy link'}
+        onClick={copyLink}
       />
-    {/if}
-    <Button
-      buttonType="secondary"
-      size="small"
-      text={linkCopied ? 'Copied' : 'Copy link'}
-      onClick={copyLink}
-    />
-    {#if isHost && meeting.status === 'SCHEDULED'}
-      <Button buttonType="secondary" size="small" text="Edit" onClick={onEdit} />
-      <Button buttonType="danger" size="small" text="Cancel meeting" onClick={cancel} />
-    {/if}
+      {#if isHost && meeting.status === 'SCHEDULED'}
+        <Button buttonType="secondary" size="small" text="Edit" onClick={onEdit} />
+        <Button buttonType="danger" size="small" text="Cancel meeting" onClick={cancel} />
+      {/if}
+    </div>
   </div>
 </div>
 
 <style>
+  .backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.35);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 100;
+  }
+
   .detail {
     color: #2d2d2d;
     display: flex;
     flex-direction: column;
     gap: 10px;
-    padding: 16px;
-    background: white;
-    border: 1px solid rgba(0, 0, 0, 0.08);
+    padding: 24px;
+    width: 380px;
+    max-height: 80vh;
+    overflow-y: auto;
+    background: #f2eee8;
     border-radius: 10px;
   }
 

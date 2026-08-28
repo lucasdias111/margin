@@ -180,6 +180,7 @@
   }
 
   .chip {
+    color: #2d2d2d;
     display: flex;
     flex-direction: column;
     align-items: flex-start;

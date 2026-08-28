@@ -49,19 +49,17 @@
         onSelect={(meeting) => meetingsState.select(meeting.code)}
       />
     </div>
-
-    {#if meetingsState.selected}
-      <div class="meetings-detail">
-        <MeetingDetailPanel
-          meeting={meetingsState.selected}
-          onEdit={() => (editing = meetingsState.selected)}
-          onChanged={refresh}
-          onClose={() => meetingsState.select(null)}
-        />
-      </div>
-    {/if}
   </div>
 </div>
+
+{#if meetingsState.selected}
+  <MeetingDetailPanel
+    meeting={meetingsState.selected}
+    onEdit={() => (editing = meetingsState.selected)}
+    onChanged={refresh}
+    onClose={() => meetingsState.select(null)}
+  />
+{/if}
 
 {#if showSchedule}
   <ScheduleMeetingModal
@@ -132,10 +130,5 @@
     flex: 1;
     min-width: 0;
     display: flex;
-  }
-
-  .meetings-detail {
-    width: 320px;
-    flex-shrink: 0;
   }
 </style>
