@@ -3,6 +3,7 @@ import type {
   CallOfferPayload,
   CallResponsePayload,
   ChannelCallInvitePayload,
+  MeetingInvitePayload,
   WebSocketMessage
 } from '$src/interfaces/WebSocketMessages'
 import type { CallMediaStatePayload } from '$src/interfaces/CallMediaStatePayload'

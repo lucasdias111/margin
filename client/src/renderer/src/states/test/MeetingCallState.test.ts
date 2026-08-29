@@ -5,7 +5,7 @@ describe('CallState meeting calls', () => {
   beforeEach(() => callState.endCall())
 
   it('starts a meeting call with a prefixed room id and no channel', () => {
-    callState.startMeetingCall('abc123', 'm_abc123', 'Weekly sync')
+    callState.startMeetingCall('abc123', 'm_abc123', 'Weekly sync', '42')
 
     expect(callState.isGroupCall).toBe(true)
     expect(callState.groupCallState?.roomId).toBe('m_abc123')
@@ -13,8 +13,14 @@ describe('CallState meeting calls', () => {
     expect(callState.groupCallState?.title).toBe('Weekly sync')
   })
 
+  it('keeps the peer id the room token was minted for', () => {
+    callState.startMeetingCall('abc123', 'm_abc123', null, '87')
+
+    expect(callState.groupCallState?.localPeerId).toBe('87')
+  })
+
   it('leaves channelId null so a meeting never marks a channel as in-call', () => {
-    callState.startMeetingCall('abc123', 'm_abc123', null)
+    callState.startMeetingCall('abc123', 'm_abc123', null, '42')
 
     expect(callState.groupCallState?.channelId).toBeNull()
   })
@@ -28,7 +34,7 @@ describe('CallState meeting calls', () => {
   })
 
   it('tracks participants for a meeting the same way as a channel call', () => {
-    callState.startMeetingCall('abc123', 'm_abc123', null)
+    callState.startMeetingCall('abc123', 'm_abc123', null, '42')
     callState.addGroupParticipant({
       peerId: '7',
       displayName: 'Alice',

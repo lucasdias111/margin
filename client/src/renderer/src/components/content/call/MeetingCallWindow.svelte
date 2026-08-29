@@ -8,6 +8,7 @@
   import type { Meeting } from '$src/interfaces/Meetings'
   import { meetingCallService } from '$src/services/call/MeetingCallService'
   import { meetingService } from '$src/services/MeetingService'
+  import { meetingGuestService } from '$src/services/MeetingGuestService'
   import CallLayout from '$src/components/content/call/CallLayout.svelte'
   import MeetingAdmitPanel from '$src/components/content/call/MeetingAdmitPanel.svelte'
   import CallPipWidget from '$src/components/content/call/CallPipWidget.svelte'
@@ -28,7 +29,7 @@
   })
 
   const localParticipant = $derived<CallParticipant>({
-    id: sessionState.currentUser?.id ?? -1,
+    id: Number(callState.groupCallState?.localPeerId ?? -1),
     displayName: 'You',
     profilePictureUrl: sessionState.currentUser?.profilePictureUrl ?? null,
     stream: localVideoStream ?? localStream,
@@ -78,9 +79,11 @@
 
   let invitedUserIds = $state<number[]>([])
   let meeting = $state<Meeting | null>(null)
+  const isGuest = meetingGuestService.hasSession()
 
   onMount(async () => {
-    if (meetingCode) meeting = await meetingService.getMeeting(meetingCode)
+    if (!meetingCode || isGuest) return
+    meeting = await meetingService.getMeeting(meetingCode)
   })
 
   const invitableMembers = $derived.by(() => {
@@ -152,7 +155,7 @@
       in:fade={{ duration: 200, easing: cubicInOut }}
       out:scale={{ duration: 250, start: 0.95, easing: cubicInOut, opacity: 0 }}
     >
-      {#if meetingCode}
+      {#if meetingCode && !isGuest}
         <MeetingAdmitPanel code={meetingCode} />
       {/if}
       <CallLayout

@@ -14,7 +14,6 @@ import {
   getUserMediaPreferringDefault
 } from '$src/services/DeviceService'
 import { ICE_SERVERS } from '$src/services/call/iceServers'
-import { sessionState } from '$src/states/SessionState.svelte'
 import { meetingService } from '$src/services/MeetingService'
 import { meetingGuestService } from '$src/services/MeetingGuestService'
 
@@ -56,14 +55,14 @@ class MeetingCallService {
   private async getRtpCapabilities(
     ws: WebSocket,
     roomId: string,
-    roomToken: string
+    roomToken: string,
+    peerId: string,
+    displayName: string
   ): Promise<RtpCapabilities> {
-    const user = sessionState.currentUser
-    if (!user) throw new Error('Cannot join meeting: not authenticated')
     this.sendMessage(ws, 'getRouterRtpCapabilities', {
       roomId,
-      peerId: user.id,
-      displayName: user.displayName,
+      peerId,
+      displayName,
       token: roomToken
     })
 
@@ -113,7 +112,12 @@ class MeetingCallService {
     })
   }
 
-  private setupConsumer(recvTransport: Transport, device: Device, ws: WebSocket): void {
+  private setupConsumer(
+    recvTransport: Transport,
+    device: Device,
+    ws: WebSocket,
+    localPeerId: string
+  ): void {
     ws.addEventListener('message', async (event) => {
       const msg = JSON.parse(event.data)
 
@@ -144,7 +148,7 @@ class MeetingCallService {
       }
 
       if (msg.type !== 'newProducer') return
-      if (msg.peerId === sessionState.currentUser?.id) return
+      if (String(msg.peerId) === localPeerId) return
 
       this.sendMessage(ws, 'consume', {
         transportId: recvTransport.id,
@@ -198,14 +202,17 @@ class MeetingCallService {
         return
       }
 
-      const { sfuUrl, roomId, roomToken, maxVideoHeight } = info
-      const title = meetingGuestService.hasSession()
-        ? ((await meetingGuestService.preview(code))?.title ?? null)
-        : ((await meetingService.getMeeting(code))?.title ?? null)
+      const { sfuUrl, roomId, roomToken, maxVideoHeight, peerId, displayName, title } = info
 
       const sfuWs = await this.connectToWebSocket(sfuUrl.replace('http', 'ws'))
 
-      const rtpCapabilities = await this.getRtpCapabilities(sfuWs, roomId, roomToken)
+      const rtpCapabilities = await this.getRtpCapabilities(
+        sfuWs,
+        roomId,
+        roomToken,
+        peerId,
+        displayName
+      )
       const device = new Device()
       await device.load({ routerRtpCapabilities: rtpCapabilities })
 
@@ -220,7 +227,7 @@ class MeetingCallService {
         iceServers: ICE_SERVERS
       })
       this.setupTransportConnection(receiveTransport, sfuWs)
-      this.setupConsumer(receiveTransport, device, sfuWs)
+      this.setupConsumer(receiveTransport, device, sfuWs, peerId)
 
       const audioBase: MediaTrackConstraints = {
         echoCancellation: true,
@@ -240,7 +247,7 @@ class MeetingCallService {
 
       this.sendMessage(sfuWs, 'getProducers', { roomId })
 
-      callState.startMeetingCall(code, roomId, title)
+      callState.startMeetingCall(code, roomId, title, peerId)
       callState.setGroupSession({
         sfuWebsocket: sfuWs,
         rtpCapabilities,

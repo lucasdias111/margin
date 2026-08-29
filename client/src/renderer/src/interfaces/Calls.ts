@@ -35,6 +35,7 @@ export interface GroupCallData {
   channelId: number | null
   meetingCode: string | null
   title: string | null
+  localPeerId: string | null
   session: ChannelCallSession | null
   participants: SFUParticipant[]
   isVideoEnabled: boolean

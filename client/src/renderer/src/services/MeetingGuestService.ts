@@ -5,6 +5,7 @@ import {
   clearGuestToken,
   getGuestToken
 } from '$src/services/meetingApi'
+import type { MeetingJoinInfo } from '$src/interfaces/Meetings'
 
 export interface MeetingPreview {
   code: string

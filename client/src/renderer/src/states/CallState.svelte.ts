@@ -88,6 +88,7 @@ class CallState {
       channelId,
       meetingCode: null,
       title: null,
+      localPeerId: null,
       session: null,
       participants: [],
       isVideoEnabled: false,
@@ -97,7 +98,12 @@ class CallState {
     }
   }
 
-  startMeetingCall(meetingCode: string, roomId: string, title: string | null): void {
+  startMeetingCall(
+    meetingCode: string,
+    roomId: string,
+    title: string | null,
+    localPeerId: string
+  ): void {
     this.activeCallType = 'group'
     this.baseState.callId = null
     this.baseState.status = 'connecting'
@@ -109,6 +115,7 @@ class CallState {
       channelId: null,
       meetingCode,
       title,
+      localPeerId,
       session: null,
       participants: [],
       isVideoEnabled: false,

@@ -39,6 +39,9 @@ export interface MeetingJoinInfo {
   roomId: string
   roomToken: string
   maxVideoHeight: number | null
+  peerId: string
+  displayName: string
+  title: string | null
 }
 
 export interface MeetingSummary {
