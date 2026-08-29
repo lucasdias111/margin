@@ -35,6 +35,12 @@ export interface EligibleMargin {
   marginName: string
 }
 
+export type MeetingJoinFailure = 'full' | 'ended' | 'not-admitted' | 'unavailable' | 'failed'
+
+export type MeetingJoinResult =
+  | { ok: true; info: MeetingJoinInfo }
+  | { ok: false; reason: MeetingJoinFailure }
+
 export interface MeetingJoinInfo {
   sfuUrl: string
   roomId: string

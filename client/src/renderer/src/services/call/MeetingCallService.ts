@@ -16,6 +16,8 @@ import {
 import { ICE_SERVERS } from '$src/services/call/iceServers'
 import { meetingService } from '$src/services/MeetingService'
 import { meetingGuestService } from '$src/services/MeetingGuestService'
+import { joinFailureMessage } from '$src/utils/MeetingJoinFailure'
+import type { MeetingJoinFailure } from '$src/interfaces/Meetings'
 
 class MeetingCallService {
   private async connectToWebSocket(wsUrl: string): Promise<WebSocket> {
@@ -190,19 +192,19 @@ class MeetingCallService {
     })
   }
 
-  async joinMeeting(code: string): Promise<void> {
-    if (callState.isGroupCall) return
+  async joinMeeting(code: string): Promise<MeetingJoinFailure | null> {
+    if (callState.isGroupCall) return null
 
     try {
-      const info = meetingGuestService.hasSession()
+      const result = meetingGuestService.hasSession()
         ? await meetingGuestService.join(code)
         : await meetingService.join(code)
-      if (!info) {
-        errorService.reportError('Could not join the meeting')
-        return
+      if (!result.ok) {
+        errorService.reportError(joinFailureMessage(result.reason))
+        return result.reason
       }
 
-      const { sfuUrl, roomId, roomToken, maxVideoHeight, peerId, displayName, title } = info
+      const { sfuUrl, roomId, roomToken, maxVideoHeight, peerId, displayName, title } = result.info
 
       const sfuWs = await this.connectToWebSocket(sfuUrl.replace('http', 'ws'))
 
@@ -265,10 +267,12 @@ class MeetingCallService {
 
       await deviceService.enumerateDevices()
       deviceService.startListening()
+      return null
     } catch (err) {
       callState.endCall()
       console.error(err)
-      errorService.reportError('Could not join the meeting')
+      errorService.reportError(joinFailureMessage('failed'))
+      return 'failed'
     }
   }
 

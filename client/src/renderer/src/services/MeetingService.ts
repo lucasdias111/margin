@@ -1,11 +1,12 @@
 import { authenticatedGet, authenticatedPatch, authenticatedPost } from '$src/services/api'
 import { webSocketService } from '$src/services/websocket/WebSocketService'
 import { WebSocketMessageType } from '$src/interfaces/WebSocketMessageType'
+import { toJoinResult } from '$src/utils/MeetingJoinFailure'
 import type {
   EligibleMargin,
   Meeting,
   MeetingInvitee,
-  MeetingJoinInfo,
+  MeetingJoinResult,
   MeetingSummary,
   ScheduleMeetingInput
 } from '$src/interfaces/Meetings'
@@ -29,10 +30,8 @@ class MeetingService {
     return response.json()
   }
 
-  async join(code: string): Promise<MeetingJoinInfo | null> {
-    const response = await authenticatedPost(null, `meetings/${code}/join`)
-    if (!response.ok) return null
-    return response.json()
+  async join(code: string): Promise<MeetingJoinResult> {
+    return toJoinResult(await authenticatedPost(null, `meetings/${code}/join`))
   }
 
   async end(code: string): Promise<void> {

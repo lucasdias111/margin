@@ -60,9 +60,23 @@ describe('MeetingService', () => {
   it('posts to the join endpoint for the given code', async () => {
     vi.mocked(authenticatedPost).mockResolvedValue(ok({ roomId: 'm_abc123' }))
 
-    const info = await meetingService.join('abc123')
+    const result = await meetingService.join('abc123')
 
     expect(authenticatedPost).toHaveBeenCalledWith(null, 'meetings/abc123/join')
-    expect(info?.roomId).toBe('m_abc123')
+    expect(result).toEqual({ ok: true, info: { roomId: 'm_abc123' } })
+  })
+
+  it('tells a full room apart from an ended one so the caller can say which', async () => {
+    vi.mocked(authenticatedPost).mockResolvedValue(failed(409))
+    await expect(meetingService.join('abc123')).resolves.toEqual({ ok: false, reason: 'full' })
+
+    vi.mocked(authenticatedPost).mockResolvedValue(failed(410))
+    await expect(meetingService.join('abc123')).resolves.toEqual({ ok: false, reason: 'ended' })
+
+    vi.mocked(authenticatedPost).mockResolvedValue(failed(503))
+    await expect(meetingService.join('abc123')).resolves.toEqual({
+      ok: false,
+      reason: 'unavailable'
+    })
   })
 })

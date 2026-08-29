@@ -5,7 +5,8 @@ import {
   clearGuestToken,
   getGuestToken
 } from '$src/services/meetingApi'
-import type { MeetingJoinInfo } from '$src/interfaces/Meetings'
+import type { MeetingJoinResult } from '$src/interfaces/Meetings'
+import { toJoinResult } from '$src/utils/MeetingJoinFailure'
 import { encryptionService } from '$src/services/EncryptionService'
 
 export interface MeetingPreview {
@@ -63,10 +64,8 @@ class MeetingGuestService {
     return 'failed'
   }
 
-  async join(code: string): Promise<MeetingJoinInfo | null> {
-    const response = await guestPost(`meetings/${code}/guest-join`)
-    if (!response.ok) return null
-    return response.json()
+  async join(code: string): Promise<MeetingJoinResult> {
+    return toJoinResult(await guestPost(`meetings/${code}/guest-join`))
   }
 
   hasSession(): boolean {

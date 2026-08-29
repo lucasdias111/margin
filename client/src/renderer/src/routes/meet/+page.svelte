@@ -14,6 +14,7 @@
   import Icon from '$src/components/common/icons/Icon.svelte'
   import { riseIn } from '$src/animations'
   import { isMeetingJoinable } from '$src/utils/MeetingUtils'
+  import { joinFailureMessage } from '$src/utils/MeetingJoinFailure'
   import { isElectron } from '$src/utils/platformUtils'
   import type { Meeting } from '$src/interfaces/Meetings'
 
@@ -101,13 +102,17 @@
 
   async function join(): Promise<void> {
     phase = 'in-call'
-    await meetingCallService.joinMeeting(code)
+    const failure = await meetingCallService.joinMeeting(code)
+    if (callState.isGroupCall) return
 
-    // joinMeeting reports its own error; if no call came up, fall back to where the user was
-    // rather than leaving them on an empty call window.
-    if (!callState.isGroupCall) {
-      phase = isGuest ? 'lobby' : 'ready'
+    if (failure === 'ended' || failure === 'full') {
+      message = joinFailureMessage(failure)
+      phase = 'unavailable'
+      return
     }
+
+    // Anything recoverable puts them back where they were rather than on an empty call window.
+    phase = isGuest ? 'lobby' : 'ready'
   }
 
   function onKnocked(): void {
