@@ -25,6 +25,9 @@
   let localStream = $state<MediaStream | null>(null)
   let micOn = $state(true)
   let cameraOn = $state(false)
+  let signingUp = $state(false)
+  let email = $state('')
+  let password = $state('')
 
   onMount(async () => {
     preview = await meetingGuestService.preview(code)
@@ -96,6 +99,11 @@
 
   async function joinAsGuest(): Promise<void> {
     if (phase === 'joining') return
+    if (signingUp && (!email.trim() || !password)) {
+      message = 'Enter an email and a password, or join as a guest instead.'
+      return
+    }
+
     phase = 'joining'
     message = ''
 
@@ -104,6 +112,20 @@
       phase = 'lobby'
       message = 'We could not join you to this meeting. Try again in a moment.'
       return
+    }
+
+    if (signingUp) {
+      const outcome = await meetingGuestService.claim(email.trim(), password)
+      if (outcome === 'email-in-use') {
+        phase = 'lobby'
+        message = 'That email already has an account. Sign in instead, or join as a guest.'
+        return
+      }
+      if (outcome === 'failed') {
+        phase = 'lobby'
+        message = 'We could not create your account. Try joining as a guest.'
+        return
+      }
     }
 
     stopPreviewStream()
@@ -171,6 +193,17 @@
         <input type="text" bind:value={displayName} placeholder="Guest" maxlength="50" />
       </label>
 
+      {#if signingUp}
+        <label class="field">
+          <span class="field-label">Email</span>
+          <input type="email" bind:value={email} placeholder="you@example.com" />
+        </label>
+        <label class="field">
+          <span class="field-label">Password</span>
+          <input type="password" bind:value={password} placeholder="••••••••" />
+        </label>
+      {/if}
+
       {#if message}
         <p class="note error">{message}</p>
       {/if}
@@ -180,14 +213,32 @@
         size="large"
         fullWidth
         disabled={phase === 'joining'}
-        text={phase === 'joining' ? 'Joining…' : 'Join as guest'}
+        text={phase === 'joining'
+          ? 'Joining…'
+          : signingUp
+            ? 'Create account and join'
+            : 'Join as guest'}
         onClick={joinAsGuest}
       />
 
+      <Button
+        buttonType="secondary"
+        size="small"
+        fullWidth
+        disabled={phase === 'joining'}
+        text={signingUp ? 'Just join as a guest' : 'Create a margin account'}
+        onClick={() => {
+          signingUp = !signingUp
+          message = ''
+        }}
+      />
+
       <p class="note">
-        {preview?.requireAdmission
-          ? 'The host will let you in.'
-          : 'You will join the meeting straight away.'}
+        {signingUp
+          ? 'You keep your place in the meeting; confirm your email afterwards to sign in later.'
+          : preview?.requireAdmission
+            ? 'The host will let you in.'
+            : 'You will join the meeting straight away.'}
       </p>
     {/if}
   </div>

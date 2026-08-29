@@ -77,6 +77,18 @@ describe('MeetingGuestService', () => {
     await expect(meetingGuestService.claim('new@margin.chat', 'pw')).resolves.toBe('claimed')
   })
 
+  it('claims with a real key pair so the account can be used afterwards', async () => {
+    vi.mocked(guestPost).mockResolvedValue(ok({}))
+
+    await meetingGuestService.claim('new@margin.chat', 'pw')
+
+    const body = vi.mocked(guestPost).mock.calls[0][1] as Record<string, string>
+    expect(body.publicKey).toBeTruthy()
+    expect(body.encryptedPrivateKey).toBeTruthy()
+    expect(body.salt).toBeTruthy()
+    expect(body.iv).toBeTruthy()
+  })
+
   it('clears the token when the guest leaves', async () => {
     vi.mocked(publicPost).mockResolvedValue(
       ok({ guestToken: 'tok', userId: 5, displayName: 'W', requiresAdmission: false })

@@ -6,6 +6,7 @@ import {
   getGuestToken
 } from '$src/services/meetingApi'
 import type { MeetingJoinInfo } from '$src/interfaces/Meetings'
+import { encryptionService } from '$src/services/EncryptionService'
 
 export interface MeetingPreview {
   code: string
@@ -41,18 +42,20 @@ class MeetingGuestService {
     return session
   }
 
-  async claim(
-    email: string,
-    password: string,
-    keys: { publicKey?: string; encryptedPrivateKey?: string; salt?: string; iv?: string } = {}
-  ): Promise<ClaimOutcome> {
+  async claim(email: string, password: string): Promise<ClaimOutcome> {
+    const { publicKey, privateKey } = await encryptionService.generateKeyPair()
+    const { encryptedKey, salt, iv } = await encryptionService.encryptPrivateKey(
+      privateKey,
+      password
+    )
+
     const response = await guestPost('meetings/claim', {
       email,
       password,
-      publicKey: keys.publicKey ?? null,
-      encryptedPrivateKey: keys.encryptedPrivateKey ?? null,
-      salt: keys.salt ?? null,
-      iv: keys.iv ?? null
+      publicKey,
+      encryptedPrivateKey: encryptedKey,
+      salt,
+      iv
     })
 
     if (response.ok) return 'claimed'
