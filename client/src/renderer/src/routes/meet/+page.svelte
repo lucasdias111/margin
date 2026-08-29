@@ -13,6 +13,7 @@
   import Button from '$src/components/common/buttons/Button.svelte'
   import Icon from '$src/components/common/icons/Icon.svelte'
   import { riseIn } from '$src/animations'
+  import { isMeetingJoinable } from '$src/utils/MeetingUtils'
   import type { Meeting } from '$src/interfaces/Meetings'
 
   const { params }: { params?: { code?: string } } = $props()
@@ -46,9 +47,12 @@
       message = 'This meeting link is not valid, or you do not have access to it.'
       return
     }
-    if (meeting.status === 'ENDED' || meeting.status === 'CANCELLED') {
+    if (!isMeetingJoinable(meeting)) {
       phase = 'unavailable'
-      message = 'This meeting has ended.'
+      message =
+        meeting.status === 'CANCELLED'
+          ? 'This meeting was cancelled.'
+          : 'This meeting is no longer available.'
       return
     }
     phase = 'ready'

@@ -26,6 +26,7 @@ export interface Meeting {
   durationMinutes: number | null
   startedAt: string | null
   endedAt: string | null
+  expiresAt: string | null
   participants: MeetingParticipantInfo[]
 }
 
@@ -57,6 +58,7 @@ export interface MeetingSummary {
   organizerTimezone: string | null
   startedAt: string | null
   endedAt: string | null
+  expiresAt: string | null
   inviteeCount: number
 }
 

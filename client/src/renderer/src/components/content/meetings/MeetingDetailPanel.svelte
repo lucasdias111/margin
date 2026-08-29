@@ -5,6 +5,7 @@
   import { meetingService } from '$src/services/MeetingService'
   import { sessionState } from '$src/states/SessionState.svelte'
   import { formatMeetingWhen } from '$src/utils/DateUtils'
+  import { isMeetingJoinable } from '$src/utils/MeetingUtils'
   import type { MeetingInvitee, MeetingSummary } from '$src/interfaces/Meetings'
   import Button from '$src/components/common/buttons/Button.svelte'
 
@@ -24,7 +25,10 @@
   let linkCopied = $state(false)
 
   const isHost = $derived(meeting.hostUserId === sessionState.currentUser?.id)
-  const canJoin = $derived(meeting.status === 'SCHEDULED' || meeting.status === 'LIVE')
+  const canJoin = $derived(isMeetingJoinable(meeting))
+  const isExpired = $derived(
+    !canJoin && meeting.status !== 'ENDED' && meeting.status !== 'CANCELLED'
+  )
 
   onMount(async () => {
     invitees = await meetingService.invitees(meeting.code)
@@ -64,6 +68,7 @@
       {#if meeting.status === 'CANCELLED'}· Cancelled{/if}
       {#if meeting.status === 'ENDED'}· Ended{/if}
       {#if meeting.status === 'LIVE'}· In progress{/if}
+      {#if isExpired}· Expired{/if}
     </p>
 
     {#if invitees.length > 0}

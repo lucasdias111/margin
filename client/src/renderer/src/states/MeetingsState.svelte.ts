@@ -1,4 +1,5 @@
 import { meetingService } from '$src/services/MeetingService'
+import { isMeetingJoinable } from '$src/utils/MeetingUtils'
 import type { MeetingSummary } from '$src/interfaces/Meetings'
 
 class MeetingsState {
@@ -9,12 +10,14 @@ class MeetingsState {
 
   get upcoming(): MeetingSummary[] {
     return this.meetings
-      .filter((m) => m.status === 'SCHEDULED' || m.status === 'LIVE')
+      .filter((m) => isMeetingJoinable(m))
       .sort((a, b) => (a.scheduledAt ?? '').localeCompare(b.scheduledAt ?? ''))
   }
 
   get past(): MeetingSummary[] {
-    return this.meetings.filter((m) => m.status === 'ENDED' || m.status === 'CANCELLED')
+    return this.meetings
+      .filter((m) => !isMeetingJoinable(m))
+      .sort((a, b) => (b.scheduledAt ?? '').localeCompare(a.scheduledAt ?? ''))
   }
 
   get selected(): MeetingSummary | null {

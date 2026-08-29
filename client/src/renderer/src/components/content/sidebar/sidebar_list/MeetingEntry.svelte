@@ -2,6 +2,7 @@
   import Icon from '$src/components/common/icons/Icon.svelte'
   import { meetingsState } from '$src/states/MeetingsState.svelte'
   import { formatMeetingWhen } from '$src/utils/DateUtils'
+  import { isMeetingJoinable } from '$src/utils/MeetingUtils'
   import { pressable } from '$src/animations'
   import type { MeetingSummary } from '$src/interfaces/Meetings'
 
@@ -12,7 +13,7 @@
 
   let { meeting, active }: Props = $props()
 
-  const isLive = $derived(meeting.status === 'LIVE')
+  const isLive = $derived(meeting.status === 'LIVE' && isMeetingJoinable(meeting))
 
   const subtitle = $derived(
     meeting.status === 'CANCELLED'
@@ -21,7 +22,9 @@
         ? 'Ended'
         : meeting.scheduledAt
           ? formatMeetingWhen(meeting.scheduledAt, meeting.organizerTimezone)
-          : 'In progress'
+          : isLive
+            ? 'In progress'
+            : 'Expired'
   )
 </script>
 

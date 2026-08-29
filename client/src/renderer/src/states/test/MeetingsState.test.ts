@@ -7,7 +7,12 @@ vi.mock('$src/services/MeetingService', () => ({
   meetingService: { myMeetings: vi.fn() }
 }))
 
-function meeting(code: string, status: MeetingSummary['status'], at: string): MeetingSummary {
+function meeting(
+  code: string,
+  status: MeetingSummary['status'],
+  at: string,
+  expiresAt: string = new Date(Date.parse(at) + 24 * 60 * 60 * 1000).toISOString()
+): MeetingSummary {
   return {
     id: 1,
     code,
@@ -21,6 +26,7 @@ function meeting(code: string, status: MeetingSummary['status'], at: string): Me
     organizerTimezone: 'UTC',
     startedAt: null,
     endedAt: null,
+    expiresAt,
     inviteeCount: 0
   }
 }
@@ -75,6 +81,30 @@ describe('MeetingsState', () => {
 
     expect(meetingsState.upcoming.map((m) => m.code)).toEqual(['sooner', 'later'])
     expect(meetingsState.past.map((m) => m.code)).toEqual(['done'])
+  })
+
+  it('treats a scheduled meeting whose window has passed as past, not upcoming', async () => {
+    vi.mocked(meetingService.myMeetings).mockResolvedValue([
+      meeting('stale', 'SCHEDULED', '2026-08-01T10:00:00Z', '2026-08-02T10:00:00Z'),
+      meeting('ahead', 'SCHEDULED', '2026-09-02T10:00:00Z')
+    ])
+
+    await meetingsState.load()
+
+    expect(meetingsState.upcoming.map((m) => m.code)).toEqual(['ahead'])
+    expect(meetingsState.past.map((m) => m.code)).toEqual(['stale'])
+  })
+
+  it('leaves a live meeting upcoming until its window closes', async () => {
+    vi.mocked(meetingService.myMeetings).mockResolvedValue([
+      meeting('running', 'LIVE', '2026-08-29T10:00:00Z', '2026-12-01T10:00:00Z'),
+      meeting('abandoned', 'LIVE', '2026-08-01T10:00:00Z', '2026-08-01T22:00:00Z')
+    ])
+
+    await meetingsState.load()
+
+    expect(meetingsState.upcoming.map((m) => m.code)).toEqual(['running'])
+    expect(meetingsState.past.map((m) => m.code)).toEqual(['abandoned'])
   })
 
   it('drops a selection that no longer exists after a refresh', async () => {
