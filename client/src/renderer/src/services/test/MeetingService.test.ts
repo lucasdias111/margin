@@ -53,8 +53,9 @@ describe('MeetingService', () => {
     await expect(meetingService.createMeeting(7, null)).resolves.toBeNull()
   })
 
-  it('builds a share link on the hash route so it survives the SPA base path', () => {
-    expect(meetingService.shareLink('abc123')).toContain('#/meet/abc123')
+  it('builds a share link on a real path, which is what app links can match', () => {
+    expect(meetingService.shareLink('abc123')).toContain('/meet/abc123')
+    expect(meetingService.shareLink('abc123')).not.toContain('#')
   })
 
   it('posts to the join endpoint for the given code', async () => {

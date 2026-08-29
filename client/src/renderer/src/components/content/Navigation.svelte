@@ -163,11 +163,11 @@
       use:pressable={{ scale: 0.88 }}
       onclick={() => onContentSelected(View.Meetings)}
       class:selected={navigationState.view === View.Meetings}
-      aria-label="Meetings"
-      title="Meetings"
+      aria-label="Calendar"
+      title="Calendar"
     >
       <Icon name="calendar" size={28} />
-      <span class="nav-label">Meetings</span>
+      <span class="nav-label">Calendar</span>
     </button>
   </div>
   <div class="avatar-space"></div>

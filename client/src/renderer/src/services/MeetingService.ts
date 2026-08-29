@@ -83,8 +83,11 @@ class MeetingService {
     return response.json()
   }
 
+  /** The canonical meeting link. A real path rather than the app's hash route, because Android
+   * App Links and iOS Universal Links match on the path and never see a fragment; the web page
+   * at /meet/<code> hands off to the desktop app or falls back to /app/#/meet/<code>. */
   shareLink(code: string): string {
-    return `${window.location.origin}${import.meta.env.BASE_URL}#/meet/${code}`
+    return `${window.location.origin}/meet/${code}`
   }
 }
 
