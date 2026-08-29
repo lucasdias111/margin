@@ -1,4 +1,8 @@
 appId: com.margin.app
+protocols:
+  - name: margin
+    schemes:
+      - margin
 productName: margin
 afterSign: scripts/notarize.cjs
 directories:

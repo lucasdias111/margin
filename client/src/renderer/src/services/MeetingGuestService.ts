@@ -59,6 +59,12 @@ class MeetingGuestService {
     return 'failed'
   }
 
+  async join(code: string): Promise<MeetingJoinInfo | null> {
+    const response = await guestPost(`meetings/${code}/guest-join`)
+    if (!response.ok) return null
+    return response.json()
+  }
+
   hasSession(): boolean {
     return getGuestToken() !== null
   }

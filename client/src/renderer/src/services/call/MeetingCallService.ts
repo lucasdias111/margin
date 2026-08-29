@@ -16,6 +16,7 @@ import {
 import { ICE_SERVERS } from '$src/services/call/iceServers'
 import { sessionState } from '$src/states/SessionState.svelte'
 import { meetingService } from '$src/services/MeetingService'
+import { meetingGuestService } from '$src/services/MeetingGuestService'
 
 class MeetingCallService {
   private async connectToWebSocket(wsUrl: string): Promise<WebSocket> {
@@ -189,14 +190,18 @@ class MeetingCallService {
     if (callState.isGroupCall) return
 
     try {
-      const info = await meetingService.join(code)
+      const info = meetingGuestService.hasSession()
+        ? await meetingGuestService.join(code)
+        : await meetingService.join(code)
       if (!info) {
         errorService.reportError('Could not join the meeting')
         return
       }
 
       const { sfuUrl, roomId, roomToken, maxVideoHeight } = info
-      const meeting = await meetingService.getMeeting(code)
+      const title = meetingGuestService.hasSession()
+        ? ((await meetingGuestService.preview(code))?.title ?? null)
+        : ((await meetingService.getMeeting(code))?.title ?? null)
 
       const sfuWs = await this.connectToWebSocket(sfuUrl.replace('http', 'ws'))
 
@@ -235,7 +240,7 @@ class MeetingCallService {
 
       this.sendMessage(sfuWs, 'getProducers', { roomId })
 
-      callState.startMeetingCall(code, roomId, meeting?.title ?? null)
+      callState.startMeetingCall(code, roomId, title)
       callState.setGroupSession({
         sfuWebsocket: sfuWs,
         rtpCapabilities,

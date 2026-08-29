@@ -21,6 +21,7 @@ interface Window {
     notifyReady: () => void
   }
   electronAPI?: {
+    onDeepLink?: (callback: (path: string) => void) => void
     onUserStatusChange: (callback: (status: 'active' | 'away') => void) => void
   }
 }
