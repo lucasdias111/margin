@@ -26,7 +26,7 @@ services:
       retries: 5
     logging: *default-logging
   margin-server:
-    image: codeberg.org/margin/margin-server:${SERVER_VERSION:-latest}
+    image: ghcr.io/marginchat/margin-server:${SERVER_VERSION:-latest}
     pull_policy: never
     container_name: margin-server
     restart: unless-stopped
@@ -76,7 +76,7 @@ services:
     logging: *default-logging
 
   margin-sfu:
-    image: codeberg.org/margin/margin-sfu:${SFU_VERSION:-latest}
+    image: ghcr.io/marginchat/margin-sfu:${SFU_VERSION:-latest}
     pull_policy: never
     container_name: margin-sfu
     restart: unless-stopped
