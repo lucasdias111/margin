@@ -6,7 +6,7 @@ margin:
   mail:
     from: ${SMTP_FROM:noreply@localhost}
   cors:
-    allowed-origins: ${APP_BASE_URL},app://
+    allowed-origins: ${margin.app.base-url},app://
 
 spring:
   application:
