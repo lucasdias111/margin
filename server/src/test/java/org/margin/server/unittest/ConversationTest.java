@@ -1,0 +1,206 @@
+package org.margin.server.unittest;
+
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.margin.server.social.conversation.events.TypingIndicatorEvent;
+import org.margin.server.social.conversation.models.Conversation;
+import org.margin.server.social.conversation.models.ConversationMember;
+import org.margin.server.social.conversation.models.ConversationInviteStatus;
+import org.margin.server.social.api.ConversationType;
+import org.margin.server.social.conversation.models.dtos.ConversationDTO;
+import org.margin.server.social.conversation.models.dtos.DirectConversationDTO;
+import org.margin.server.social.conversation.models.dtos.GroupConversationDTO;
+import org.margin.server.social.conversation.repositories.ConversationMemberRepository;
+import org.margin.server.social.conversation.repositories.ConversationRepository;
+import org.margin.server.social.conversation.services.ConversationCreationService;
+import org.margin.server.social.conversation.services.ConversationService;
+import org.margin.server.users.models.User;
+import org.margin.server.users.api.UserLookup;
+import org.margin.server.presence.PresenceService;
+import org.mockito.Mock;
+import org.springframework.context.ApplicationEventPublisher;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.test.util.ReflectionTestUtils;
+
+import java.time.Instant;
+import java.util.List;
+import java.util.Optional;
+
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
+import static org.margin.server.unittest.utils.UserTestUtils.*;
+import static org.margin.server.unittest.utils.ConversationTestUtils.*;
+
+@ExtendWith(MockitoExtension.class)
+class ConversationServiceTest {
+
+    @Mock
+    private ConversationRepository conversationRepository;
+    @Mock
+    private ConversationMemberRepository conversationMemberRepository;
+    @Mock
+    private UserLookup userLookup;
+    @Mock
+    private PresenceService presenceService;
+    @Mock
+    private ApplicationEventPublisher eventPublisher;
+    @Mock
+    private ConversationCreationService conversationCreationService;
+
+    private ConversationService conversationService;
+
+    @BeforeEach
+    void setUp() {
+        org.mockito.Mockito.lenient().when(userLookup.dtoOf(org.mockito.ArgumentMatchers.anyLong()))
+                .thenAnswer(i -> new org.margin.server.users.models.dtos.UserDTO(
+                        i.getArgument(0), "u", null, null, null, false));
+
+        ConversationService serviceImpl = new ConversationService(
+                conversationCreationService,
+                conversationRepository,
+                conversationMemberRepository,
+                userLookup,
+                null, // self placeholder
+                presenceService,
+                eventPublisher
+        );
+
+        // 2. Wrap it in a spy so we can mock self-calls
+        conversationService = spy(serviceImpl);
+
+        // 3. Use Reflection to point the 'self' field to the spy
+        ReflectionTestUtils.setField(conversationService, "self", conversationService);
+    }
+
+    @Test
+    @DisplayName("Should map DIRECT conversation correctly")
+    void getConversationDTO_Direct() {
+        User user1 = createUser(1L);
+        User user2 = createUser(2L);
+        Conversation conv = createConversation(10L, ConversationType.DIRECT);
+
+        ConversationMember member1 = new ConversationMember();
+        member1.setUserId(user1.getId());
+        member1.setLastReadAt(Instant.now());
+
+        ConversationMember member2 = new ConversationMember();
+        member2.setUserId(user2.getId());
+        member2.setLastReadAt(Instant.now());
+
+        conv.setMembers(List.of(member1, member2));
+
+        ConversationDTO result = conversationService.getConversationDTO(conv, 1L);
+
+        assertInstanceOf(DirectConversationDTO.class, result);
+        assertEquals(2L, ((DirectConversationDTO) result).otherUserId());
+    }
+
+    @Test
+    @DisplayName("Should map GROUP conversation correctly")
+    void getConversationDTO_Group() {
+        Conversation conv = createConversation(20L, ConversationType.GROUP);
+        conv.setName("Devs");
+
+        doReturn(conv).when(conversationService).getById(20L);
+        when(conversationMemberRepository.findUserIdsByConversationId(20L))
+                .thenReturn(List.of(1L, 2L));
+
+        ConversationDTO result = conversationService.getConversationDTO(conv, 1L);
+
+        assertInstanceOf(GroupConversationDTO.class, result);
+        assertEquals("Devs", ((GroupConversationDTO) result).name());
+        assertEquals(2, ((GroupConversationDTO) result).memberIds().size());
+    }
+
+    @Test
+    @DisplayName("Should create group, add creator as member and invite others")
+    void createGroupConversation_Success() {
+        User creator = createUser(1L);
+        creator.setEmail("creator@example.com");
+        User invitee = createUser(2L);
+        invitee.setEmail("invitee@example.com");
+
+        Conversation conversation = createConversation(99L, ConversationType.GROUP);
+        conversation.setName("New Group");
+
+        when(conversationCreationService.createGroupConversation("New Group", false)).thenReturn(conversation);
+        when(userLookup.idByEmail("invitee@example.com")).thenReturn(Optional.of(invitee.getId()));
+
+        Conversation result = conversationService.createGroupConversation(
+                creator.getId(), List.of("invitee@example.com"), "New Group", false);
+
+        assertNotNull(result);
+        assertEquals(99L, result.getId());
+        verify(conversationCreationService).createGroupConversation("New Group", false);
+        // Creator added as ACCEPTED member
+        verify(conversationCreationService).createConversationMember(conversation, creator.getId());
+    }
+
+    @Test
+    @DisplayName("addMember should invite with PENDING status and fire invite event")
+    void addMember_Success() {
+        Conversation conv = createConversation(1L, ConversationType.GROUP);
+        User adder = createUser(1L);
+        User invitee = createUser(2L);
+
+        doReturn(conv).when(conversationService).getById(1L);
+
+        assertDoesNotThrow(() -> conversationService.addMember(1L, 2L, adder.getId()));
+        verify(conversationCreationService).createConversationMemberWithStatus(
+                conv, invitee.getId(), ConversationInviteStatus.PENDING);
+    }
+
+    @Test
+    @DisplayName("getById should throw exception when not found")
+    void getById_NotFound_ThrowsException() {
+        when(conversationRepository.findByIdWithAssociations(1L)).thenReturn(Optional.empty());
+
+        assertThrows(RuntimeException.class, () -> conversationService.getById(1L));
+    }
+
+    @Test
+    @DisplayName("notifyTyping should publish a TypingIndicatorEvent excluding the sender")
+    void notifyTyping_publishesEventExcludingSender() {
+        User sender = createUser(1L, "sender");
+        User other = createUser(2L, "other");
+        Conversation conversation = createConversation(10L, ConversationType.GROUP);
+
+        doReturn(conversation).when(conversationService).getById(10L);
+        when(conversationMemberRepository.findUserIdsByConversationId(10L))
+                .thenReturn(List.of(sender.getId(), other.getId()));
+
+        conversationService.notifyTyping(sender.getId(), conversation.getId(), true);
+
+        org.mockito.ArgumentCaptor<TypingIndicatorEvent> captor =
+                org.mockito.ArgumentCaptor.forClass(TypingIndicatorEvent.class);
+        verify(eventPublisher).publishEvent(captor.capture());
+
+        TypingIndicatorEvent event = captor.getValue();
+        assertEquals(10L, event.getConversationId());
+        assertEquals(sender.getId(), event.getUser().id());
+        assertTrue(event.isTyping());
+        assertEquals(List.of(other.getId()), event.getRecipientIds());
+    }
+
+    @Test
+    @DisplayName("notifyTyping should forward isTyping:false unchanged")
+    void notifyTyping_forwardsIsTypingFalse() {
+        User sender = createUser(1L, "sender");
+        User other = createUser(2L, "other");
+        Conversation conversation = createConversation(10L, ConversationType.DIRECT);
+
+        doReturn(conversation).when(conversationService).getById(10L);
+        when(conversationMemberRepository.findUserIdsByConversationId(10L))
+                .thenReturn(List.of(sender.getId(), other.getId()));
+
+        conversationService.notifyTyping(sender.getId(), conversation.getId(), false);
+
+        org.mockito.ArgumentCaptor<TypingIndicatorEvent> captor =
+                org.mockito.ArgumentCaptor.forClass(TypingIndicatorEvent.class);
+        verify(eventPublisher).publishEvent(captor.capture());
+        assertFalse(captor.getValue().isTyping());
+    }
+
+}

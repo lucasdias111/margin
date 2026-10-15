@@ -1,0 +1,58 @@
+package org.margin.server.websocket.utils;
+
+import lombok.extern.slf4j.Slf4j;
+import org.margin.server.notifications.Notification;
+import org.margin.server.social.messages.models.dtos.MessageDTO;
+import org.margin.server.users.models.dtos.UserDTO;
+import org.margin.server.websocket.models.WebSocketMessage;
+import org.margin.server.websocket.models.WebSocketMessageType;
+import org.margin.server.websocket.models.payloads.NotificationPayload;
+import org.springframework.stereotype.Component;
+import tools.jackson.databind.ObjectMapper;
+
+@Slf4j
+@Component
+public class WebSocketMessageBuilder {
+
+    private final ObjectMapper mapper;
+
+    public WebSocketMessageBuilder(ObjectMapper mapper) {
+        this.mapper = mapper;
+    }
+
+    public String message(MessageDTO message) {
+        return buildMessage(
+                WebSocketMessageType.RECEIVE_MESSAGE,
+                message.conversationId(),
+                message
+        );
+    }
+
+    public String notification(Notification notification, UserDTO sender) {
+        var payload = new NotificationPayload(
+                notification.getNotificationId(),
+                notification.getType(),
+                notification.getReferenceId(),
+                notification.getMarginId(),
+                notification.getConversationId(),
+                sender,
+                notification.getCreatedAt(),
+                notification.isSeen()
+        );
+        return buildMessage(WebSocketMessageType.NOTIFICATION, notification.getRecipientId(), payload);
+    }
+
+    public <T> String buildMessage(WebSocketMessageType type, Long recipientId, T payload) {
+        WebSocketMessage<T> message = new WebSocketMessage<>(
+                type,
+                System.currentTimeMillis(),
+                recipientId,
+                payload
+        );
+        return toJson(message);
+    }
+
+    private String toJson(Object obj) {
+        return mapper.writeValueAsString(obj);
+    }
+}

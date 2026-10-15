@@ -1,0 +1,32 @@
+package org.margin.server.websocket.processors;
+
+import org.margin.server.social.messages.services.MessageService;
+import org.margin.server.shared.security.AuthenticatedUser;
+import org.margin.server.websocket.models.WebSocketMessageIn;
+import org.margin.server.websocket.models.WebSocketMessageType;
+import org.margin.server.websocket.models.payloads.MessageReactionPayload;
+import org.springframework.stereotype.Component;
+
+@Component
+public class AddReactionProcessor implements WebSocketMessageProcessor<MessageReactionPayload> {
+    private final MessageService messageService;
+
+    public AddReactionProcessor(MessageService messageService) {
+        this.messageService = messageService;
+    }
+
+    @Override
+    public WebSocketMessageType getType() {
+        return WebSocketMessageType.SEND_ADD_REACTION;
+    }
+
+    @Override
+    public void process(AuthenticatedUser user, WebSocketMessageIn<MessageReactionPayload> message) {
+        messageService.addReaction(
+                user.id(),
+                message.getRecipientId(),
+                message.getPayload().messageId(),
+                message.getPayload().emoji()
+        );
+    }
+}
