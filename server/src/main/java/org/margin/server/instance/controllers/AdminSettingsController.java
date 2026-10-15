@@ -4,6 +4,7 @@ import org.margin.server.instance.api.MarginCreationPolicy;
 import org.margin.server.instance.api.RegistrationMode;
 import org.margin.server.instance.services.InstanceSettingsService;
 import org.margin.server.instance.services.InstanceSettingsService.InstanceSettingsUpdate;
+import org.margin.server.instance.services.UpdateCheck;
 import org.margin.server.shared.security.AuthenticatedUser;
 import org.margin.server.users.api.AdminAccess;
 import org.springframework.http.HttpStatus;
@@ -12,24 +13,26 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 
 @RestController
-@RequestMapping("/api/admin/settings")
+@RequestMapping("/api/admin")
 public class AdminSettingsController {
 
     private final InstanceSettingsService settings;
     private final AdminAccess adminAccess;
+    private final UpdateCheck updateCheck;
 
-    public AdminSettingsController(InstanceSettingsService settings, AdminAccess adminAccess) {
+    public AdminSettingsController(InstanceSettingsService settings, AdminAccess adminAccess, UpdateCheck updateCheck) {
         this.settings = settings;
         this.adminAccess = adminAccess;
+        this.updateCheck = updateCheck;
     }
 
-    @GetMapping
+    @GetMapping("/settings")
     public SettingsView get(@AuthenticationPrincipal AuthenticatedUser user) {
         adminAccess.requireAdmin(user.id());
         return view();
     }
 
-    @PatchMapping
+    @PatchMapping("/settings")
     public SettingsView update(@RequestBody InstanceSettingsUpdate update,
                                @AuthenticationPrincipal AuthenticatedUser user) {
         adminAccess.requireAdmin(user.id());
@@ -39,6 +42,12 @@ public class AdminSettingsController {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, e.getMessage());
         }
         return view();
+    }
+
+    @GetMapping("/update")
+    public UpdateCheck.Status updateStatus(@AuthenticationPrincipal AuthenticatedUser user) {
+        adminAccess.requireAdmin(user.id());
+        return updateCheck.status();
     }
 
     private SettingsView view() {

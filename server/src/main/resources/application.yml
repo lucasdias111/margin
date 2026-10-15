@@ -1,5 +1,5 @@
 margin:
-  version: ${MARGIN_VERSION:dev}
+  version: ${MARGIN_VERSION:@project.version@}
   instance:
     name: ${MARGIN_INSTANCE_NAME:}
     registration-mode: ${MARGIN_REGISTRATION_MODE:INVITE}
@@ -10,6 +10,8 @@ margin:
     secret: ${TURN_SECRET:}
     uris: ${TURN_URIS:}
     ttl: 12h
+  update-check:
+    enabled: ${UPDATE_CHECK:true}
   gifs:
     klipy-api-key: ${KLIPY_API_KEY:}
   meetings:
