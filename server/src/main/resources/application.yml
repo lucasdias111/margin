@@ -1,4 +1,10 @@
 margin:
+  version: ${MARGIN_VERSION:dev}
+  instance:
+    name: ${MARGIN_INSTANCE_NAME:}
+    registration-mode: ${MARGIN_REGISTRATION_MODE:INVITE}
+  gifs:
+    klipy-api-key: ${KLIPY_API_KEY:}
   meetings:
     guest-token-secret: ${MEETING_GUEST_TOKEN_SECRET}
   app:
