@@ -4,13 +4,7 @@
   let { disabled }: { disabled: boolean } = $props()
 </script>
 
-<button
-  class="sendbut"
-  type="submit"
-  {disabled}
-  aria-label="Send"
-  title="Send"
->
+<button class="sendbut" type="submit" {disabled} aria-label="Send" title="Send">
   <Icon name="send" size={18} color="white" />
 </button>
 

@@ -21,7 +21,7 @@
 
   let currentUserRole = $derived(
     margin.members.find((m) => m.user.id === sessionState.currentUser?.id)?.role ??
-    MarginRole.MEMBER
+      MarginRole.MEMBER
   )
 
   let assignableRoles = $derived(

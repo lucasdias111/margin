@@ -24,7 +24,7 @@
   let isDirty = $derived(
     editedName !== (selectedSpace?.spaceName ?? '') ||
       editedDescription !== (selectedSpace?.spaceDescription ?? '') ||
-    editedVisibility !== (selectedSpace?.visibility ?? 'PUBLIC')
+      editedVisibility !== (selectedSpace?.visibility ?? 'PUBLIC')
   )
 
   async function handleSave(): Promise<void> {
@@ -168,5 +168,4 @@
     color: #888;
     margin: 2px 0 0 0;
   }
-
 </style>

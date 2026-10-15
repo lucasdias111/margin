@@ -1,15 +1,21 @@
-import type { CallOfferPayload, ChannelCallInvitePayload } from '$src/interfaces/WebSocketMessages'
+import type {
+  CallOfferPayload,
+  ChannelCallInvitePayload,
+  MeetingInvitePayload
+} from '$src/interfaces/WebSocketMessages'
 
 const CHANNEL_CALL_INVITE_TIMEOUT_MS = 20_000
 
 class IncomingCallState {
   offer = $state<CallOfferPayload | null>(null)
   channelInvite = $state<ChannelCallInvitePayload | null>(null)
+  meetingInvite = $state<MeetingInvitePayload | null>(null)
 
   private channelInviteTimer: ReturnType<typeof setTimeout> | null = null
+  private meetingInviteTimer: ReturnType<typeof setTimeout> | null = null
 
   get isRinging(): boolean {
-    return this.offer !== null || this.channelInvite !== null
+    return this.offer !== null || this.channelInvite !== null || this.meetingInvite !== null
   }
 
   setOffer(offer: CallOfferPayload): void {
@@ -22,6 +28,21 @@ class IncomingCallState {
 
   isOfferFor(callId: number | undefined): boolean {
     return this.offer !== null && this.offer.callId === callId
+  }
+
+  setMeetingInvite(invite: MeetingInvitePayload): void {
+    this.meetingInvite = invite
+    if (this.meetingInviteTimer) clearTimeout(this.meetingInviteTimer)
+    this.meetingInviteTimer = setTimeout(
+      () => this.clearMeetingInvite(),
+      CHANNEL_CALL_INVITE_TIMEOUT_MS
+    )
+  }
+
+  clearMeetingInvite(): void {
+    if (this.meetingInviteTimer) clearTimeout(this.meetingInviteTimer)
+    this.meetingInviteTimer = null
+    this.meetingInvite = null
   }
 
   setChannelInvite(invite: ChannelCallInvitePayload): void {

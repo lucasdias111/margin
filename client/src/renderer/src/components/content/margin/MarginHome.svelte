@@ -2,8 +2,7 @@
   import { MarginRole } from '$src/interfaces/Margin'
   import { announcementService } from '$src/services/AnnouncementService.js'
   import type { Announcement } from '$src/interfaces/Announcement'
-  import CreateOrEditAnnouncementModal
-    from '$src/components/content/margin/announcement/modals/CreateOrEditAnnouncementModal.svelte'
+  import CreateOrEditAnnouncementModal from '$src/components/content/margin/announcement/modals/CreateOrEditAnnouncementModal.svelte'
   import AnnouncementCard from '$src/components/content/margin/announcement/AnnouncementCard.svelte'
   import MarginIcon from '$src/components/content/margin/MarginIcon.svelte'
   import Icon from '$src/components/common/icons/Icon.svelte'
@@ -28,9 +27,7 @@
   const canManage = $derived(
     currentUserRole === MarginRole.ADMIN || currentUserRole === MarginRole.OWNER
   )
-  const canUploadFiles = $derived(
-    (subscriptionState.subscription?.limits.maxStorageGb ?? 1) > 0
-  )
+  const canUploadFiles = $derived((subscriptionState.subscription?.limits.maxStorageGb ?? 1) > 0)
 
   let announcements = $state<Announcement[]>([])
   let modalOpen = $state(false)
@@ -224,8 +221,13 @@
         {:else}
           <button
             class="new-file-btn locked"
-            onclick={() => upgradeState.show({ tier: subscriptionState.subscription?.tier ?? null, limit: 'STORAGE', message: 'Upgrade your plan to share files with your margin.' })}
-          >Upgrade to upload</button>
+            onclick={() =>
+              upgradeState.show({
+                tier: subscriptionState.subscription?.tier ?? null,
+                limit: 'STORAGE',
+                message: 'Upgrade your plan to share files with your margin.'
+              })}>Upgrade to upload</button
+          >
         {/if}
       {/if}
     </div>
@@ -334,8 +336,9 @@
     flex-direction: column;
     gap: 12px;
     border: 1px dashed transparent;
-    transition: border-color 0.15s,
-    background 0.15s;
+    transition:
+      border-color 0.15s,
+      background 0.15s;
   }
 
   .files-section.drag-over {

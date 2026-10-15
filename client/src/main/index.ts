@@ -1,5 +1,14 @@
-import { app, BrowserWindow, desktopCapturer, ipcMain, nativeImage, safeStorage, session, shell } from 'electron'
-import { join } from 'path'
+import {
+  app,
+  BrowserWindow,
+  desktopCapturer,
+  ipcMain,
+  nativeImage,
+  safeStorage,
+  session,
+  shell
+} from 'electron'
+import { join, resolve } from 'path'
 import { electronApp, is, optimizer } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
 import notificationBadge from '../../resources/notification-badge.png?asset'
@@ -9,6 +18,10 @@ import pkg from 'electron-updater'
 import { setupPresence } from './presence'
 
 const { autoUpdater } = pkg
+
+// Dev builds talk to the local server, so keep their session apart from the installed app's.
+if (is.dev) app.setPath('userData', app.getPath('userData') + '-dev')
+
 const SECURE_FILE = join(app.getPath('userData'), 'secure.bin')
 const TOKEN_FILE = join(app.getPath('userData'), 'session.bin')
 const REFRESH_FILE = join(app.getPath('userData'), 'refresh.bin')
@@ -189,7 +202,7 @@ function checkForUpdates(): void {
 }
 
 function createWindow(): void {
-  const mainWindow = new BrowserWindow({
+  const win = new BrowserWindow({
     width: 1400,
     height: 1000,
     minWidth: 1000,
@@ -209,9 +222,9 @@ function createWindow(): void {
     }
   })
 
-  setupPresence(mainWindow)
+  setupPresence(win)
 
-  mainWindow.webContents.session.webRequest.onHeadersReceived((details, callback) => {
+  win.webContents.session.webRequest.onHeadersReceived((details, callback) => {
     callback({
       responseHeaders: {
         ...details.responseHeaders,
@@ -222,17 +235,23 @@ function createWindow(): void {
     })
   })
 
-  mainWindow.on('ready-to-show', () => {
-    mainWindow.show()
+  mainWindow = win
+
+  win.on('closed', () => {
+    mainWindow = null
   })
 
-  mainWindow.webContents.on('before-input-event', (_event, input) => {
+  win.on('ready-to-show', () => {
+    win.show()
+  })
+
+  win.webContents.on('before-input-event', (_event, input) => {
     if (input.control && input.shift && input.key === 'I') {
-      mainWindow.webContents.toggleDevTools()
+      win.webContents.toggleDevTools()
     }
   })
 
-  mainWindow.webContents.setWindowOpenHandler((details) => {
+  win.webContents.setWindowOpenHandler((details) => {
     try {
       const { protocol } = new URL(details.url)
       if (protocol === 'http:' || protocol === 'https:' || protocol === 'mailto:') {
@@ -244,17 +263,17 @@ function createWindow(): void {
     return { action: 'deny' }
   })
 
-  ipcMain.on('window-minimize', () => mainWindow.minimize())
+  ipcMain.on('window-minimize', () => win.minimize())
 
   ipcMain.on('window-maximize', () => {
-    if (mainWindow.isMaximized()) {
-      mainWindow.unmaximize()
+    if (win.isMaximized()) {
+      win.unmaximize()
     } else {
-      mainWindow.maximize()
+      win.maximize()
     }
   })
 
-  ipcMain.on('window-close', () => mainWindow.close())
+  ipcMain.on('window-close', () => win.close())
 
   ipcMain.on('renderer-ready', () => {
     logUpdater('renderer-ready received')
@@ -266,14 +285,67 @@ function createWindow(): void {
   })
 
   if (is.dev && process.env['ELECTRON_RENDERER_URL']) {
-    mainWindow.loadURL(process.env['ELECTRON_RENDERER_URL'])
+    win.loadURL(process.env['ELECTRON_RENDERER_URL'])
   } else {
-    mainWindow.loadFile(join(__dirname, '../renderer/index.html'))
+    win.loadFile(join(__dirname, '../renderer/index.html'))
   }
 }
 
+let mainWindow: BrowserWindow | null = null
+
+const PROTOCOL = 'margin'
+
+function meetingPathFrom(url: string): string | null {
+  const match = url.match(/^margin:\/\/meet\/([A-Za-z0-9_-]+)/)
+  return match ? `/meet/${match[1]}` : null
+}
+
+function routeDeepLink(url: string): void {
+  const path = meetingPathFrom(url)
+  const target = mainWindow
+  if (!path || !target) return
+
+  if (target.isMinimized()) target.restore()
+  target.focus()
+  target.webContents.send('deep-link', path)
+}
+
+function deepLinkFromArgv(argv: string[]): string | undefined {
+  return argv.find((arg) => arg.startsWith(`${PROTOCOL}://`))
+}
+
+// A protocol activation on Windows and Linux arrives as a second launch, so the lock and the
+// handler have to ship together or the link just opens another window.
+const gotTheLock = app.requestSingleInstanceLock()
+
+if (!gotTheLock) {
+  app.quit()
+} else {
+  app.on('second-instance', (_event, argv) => {
+    const url = deepLinkFromArgv(argv)
+    if (url) routeDeepLink(url)
+    else if (mainWindow) {
+      if (mainWindow.isMinimized()) mainWindow.restore()
+      mainWindow.focus()
+    }
+  })
+}
+
+app.on('open-url', (event, url) => {
+  event.preventDefault()
+  routeDeepLink(url)
+})
+
 app.whenReady().then(() => {
   electronApp.setAppUserModelId('com.electron')
+
+  if (process.defaultApp) {
+    if (process.argv.length >= 2) {
+      app.setAsDefaultProtocolClient(PROTOCOL, process.execPath, [resolve(process.argv[1])])
+    }
+  } else {
+    app.setAsDefaultProtocolClient(PROTOCOL)
+  }
 
   app.on('browser-window-created', (_, window) => {
     optimizer.watchWindowShortcuts(window)
@@ -287,6 +359,11 @@ app.whenReady().then(() => {
   ipcMain.on('ping', () => console.log('pong'))
 
   createWindow()
+
+  const launchUrl = deepLinkFromArgv(process.argv)
+  if (launchUrl) {
+    mainWindow?.webContents.once('did-finish-load', () => routeDeepLink(launchUrl))
+  }
 
   app.on('activate', function () {
     if (BrowserWindow.getAllWindows().length === 0) createWindow()

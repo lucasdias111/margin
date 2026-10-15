@@ -1,6 +1,7 @@
 <script lang="ts">
   import UsersList from './sidebar_list/UsersList.svelte'
   import SpacesList from './sidebar_list/SpacesList.svelte'
+  import MeetingsList from './sidebar_list/MeetingsList.svelte'
   import UserSearchBar from '$src/components/common/user/UserSearchBar.svelte'
   import type { User } from '$src/interfaces/User'
   import { View } from '$src/interfaces/View'
@@ -107,6 +108,12 @@
 
         <div class="panel-content">
           <SpacesList />
+        </div>
+      </div>
+    {:else if selectedContent === 'meetings'}
+      <div class="pane panel" in:viewIn out:viewOut>
+        <div class="panel-content">
+          <MeetingsList />
         </div>
       </div>
     {:else if selectedContent === 'settings'}

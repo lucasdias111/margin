@@ -3,5 +3,6 @@ export enum View {
   Margin = 'margin',
   Settings = 'settings',
   Notifications = 'notifications',
-  Manage = 'manage'
+  Manage = 'manage',
+  Meetings = 'meetings'
 }

@@ -107,9 +107,7 @@ describe('LoginComponent', () => {
   })
 
   it('shows activation reminder when login is rejected because account is not activated', async () => {
-    vi.mocked(authenticationService.login).mockRejectedValue(
-      new Error('User is not yet activated')
-    )
+    vi.mocked(authenticationService.login).mockRejectedValue(new Error('User is not yet activated'))
     render(LoginComponent)
 
     await fireEvent.input(screen.getByLabelText('Email'), { target: { value: 'john@test.com' } })

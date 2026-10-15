@@ -26,7 +26,7 @@
 
   const hasChanges = $derived(
     displayName !== sessionState.currentUser.displayName ||
-    email !== sessionState.currentUser.email ||
+      email !== sessionState.currentUser.email ||
       newProfilePicture !== null
   )
 
@@ -257,7 +257,12 @@
           Permanently delete your account and all associated data. This action cannot be undone.
         </span>
       </div>
-      <Button buttonType="delete" size="small" text="Delete account" onClick={() => (showDeleteConfirm = true)} />
+      <Button
+        buttonType="delete"
+        size="small"
+        text="Delete account"
+        onClick={() => (showDeleteConfirm = true)}
+      />
     </div>
   </div>
 </div>
@@ -409,7 +414,9 @@
     font-size: 0.9rem;
     color: #333;
     outline: none;
-    transition: border-color 0.15s, background 0.15s;
+    transition:
+      border-color 0.15s,
+      background 0.15s;
   }
 
   .field-input-standalone:focus {

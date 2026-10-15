@@ -2,7 +2,6 @@ import type { User } from '$src/interfaces/User'
 
 export interface Notification {
   notificationId: number
-  recipient: User
   sender: User | null
   type: NotificationType
   referenceId: number
@@ -22,5 +21,8 @@ export enum NotificationType {
   THREAD_REPLY = 'THREAD_REPLY',
   SUBSCRIPTION_UPGRADED = 'SUBSCRIPTION_UPGRADED',
   SUBSCRIPTION_PAYMENT_FAILED = 'SUBSCRIPTION_PAYMENT_FAILED',
-  SUBSCRIPTION_LIMIT_WARNING = 'SUBSCRIPTION_LIMIT_WARNING'
+  SUBSCRIPTION_LIMIT_WARNING = 'SUBSCRIPTION_LIMIT_WARNING',
+  MEETING_INVITE = 'MEETING_INVITE',
+  MEETING_REMINDER = 'MEETING_REMINDER',
+  MEETING_STARTED = 'MEETING_STARTED'
 }

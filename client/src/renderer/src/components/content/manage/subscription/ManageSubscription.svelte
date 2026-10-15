@@ -35,7 +35,6 @@
     return () => clearTimeout(timer)
   })
 
-
   onMount(async () => {
     try {
       const marginId = navigationState.selectedMargin.marginId
@@ -117,7 +116,7 @@
         subscription.tier !== 'FREE' &&
         subscription.status === 'ACTIVE' &&
         (tiers.find((t) => t.tier === tier)?.price ?? Infinity) <
-        (tiers.find((t) => t.tier === subscription!.tier)?.price ?? 0)
+          (tiers.find((t) => t.tier === subscription!.tier)?.price ?? 0)
 
       if (isDowngrade) {
         subscriptionState.set(await subscriptionService.changeTier(marginId, tier))
@@ -245,7 +244,9 @@
                 buttonType="primary"
                 size="medium"
                 text={checkoutPending === tier.tier ? 'Redirecting...' : 'Choose'}
-                disabled={checkoutPending !== null || subscription.hasPendingPayment || !hasConsented}
+                disabled={checkoutPending !== null ||
+                  subscription.hasPendingPayment ||
+                  !hasConsented}
                 onClick={() => handleSelectTier(tier.tier)}
               />
             {/if}
@@ -258,10 +259,14 @@
           <input type="checkbox" bind:checked={hasConsented} />
           <span>
             I've read and agree to the
-            <button class="consent-link" onclick={() => (legalModal = 'tos')}>Terms of Service</button>
+            <button class="consent-link" onclick={() => (legalModal = 'tos')}
+              >Terms of Service</button
+            >
             and
-            <button class="consent-link" onclick={() => (legalModal = 'privacy')}>Privacy Policy</button>,
-            and I confirm that my subscription starts immediately, waiving my 14-day right of withdrawal.
+            <button class="consent-link" onclick={() => (legalModal = 'privacy')}
+              >Privacy Policy</button
+            >, and I confirm that my subscription starts immediately, waiving my 14-day right of
+            withdrawal.
           </span>
         </label>
       {/if}

@@ -17,9 +17,7 @@
   let messageInput = $state('')
   let sidebarOpen = $state(true)
 
-  const canUploadFiles = $derived(
-    (subscriptionState.subscription?.limits.maxStorageGb ?? 1) > 0
-  )
+  const canUploadFiles = $derived((subscriptionState.subscription?.limits.maxStorageGb ?? 1) > 0)
 
   const activeConvId = $derived(navigationState.selectedChannel?.conversationId)
   const activeMessages = $derived(
@@ -106,11 +104,7 @@
 
   <div class="chat-body">
     <div class="pane chat-background">
-      <MessagesContainer
-        messages={activeMessages}
-        isLoading={activeMeta.isLoading}
-        {typingUsers}
-      />
+      <MessagesContainer messages={activeMessages} isLoading={activeMeta.isLoading} {typingUsers} />
     </div>
     <ChannelSidebar channel={navigationState.selectedChannel} bind:isOpen={sidebarOpen} />
   </div>

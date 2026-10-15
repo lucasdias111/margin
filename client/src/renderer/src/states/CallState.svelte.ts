@@ -84,7 +84,38 @@ class CallState {
     this.baseState.isMinimized = false
 
     this.groupData = {
+      roomId: String(channelId),
       channelId,
+      meetingCode: null,
+      title: null,
+      localPeerId: null,
+      session: null,
+      participants: [],
+      isVideoEnabled: false,
+      isAudioEnabled: true,
+      screenShareProducer: null,
+      isScreenSharing: false
+    }
+  }
+
+  startMeetingCall(
+    meetingCode: string,
+    roomId: string,
+    title: string | null,
+    localPeerId: string
+  ): void {
+    this.activeCallType = 'group'
+    this.baseState.callId = null
+    this.baseState.status = 'connecting'
+    this.baseState.duration = 0
+    this.baseState.isMinimized = false
+
+    this.groupData = {
+      roomId,
+      channelId: null,
+      meetingCode,
+      title,
+      localPeerId,
       session: null,
       participants: [],
       isVideoEnabled: false,

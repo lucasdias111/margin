@@ -33,4 +33,14 @@
     onAccept={() => incomingCallService.acceptChannelInvite()}
     onDecline={() => incomingCallService.declineChannelInvite()}
   />
+{:else if incomingCallState.meetingInvite}
+  <IncomingCallModal
+    caller={incomingCallState.meetingInvite.inviter}
+    subtitle="Meeting invite"
+    channelName={incomingCallState.meetingInvite.title ??
+      incomingCallState.meetingInvite.marginName}
+    acceptLabel="Join"
+    onAccept={() => incomingCallService.acceptMeetingInvite()}
+    onDecline={() => incomingCallState.clearMeetingInvite()}
+  />
 {/if}

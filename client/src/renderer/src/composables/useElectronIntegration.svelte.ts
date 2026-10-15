@@ -1,4 +1,5 @@
 import { onMount } from 'svelte'
+import { push } from 'svelte-spa-router'
 import { notificationService } from '$src/services/NotificationService'
 import { updateService } from '$src/services/UpdateService'
 import { isElectron } from '$src/utils/platformUtils'
@@ -6,6 +7,10 @@ import { isElectron } from '$src/utils/platformUtils'
 export function useElectronIntegration(onUserActive: () => void): void {
   onMount(() => {
     if (!isElectron()) return
+
+    window.electronAPI?.onDeepLink?.((path: string) => {
+      push(path)
+    })
 
     window.updater!.onUpdateAvailable((version: string) => {
       updateService.setVersion(version)

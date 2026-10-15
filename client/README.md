@@ -7,15 +7,15 @@ video chat.
 
 ## Got a question?
 
-Check the [wiki](https://codeberg.org/margin/margin-desktop/wiki) or open an [issue](https://codeberg.org/margin/margin-desktop/issues).
+Check the [wiki](https://github.com/MarginChat/margin-desktop/wiki) or open an [issue](https://github.com/MarginChat/margin-desktop/issues).
 
 ## Found a bug?
 
-Please search [existing issues](https://codeberg.org/margin/margin-desktop/issues) before opening a new one.
+Please search [existing issues](https://github.com/MarginChat/margin-desktop/issues) before opening a new one.
 
 ## Contributing
 
-Open an [issue](https://codeberg.org/margin/margin-desktop/issues) or send a pull request. There are plenty
+Open an [issue](https://github.com/MarginChat/margin-desktop/issues) or send a pull request. There are plenty
 of ways to help that don't require writing code.
 
 ## License

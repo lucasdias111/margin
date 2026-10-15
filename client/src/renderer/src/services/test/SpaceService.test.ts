@@ -35,7 +35,11 @@ describe('SpaceService', () => {
         buildSpace({
           spaceId: 1,
           channels: [
-            buildChannel({ id: 10, conversationId: 100, voiceParticipants: [buildUser({ id: 7 })] }),
+            buildChannel({
+              id: 10,
+              conversationId: 100,
+              voiceParticipants: [buildUser({ id: 7 })]
+            }),
             buildChannel({ id: 11, conversationId: 101, voiceParticipants: [] })
           ]
         }),

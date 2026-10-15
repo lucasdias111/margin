@@ -34,7 +34,13 @@
           If an account exists for <strong>{email}</strong>, we've sent a password reset link.
         </p>
       </div>
-      <Button buttonType="secondary" size="medium" text="Back to sign in" onClick={() => push('/')} fullWidth />
+      <Button
+        buttonType="secondary"
+        size="medium"
+        text="Back to sign in"
+        onClick={() => push('/')}
+        fullWidth
+      />
     {:else}
       <div class="header">
         <h1 class="title">Forgot password?</h1>

@@ -87,3 +87,43 @@ export function formatLastSeen(date: Date | string | null | undefined): string {
 
   return `Last seen ${dayMonthFormatter.format(seen)}`
 }
+
+export function viewerTimeZone(): string {
+  return Intl.DateTimeFormat().resolvedOptions().timeZone
+}
+
+export function availableTimeZones(): string[] {
+  const supported = (Intl as unknown as { supportedValuesOf?: (k: string) => string[] })
+    .supportedValuesOf
+  return supported ? supported('timeZone') : [viewerTimeZone()]
+}
+
+export function formatInZone(date: Date | string, timeZone: string): string {
+  return new Intl.DateTimeFormat('en-GB', {
+    timeZone,
+    weekday: 'short',
+    day: 'numeric',
+    month: 'short',
+    hour: '2-digit',
+    minute: '2-digit'
+  }).format(parseDate(date))
+}
+
+/**
+ * Meetings are booked in the organiser's zone but read anywhere, so both are shown whenever
+ * they differ.
+ */
+export function formatMeetingWhen(date: Date | string, organizerZone: string | null): string {
+  const viewer = viewerTimeZone()
+  const local = formatInZone(date, viewer)
+  if (!organizerZone || organizerZone === viewer) {
+    return local
+  }
+  return `${local} · ${formatInZone(date, organizerZone)} ${organizerZone}`
+}
+
+export function toLocalInputValue(date: Date | string): string {
+  const d = parseDate(date)
+  const pad = (n: number): string => n.toString().padStart(2, '0')
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`
+}

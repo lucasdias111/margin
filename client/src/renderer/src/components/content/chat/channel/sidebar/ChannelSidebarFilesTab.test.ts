@@ -47,7 +47,9 @@ describe('ChannelSidebarFilesTab', () => {
   it('keeps an uploaded file when the initial load resolves afterwards', async () => {
     const initialLoad = deferred<StoredFile[]>()
     vi.mocked(fileStorageService.getChannelFiles).mockReturnValue(initialLoad.promise)
-    vi.mocked(fileStorageService.uploadChannelFile).mockResolvedValue(storedFile(99, 'uploaded.png'))
+    vi.mocked(fileStorageService.uploadChannelFile).mockResolvedValue(
+      storedFile(99, 'uploaded.png')
+    )
 
     const { container } = render(ChannelSidebarFilesTab, {
       props: { channel: channel(), fileCount: 0 }

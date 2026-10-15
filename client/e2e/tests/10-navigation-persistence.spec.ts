@@ -26,6 +26,8 @@ test.describe('Navigation persistence', () => {
     await expect(authedPage.locator('.handle', { hasText: seed.bob.displayName })).toBeVisible()
 
     await home.goToMargin()
-    await expect(authedPage.locator('.chat .channel-name', { hasText: seed.channelName })).toBeVisible()
+    await expect(
+      authedPage.locator('.chat .channel-name', { hasText: seed.channelName }).first()
+    ).toBeVisible()
   })
 })

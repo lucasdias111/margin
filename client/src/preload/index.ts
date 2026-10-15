@@ -38,7 +38,9 @@ if (process.contextIsolated) {
     })
     contextBridge.exposeInMainWorld('electronAPI', {
       onUserStatusChange: (callback: (status: 'active' | 'idle' | 'away') => void) =>
-        ipcRenderer.on('user-status', (_event, status) => callback(status))
+        ipcRenderer.on('user-status', (_event, status) => callback(status)),
+      onDeepLink: (callback: (path: string) => void) =>
+        ipcRenderer.on('deep-link', (_event, path) => callback(path))
     })
   } catch (error) {
     console.error(error)

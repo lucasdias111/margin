@@ -107,7 +107,8 @@
   <ConfirmationModal
     open={memberToRemove !== null}
     title="Remove member"
-    message="Are you sure you want to remove {memberToRemove?.user.displayName} from this space? They will lose access to all channels."
+    message="Are you sure you want to remove {memberToRemove?.user
+      .displayName} from this space? They will lose access to all channels."
     confirmLabel="Remove"
     variant="delete"
     onConfirm={confirmRemoveMember}

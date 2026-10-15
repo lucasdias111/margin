@@ -21,9 +21,7 @@
   let isUploading = $state(false)
   let fileInput: HTMLInputElement
 
-  const canUploadFiles = $derived(
-    (subscriptionState.subscription?.limits.maxStorageGb ?? 1) > 0
-  )
+  const canUploadFiles = $derived((subscriptionState.subscription?.limits.maxStorageGb ?? 1) > 0)
 
   $effect(() => {
     const channelId = channel?.id

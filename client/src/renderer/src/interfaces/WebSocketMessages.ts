@@ -46,3 +46,10 @@ export interface TypingIndicatorEventPayload {
   displayName: string
   isTyping: boolean
 }
+
+export interface MeetingInvitePayload {
+  code: string
+  title: string | null
+  marginName: string
+  inviter: User
+}

@@ -31,7 +31,11 @@ export interface P2PCallData {
 }
 
 export interface GroupCallData {
-  channelId: number
+  roomId: string
+  channelId: number | null
+  meetingCode: string | null
+  title: string | null
+  localPeerId: string | null
   session: ChannelCallSession | null
   participants: SFUParticipant[]
   isVideoEnabled: boolean

@@ -1,6 +1,7 @@
 <script lang="ts">
   import { messageLoaderService } from '$src/services/MessageLoaderService'
   import type { Notification } from '$src/interfaces/Notification'
+  import { notificationIcon, notificationTitle } from '$src/utils/notificationPresentation'
   import { NotificationType } from '$src/interfaces/Notification'
   import { formatTimestamp } from '$src/utils/DateUtils'
   import { notificationService } from '$src/services/NotificationService'
@@ -90,6 +91,13 @@
     } else if (notification.type === NotificationType.ADDED_TO_MARGIN) {
       marginService.select(await marginService.getMargin(notification.marginId))
       navigationService.setView(View.Margin)
+    } else if (notification.type === NotificationType.INVITED_TO_MARGIN) {
+      if (notification.marginId) {
+        marginService.select(await marginService.getMargin(notification.marginId))
+        navigationService.setView(View.Margin)
+      }
+    } else if (notification.type === NotificationType.CONVERSATION_INVITE) {
+      await navigateToInvitedConversation(notification)
     } else if (notification.type === NotificationType.MESSAGE_REACTION) {
       await navigateToReactedMessage(notification)
     } else if (notification.type === NotificationType.THREAD_REPLY) {
@@ -104,6 +112,17 @@
       marginService.select(await marginService.getMargin(notification.marginId))
       navigationState.manageTab = 'Subscription'
       navigationService.setView(View.Manage)
+    }
+  }
+
+  async function navigateToInvitedConversation(notification: Notification): Promise<void> {
+    const conversation = conversationsState.byId.get(notification.referenceId)
+    if (conversation?.type === 'GROUP') {
+      groupConversationService.selectGroupConversation(conversation)
+    } else if (notification.sender) {
+      await messageLoaderService.loadConversationForUser(notification.sender)
+      usersService.select(notification.sender)
+      navigationService.setView(View.Private)
     }
   }
 
@@ -135,59 +154,6 @@
     }
   }
 
-  function getNotificationIcon(type: NotificationType): string {
-    switch (type) {
-      case NotificationType.ANNOUNCEMENT:
-        return '📢'
-      case NotificationType.MISSED_CALL:
-        return '📞'
-      case NotificationType.ADDED_TO_MARGIN:
-        return '👥'
-      case NotificationType.INVITED_TO_MARGIN:
-        return '✉️'
-      case NotificationType.CONVERSATION_INVITE:
-        return '💬'
-      case NotificationType.MESSAGE_REACTION:
-        return '👍'
-      case NotificationType.THREAD_REPLY:
-        return '🧵'
-      case NotificationType.SUBSCRIPTION_UPGRADED:
-        return '✨'
-      case NotificationType.SUBSCRIPTION_PAYMENT_FAILED:
-        return '⚠️'
-      case NotificationType.SUBSCRIPTION_LIMIT_WARNING:
-        return '📊'
-      default:
-        return '🔔'
-    }
-  }
-
-  function getNotificationTitle(notification: Notification): string {
-    switch (notification.type) {
-      case NotificationType.ANNOUNCEMENT:
-        return `New announcement from ${notification.sender?.displayName ?? 'Admin'}`
-      case NotificationType.MISSED_CALL:
-        return `Missed call from ${notification.sender?.displayName ?? 'Unknown'}`
-      case NotificationType.ADDED_TO_MARGIN:
-        return `${notification.sender?.displayName ?? 'Someone'} added you to a margin`
-      case NotificationType.INVITED_TO_MARGIN:
-        return `${notification.sender?.displayName ?? 'Someone'} invited you to join a margin`
-      case NotificationType.CONVERSATION_INVITE:
-        return `${notification.sender?.displayName ?? 'Someone'} invited you to a conversation`
-      case NotificationType.MESSAGE_REACTION:
-        return `${notification.sender?.displayName ?? 'Someone'} reacted to your message`
-      case NotificationType.THREAD_REPLY:
-        return `${notification.sender?.displayName ?? 'Someone'} replied in a thread you follow`
-      case NotificationType.SUBSCRIPTION_UPGRADED:
-        return 'Your workspace plan was upgraded'
-      case NotificationType.SUBSCRIPTION_PAYMENT_FAILED:
-        return "Payment for your workspace plan didn't go through"
-      case NotificationType.SUBSCRIPTION_LIMIT_WARNING:
-        return 'Your workspace is approaching its member limit'
-      default:
-        return 'New notification'
-    }
-  }
 </script>
 
 <div class="pane notifications-page" in:viewIn>
@@ -211,10 +177,10 @@
         {#if notification.type === NotificationType.INVITED_TO_MARGIN && !notification.seen}
           <div class="notification-item unseen invite-notification">
             <div class="notification-icon">
-              {getNotificationIcon(notification.type)}
+              {notificationIcon(notification.type)}
             </div>
             <div class="notification-body">
-              <div class="notification-title">{getNotificationTitle(notification)}</div>
+              <div class="notification-title">{notificationTitle(notification)}</div>
               <div class="notification-date">{formatTimestamp(notification.createdAt)}</div>
             </div>
             <div class="invite-actions">
@@ -231,10 +197,10 @@
         {:else if notification.type === NotificationType.CONVERSATION_INVITE && !notification.seen}
           <div class="notification-item unseen invite-notification">
             <div class="notification-icon">
-              {getNotificationIcon(notification.type)}
+              {notificationIcon(notification.type)}
             </div>
             <div class="notification-body">
-              <div class="notification-title">{getNotificationTitle(notification)}</div>
+              <div class="notification-title">{notificationTitle(notification)}</div>
               <div class="notification-date">{formatTimestamp(notification.createdAt)}</div>
             </div>
             <div class="invite-actions">
@@ -257,10 +223,10 @@
             onclick={() => handleClick(notification)}
           >
             <div class="notification-icon">
-              {getNotificationIcon(notification.type)}
+              {notificationIcon(notification.type)}
             </div>
             <div class="notification-body">
-              <div class="notification-title">{getNotificationTitle(notification)}</div>
+              <div class="notification-title">{notificationTitle(notification)}</div>
               <div class="notification-date">{formatTimestamp(notification.createdAt)}</div>
             </div>
             {#if !notification.seen}
