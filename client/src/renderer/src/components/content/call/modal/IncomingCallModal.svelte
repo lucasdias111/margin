@@ -1,0 +1,172 @@
+<script lang="ts">
+  import UserAvatar from '$src/components/common/user/UserAvatar.svelte'
+  import type { User } from '$src/interfaces/User'
+  import { backdrop, modalIn, pressable } from '$src/animations'
+
+  interface Props {
+    caller: User | null
+    subtitle?: string
+    channelName?: string | null
+    acceptLabel?: string
+    onAccept: () => void
+    onDecline: () => void
+  }
+
+  let {
+    caller,
+    subtitle = 'Incoming call',
+    channelName = null,
+    acceptLabel = 'Accept',
+    onAccept,
+    onDecline
+  }: Props = $props()
+</script>
+
+{#if caller}
+  <div class="backdrop" transition:backdrop>
+    <div class="modal" role="dialog" aria-modal="true" transition:modalIn={{ start: 0.9 }}>
+      <div class="avatar-wrapper">
+        <div class="pulse-ring"></div>
+        <UserAvatar profilePictureUrl={caller.profilePictureUrl} width={56} height={56} />
+      </div>
+      <div class="info">
+        <p class="name">{caller.displayName}</p>
+        <p class="subtitle">{subtitle}</p>
+        {#if channelName}
+          <p class="channel-name"># {channelName}</p>
+        {/if}
+      </div>
+      <div class="actions">
+        <button class="decline" onclick={onDecline} use:pressable>Decline</button>
+        <button class="accept" onclick={onAccept} use:pressable>{acceptLabel}</button>
+      </div>
+    </div>
+  </div>
+{/if}
+
+<style>
+  .backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.25);
+    backdrop-filter: blur(4px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 500;
+  }
+
+  .modal {
+    background: #fff;
+    border-radius: 16px;
+    padding: 28px 32px 24px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.12);
+    min-width: 260px;
+  }
+
+  .avatar-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .pulse-ring {
+    position: absolute;
+    width: 72px;
+    height: 72px;
+    border-radius: 50%;
+    border: 2px solid rgba(180, 112, 36, 0.35);
+    animation: pulse 1.8s var(--ease-standard) infinite;
+    pointer-events: none;
+  }
+
+  .info {
+    text-align: center;
+  }
+
+  .name {
+    margin: 0;
+    font-size: 1rem;
+    font-weight: 600;
+    color: #1a1a1a;
+  }
+
+  .subtitle {
+    margin: 3px 0 0;
+    font-size: 0.78rem;
+    color: #999;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  .channel-name {
+    margin: 8px 0 0;
+    padding: 3px 10px;
+    display: inline-block;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #b47024;
+    background: rgba(180, 112, 36, 0.1);
+    border-radius: 999px;
+  }
+
+  .actions {
+    display: flex;
+    gap: 10px;
+    width: 100%;
+    margin-top: 4px;
+  }
+
+  .decline,
+  .accept {
+    flex: 1;
+    padding: 10px;
+    border: none;
+    border-radius: 8px;
+    font-size: 0.875rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition:
+      transform 0.12s ease,
+      opacity 0.12s ease;
+  }
+
+  .decline:hover,
+  .accept:hover {
+    opacity: 0.85;
+  }
+  .decline:active,
+  .accept:active {
+    transform: scale(0.96);
+  }
+
+  .decline {
+    background: #f1f1f1;
+    color: #444;
+  }
+
+  .accept {
+    background: #b47024;
+    color: white;
+  }
+
+  @keyframes pulse {
+    0% {
+      transform: scale(1);
+      opacity: 0.6;
+    }
+    70% {
+      transform: scale(1.5);
+      opacity: 0;
+    }
+    100% {
+      transform: scale(1.5);
+      opacity: 0;
+    }
+  }
+</style>

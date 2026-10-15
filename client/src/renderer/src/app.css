@@ -1,0 +1,53 @@
+@import './animations/motion.css';
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  width: 100%;
+  height: 100%;
+  font-family: 'Inter', sans-serif;
+  font-weight: 300;
+  font-size: 14px;
+  background: transparent !important;
+}
+
+input,
+textarea,
+button,
+select {
+  font: inherit;
+}
+
+button {
+  padding: 0.6em 1.2em;
+  transition: border-color 0.25s;
+  cursor: pointer;
+}
+
+.pane {
+  background-color: #ffffff;
+  border: 1px solid #e4cbb2;
+  border-radius: 20px;
+  outline: none;
+  transition:
+    border-color 0.15s,
+    background-color 0.15s;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    color: #f6f6f6;
+    background-color: #2f2f2f;
+  }
+
+  button {
+    color: #ffffff;
+    background-color: #0f0f0f98;
+  }
+
+  button:active {
+    background-color: #0f0f0f69;
+  }
+}

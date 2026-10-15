@@ -1,0 +1,210 @@
+
+:root {
+  /* Durations */
+  --motion-instant: 120ms;
+  --motion-fast: 180ms;
+  --motion-base: 240ms;
+  --motion-slow: 320ms;
+  --motion-slower: 440ms;
+
+  /* Curves */
+  --ease-standard: cubic-bezier(0.32, 0.72, 0, 1);
+  --ease-exit: cubic-bezier(0.4, 0, 1, 1);
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --ease-bounce: cubic-bezier(0.22, 1.61, 0.36, 1);
+
+  /* Per-item delay written by the `stagger` action. */
+  --stagger-delay: 0ms;
+}
+
+/* --- Interactive feedback ------------------------------------------------ */
+
+/**
+ * Baseline hover/press feel for anything clickable. Colour transitions stay
+ * with the component; this only owns the transform.
+ */
+.motion-press {
+  transition: transform var(--motion-instant) var(--ease-standard);
+}
+
+.motion-press:active:not(:disabled) {
+  transform: scale(0.96);
+  transition-duration: var(--motion-instant);
+}
+
+.motion-lift {
+  transition:
+    transform var(--motion-fast) var(--ease-standard),
+    box-shadow var(--motion-fast) var(--ease-standard);
+}
+
+.motion-lift:hover:not(:disabled) {
+  transform: translate3d(0, -2px, 0);
+}
+
+.motion-lift:active:not(:disabled) {
+  transform: translate3d(0, 0, 0) scale(0.98);
+  transition-duration: var(--motion-instant);
+}
+
+/**
+ * The bar moved by the `slidingIndicator` action. Its container needs
+ * `position: relative`; width/height and offset are set by the action.
+ */
+.motion-indicator {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  height: 2px;
+  background: currentColor;
+  border-radius: 2px;
+  opacity: 0;
+  pointer-events: none;
+  transition-property: transform, width, height, opacity;
+  transition-timing-function: var(--ease-standard);
+  transition-duration: var(--motion-base);
+}
+
+/* --- Keyframe helpers ---------------------------------------------------- */
+
+@keyframes motion-rise-in {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 10px, 0);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+@keyframes motion-scale-in {
+  from {
+    opacity: 0;
+    transform: scale(0.94);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes motion-pop-in {
+  from {
+    opacity: 0;
+    transform: scale(0.8);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes motion-pulse {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.08);
+  }
+}
+
+@keyframes motion-shake {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0);
+  }
+  20% {
+    transform: translate3d(-5px, 0, 0);
+  }
+  40% {
+    transform: translate3d(4px, 0, 0);
+  }
+  60% {
+    transform: translate3d(-3px, 0, 0);
+  }
+  80% {
+    transform: translate3d(2px, 0, 0);
+  }
+}
+
+@keyframes motion-shimmer {
+  from {
+    background-position: 200% 0;
+  }
+  to {
+    background-position: -200% 0;
+  }
+}
+
+.motion-rise-in {
+  animation: motion-rise-in var(--motion-slow) var(--ease-standard) both;
+}
+
+.motion-scale-in {
+  animation: motion-scale-in var(--motion-fast) var(--ease-standard) both;
+}
+
+.motion-pop-in {
+  animation: motion-pop-in var(--motion-base) var(--ease-spring) both;
+}
+
+.motion-shake {
+  animation: motion-shake var(--motion-slow) var(--ease-in-out) both;
+}
+
+/** Pairs with the `stagger` action: each child waits its turn. */
+.motion-cascade {
+  animation: motion-rise-in var(--motion-base) var(--ease-standard) both;
+  animation-delay: var(--stagger-delay, 0ms);
+}
+
+/** Placeholder sweep for content that hasn't arrived yet. */
+.motion-skeleton {
+  background: linear-gradient(
+    90deg,
+    rgba(0, 0, 0, 0.04) 25%,
+    rgba(0, 0, 0, 0.08) 37%,
+    rgba(0, 0, 0, 0.04) 63%
+  );
+  background-size: 200% 100%;
+  animation: motion-shimmer 1.4s linear infinite;
+}
+
+/* --- Reduced motion ------------------------------------------------------ */
+
+/**
+ * Honour the OS setting: collapse animation to a near-instant cross-fade rather
+ * than removing it, so state changes are still legible.
+ */
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --motion-instant: 1ms;
+    --motion-fast: 1ms;
+    --motion-base: 1ms;
+    --motion-slow: 1ms;
+    --motion-slower: 1ms;
+    --stagger-delay: 0ms;
+  }
+
+  .motion-press:active:not(:disabled),
+  .motion-lift:hover:not(:disabled),
+  .motion-lift:active:not(:disabled) {
+    transform: none;
+  }
+
+  .motion-skeleton {
+    animation: none;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 1ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 1ms !important;
+    scroll-behavior: auto !important;
+  }
+}

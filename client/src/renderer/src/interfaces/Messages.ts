@@ -1,0 +1,42 @@
+import type { Conversation } from '$src/interfaces/Conversation'
+import type { StoredFile } from '$src/interfaces/StoredFile'
+import type { User } from '$src/interfaces/User'
+
+export interface MessageReaction {
+  id: number
+  messageId: number
+  conversationId: number
+  userId: number
+  displayName: string
+  emoji: string
+}
+
+export type MessageStatus = 'sending' | 'sent' | 'error'
+
+export interface LocalAttachment {
+  fileName: string
+  contentType: string
+  previewUrl: string
+}
+
+export interface Message {
+  id: number
+  conversationId: number
+  conversationType: 'DIRECT' | 'GROUP' | 'CHANNEL' | 'THREAD'
+  user: User
+  content: string
+  isEdited: boolean
+  createdAt: string
+  marginId?: number
+  channelName?: string
+  reactions: MessageReaction[]
+  attachments: StoredFile[]
+  status?: MessageStatus
+  localAttachments?: LocalAttachment[]
+  parentConversationId?: number | null
+}
+
+export interface ConversationMessagesResponse {
+  messages: Message[]
+  conversation: Conversation
+}
