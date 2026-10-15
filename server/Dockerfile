@@ -13,7 +13,9 @@ RUN cp target/server-*.jar app.jar
 FROM eclipse-temurin:25-jre-noble AS runtime
 WORKDIR /app
 
-RUN useradd --system --no-create-home --uid 10001 margin
+RUN useradd --system --no-create-home --uid 10001 margin \
+    && mkdir -p /var/margin/uploads \
+    && chown margin /var/margin/uploads
 USER margin
 
 COPY --from=build /build/app.jar app.jar
