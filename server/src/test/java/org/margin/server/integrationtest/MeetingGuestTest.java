@@ -153,7 +153,7 @@ class MeetingGuestTest extends MarginTestRunner {
         MeetingGuestPrincipal principal = guestTokenService.parse(session.guestToken()).orElseThrow();
 
         guestService.claim(principal, new ClaimGuestRequest(
-                "wanderer@example.com", "hunter2", null, null, null, null));
+                "wanderer@example.com", "hunter2", null, null, null, null, invite()));
 
         assertFalse(userLookup.isGuest(session.userId()));
         assertEquals(session.userId(),
@@ -168,7 +168,7 @@ class MeetingGuestTest extends MarginTestRunner {
         MeetingGuestPrincipal principal = guestTokenService.parse(session.guestToken()).orElseThrow();
 
         guestService.claim(principal, new ClaimGuestRequest(
-                "wanderer@example.com", "hunter2", null, null, null, null));
+                "wanderer@example.com", "hunter2", null, null, null, null, invite()));
 
         AuthResponse beforeActivation = AuthTestUtils.login("wanderer@example.com", "hunter2");
         assertFalse(beforeActivation.success());
@@ -190,7 +190,7 @@ class MeetingGuestTest extends MarginTestRunner {
 
         ResponseStatusException e = assertThrows(ResponseStatusException.class,
                 () -> guestService.claim(principal, new ClaimGuestRequest(
-                        "taken@margin.chat", "hunter2", null, null, null, null)));
+                        "taken@margin.chat", "hunter2", null, null, null, null, invite())));
 
         assertEquals(HttpStatus.CONFLICT, e.getStatusCode());
         assertTrue(userLookup.isGuest(session.userId()), "the guest keeps their seat on a failed claim");
@@ -202,12 +202,32 @@ class MeetingGuestTest extends MarginTestRunner {
         GuestSessionResponse session = guestService.createGuestSession(meeting.code(), "Wanderer");
         MeetingGuestPrincipal principal = guestTokenService.parse(session.guestToken()).orElseThrow();
         guestService.claim(principal, new ClaimGuestRequest(
-                "wanderer@example.com", "hunter2", null, null, null, null));
+                "wanderer@example.com", "hunter2", null, null, null, null, invite()));
 
         ResponseStatusException e = assertThrows(ResponseStatusException.class,
                 () -> guestService.claim(principal, new ClaimGuestRequest(
-                        "other@example.com", "hunter2", null, null, null, null)));
+                        "other@example.com", "hunter2", null, null, null, null, invite())));
 
         assertEquals(HttpStatus.CONFLICT, e.getStatusCode());
+    }
+
+    private static String invite() {
+        return org.margin.server.integrationtest.utils.AuthTestUtils.createInviteCode().getCode();
+    }
+
+    @org.junit.jupiter.api.Test
+    void keepingAGuestProfileFollowsTheRegistrationMode() {
+        meeting = newMeeting();
+        MeetingGuestPrincipal principal = guestTokenService.parse(
+                guestService.createGuestSession(meeting.code(), "Wanderer").guestToken()).orElseThrow();
+
+        org.springframework.web.server.ResponseStatusException noCode = assertThrows(
+                org.springframework.web.server.ResponseStatusException.class,
+                () -> guestService.claim(principal, new ClaimGuestRequest(
+                        "wanderer@example.com", "hunter2", null, null, null, null, null)));
+        assertEquals(403, noCode.getStatusCode().value(), "invite-only by default, so a code is needed");
+
+        guestService.claim(principal, new ClaimGuestRequest(
+                "wanderer@example.com", "hunter2", null, null, null, null, invite()));
     }
 }

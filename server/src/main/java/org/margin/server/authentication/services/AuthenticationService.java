@@ -10,7 +10,7 @@ import org.margin.server.authentication.exceptions.RegistrationException;
 import org.margin.server.authentication.models.AuthResponse;
 import org.margin.server.email.EmailService;
 import org.margin.server.instance.api.InstanceSettings;
-import org.margin.server.social.api.MarginLookup;
+import org.margin.server.authentication.api.SignUpGate;
 import org.margin.server.users.api.AccountStatus;
 import org.margin.server.users.api.Role;
 import org.margin.server.users.api.ProfilePictureCommands;
@@ -48,8 +48,7 @@ public class AuthenticationService {
     private final UserSecurityService userSecurityService;
     private final RefreshTokenService refreshTokenService;
     private final InstanceSettings instanceSettings;
-    private final InviteCodeService inviteCodeService;
-    private final MarginLookup marginLookup;
+    private final SignUpGate signUpGate;
 
     public AuthenticationService(
             AuthenticationManager authenticationManager,
@@ -64,8 +63,7 @@ public class AuthenticationService {
             UserSecurityService userSecurityService,
             RefreshTokenService refreshTokenService,
             InstanceSettings instanceSettings,
-            InviteCodeService inviteCodeService,
-            MarginLookup marginLookup) {
+            SignUpGate signUpGate) {
         this.authenticationManager = authenticationManager;
         this.userLookup = userLookup;
         this.userAccountCommands = userAccountCommands;
@@ -78,8 +76,7 @@ public class AuthenticationService {
         this.userSecurityService = userSecurityService;
         this.refreshTokenService = refreshTokenService;
         this.instanceSettings = instanceSettings;
-        this.inviteCodeService = inviteCodeService;
-        this.marginLookup = marginLookup;
+        this.signUpGate = signUpGate;
     }
 
     public AuthResponse authenticateUser(String email, String password) {
@@ -178,29 +175,13 @@ public class AuthenticationService {
         if (userAccountCommands.emailIsTaken(email)) {
             throw new IllegalArgumentException("Email already in use");
         }
-        requireSignUpAllowed(inviteCode);
+        signUpGate.requireSignUpAllowed(inviteCode);
 
-        AccountStatus status = instanceSettings.requireAccountApproval()
-                ? AccountStatus.PENDING_APPROVAL
-                : AccountStatus.ACTIVE;
+        AccountStatus status = signUpGate.initialStatus();
         return createAccount(displayName, email, password, privateKey, publicKey, salt, iv, profilePicture,
                 Role.USER, status, instanceSettings.requireEmailVerification());
     }
 
-    private void requireSignUpAllowed(String inviteCode) {
-        switch (instanceSettings.registrationMode()) {
-            case OPEN -> {
-            }
-            case CLOSED -> throw new IllegalArgumentException("Sign-up is closed on this instance");
-            case INVITE -> {
-                // A margin's own invite link counts as an invite, so margin owners can onboard their team.
-                boolean invited = marginLookup.isUsableLinkInvite(inviteCode) || inviteCodeService.redeem(inviteCode);
-                if (!invited) {
-                    throw new IllegalArgumentException("A valid invite code is required to sign up");
-                }
-            }
-        }
-    }
 
     /** Creates an account without applying registration policy: used by admins and the first-admin setup. */
     @Transactional
