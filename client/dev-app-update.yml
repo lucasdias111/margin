@@ -1,3 +1,4 @@
-provider: generic
-url: https://nbg1.your-objectstorage.com/margininstall
+provider: github
+owner: lucasdias111
+repo: margin
 updaterCacheDirName: margin-desktop-updater

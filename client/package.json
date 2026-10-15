@@ -3,8 +3,8 @@
   "version": "0.3.4",
   "description": "Desktop application for margin",
   "main": "./out/main/index.js",
-  "author": "margin",
-  "homepage": "https://margin.chat",
+  "author": "margin contributors",
+  "homepage": "https://github.com/lucasdias111/margin",
   "type": "module",
   "scripts": {
     "format": "prettier --plugin prettier-plugin-svelte --write .",
@@ -36,7 +36,6 @@
   "dependencies": {
     "@electron-toolkit/preload": "^3.0.2",
     "@electron-toolkit/utils": "^4.0.0",
-    "@electron/notarize": "^3.1.1",
     "@emoji-mart/data": "^1.2.1",
     "electron-updater": "^6.3.9",
     "emoji-mart": "^5.6.0",
