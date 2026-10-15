@@ -21,10 +21,12 @@ websocket:
   port: 0
 
 margin:
+  app:
+    base-url: http://localhost:8080
   meetings:
     guest-token-secret: integration-guest-token-secret-that-is-long-enough
   mail:
-    from: ${MAIL_FROM:localhost@margin.chat}
+    from: ${SMTP_FROM:noreply@localhost}
     log-only: true
   websocket:
     port: 8082

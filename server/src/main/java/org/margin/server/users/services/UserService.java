@@ -150,7 +150,7 @@ public class UserService {
         encryption.setSalt(null);
         user.setEncryption(encryption);
         user.setDisplayName("Deleted User");
-        user.setEmail(DELETED_USER + user.getId() + "@margin.chat");
+        user.setEmail(DELETED_USER + user.getId() + "@deleted.invalid");
         user.setProfilePictureUrl(null);
         user.setDeletedAt(Instant.now());
         userRepository.save(user);
