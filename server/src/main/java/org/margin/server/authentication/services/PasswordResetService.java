@@ -72,6 +72,11 @@ public class PasswordResetService {
     @Transactional
     public void requestPasswordReset(String email) {
         String normalised = email.toLowerCase();
+        if (!emailService.isEnabled()) {
+            // Without mail, people ask an admin for a one-time reset link instead.
+            log.info("Password reset requested for {} but mail is not configured", normalised);
+            return;
+        }
         log.info("Password reset requested for email {}", normalised);
         userLookup.findByEmail(normalised).ifPresent(user -> {
             tokenRepository.deleteByUserId(user.getId());

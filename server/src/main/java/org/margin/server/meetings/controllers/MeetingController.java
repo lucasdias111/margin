@@ -14,6 +14,9 @@ import org.margin.server.meetings.services.MeetingSchedulingService;
 import org.margin.server.meetings.services.MeetingAdmissionService;
 import org.margin.server.meetings.services.MeetingService;
 import org.margin.server.shared.security.AuthenticatedUser;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
@@ -69,6 +72,15 @@ public class MeetingController {
     public List<MeetingInviteDTO> invitees(@PathVariable String code,
                                            @AuthenticationPrincipal AuthenticatedUser user) {
         return schedulingService.invitees(code, user.id());
+    }
+
+    @GetMapping("/{code}/calendar.ics")
+    public ResponseEntity<String> calendarFile(@PathVariable String code,
+                                               @AuthenticationPrincipal AuthenticatedUser user) {
+        return ResponseEntity.ok()
+                .contentType(MediaType.parseMediaType("text/calendar; charset=utf-8"))
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"meeting.ics\"")
+                .body(schedulingService.calendarFile(code, user.id()));
     }
 
     @GetMapping("/eligible-margins")

@@ -246,6 +246,13 @@ public class MeetingSchedulingService {
         }
     }
 
+    @Transactional(readOnly = true)
+    public String calendarFile(String code, Long actingUserId) {
+        Meeting meeting = requireMeeting(code);
+        requireHost(meeting, actingUserId);
+        return mailer.calendarFileFor(meeting);
+    }
+
     private Meeting requireMeeting(String code) {
         return meetingRepository.findByCode(code)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Meeting not found"));

@@ -55,7 +55,8 @@ class MailDispatcherTest {
     @Test
     @DisplayName("a guest address is refused before it reaches the mail sender")
     void dispatch_refusesGuestAddresses() throws Exception {
-        EmailService real = new EmailService(null, null);
+        EmailService real = new EmailService(new org.springframework.beans.factory.support.StaticListableBeanFactory()
+                .getBeanProvider(org.springframework.mail.javamail.JavaMailSender.class), null, "");
         org.springframework.test.util.ReflectionTestUtils.setField(real, "logOnly", false);
 
         real.sendEmail("guest_x@guests.margin.invalid", "Hi", "body");

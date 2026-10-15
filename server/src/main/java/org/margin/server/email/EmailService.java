@@ -3,6 +3,7 @@ package org.margin.server.email;
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
@@ -17,6 +18,7 @@ import java.util.Locale;
 public class EmailService {
     private final JavaMailSender mailSender;
     private final TemplateEngine templateEngine;
+    private final boolean enabled;
 
     @Value("${margin.app.base-url:http://localhost:8080}")
     private String baseUrl;
@@ -32,9 +34,17 @@ public class EmailService {
 
     private static final String GUEST_EMAIL_DOMAIN = "@guests.margin.invalid";
 
-    public EmailService(JavaMailSender mailSender, TemplateEngine templateEngine) {
-        this.mailSender = mailSender;
+    public EmailService(ObjectProvider<JavaMailSender> mailSender,
+                        TemplateEngine templateEngine,
+                        @Value("${spring.mail.host:}") String mailHost) {
+        this.mailSender = mailSender.getIfAvailable();
         this.templateEngine = templateEngine;
+        this.enabled = !mailHost.isBlank() && this.mailSender != null;
+    }
+
+    /** Whether this instance has SMTP configured. Without it every send is skipped. */
+    public boolean isEnabled() {
+        return enabled;
     }
 
     public void sendEmail(String to, String subject, String htmlBody) throws MessagingException {
@@ -44,6 +54,10 @@ public class EmailService {
         }
         if (logOnly) {
             log.info("[EMAIL LOG-ONLY] to={} subject=\"{}\" body={}", to, subject, htmlBody);
+            return;
+        }
+        if (!enabled) {
+            log.info("Mail is not configured; not sending \"{}\"", subject);
             return;
         }
         MimeMessage message = mailSender.createMimeMessage();
@@ -63,6 +77,10 @@ public class EmailService {
         }
         if (logOnly) {
             log.info("[EMAIL LOG-ONLY] to={} subject=\"{}\" ics={}", to, subject, icsFileName);
+            return;
+        }
+        if (!enabled) {
+            log.info("Mail is not configured; not sending \"{}\"", subject);
             return;
         }
         MimeMessage message = mailSender.createMimeMessage();

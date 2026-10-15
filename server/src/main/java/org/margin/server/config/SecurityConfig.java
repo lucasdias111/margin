@@ -139,6 +139,7 @@ public class SecurityConfig {
                                 "/api/auth/reset-password").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/instance").permitAll()
                         .requestMatchers("/api/setup", "/api/setup/**").permitAll()
+                        .requestMatchers("/api/internal/**").permitAll()
                         .requestMatchers("/api/sfu/peer_joined", "/api/sfu/peer_left").permitAll()
                         .anyRequest().authenticated()
                 )
