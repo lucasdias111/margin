@@ -18,6 +18,10 @@ import pkg from 'electron-updater'
 import { setupPresence } from './presence'
 
 const { autoUpdater } = pkg
+
+// Dev builds talk to the local server, so keep their session apart from the installed app's.
+if (is.dev) app.setPath('userData', app.getPath('userData') + '-dev')
+
 const SECURE_FILE = join(app.getPath('userData'), 'secure.bin')
 const TOKEN_FILE = join(app.getPath('userData'), 'session.bin')
 const REFRESH_FILE = join(app.getPath('userData'), 'refresh.bin')
