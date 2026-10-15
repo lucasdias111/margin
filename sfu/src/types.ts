@@ -15,4 +15,5 @@ export interface Room {
     router: MediasoupTypes.Router
     peers: Map<string, Peer>
     maxParticipants: number
+    lastEmptyAt: number | null
 }

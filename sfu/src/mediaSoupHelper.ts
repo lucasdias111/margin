@@ -2,6 +2,8 @@ import http from 'http'
 import {WebSocketServer} from 'ws'
 import {Peer, Room} from './types.js'
 import {notifyPeerLeft} from './springNotifier.js'
+import {isOriginAllowed} from './authorizationHelper.js'
+import {markRoomEmptiness} from './roomReaper.js'
 import {
     handleConnectTransport,
     handleConsume,
@@ -13,7 +15,14 @@ import {
 
 export function initMediaSoupServer(app: any, rooms: Map<string, Room>) {
     const server = http.createServer(app)
-    const wss = new WebSocketServer({server})
+    const wss = new WebSocketServer({
+        server,
+        verifyClient: ({origin}, done) => {
+            if (isOriginAllowed(origin)) return done(true)
+            console.warn(`Rejected WebSocket upgrade from disallowed origin: ${origin}`)
+            done(false, 403, 'Forbidden origin')
+        }
+    })
 
     console.log('WebSocket server initialized')
 
@@ -90,6 +99,7 @@ export function initMediaSoupServer(app: any, rooms: Map<string, Room>) {
             peer.producers.forEach(p => p.close())
             peer.consumers.forEach(c => c.close())
             room.peers.delete(peer.id)
+            markRoomEmptiness(room, Date.now())
 
             room.peers.forEach(p => {
                 p.ws.send(JSON.stringify({ type: 'peer_left', peerId: peer!.id }))

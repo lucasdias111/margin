@@ -28,7 +28,8 @@ export async function getOrCreateRoom(rooms: Map<string, Room>, roomId: string, 
         id: roomId,
         router,
         peers: new Map(),
-        maxParticipants
+        maxParticipants,
+        lastEmptyAt: Date.now()
     }
 
     rooms.set(roomId, room)
