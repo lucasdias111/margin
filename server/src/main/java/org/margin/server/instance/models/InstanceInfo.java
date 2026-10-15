@@ -10,6 +10,6 @@ public record InstanceInfo(String name,
                            boolean mailEnabled,
                            Features features) {
 
-    public record Features(boolean gifs) {
+    public record Features(boolean gifs, boolean webPush) {
     }
 }

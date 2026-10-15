@@ -61,6 +61,7 @@ class InstanceTest extends MarginTestRunner {
         assertEquals("INVITE", info.get("registrationMode").asText(), "invite-only is the default");
         assertTrue(info.get("mailEnabled").asBoolean());
         assertFalse(info.get("features").get("gifs").asBoolean(), "gifs are off without a klipy key");
+        assertTrue(info.get("features").get("webPush").asBoolean());
         assertTrue(info.hasNonNull("version"));
     }
 

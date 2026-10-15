@@ -34,6 +34,6 @@ public class InstanceController {
                 publicUrl,
                 settings.registrationMode(),
                 settings.mailEnabled(),
-                new InstanceInfo.Features(gifsEnabled));
+                new InstanceInfo.Features(gifsEnabled, true));
     }
 }
