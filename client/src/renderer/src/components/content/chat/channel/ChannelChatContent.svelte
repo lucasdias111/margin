@@ -9,15 +9,12 @@
   import { navigationState } from '$src/states/NavigationState.svelte'
   import { sessionState } from '$src/states/SessionState.svelte'
   import { conversationsState, defaultMeta } from '$src/states/ConversationsState.svelte'
-  import { subscriptionState } from '$src/states/SubscriptionState.svelte'
   import { typingIndicatorService } from '$src/services/TypingIndicatorService'
   import { typingIndicatorState } from '$src/states/TypingIndicatorState.svelte'
   import { untrack } from 'svelte'
 
   let messageInput = $state('')
   let sidebarOpen = $state(true)
-
-  const canUploadFiles = $derived((subscriptionState.subscription?.limits.maxStorageGb ?? 1) > 0)
 
   const activeConvId = $derived(navigationState.selectedChannel?.conversationId)
   const activeMessages = $derived(
@@ -113,7 +110,6 @@
     selectedContent={!!navigationState.selectedChannel}
     bind:messageInput
     onSubmit={handleSubmit}
-    fileUploadEnabled={canUploadFiles}
   />
 </div>
 

@@ -10,8 +10,6 @@ import { View } from '$src/interfaces/View'
 import { navigationService } from '$src/services/NavigationService'
 import { marginState } from '$src/states/MarginState.svelte'
 import { navigationState } from '$src/states/NavigationState.svelte'
-import { subscriptionService } from '$src/services/SubscriptionService'
-import { subscriptionState } from '$src/states/SubscriptionState.svelte'
 
 class MarginService {
   select(margin: Margin): void {
@@ -20,7 +18,6 @@ class MarginService {
     navigationState.selectedChannel = null
     spaceState.setSpaces([])
     navigationState.selectedSpace = null
-    subscriptionService.fetchForMargin(margin.marginId).then((sub) => subscriptionState.set(sub))
   }
   async getMargin(marginId: number): Promise<Margin> {
     const response = await authenticatedGet(`margins/get_margin/${marginId}`)

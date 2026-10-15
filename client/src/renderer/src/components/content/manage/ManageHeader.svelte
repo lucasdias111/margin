@@ -7,14 +7,11 @@
   interface Props {
     activeTab: ManageTab
     onTabChange: (tab: ManageTab) => void
-    isOwner: boolean
   }
 
-  let { activeTab, onTabChange, isOwner }: Props = $props()
+  let { activeTab, onTabChange }: Props = $props()
 
-  const tabs = $derived<ManageTab[]>(
-    isOwner ? ['Margin', 'Spaces', 'Subscription'] : ['Margin', 'Spaces']
-  )
+  const tabs: ManageTab[] = ['Margin', 'Spaces']
 </script>
 
 <div class="manage-header">

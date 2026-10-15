@@ -17,8 +17,6 @@
   import type { StoredFile } from '$src/interfaces/StoredFile'
   import { FileListStore } from '$src/composables/FileListStore.svelte'
   import FileRow from '$src/components/common/files/FileRow.svelte'
-  import { subscriptionState } from '$src/states/SubscriptionState.svelte'
-  import { upgradeState } from '$src/states/UpgradeState.svelte'
 
   const currentUserRole = $derived(
     navigationState.selectedMargin?.members.find((m) => m.user.id === sessionState.currentUser?.id)
@@ -27,7 +25,6 @@
   const canManage = $derived(
     currentUserRole === MarginRole.ADMIN || currentUserRole === MarginRole.OWNER
   )
-  const canUploadFiles = $derived((subscriptionState.subscription?.limits.maxStorageGb ?? 1) > 0)
 
   let announcements = $state<Announcement[]>([])
   let modalOpen = $state(false)
@@ -215,20 +212,8 @@
       <Icon name="file" size={12} strokeWidth={2.5} />
       <span class="card-title">Files</span>
       {#if canManage}
-        {#if canUploadFiles}
-          <button class="new-file-btn" onclick={() => fileInputRef?.click()}>+ Upload</button>
-          <input bind:this={fileInputRef} type="file" multiple hidden onchange={handleFileSelect} />
-        {:else}
-          <button
-            class="new-file-btn locked"
-            onclick={() =>
-              upgradeState.show({
-                tier: subscriptionState.subscription?.tier ?? null,
-                limit: 'STORAGE',
-                message: 'Upgrade your plan to share files with your margin.'
-              })}>Upgrade to upload</button
-          >
-        {/if}
+        <button class="new-file-btn" onclick={() => fileInputRef?.click()}>+ Upload</button>
+        <input bind:this={fileInputRef} type="file" multiple hidden onchange={handleFileSelect} />
       {/if}
     </div>
 
@@ -364,16 +349,8 @@
     transition: color 0.15s;
   }
 
-  .new-file-btn:hover:not(.locked) {
+  .new-file-btn:hover {
     color: #e06b28;
-  }
-
-  .new-file-btn.locked {
-    color: #bbb;
-  }
-
-  .new-file-btn.locked:hover {
-    color: #999;
   }
 
   .file-list {

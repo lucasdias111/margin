@@ -20,10 +20,7 @@
   ]
 
   const session = $derived(callState.groupCallState?.session ?? null)
-  const maxVideoHeight = $derived(session?.maxVideoHeight ?? null)
-  const availableQualities = $derived(
-    QUALITY_OPTIONS.filter((q) => maxVideoHeight === null || q.height <= maxVideoHeight)
-  )
+  const availableQualities = QUALITY_OPTIONS
 
   function handleAudioChange(e: Event): void {
     const deviceId = (e.currentTarget as HTMLSelectElement).value

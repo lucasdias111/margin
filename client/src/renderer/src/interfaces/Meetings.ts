@@ -45,7 +45,6 @@ export interface MeetingJoinInfo {
   sfuUrl: string
   roomId: string
   roomToken: string
-  maxVideoHeight: number | null
   peerId: string
   displayName: string
   title: string | null

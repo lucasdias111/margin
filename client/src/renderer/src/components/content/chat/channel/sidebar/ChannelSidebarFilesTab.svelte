@@ -3,8 +3,6 @@
   import type { StoredFile } from '$src/interfaces/StoredFile'
   import { fileStorageService } from '$src/services/FileStorageService'
   import { sessionState } from '$src/states/SessionState.svelte.js'
-  import { subscriptionState } from '$src/states/SubscriptionState.svelte'
-  import { upgradeState } from '$src/states/UpgradeState.svelte'
   import { FileListStore } from '$src/composables/FileListStore.svelte'
   import Icon from '$src/components/common/icons/Icon.svelte'
   import FileRow from '$src/components/common/files/FileRow.svelte'
@@ -21,8 +19,6 @@
   let isUploading = $state(false)
   let fileInput: HTMLInputElement
 
-  const canUploadFiles = $derived((subscriptionState.subscription?.limits.maxStorageGb ?? 1) > 0)
-
   $effect(() => {
     const channelId = channel?.id
     if (!channelId) {
@@ -37,14 +33,6 @@
   })
 
   async function handleUploadClick(): Promise<void> {
-    if (!canUploadFiles) {
-      upgradeState.show({
-        tier: subscriptionState.subscription?.tier ?? null,
-        limit: 'STORAGE',
-        message: 'Upgrade your plan to share files in channels.'
-      })
-      return
-    }
     fileInput.click()
   }
 
@@ -89,19 +77,10 @@
     class="file-input-hidden"
     onchange={handleFileSelected}
   />
-  <button
-    class="upload-btn"
-    class:locked={!canUploadFiles}
-    onclick={handleUploadClick}
-    disabled={isUploading}
-    title={!canUploadFiles ? 'Upgrade your plan to upload files' : undefined}
-  >
+  <button class="upload-btn" onclick={handleUploadClick} disabled={isUploading}>
     {#if isUploading}
       <Icon name="upload" size={12} strokeWidth={2} />
       Uploading…
-    {:else if !canUploadFiles}
-      <Icon name="lock" size={12} strokeWidth={2} />
-      Upgrade to upload
     {:else}
       <Icon name="upload" size={12} strokeWidth={2} />
       Upload file
@@ -159,26 +138,15 @@
       color 0.15s;
   }
 
-  .upload-btn:hover:not(:disabled):not(.locked) {
+  .upload-btn:hover:not(:disabled) {
     background: rgba(0, 0, 0, 0.07);
     border-color: rgba(0, 0, 0, 0.22);
     color: #555;
   }
 
-  .upload-btn:disabled:not(.locked) {
+  .upload-btn:disabled {
     cursor: default;
     opacity: 0.6;
-  }
-
-  .upload-btn.locked {
-    border-style: dashed;
-    color: #bbb;
-    cursor: pointer;
-  }
-
-  .upload-btn.locked:hover {
-    border-color: rgba(0, 0, 0, 0.2);
-    color: #999;
   }
 
   .files-empty {

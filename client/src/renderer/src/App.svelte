@@ -3,7 +3,6 @@
   import { routes } from '$src/routes'
   import TitleBar from './TitleBar.svelte'
   import ErrorToast from '$src/components/common/messages/ErrorToast.svelte'
-  import UpgradeModal from '$src/components/common/modals/UpgradeModal.svelte'
   import { isElectron } from '$src/utils/platformUtils'
 
   const rounded = window.api?.platform !== 'linux'
@@ -14,7 +13,6 @@
     <TitleBar title="margin" />
   {/if}
   <ErrorToast />
-  <UpgradeModal />
   <div class="app-content">
     <Router {routes} />
   </div>

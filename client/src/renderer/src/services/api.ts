@@ -1,6 +1,5 @@
 import { API_CONFIG } from '$src/shared/config'
 import { errorService } from '$src/services/ErrorService'
-import { upgradeState } from '$src/states/UpgradeState.svelte'
 
 let unauthenticatedHandler: (() => Promise<void>) | null = null
 let unauthenticatedInFlight: Promise<void> | null = null
@@ -113,18 +112,6 @@ async function isResponseUnauthenticated(response: Response): Promise<boolean> {
 }
 
 async function handleNonOkResponse(response: Response): Promise<never> {
-  if (response.status === 402) {
-    const body = await response
-      .clone()
-      .json()
-      .catch(() => ({}))
-    upgradeState.show({
-      tier: body.tier ?? null,
-      limit: body.limit ?? null,
-      message: body.detail ?? 'Upgrade required'
-    })
-    throw new Error(body.detail ?? 'Upgrade required')
-  }
   const message = await extractErrorMessage(response)
   errorService.reportError(message)
   throw new Error(message)
