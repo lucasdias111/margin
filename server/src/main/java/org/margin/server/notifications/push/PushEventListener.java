@@ -2,6 +2,8 @@ package org.margin.server.notifications.push;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.margin.server.notifications.Notification;
+import org.margin.server.notifications.events.NotificationDeliveryEvent;
 import org.margin.server.social.announcements.events.AnnouncementCreatedEvent;
 import org.margin.server.social.conversation.events.ConversationInviteEvent;
 import org.margin.server.social.messages.events.MessageSentEvent;
@@ -22,6 +24,37 @@ public class PushEventListener {
 
     public PushEventListener(PushDispatchService pushDispatchService) {
         this.pushDispatchService = pushDispatchService;
+    }
+
+    /**
+     * Meeting reminders and start notices, for anyone who is not on a live socket. Driven off the
+     * stored notification rather than a meetings event, because that would put a
+     * notifications -> meetings edge opposite the existing meetings -> notifications::api one.
+     * Only meeting types are handled here; the rest already push from their own domain events.
+     */
+    @EventListener
+    public void onNotificationDelivery(NotificationDeliveryEvent event) {
+        Notification notification = event.getNotification();
+        String body = switch (notification.getType()) {
+            case MEETING_REMINDER -> "Starts in 10 minutes";
+            case MEETING_STARTED -> "Starting now";
+            default -> null;
+        };
+        if (body == null) {
+            return;
+        }
+
+        pushDispatchService.pushToUserIfOffline(
+                notification.getRecipientId(),
+                new PushMessage(
+                        "Meeting",
+                        body,
+                        Map.of(
+                                "type", "meeting",
+                                "meetingId", String.valueOf(notification.getReferenceId())
+                        )
+                )
+        );
     }
 
     @EventListener

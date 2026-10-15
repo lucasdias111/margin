@@ -1,7 +1,11 @@
 package org.margin.server.integrationtest;
 
 import org.junit.jupiter.api.Test;
+import org.margin.server.integrationtest.config.CapturingPushSenderConfig;
+import org.margin.server.integrationtest.config.CapturingPushSenderConfig.CapturedPush;
 import org.margin.server.integrationtest.config.MarginTestRunner;
+import org.margin.server.notifications.push.PushPlatform;
+import org.margin.server.notifications.push.PushTokenService;
 import org.margin.server.integrationtest.utils.MarginTestUtils;
 import org.margin.server.integrationtest.utils.SubscriptionTestUtils;
 import org.margin.server.integrationtest.utils.UserTestUtils;
@@ -23,6 +27,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
@@ -42,12 +47,15 @@ class MeetingReminderTest extends MarginTestRunner {
     private NotificationRepository notificationRepository;
     @Autowired
     private MarginService marginService;
+    @Autowired
+    private PushTokenService pushTokenService;
 
     private User host;
     private User invitee;
     private Margin margin;
 
     private void seed() {
+        CapturingPushSenderConfig.reset();
         host = UserTestUtils.createUser("alice", "alice@margin.chat");
         invitee = UserTestUtils.createUser("bob", "bob@margin.chat");
         margin = MarginTestUtils.createMargin("Acme", host);
@@ -125,6 +133,119 @@ class MeetingReminderTest extends MarginTestRunner {
         reminderJob.sendDueReminders(Instant.now());
 
         assertEquals(2, remindersFor(meeting.id()), "the new time deserves its own reminder");
+    }
+
+    private long startedNoticesFor(Long meetingId) {
+        return notificationRepository.findAll().stream()
+                .filter(n -> n.getType() == NotificationType.MEETING_STARTED)
+                .filter(n -> meetingId.equals(n.getReferenceId()))
+                .count();
+    }
+
+    @Test
+    void aMeetingIsAnnouncedOnTheClockEvenIfNobodyHasJoined() {
+        seed();
+        MeetingSummaryDTO meeting = scheduleAt(Instant.now().plus(Duration.ofMinutes(30)));
+
+        reminderJob.sendStartedNotices(Instant.now().plus(Duration.ofMinutes(30)));
+
+        assertEquals(1, startedNoticesFor(meeting.id()),
+                "the notice follows the scheduled time, not the first join");
+    }
+
+    @Test
+    void aMeetingIsNotAnnouncedBeforeItsScheduledTime() {
+        seed();
+        MeetingSummaryDTO meeting = scheduleAt(Instant.now().plus(Duration.ofMinutes(30)));
+
+        reminderJob.sendStartedNotices(Instant.now().plus(Duration.ofMinutes(29)));
+
+        assertEquals(0, startedNoticesFor(meeting.id()));
+    }
+
+    @Test
+    void aMeetingIsOnlyAnnouncedOnce() {
+        seed();
+        MeetingSummaryDTO meeting = scheduleAt(Instant.now().plus(Duration.ofMinutes(30)));
+        Instant due = Instant.now().plus(Duration.ofMinutes(31));
+
+        reminderJob.sendStartedNotices(due);
+        reminderJob.sendStartedNotices(due);
+
+        assertEquals(1, startedNoticesFor(meeting.id()));
+    }
+
+    @Test
+    void aCancelledMeetingIsNotAnnounced() {
+        seed();
+        MeetingSummaryDTO meeting = scheduleAt(Instant.now().plus(Duration.ofMinutes(30)));
+        schedulingService.cancel(meeting.code(), host.getId());
+
+        reminderJob.sendStartedNotices(Instant.now().plus(Duration.ofMinutes(31)));
+
+        assertEquals(0, startedNoticesFor(meeting.id()));
+    }
+
+    @Test
+    void anInstantMeetingHasNoScheduledTimeSoIsNeverAnnounced() {
+        seed();
+
+        assertEquals(0, reminderJob.sendStartedNotices(Instant.now().plus(Duration.ofDays(1))),
+                "instant meetings ring instead");
+    }
+
+    @Test
+    void anOfflineInviteeIsPushedWhenTheMeetingStarts() {
+        seed();
+        pushTokenService.register(invitee.getId(), PushPlatform.ANDROID, "invitee-device");
+        MeetingSummaryDTO meeting = scheduleAt(Instant.now().plus(Duration.ofMinutes(30)));
+
+        reminderJob.sendStartedNotices(Instant.now().plus(Duration.ofMinutes(31)));
+
+        await(() -> !CapturingPushSenderConfig.captured.isEmpty());
+        List<CapturedPush> pushes = List.copyOf(CapturingPushSenderConfig.captured);
+        assertEquals(1, pushes.size());
+        assertEquals("invitee-device", pushes.getFirst().token());
+        assertEquals("Starting now", pushes.getFirst().message().body());
+        assertEquals(String.valueOf(meeting.id()), pushes.getFirst().message().data().get("meetingId"));
+    }
+
+    @Test
+    void anOfflineInviteeIsPushedForTheTenMinuteReminderToo() {
+        seed();
+        pushTokenService.register(invitee.getId(), PushPlatform.ANDROID, "invitee-device");
+        scheduleAt(Instant.now().plus(Duration.ofMinutes(5)));
+
+        reminderJob.sendDueReminders(Instant.now());
+
+        await(() -> !CapturingPushSenderConfig.captured.isEmpty());
+        assertEquals("Starts in 10 minutes",
+                CapturingPushSenderConfig.captured.getFirst().message().body());
+    }
+
+    @Test
+    void theHostIsNeverPushedAboutTheirOwnMeeting() {
+        seed();
+        pushTokenService.register(host.getId(), PushPlatform.ANDROID, "host-device");
+        scheduleAt(Instant.now().plus(Duration.ofMinutes(30)));
+
+        reminderJob.sendStartedNotices(Instant.now().plus(Duration.ofMinutes(31)));
+
+        assertTrue(CapturingPushSenderConfig.captured.stream()
+                        .noneMatch(p -> p.token().equals("host-device")),
+                "the host started it; they do not need telling");
+    }
+
+    private void await(java.util.function.BooleanSupplier condition) {
+        long deadline = System.currentTimeMillis() + 2000;
+        while (System.currentTimeMillis() < deadline && !condition.getAsBoolean()) {
+            try {
+                Thread.sleep(25);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                return;
+            }
+        }
     }
 
     @Test

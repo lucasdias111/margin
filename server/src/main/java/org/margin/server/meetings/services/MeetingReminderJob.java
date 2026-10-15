@@ -48,8 +48,9 @@ public class MeetingReminderJob {
         if (!enabled) {
             return;
         }
-        sendDueReminders(Instant.now());
-        sendStartedNotices();
+        Instant now = Instant.now();
+        sendDueReminders(now);
+        sendStartedNotices(now);
     }
 
     @Transactional
@@ -65,13 +66,17 @@ public class MeetingReminderJob {
         return due.size();
     }
 
+    /**
+     * Fires at the scheduled time rather than when someone first joins: invitees are told the
+     * meeting is due to start, whether or not anyone has arrived yet.
+     */
     @Transactional
-    public int sendStartedNotices() {
-        List<Meeting> started = meetingRepository.findMeetingsNeedingStartedNotice();
+    public int sendStartedNotices(Instant now) {
+        List<Meeting> started = meetingRepository.findMeetingsNeedingStartedNotice(now);
 
         for (Meeting meeting : started) {
             notify(meeting, NotificationType.MEETING_STARTED);
-            meeting.setStartedNoticeSentAt(Instant.now());
+            meeting.setStartedNoticeSentAt(now);
             meetingRepository.save(meeting);
         }
 

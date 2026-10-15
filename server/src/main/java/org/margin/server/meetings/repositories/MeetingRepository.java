@@ -38,9 +38,11 @@ public interface MeetingRepository extends JpaRepository<Meeting, Long> {
 
     @Query("""
             SELECT m FROM Meeting m
-            WHERE m.status = org.margin.server.meetings.models.MeetingStatus.LIVE
+            WHERE m.status IN (org.margin.server.meetings.models.MeetingStatus.SCHEDULED,
+                               org.margin.server.meetings.models.MeetingStatus.LIVE)
               AND m.startedNoticeSentAt IS NULL
               AND m.scheduledAt IS NOT NULL
+              AND m.scheduledAt <= :now
             """)
-    List<Meeting> findMeetingsNeedingStartedNotice();
+    List<Meeting> findMeetingsNeedingStartedNotice(@Param("now") Instant now);
 }
