@@ -10,9 +10,6 @@ import org.springframework.stereotype.Service;
 import org.thymeleaf.TemplateEngine;
 import org.thymeleaf.context.Context;
 
-import java.time.Instant;
-import java.time.ZoneOffset;
-import java.time.format.DateTimeFormatter;
 import java.util.Locale;
 
 @Service
@@ -94,25 +91,6 @@ public class EmailService {
         return templateEngine.process("email/meeting-invite", ctx);
     }
 
-    public String buildInvoiceMail(String ownerName, String marginName, String tier,
-                                   String amount, String currency,
-                                   String paymentId, Instant nextBillingDate) {
-        String formattedNext = nextBillingDate != null
-                ? DateTimeFormatter.ofPattern("d MMM yyyy", Locale.ENGLISH).withZone(ZoneOffset.UTC).format(nextBillingDate)
-                : "—";
-
-        Context ctx = new Context(Locale.ENGLISH);
-        ctx.setVariable("logoUrl", logoUrl.isBlank() ? null : logoUrl);
-        ctx.setVariable("ownerName", ownerName);
-        ctx.setVariable("marginName", marginName);
-        ctx.setVariable("tier", tier);
-        ctx.setVariable("amount", amount);
-        ctx.setVariable("currency", currency);
-        ctx.setVariable("paymentId", paymentId);
-        ctx.setVariable("nextBillingDate", formattedNext);
-
-        return templateEngine.process("email/invoice", ctx);
-    }
 
     public String buildPasswordResetMail(String displayName, String resetToken) {
         Context ctx = new Context(Locale.ENGLISH);

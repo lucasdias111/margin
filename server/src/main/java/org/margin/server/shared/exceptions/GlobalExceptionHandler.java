@@ -1,6 +1,5 @@
 package org.margin.server.shared.exceptions;
 
-import com.mollie.mollie.models.errors.APIException;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.catalina.connector.ClientAbortException;
@@ -50,13 +49,6 @@ public class GlobalExceptionHandler {
         return detail;
     }
 
-    @ExceptionHandler(APIException.class)
-    public ProblemDetail handleAPIException(APIException ex) {
-        log.error("Mollie API error", ex);
-        ProblemDetail detail = ProblemDetail.forStatus(HttpStatus.INTERNAL_SERVER_ERROR);
-        detail.setDetail(ex.getMessage());
-        return detail;
-    }
 
     @ExceptionHandler({AsyncRequestNotUsableException.class, ClientAbortException.class})
     public void handleClientDisconnect(Exception ex) {

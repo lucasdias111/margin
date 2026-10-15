@@ -11,7 +11,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 class MeetingIcsBuilderTest {
 
-    private final MeetingIcsBuilder builder = new MeetingIcsBuilder();
+    private final MeetingIcsBuilder builder = new MeetingIcsBuilder("https://chat.example.com");
 
     private Meeting meeting(String title, int sequence) {
         Meeting meeting = new Meeting();
@@ -29,8 +29,8 @@ class MeetingIcsBuilderTest {
         String first = builder.build(meeting("Sync", 0), "https://margin.chat/meet/abc123", false);
         String second = builder.build(meeting("Sync moved", 1), "https://margin.chat/meet/abc123", false);
 
-        assertThat(first).contains("UID:abc123@margin.chat");
-        assertThat(second).contains("UID:abc123@margin.chat");
+        assertThat(first).contains("UID:abc123@chat.example.com");
+        assertThat(second).contains("UID:abc123@chat.example.com");
     }
 
     @Test

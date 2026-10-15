@@ -37,7 +37,6 @@ class FilesControllerTest extends MarginTestRunner {
 
         Margin margin = MarginTestUtils.createMargin("FilesCtrlMargin", owner);
         marginId = margin.getId();
-        SubscriptionTestUtils.overrideLimits(margin, 25, 100, 10);
 
         MarginTestUtils.addUserToMargin(marginId, owner, member);
 

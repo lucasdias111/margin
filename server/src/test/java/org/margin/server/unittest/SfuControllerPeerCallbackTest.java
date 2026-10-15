@@ -8,8 +8,7 @@ import org.margin.server.sfu.SfuController;
 import org.margin.server.sfu.services.SfuService;
 import org.margin.server.sfu.services.SfuTokenService;
 import org.margin.server.shared.authorization.MarginAccessChecker;
-import org.margin.server.social.api.ChannelLookup;
-import org.margin.server.subscriptions.services.SubscriptionValidationService;
+import org.margin.server.sfu.services.CallCapacity;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -39,9 +38,7 @@ class SfuControllerPeerCallbackTest {
     @Mock
     private SfuTokenService sfuTokenService;
     @Mock
-    private ChannelLookup channelLookup;
-    @Mock
-    private SubscriptionValidationService subscriptionValidationService;
+    private CallCapacity callCapacity;
 
     @InjectMocks
     private SfuController controller;

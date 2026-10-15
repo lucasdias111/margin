@@ -9,7 +9,6 @@
   import PrivateChatHeader from '$src/components/content/chat/private/PrivateChatHeader.svelte'
   import { navigationState } from '$src/states/NavigationState.svelte'
   import { sessionState } from '$src/states/SessionState.svelte'
-  import { subscriptionState } from '$src/states/SubscriptionState.svelte'
   import { typingIndicatorService } from '$src/services/TypingIndicatorService'
   import { typingIndicatorState } from '$src/states/TypingIndicatorState.svelte'
   import { untrack } from 'svelte'
@@ -19,7 +18,6 @@
 
   let messageInput = $state('')
   let chatInputRef = $state<ChatInput | null>(null)
-  const canUploadFiles = $derived((subscriptionState.subscription?.limits.maxStorageGb ?? 1) > 0)
   const activeConversation = $derived(
     conversationsState.currentConversation
       ? conversationsState.byId.get(conversationsState.currentConversation.id)
@@ -160,7 +158,6 @@
       bind:messageInput
       onSubmit={handleSubmitMessage}
       allowFileAttachments={false}
-      fileUploadEnabled={canUploadFiles}
     />
   {:else}
     <div class="empty-state" in:riseIn={{ distance: 10 }}>

@@ -47,8 +47,8 @@ describe('MeetingService', () => {
     )
   })
 
-  it('returns null on a 402 so the global upgrade modal is the only free-plan feedback', async () => {
-    vi.mocked(authenticatedPost).mockResolvedValue(failed(402))
+  it('returns null when the meeting cannot be created', async () => {
+    vi.mocked(authenticatedPost).mockResolvedValue(failed(500))
 
     await expect(meetingService.createMeeting(7, null)).resolves.toBeNull()
   })

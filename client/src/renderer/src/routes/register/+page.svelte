@@ -7,9 +7,6 @@
   import avatar from '$src/assets/pics/anonym-avatar.png'
   import { errorService } from '$src/services/ErrorService'
   import type { AuthResponse } from '$src/interfaces/AuthResponse'
-  import PolicyModal from '$src/components/common/modals/PolicyModal.svelte'
-  import { privacyPolicyHtml } from '$src/assets/legal/privacy-policy'
-  import { termsOfServiceHtml } from '$src/assets/legal/terms-of-service'
   import Button from '$src/components/common/buttons/Button.svelte'
   import Tooltip from '$src/components/common/Tooltip.svelte'
   import Spinner from '$src/components/common/Spinner.svelte'
@@ -23,13 +20,6 @@
   let isLoading = $state(false)
   let previewUrl = $state<string | null>(avatar)
 
-  let acceptedTerms = $state(false)
-  let acceptedPrivacy = $state(false)
-
-  let policyModalOpen = $state(false)
-  let policyModalTitle = $state('')
-  let policyModalContent = $state('')
-
   let registrationComplete = $state(false)
   let registeredEmail = $state('')
 
@@ -38,7 +28,6 @@
 
   let passwordTouched = $state(false)
   let repeatPasswordTouched = $state(false)
-  let policyTouched = $state(false)
   let focusedField = $state<string | null>(null)
 
   const fieldHints: Record<string, string> = {
@@ -60,41 +49,20 @@
     return null
   }
 
-  let termsError = $derived(
-    policyTouched && !acceptedTerms ? 'You must accept the Terms of Service' : null
-  )
-  let privacyError = $derived(
-    policyTouched && !acceptedPrivacy ? 'You must accept the Privacy Policy' : null
-  )
-
   let hasErrors = $derived(
     !displayName ||
       !email ||
       !password ||
       !repeatPassword ||
-      !acceptedTerms ||
-      !acceptedPrivacy ||
       passwordError !== null ||
       repeatPasswordError !== null
   )
-
-  function openPolicy(type: 'terms' | 'privacy'): void {
-    if (type === 'terms') {
-      policyModalTitle = 'Terms of Service'
-      policyModalContent = termsOfServiceHtml
-    } else {
-      policyModalTitle = 'Privacy Policy'
-      policyModalContent = privacyPolicyHtml
-    }
-    policyModalOpen = true
-  }
 
   async function handleRegistration(event: SubmitEvent): Promise<void> {
     event.preventDefault()
 
     passwordTouched = true
     repeatPasswordTouched = true
-    policyTouched = true
 
     if (hasErrors) return
 
@@ -266,34 +234,6 @@
             {/if}
           </div>
 
-          <div class="legal-checkboxes">
-            <label class="checkbox-row">
-              <input type="checkbox" bind:checked={acceptedTerms} />
-              <span>
-                I agree to the
-                <button type="button" class="link" onclick={() => openPolicy('terms')}>
-                  Terms of Service
-                </button>
-              </span>
-            </label>
-            {#if termsError}
-              <span class="error-text">{termsError}</span>
-            {/if}
-
-            <label class="checkbox-row">
-              <input type="checkbox" bind:checked={acceptedPrivacy} />
-              <span>
-                I agree to the
-                <button type="button" class="link" onclick={() => openPolicy('privacy')}>
-                  Privacy Policy
-                </button>
-              </span>
-            </label>
-            {#if privacyError}
-              <span class="error-text">{privacyError}</span>
-            {/if}
-          </div>
-
           <Button
             buttonType="primary"
             size="medium"
@@ -321,13 +261,6 @@
     {/if}
   </div>
 </PageTransition>
-
-<PolicyModal
-  open={policyModalOpen}
-  title={policyModalTitle}
-  content={policyModalContent}
-  onClose={() => (policyModalOpen = false)}
-/>
 
 <style>
   .page {
@@ -443,46 +376,6 @@
     font-size: 12px;
     color: #d94040;
     margin: 0;
-  }
-
-  .legal-checkboxes {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    padding: 2px 0;
-  }
-
-  .checkbox-row {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    font-size: 13px;
-    color: #555250;
-    cursor: pointer;
-  }
-
-  .checkbox-row input[type='checkbox'] {
-    width: 16px;
-    height: 16px;
-    accent-color: #e8712a;
-    cursor: pointer;
-    flex-shrink: 0;
-  }
-
-  .link {
-    background: none;
-    border: none;
-    padding: 0;
-    color: #e8712a;
-    font-size: 13px;
-    font-family: inherit;
-    cursor: pointer;
-    text-decoration: underline;
-    text-underline-offset: 2px;
-  }
-
-  .link:hover {
-    color: #d4621a;
   }
 
   @keyframes spin {

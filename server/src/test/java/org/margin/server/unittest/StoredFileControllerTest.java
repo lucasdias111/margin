@@ -18,9 +18,6 @@ import org.margin.server.storage.dtos.StoredFileDTO;
 import org.margin.server.storage.models.StoredFile;
 import org.margin.server.storage.services.StorageService;
 import org.margin.server.storage.services.StoredFileService;
-import org.margin.server.subscriptions.exceptions.SubscriptionLimitExceededException;
-import org.margin.server.subscriptions.models.LimitType;
-import org.margin.server.subscriptions.models.SubscriptionTier;
 import org.margin.server.users.models.User;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
@@ -153,23 +150,6 @@ class StoredFileControllerTest {
         verify(storedFileService).uploadChannelFile(eq(3L), any(), eq(user.getId()), eq(false));
     }
 
-    @Test
-    void uploadMarginFileForbiddenWhenServiceThrowsQuotaException() {
-        doThrow(new SubscriptionLimitExceededException("Storage quota exceeded", SubscriptionTier.FREE, LimitType.STORAGE))
-                .when(storedFileService).uploadMarginFile(eq(7L), any(), eq(user.getId()));
-
-        assertThrows(SubscriptionLimitExceededException.class, () ->
-                controller.uploadMarginFile(7L, fakeFile("big.bin", "application/octet-stream", "data"), principalOf(user)));
-    }
-
-    @Test
-    void uploadChannelFileForbiddenWhenServiceThrowsQuotaException() {
-        doThrow(new SubscriptionLimitExceededException("Storage quota exceeded", SubscriptionTier.FREE, LimitType.STORAGE))
-                .when(storedFileService).uploadChannelFile(eq(3L), any(), eq(user.getId()), eq(false));
-
-        assertThrows(SubscriptionLimitExceededException.class, () ->
-                controller.uploadChannelFile(3L, fakeFile("img.png", "image/png", "bytes"), false, principalOf(user)));
-    }
 
     @Test
     void uploadConversationFileDelegatesToService() {

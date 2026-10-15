@@ -14,10 +14,10 @@ import org.margin.server.meetings.repositories.MeetingParticipantRepository;
 import org.margin.server.meetings.repositories.MeetingRepository;
 import org.margin.server.meetings.services.MeetingService;
 import org.margin.server.shared.authorization.MarginAccessChecker;
+import org.margin.server.sfu.services.CallCapacity;
 import org.margin.server.sfu.services.SfuService;
 import org.margin.server.sfu.services.SfuTokenService;
 import org.margin.server.social.api.MarginLookup;
-import org.margin.server.subscriptions.services.SubscriptionValidationService;
 import org.margin.server.users.api.UserLookup;
 import org.margin.server.users.api.UserSummary;
 import org.mockito.ArgumentCaptor;
@@ -63,7 +63,7 @@ class MeetingServiceTest {
     @Mock
     private MarginAccessChecker marginAccessChecker;
     @Mock
-    private SubscriptionValidationService subscriptionValidationService;
+    private CallCapacity callCapacity;
     @Mock
     private SfuService sfuService;
     @Mock
@@ -88,7 +88,6 @@ class MeetingServiceTest {
         meeting.setStatus(MeetingStatus.LIVE);
         meeting.setMaxParticipants(10);
         meeting.setExpiresAt(Instant.now().plus(Duration.ofHours(12)));
-        meeting.setMaxVideoHeight(720);
 
         when(meetingRepository.findByCode(CODE)).thenReturn(Optional.of(meeting));
         when(meetingRepository.save(any())).thenAnswer(i -> i.getArgument(0));
@@ -109,7 +108,6 @@ class MeetingServiceTest {
         assertThat(response.roomId()).isEqualTo("m_" + CODE);
         assertThat(response.roomToken()).isEqualTo("room-token");
         assertThat(response.sfuUrl()).isEqualTo("ws://sfu.test");
-        assertThat(response.maxVideoHeight()).isEqualTo(720);
         verify(sfuService).createOrJoinRoom("m_" + CODE, 10);
     }
 

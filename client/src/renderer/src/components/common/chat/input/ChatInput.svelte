@@ -6,8 +6,6 @@
   import GifButton from '$src/components/common/chat/input/GifButton.svelte'
   import EmojiButton from '$src/components/common/chat/input/EmojiButton.svelte'
   import SendButton from '$src/components/common/chat/input/SendButton.svelte'
-  import { upgradeState } from '$src/states/UpgradeState.svelte'
-  import { subscriptionState } from '$src/states/SubscriptionState.svelte'
 
   interface PendingFile {
     file: File
@@ -49,14 +47,6 @@
     const filtered = inline ? files.filter((f) => f.type.startsWith('image/')) : files
     if (filtered.length === 0) return
     pendingFiles = [...pendingFiles, ...filtered.map((file) => ({ file, inline }))]
-  }
-
-  function showStorageUpgradePrompt(): void {
-    upgradeState.show({
-      tier: subscriptionState.subscription?.tier ?? null,
-      limit: 'STORAGE',
-      message: 'Upgrade your plan to attach files in channels.'
-    })
   }
 
   function removePendingFile(index: number): void {
@@ -150,7 +140,6 @@
           disabled={!selectedContent}
           locked={!fileUploadEnabled}
           onFilesSelected={(files) => queuePendingFiles(files)}
-          onLockedClick={showStorageUpgradePrompt}
         />
       {/if}
 

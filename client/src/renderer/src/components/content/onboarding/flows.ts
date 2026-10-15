@@ -135,20 +135,5 @@ export const flows: Flow[] = [
         placement: 'top'
       }
     ]
-  },
-  {
-    id: 'manage-tab-subscription',
-    trigger: () =>
-      navigationState.view === View.Manage &&
-      navigationState.manageTab === 'Subscription' &&
-      isAdminOrOwner(),
-    steps: [
-      {
-        target: '[data-tour="manage-tab-content-subscription"]',
-        title: 'Subscription & billing',
-        body: "Review your plan, update payment details, and manage your margin's subscription.",
-        placement: 'top'
-      }
-    ]
   }
 ]

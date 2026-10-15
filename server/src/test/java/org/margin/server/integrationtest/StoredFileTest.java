@@ -36,7 +36,6 @@ class StoredFileTest extends MarginTestRunner {
 
         Margin margin = MarginTestUtils.createMargin("FilesMargin", owner);
         marginId = margin.getId();
-        SubscriptionTestUtils.overrideLimits(margin, 25, 100, 10);
 
         MarginTestUtils.addUserToMargin(marginId, owner, admin);
         MarginTestUtils.updateMemberRole(marginId, admin, MarginRole.ADMIN, owner);

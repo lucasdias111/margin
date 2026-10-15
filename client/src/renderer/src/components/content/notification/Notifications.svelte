@@ -14,7 +14,6 @@
   import { View } from '$src/interfaces/View'
   import { usersService } from '$src/services/UsersService'
   import { navigationService } from '$src/services/NavigationService'
-  import { navigationState } from '$src/states/NavigationState.svelte'
   import { channelService } from '$src/services/ChannelService'
   import { groupConversationService } from '$src/services/GroupConversationService'
   import { conversationsState } from '$src/states/ConversationsState.svelte'
@@ -104,14 +103,6 @@
       if (notification.conversationId) {
         await threadService.navigateToThreadById(notification.conversationId)
       }
-    } else if (
-      notification.type === NotificationType.SUBSCRIPTION_UPGRADED ||
-      notification.type === NotificationType.SUBSCRIPTION_PAYMENT_FAILED ||
-      notification.type === NotificationType.SUBSCRIPTION_LIMIT_WARNING
-    ) {
-      marginService.select(await marginService.getMargin(notification.marginId))
-      navigationState.manageTab = 'Subscription'
-      navigationService.setView(View.Manage)
     }
   }
 
@@ -153,7 +144,6 @@
       navigationService.setView(View.Private)
     }
   }
-
 </script>
 
 <div class="pane notifications-page" in:viewIn>

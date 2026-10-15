@@ -53,7 +53,6 @@ export interface ChannelCallSession {
   localStream: MediaStream
   audioProducer: Producer | null
   videoProducer: Producer | null
-  maxVideoHeight: number | null
   preferredVideoHeight: number | null
   preferredScreenHeight: number | null
 }

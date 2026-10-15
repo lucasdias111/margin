@@ -15,6 +15,7 @@ import net.fortuna.ical4j.model.property.Summary;
 import net.fortuna.ical4j.model.property.Uid;
 import net.fortuna.ical4j.model.property.Url;
 import org.margin.server.meetings.entities.Meeting;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import java.io.ByteArrayOutputStream;
@@ -28,6 +29,13 @@ public class MeetingIcsBuilder {
 
     private static final Duration DEFAULT_LENGTH = Duration.ofHours(1);
 
+    private final String uidDomain;
+
+    public MeetingIcsBuilder(@Value("${margin.app.base-url:http://localhost:8080}") String baseUrl) {
+        String host = java.net.URI.create(baseUrl).getHost();
+        this.uidDomain = host == null ? "localhost" : host;
+    }
+
     public String build(Meeting meeting, String joinUrl, boolean cancelled) {
         Instant start = meeting.getScheduledAt() == null ? Instant.now() : meeting.getScheduledAt();
         Duration length = meeting.getDurationMinutes() == null
@@ -35,7 +43,7 @@ public class MeetingIcsBuilder {
                 : Duration.ofMinutes(meeting.getDurationMinutes());
 
         VEvent event = new VEvent();
-        event.add(new Uid(meeting.getCode() + "@margin.chat"));
+        event.add(new Uid(meeting.getCode() + "@" + uidDomain));
         event.add(new DtStamp());
         event.add(new DtStart<>(start));
         event.add(new DtEnd<>(start.plus(length)));

@@ -5,7 +5,7 @@ import type { Channel } from '$src/interfaces/Channel'
 import type { Space } from '$src/interfaces/Space'
 import type { GroupConversation, ThreadConversation } from '$src/interfaces/Conversation'
 
-export type ManageTab = 'Margin' | 'Spaces' | 'Subscription'
+export type ManageTab = 'Margin' | 'Spaces'
 
 class NavigationState {
   private _view = $state<View | null>(View.Private)

@@ -4,7 +4,7 @@ margin:
   app:
     base-url: http://localhost:5173
   mail:
-    from: ${MAIL_FROM:localhost@margin.chat}
+    from: ${SMTP_FROM:noreply@localhost}
     require-email-activation: false
   cors:
     allowed-origins: http://localhost:5173,http://localhost:5174,http://localhost:5175,http://localhost:5176,http://localhost:5177,http://localhost:5178,http://localhost:5274
@@ -74,7 +74,3 @@ management:
   server:
     port: 9090
 
-mollie:
-  api-key: ${MOLLIE_API_KEY}
-  redirect-base-url: http://localhost:4173
-  testmode: true

@@ -4,7 +4,6 @@
         "social::api",
         "social::conversation-dtos",
         "social::events",
-        "subscriptions::events",
         "users::api"
 })
 package org.margin.server.notifications;

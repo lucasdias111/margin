@@ -4,7 +4,6 @@ protocols:
     schemes:
       - margin
 productName: margin
-afterSign: scripts/notarize.cjs
 directories:
   buildResources: build
 files:
@@ -20,11 +19,6 @@ asarUnpack:
 win:
   executableName: margin
   icon: build/icons/win/icon.ico
-  azureSignOptions:
-    endpoint: https://neu.codesigning.azure.net/
-    codeSigningAccountName: margin-signing
-    certificateProfileName: margin-cert
-    publisherName: margin Software ApS
 nsis:
   artifactName: ${name}-${version}-setup.${ext}
   shortcutName: ${productName}
@@ -46,7 +40,7 @@ mac:
     - NSMicrophoneUsageDescription: Application requests access to the device's microphone.
     - NSDocumentsFolderUsageDescription: Application requests access to the user's Documents folder.
     - NSDownloadsFolderUsageDescription: Application requests access to the user's Downloads folder.
-  identity: "Lucas Dias (WGW4TMK5W9)"
+  identity: null
   notarize: false
 dmg:
   artifactName: ${name}-${version}.${ext}
@@ -54,12 +48,13 @@ linux:
   target:
     - target: AppImage
       arch: [ x64 ]
-  maintainer: margin.chat
+  maintainer: margin contributors
   category: Communication
   icon: build/icons/png
 appImage:
   artifactName: ${name}-${version}.${ext}
 npmRebuild: false
 publish:
-  provider: generic
-  url: https://updates.margin.chat
+  provider: github
+  owner: lucasdias111
+  repo: margin

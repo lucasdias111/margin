@@ -15,11 +15,10 @@ import org.margin.server.meetings.repositories.MeetingParticipantRepository;
 import org.margin.server.meetings.repositories.MeetingRepository;
 import org.margin.server.shared.authorization.MarginAccessChecker;
 import org.margin.server.shared.voice.RoomKey;
+import org.margin.server.sfu.services.CallCapacity;
 import org.margin.server.sfu.services.SfuService;
 import org.margin.server.sfu.services.SfuTokenService;
 import org.margin.server.social.api.MarginLookup;
-import org.margin.server.subscriptions.models.SubscriptionTier;
-import org.margin.server.subscriptions.services.SubscriptionValidationService;
 import org.margin.server.users.api.UserLookup;
 import org.springframework.http.HttpStatus;
 import org.springframework.modulith.NamedInterface;
@@ -39,12 +38,11 @@ import java.util.UUID;
 @Service
 public class MeetingService {
     private static final Duration INSTANT_MEETING_LIFETIME = Duration.ofHours(12);
-    private static final int FREE_TIER_MAX_VIDEO_HEIGHT = 720;
 
     private final MeetingRepository meetingRepository;
     private final MeetingParticipantRepository participantRepository;
     private final MarginAccessChecker marginAccessChecker;
-    private final SubscriptionValidationService subscriptionValidationService;
+    private final CallCapacity callCapacity;
     private final SfuService sfuService;
     private final SfuTokenService sfuTokenService;
     private final MarginLookup marginLookup;
@@ -53,7 +51,7 @@ public class MeetingService {
     public MeetingService(MeetingRepository meetingRepository,
                           MeetingParticipantRepository participantRepository,
                           MarginAccessChecker marginAccessChecker,
-                          SubscriptionValidationService subscriptionValidationService,
+                          CallCapacity callCapacity,
                           SfuService sfuService,
                           SfuTokenService sfuTokenService,
                           MarginLookup marginLookup,
@@ -61,7 +59,7 @@ public class MeetingService {
         this.meetingRepository = meetingRepository;
         this.participantRepository = participantRepository;
         this.marginAccessChecker = marginAccessChecker;
-        this.subscriptionValidationService = subscriptionValidationService;
+        this.callCapacity = callCapacity;
         this.sfuService = sfuService;
         this.sfuTokenService = sfuTokenService;
         this.marginLookup = marginLookup;
@@ -74,7 +72,6 @@ public class MeetingService {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "marginId is required");
         }
         marginAccessChecker.requireMarginMember(hostUserId, request.marginId());
-        subscriptionValidationService.validateMeetingCreation(request.marginId());
 
         Meeting meeting = new Meeting();
         meeting.setCode(MeetingCodes.newCode());
@@ -86,10 +83,7 @@ public class MeetingService {
         meeting.setRequireAdmission(request.requireAdmission() == null || request.requireAdmission());
         meeting.setExpiresAt(Instant.now().plus(INSTANT_MEETING_LIFETIME));
 
-        meeting.setMaxParticipants(subscriptionValidationService.getMaxCallParticipants(request.marginId()));
-        meeting.setMaxVideoHeight(
-                subscriptionValidationService.tierForMargin(request.marginId()) == SubscriptionTier.FREE
-                        ? FREE_TIER_MAX_VIDEO_HEIGHT : null);
+        meeting.setMaxParticipants(callCapacity.maxParticipants());
 
         Meeting saved = meetingRepository.save(meeting);
         addParticipant(saved.getId(), hostUserId, MeetingRole.HOST);
@@ -101,7 +95,6 @@ public class MeetingService {
     @Transactional(readOnly = true)
     public List<EligibleMarginDTO> eligibleMargins(Long userId) {
         return marginLookup.marginsForUser(userId).stream()
-                .filter(m -> subscriptionValidationService.canCreateMeetings(m.id()))
                 .map(m -> new EligibleMarginDTO(m.id(), m.name()))
                 .toList();
     }
@@ -184,7 +177,6 @@ public class MeetingService {
                 sfuService.getSfuPublicUrl(),
                 room.value(),
                 token,
-                meeting.getMaxVideoHeight(),
                 String.valueOf(userId),
                 participant.getDisplayName(),
                 meeting.getTitle());

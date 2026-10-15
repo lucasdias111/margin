@@ -9,7 +9,6 @@ import org.margin.server.social.api.ChannelLookup;
 import org.margin.server.social.api.MessageAttachmentDTO;
 import org.margin.server.social.api.MessageAttachmentLookup;
 import org.margin.server.storage.repositories.StoredFileRepository;
-import org.margin.server.subscriptions.services.SubscriptionValidationService;
 import org.margin.server.users.api.UserLookup;
 import org.margin.server.users.models.dtos.UserDTO;
 import org.springframework.http.HttpStatus;
@@ -30,27 +29,23 @@ public class StoredFileService implements MessageAttachmentLookup {
     private final StoredFileRepository storedFileRepository;
     private final PresenceService presenceService;
     private final StorageService storageService;
-    private final SubscriptionValidationService subscriptionValidationService;
     private final ChannelLookup channelLookup;
     private final UserLookup userLookup;
 
     public StoredFileService(StoredFileRepository storedFileRepository,
                              PresenceService presenceService,
                              StorageService storageService,
-                             SubscriptionValidationService subscriptionValidationService,
                              ChannelLookup channelLookup,
                              UserLookup userLookup) {
         this.storedFileRepository = storedFileRepository;
         this.presenceService = presenceService;
         this.storageService = storageService;
-        this.subscriptionValidationService = subscriptionValidationService;
         this.channelLookup = channelLookup;
         this.userLookup = userLookup;
     }
 
     @Transactional
     public StoredFile uploadMarginFile(Long marginId, MultipartFile file, Long uploaderId) {
-        validateQuota(marginId, file.getSize());
         String url = storageService.saveStoredFile(file);
         StoredFile entity = new StoredFile();
         entity.setScope(StoredFileScope.MARGIN);
@@ -66,7 +61,6 @@ public class StoredFileService implements MessageAttachmentLookup {
     @Transactional
     public StoredFile uploadChannelFile(Long channelId, MultipartFile file, Long uploaderId, boolean inline) {
         Long marginId = channelLookup.marginIdOf(channelId);
-        validateQuota(marginId, file.getSize());
         String url = storageService.saveStoredFile(file);
         StoredFile entity = new StoredFile();
         entity.setScope(StoredFileScope.CHANNEL);
@@ -173,10 +167,6 @@ public class StoredFileService implements MessageAttachmentLookup {
         storedFileRepository.saveAll(files);
     }
 
-    private void validateQuota(Long marginId, long newFileBytes) {
-        subscriptionValidationService.validateStorageQuota(marginId,
-                storedFileRepository.sumSizeBytesByMargin(marginId), newFileBytes);
-    }
 
     @Transactional(readOnly = true)
     public List<StoredFileDTO> toDTOs(List<StoredFile> files) {

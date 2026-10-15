@@ -31,7 +31,7 @@ public class StorageUrls {
         try {
             return storage.presign(storedUrl).orElse(storedUrl);
         } catch (RuntimeException e) {
-            log.warn("Failed to presign storage URL '{}'; serving raw URL. Check that HETZNER_S3_ENDPOINT matches the stored host. Cause: {}",
+            log.warn("Failed to presign storage URL '{}'; serving raw URL. Check that S3_ENDPOINT matches the stored host. Cause: {}",
                     storedUrl, e.getMessage());
             return storedUrl;
         }

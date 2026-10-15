@@ -77,7 +77,7 @@
           {#if !isElectron()}
             <a
               class="dropdown-item"
-              href="https://margin.chat/download"
+              href="https://github.com/lucasdias111/margin/releases"
               target="_blank"
               rel="noopener noreferrer"
               onclick={() => (showDropdown = false)}

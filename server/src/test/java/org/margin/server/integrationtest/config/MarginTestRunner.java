@@ -1,7 +1,6 @@
 package org.margin.server.integrationtest.config;
 
 import org.junit.jupiter.api.BeforeEach;
-import org.margin.server.subscriptions.services.MollieClient;
 import org.margin.server.websocket.WebSocketServer;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -18,9 +17,6 @@ public abstract class MarginTestRunner {
 
     @Autowired
     protected WebSocketServer webSocketServer;
-
-    @MockitoBean
-    protected MollieClient mollieClient;
 
     @BeforeEach
     void waitForServer() throws Exception {

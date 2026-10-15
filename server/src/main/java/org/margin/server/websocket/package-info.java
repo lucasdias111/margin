@@ -17,8 +17,6 @@
         "social::calls",
         "social::conversation-dtos",
         "social::events",
-        "subscriptions::api",
-        "subscriptions::events",
         "users::api"
 })
 package org.margin.server.websocket;

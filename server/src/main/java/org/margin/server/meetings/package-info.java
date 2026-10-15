@@ -6,7 +6,6 @@
         "sfu::api",
         "sfu::events",
         "social::api",
-        "subscriptions::api",
         "users::api"
 })
 package org.margin.server.meetings;

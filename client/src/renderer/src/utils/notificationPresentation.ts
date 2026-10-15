@@ -8,9 +8,6 @@ const ICONS: Record<NotificationType, string> = {
   [NotificationType.CONVERSATION_INVITE]: '💬',
   [NotificationType.MESSAGE_REACTION]: '👍',
   [NotificationType.THREAD_REPLY]: '🧵',
-  [NotificationType.SUBSCRIPTION_UPGRADED]: '✨',
-  [NotificationType.SUBSCRIPTION_PAYMENT_FAILED]: '⚠️',
-  [NotificationType.SUBSCRIPTION_LIMIT_WARNING]: '📊',
   [NotificationType.MEETING_INVITE]: '📅',
   [NotificationType.MEETING_REMINDER]: '📅',
   [NotificationType.MEETING_STARTED]: '📅'
@@ -38,12 +35,6 @@ export function notificationTitle(notification: Notification): string {
       return `${who} reacted to your message`
     case NotificationType.THREAD_REPLY:
       return `${who} replied in a thread you follow`
-    case NotificationType.SUBSCRIPTION_UPGRADED:
-      return 'Your workspace plan was upgraded'
-    case NotificationType.SUBSCRIPTION_PAYMENT_FAILED:
-      return "Payment for your workspace plan didn't go through"
-    case NotificationType.SUBSCRIPTION_LIMIT_WARNING:
-      return 'Your workspace is approaching its member limit'
     case NotificationType.MEETING_INVITE:
       return `${who} invited you to a meeting`
     case NotificationType.MEETING_REMINDER:

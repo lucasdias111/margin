@@ -21,10 +21,12 @@ websocket:
   port: 0
 
 margin:
+  app:
+    base-url: http://localhost:8080
   meetings:
     guest-token-secret: integration-guest-token-secret-that-is-long-enough
   mail:
-    from: ${MAIL_FROM:localhost@margin.chat}
+    from: ${SMTP_FROM:noreply@localhost}
     log-only: true
   websocket:
     port: 8082
@@ -49,7 +51,3 @@ sfu:
   internal-api-key: integration-test-internal-api-key
   token-secret: integration-sfu-secret-that-is-long-enough
 
-mollie:
-  api-key: test_integrationdummymolliekey
-  webhook-base-url: http://localhost:8080
-  redirect-base-url: http://localhost:4173
