@@ -23,6 +23,8 @@ websocket:
 margin:
   app:
     base-url: http://localhost:8080
+  turn:
+    secret: integration-turn-secret
   meetings:
     guest-token-secret: integration-guest-token-secret-that-is-long-enough
   mail:

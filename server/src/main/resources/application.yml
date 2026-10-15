@@ -6,6 +6,10 @@ margin:
   admin:
     email: ${MARGIN_ADMIN_EMAIL:}
     password: ${MARGIN_ADMIN_PASSWORD:}
+  turn:
+    secret: ${TURN_SECRET:}
+    uris: ${TURN_URIS:}
+    ttl: 12h
   gifs:
     klipy-api-key: ${KLIPY_API_KEY:}
   meetings:
