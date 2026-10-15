@@ -68,12 +68,15 @@ class AuthenticationTest extends MarginTestRunner {
     }
 
     @Test
-    void accountLocksAfterThreeFailedAttempts() {
+    void accountBacksOffAfterTenFailedAttempts() {
         InviteCode key = AuthTestUtils.createInviteCode();
         AuthTestUtils.registerAndActivate("eve", "eve@margin.chat", "correct", key.getCode());
 
-        AuthTestUtils.login("eve@margin.chat", "wrong");
-        AuthTestUtils.login("eve@margin.chat", "wrong");
+        for (int i = 0; i < 9; i++) {
+            AuthTestUtils.login("eve@margin.chat", "wrong");
+        }
+        assertNull(AuthTestUtils.securityOf(AuthTestUtils.findByEmail("eve@margin.chat")).getAccountLockedUntil(),
+                "a few typos must not lock anyone out");
         AuthTestUtils.login("eve@margin.chat", "wrong");
 
         User user = AuthTestUtils.findByEmail("eve@margin.chat");
@@ -86,9 +89,9 @@ class AuthenticationTest extends MarginTestRunner {
         InviteCode key = AuthTestUtils.createInviteCode();
         AuthTestUtils.registerAndActivate("frank", "frank@margin.chat", "correct", key.getCode());
 
-        AuthTestUtils.login("frank@margin.chat", "wrong");
-        AuthTestUtils.login("frank@margin.chat", "wrong");
-        AuthTestUtils.login("frank@margin.chat", "wrong");
+        for (int i = 0; i < 10; i++) {
+            AuthTestUtils.login("frank@margin.chat", "wrong");
+        }
 
         AuthResponse response = AuthTestUtils.login("frank@margin.chat", "correct");
 

@@ -31,8 +31,10 @@ import java.time.Instant;
 @Service
 @Slf4j
 public class AuthenticationService {
-    private static final int MAX_FAILED_ATTEMPTS = 3;
-    private static final int LOCK_DURATION_SECONDS = 30;
+    // A short back-off rather than a hard lock: it slows password guessing without letting
+    // anyone who knows an email address lock that person (or the admin) out.
+    private static final int MAX_FAILED_ATTEMPTS = 10;
+    private static final int LOCK_DURATION_SECONDS = 300;
 
     private final AuthenticationManager authenticationManager;
     private final UserLookup userLookup;

@@ -21,6 +21,15 @@ margin:
   cors:
     allowed-origins: ${margin.app.base-url},app://
 
+server:
+  # Behind the bundled proxy (or your own), take the client address from X-Forwarded-For, but only
+  # when the request comes from a trusted proxy: private network ranges by default, plus any
+  # addresses matched by TRUSTED_PROXIES (a regular expression). Everyone else can't spoof it.
+  forward-headers-strategy: native
+  tomcat:
+    remoteip:
+      trusted-proxies: ${TRUSTED_PROXIES:}
+
 spring:
   application:
     name: margin-server

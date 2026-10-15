@@ -18,6 +18,10 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 
+import org.margin.server.shared.exceptions.TooManyRequestsException;
+import org.margin.server.shared.ratelimit.RateLimitConfig;
+import org.margin.server.shared.ratelimit.RateLimitService;
+
 import java.util.List;
 
 @RestController
@@ -30,6 +34,7 @@ public class MarginInviteController {
     private final MarginService marginService;
     private final MarginMapper marginMapper;
     private final UserLookup userLookup;
+    private final RateLimitService rateLimitService;
 
     @PostMapping("/margins/{marginId}/link")
     public ResponseEntity<MarginInviteDTO> createLinkInvite(
@@ -82,7 +87,9 @@ public class MarginInviteController {
     }
 
     @GetMapping("/join/{code}")
-    public ResponseEntity<MarginInviteDTO> getInviteDetails(@PathVariable String code) {
+    public ResponseEntity<MarginInviteDTO> getInviteDetails(@PathVariable String code,
+                                                            @AuthenticationPrincipal AuthenticatedUser user) {
+        limitRedemption(user);
 
         MarginInvite invite = marginInviteService.findInviteDetails(code)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Invite code not found"));
@@ -98,6 +105,7 @@ public class MarginInviteController {
     public ResponseEntity<MarginDTO> acceptLinkInvite(
             @PathVariable String code,
             @AuthenticationPrincipal AuthenticatedUser user) {
+        limitRedemption(user);
 
         MarginInvite invite = marginInviteService.findInviteDetails(code)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Invite code not found"));
@@ -173,5 +181,11 @@ public class MarginInviteController {
 
     private String nameOf(Long userId) {
         return userId == null ? null : userLookup.summaryOf(userId).displayName();
+    }
+
+    private void limitRedemption(AuthenticatedUser user) {
+        if (!rateLimitService.tryConsume("invite:" + user.id(), RateLimitConfig.inviteRedemption())) {
+            throw new TooManyRequestsException("Too many invite attempts. Try again later.");
+        }
     }
 }

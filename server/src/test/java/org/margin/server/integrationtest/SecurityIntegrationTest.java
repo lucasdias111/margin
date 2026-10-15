@@ -135,4 +135,34 @@ class SecurityIntegrationTest extends MarginTestRunner {
                 HttpResponse.BodyHandlers.ofString()
         );
     }
+
+    @Test
+    void loginAttemptsAreRateLimitedPerClient() throws Exception {
+        int lastStatus = 0;
+        for (int i = 0; i < 11; i++) {
+            lastStatus = client.send(
+                    HttpRequest.newBuilder(URI.create(base() + "/api/auth/login"))
+                            .header("Content-Type", "application/json")
+                            // The test client is on loopback, a trusted proxy, so this is the client address.
+                            .header("X-Forwarded-For", "203.0.113.7")
+                            .POST(HttpRequest.BodyPublishers.ofString("{\"email\":\"nobody@example.com\",\"password\":\"guess\"}"))
+                            .build(),
+                    HttpResponse.BodyHandlers.ofString()).statusCode();
+        }
+
+        assertEquals(429, lastStatus, "the 11th attempt in 15 minutes is refused");
+    }
+
+    @Test
+    void aTrustedProxysForwardedAddressGetsItsOwnLimit() throws Exception {
+        HttpResponse<String> response = client.send(
+                HttpRequest.newBuilder(URI.create(base() + "/api/auth/login"))
+                        .header("Content-Type", "application/json")
+                        .header("X-Forwarded-For", "203.0.113.99")
+                        .POST(HttpRequest.BodyPublishers.ofString("{\"email\":\"nobody@example.com\",\"password\":\"guess\"}"))
+                        .build(),
+                HttpResponse.BodyHandlers.ofString());
+
+        assertNotEquals(429, response.statusCode(), "another client isn't held back by someone else's attempts");
+    }
 }
