@@ -1,27 +1,38 @@
 package org.margin.server.notifications.services;
 
 import org.margin.server.notifications.Notification;
+import org.margin.server.notifications.models.dtos.NotificationDTO;
 import org.margin.server.shared.notifications.NotificationType;
 import org.margin.server.notifications.repositories.NotificationRepository;
 import org.margin.server.notifications.events.NotificationDeliveryEvent;
 import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.modulith.NamedInterface;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.function.Function;
+import org.margin.server.users.api.UserLookup;
+import org.margin.server.users.models.dtos.UserDTO;
+
 import java.util.stream.Collectors;
 
+@NamedInterface("api")
 @Service
 public class NotificationService {
     private final NotificationRepository notificationRepository;
     private final ApplicationEventPublisher eventPublisher;
+    private final UserLookup userLookup;
 
     public NotificationService(NotificationRepository notificationRepository,
-                               ApplicationEventPublisher eventPublisher) {
+                               ApplicationEventPublisher eventPublisher,
+                               UserLookup userLookup) {
         this.notificationRepository = notificationRepository;
         this.eventPublisher = eventPublisher;
+        this.userLookup = userLookup;
     }
 
     @Transactional
@@ -35,6 +46,7 @@ public class NotificationService {
                                Long referenceId, Long marginId, Long conversationId) {
         List<Notification> notifications = recipientIds.stream()
                 .filter(recipientId -> senderId == null || !recipientId.equals(senderId))
+                .filter(recipientId -> !userLookup.isGuest(recipientId))
                 .map(recipientId -> {
                     Notification n = new Notification();
                     n.setRecipientId(recipientId);
@@ -87,8 +99,29 @@ public class NotificationService {
         notificationRepository.save(notification);
     }
 
-    public List<Notification> getNotificationsForUser(Long recipientId) {
-        return notificationRepository.findByRecipientIdOrderByCreatedAtDesc(recipientId);
+    public List<NotificationDTO> getNotificationsForUser(Long recipientId) {
+        List<Notification> notifications =
+                notificationRepository.findByRecipientIdOrderByCreatedAtDesc(recipientId);
+
+        Map<Long, UserDTO> senders = userLookup.dtosOf(notifications.stream()
+                        .map(Notification::getSenderId)
+                        .filter(Objects::nonNull)
+                        .distinct()
+                        .toList())
+                .stream()
+                .collect(Collectors.toMap(UserDTO::id, Function.identity()));
+
+        return notifications.stream()
+                .map(n -> new NotificationDTO(
+                        n.getNotificationId(),
+                        n.getType(),
+                        n.getReferenceId(),
+                        n.getMarginId(),
+                        n.getConversationId(),
+                        n.getSenderId() == null ? null : senders.get(n.getSenderId()),
+                        n.isSeen(),
+                        n.getCreatedAt()))
+                .toList();
     }
 
     public Map<Long, Long> getUnseenCountsPerMargin(Long recipientId) {

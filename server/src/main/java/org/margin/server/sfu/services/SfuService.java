@@ -7,6 +7,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.margin.server.presence.PresenceService;
 import org.margin.server.sfu.events.ChannelCallInviteEvent;
 import org.margin.server.sfu.events.ChannelVoiceParticipantEvent;
+import org.margin.server.sfu.events.MeetingPeerJoinedEvent;
+import org.margin.server.sfu.events.MeetingPeerLeftEvent;
+import org.margin.server.shared.voice.RoomKey;
 import org.margin.server.sfu.models.ChannelCallInvitePayload;
 import org.margin.server.sfu.models.ChannelVoiceParticipantPayload;
 import org.margin.server.users.models.dtos.UserDTO;
@@ -32,7 +35,6 @@ import java.util.Objects;
 @Slf4j
 @Service
 public class SfuService implements VoiceParticipantLookup {
-
     private final ApplicationEventPublisher eventPublisher;
     private final PresenceService presenceService;
     private final UserService userService;
@@ -66,13 +68,18 @@ public class SfuService implements VoiceParticipantLookup {
         String url = sfuUrl + "/rooms/" + roomId;
         HttpHeaders headers = internalHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
-        restTemplate.exchange(
-                url,
-                HttpMethod.POST,
-                new HttpEntity<>(Map.of("maxParticipants", maxParticipants), headers),
-                new ParameterizedTypeReference<Map<String, Object>>() {
-                }
-        );
+        try {
+            restTemplate.exchange(
+                    url,
+                    HttpMethod.POST,
+                    new HttpEntity<>(Map.of("maxParticipants", maxParticipants), headers),
+                    new ParameterizedTypeReference<Map<String, Object>>() {
+                    }
+            );
+        } catch (Exception e) {
+            log.error("Could not reach the SFU to open room {}: {}", roomId, e.getMessage());
+            throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE, "SFU_UNAVAILABLE");
+        }
     }
 
     public void notifyUserJoined(Long channelId, Long userId) {
@@ -94,8 +101,35 @@ public class SfuService implements VoiceParticipantLookup {
                 new ChannelVoiceParticipantPayload(channelId, userLookup.dtoOf(userId))));
     }
 
+    public void closeRoom(String roomId) {
+        try {
+            restTemplate.exchange(
+                    sfuUrl + "/rooms/" + roomId,
+                    HttpMethod.DELETE,
+                    new HttpEntity<>(internalHeaders()),
+                    Void.class
+            );
+        } catch (Exception e) {
+            log.warn("Could not close room {}: {}", roomId, e.getMessage());
+        }
+    }
+
+    public void notifyMeetingPeerJoined(String meetingCode, String peerId) {
+        eventPublisher.publishEvent(new MeetingPeerJoinedEvent(meetingCode, peerId));
+    }
+
+    public void notifyMeetingPeerLeft(String meetingCode, String peerId) {
+        eventPublisher.publishEvent(new MeetingPeerLeftEvent(meetingCode, peerId));
+    }
+
     public List<UserDTO> getVoiceParticipants(Long channelId) {
-        String url = sfuUrl + "/rooms/" + channelId + "/peers";
+        return userLookup.dtosOf(
+                peerIdsInRoom(new RoomKey.ChannelRoom(channelId)).stream().map(Long::parseLong).toList()
+        );
+    }
+
+    public List<String> peerIdsInRoom(RoomKey room) {
+        String url = sfuUrl + "/rooms/" + room.value() + "/peers";
         try {
             ResponseEntity<Map<String, List<String>>> response = restTemplate.exchange(
                     url,
@@ -104,10 +138,9 @@ public class SfuService implements VoiceParticipantLookup {
                     new ParameterizedTypeReference<>() {
                     }
             );
-            List<String> peerIds = response.getBody().getOrDefault("peers", List.of());
-            return userLookup.dtosOf(peerIds.stream().map(Long::parseLong).toList());
+            return response.getBody().getOrDefault("peers", List.of());
         } catch (Exception e) {
-            log.warn("Could not fetch voice participants for channel {}: {}", channelId, e.getMessage());
+            log.warn("Could not fetch peers for room {}: {}", room.value(), e.getMessage());
             return List.of();
         }
     }

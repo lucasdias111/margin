@@ -48,6 +48,14 @@ public enum WebSocketMessageType {
 
     CONVERSATION_INVITE(ConversationInvitePayload.class),
 
+    MEETING_INVITE(null),
+    MEETING_KNOCK(null),
+    MEETING_LEAVE_LOBBY(null),
+    MEETING_ADMITTED(null),
+    MEETING_DENIED(null),
+    MEETING_KNOCK_RECEIVED(null),
+    MEETING_REMOVED(null),
+
     PING(null),
     PONG(null);
 

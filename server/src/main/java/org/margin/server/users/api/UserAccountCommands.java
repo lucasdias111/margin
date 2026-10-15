@@ -1,7 +1,6 @@
 package org.margin.server.users.api;
 
 public interface UserAccountCommands {
-
     boolean emailIsTaken(String email);
 
     Long register(NewUser newUser);
@@ -11,6 +10,11 @@ public interface UserAccountCommands {
     void updateEncryptionKeys(Long userId, String publicKey, String encryptedPrivateKey, String salt, String iv);
 
     void invalidateCachedUser(Long userId);
+
+    Long createGuest(String displayName, java.time.Instant expiresAt);
+
+    void promoteGuest(Long userId, String email, String encodedPassword, String publicKey,
+                      String encryptedPrivateKey, String salt, String iv);
 
     record NewUser(
             String displayName,
