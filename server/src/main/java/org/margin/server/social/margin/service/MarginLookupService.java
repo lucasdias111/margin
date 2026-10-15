@@ -5,6 +5,8 @@ import org.margin.server.social.margin.entities.Margin;
 import org.margin.server.social.margin.entities.MarginMember;
 import org.margin.server.social.margin.exceptions.MarginNotFoundException;
 import org.margin.server.social.margin.models.MarginRole;
+import org.margin.server.social.margin.entities.MarginInvite;
+import org.margin.server.social.margin.repositories.MarginInviteRepository;
 import org.margin.server.social.margin.repositories.MarginMemberRepository;
 import org.margin.server.social.margin.repositories.MarginRepository;
 import org.springframework.stereotype.Service;
@@ -17,11 +19,26 @@ public class MarginLookupService implements MarginLookup {
 
     private final MarginRepository marginRepository;
     private final MarginMemberRepository marginMemberRepository;
+    private final MarginInviteRepository marginInviteRepository;
 
     public MarginLookupService(MarginRepository marginRepository,
-                                  MarginMemberRepository marginMemberRepository) {
+                                  MarginMemberRepository marginMemberRepository,
+                                  MarginInviteRepository marginInviteRepository) {
         this.marginRepository = marginRepository;
         this.marginMemberRepository = marginMemberRepository;
+        this.marginInviteRepository = marginInviteRepository;
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public boolean isUsableLinkInvite(String code) {
+        if (code == null || code.isBlank()) {
+            return false;
+        }
+        return marginInviteRepository.findByInviteCode(code.trim())
+                .filter(invite -> invite.getType() == MarginInvite.InviteType.LINK)
+                .filter(MarginInvite::isUsable)
+                .isPresent();
     }
 
     @Override

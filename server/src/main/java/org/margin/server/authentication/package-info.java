@@ -1,7 +1,9 @@
 @ApplicationModule(allowedDependencies = {
         "email",
         "email::events",
+        "instance::api",
         "shared",
+        "social::api",
         "users::api",
         "users::events",
         "users::identity"

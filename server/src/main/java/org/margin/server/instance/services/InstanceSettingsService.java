@@ -34,6 +34,7 @@ public class InstanceSettingsService implements InstanceSettings {
                                    @Value("${margin.instance.name:}") String name,
                                    @Value("${margin.instance.registration-mode:INVITE}") RegistrationMode registrationMode,
                                    @Value("${margin.instance.margin-creation:EVERYONE}") MarginCreationPolicy marginCreation,
+                                   @Value("${margin.instance.require-email-verification:true}") boolean requireEmailVerification,
                                    @Value("${margin.instance.require-account-approval:false}") boolean requireApproval,
                                    @Value("${margin.instance.max-call-participants:0}") int maxCallParticipants,
                                    @Value("${spring.mail.host:}") String mailHost) {
@@ -43,7 +44,7 @@ public class InstanceSettingsService implements InstanceSettings {
                 NAME, name.isBlank() ? hostOf(baseUrl) : name,
                 REGISTRATION_MODE, registrationMode.name(),
                 MARGIN_CREATION, marginCreation.name(),
-                REQUIRE_EMAIL_VERIFICATION, "true",
+                REQUIRE_EMAIL_VERIFICATION, String.valueOf(requireEmailVerification),
                 REQUIRE_ACCOUNT_APPROVAL, String.valueOf(requireApproval),
                 MAX_CALL_PARTICIPANTS, String.valueOf(Math.max(0, maxCallParticipants)));
     }

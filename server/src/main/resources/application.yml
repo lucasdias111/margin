@@ -3,6 +3,9 @@ margin:
   instance:
     name: ${MARGIN_INSTANCE_NAME:}
     registration-mode: ${MARGIN_REGISTRATION_MODE:INVITE}
+  admin:
+    email: ${MARGIN_ADMIN_EMAIL:}
+    password: ${MARGIN_ADMIN_PASSWORD:}
   gifs:
     klipy-api-key: ${KLIPY_API_KEY:}
   meetings:

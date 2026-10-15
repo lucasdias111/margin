@@ -71,6 +71,7 @@ public class AuthenticationController {
                     request.publicKey(),
                     request.salt(),
                     request.iv(),
+                    request.inviteCode(),
                     profilePicture);
             return ResponseEntity.ok().build();
         } catch (IllegalArgumentException e) {

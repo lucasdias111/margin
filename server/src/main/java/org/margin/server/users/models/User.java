@@ -10,6 +10,8 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 import lombok.*;
 import org.hibernate.annotations.UpdateTimestamp;
+import org.margin.server.users.api.AccountStatus;
+import org.margin.server.users.api.Role;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
@@ -68,6 +70,18 @@ public class User implements UserDetails {
 
     @Column(name = "guest_expires_at")
     private Instant guestExpiresAt;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "role", nullable = false)
+    private Role role = Role.USER;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "status", nullable = false)
+    private AccountStatus status = AccountStatus.ACTIVE;
+
+    public boolean isAdmin() {
+        return role == Role.ADMIN;
+    }
 
     public boolean isGuest() {
         return accountType == UserAccountType.GUEST;

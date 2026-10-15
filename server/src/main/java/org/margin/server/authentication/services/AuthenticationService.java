@@ -9,11 +9,14 @@ import org.margin.server.authentication.exceptions.InvalidRefreshTokenException;
 import org.margin.server.authentication.exceptions.RegistrationException;
 import org.margin.server.authentication.models.AuthResponse;
 import org.margin.server.email.EmailService;
+import org.margin.server.instance.api.InstanceSettings;
+import org.margin.server.social.api.MarginLookup;
+import org.margin.server.users.api.AccountStatus;
+import org.margin.server.users.api.Role;
 import org.margin.server.users.api.ProfilePictureCommands;
 import org.margin.server.users.api.UserAccountCommands;
 import org.margin.server.users.api.UserLookup;
 import org.margin.server.users.models.User;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
@@ -31,9 +34,6 @@ public class AuthenticationService {
     private static final int MAX_FAILED_ATTEMPTS = 3;
     private static final int LOCK_DURATION_SECONDS = 30;
 
-    @Value("${margin.mail.require-email-activation:true}")
-    private boolean requireEmailActivation;
-
     private final AuthenticationManager authenticationManager;
     private final UserLookup userLookup;
     private final UserAccountCommands userAccountCommands;
@@ -45,6 +45,9 @@ public class AuthenticationService {
     private final EmailService emailService;
     private final UserSecurityService userSecurityService;
     private final RefreshTokenService refreshTokenService;
+    private final InstanceSettings instanceSettings;
+    private final InviteCodeService inviteCodeService;
+    private final MarginLookup marginLookup;
 
     public AuthenticationService(
             AuthenticationManager authenticationManager,
@@ -57,7 +60,10 @@ public class AuthenticationService {
             ActivationKeyService activationKeyService,
             EmailService emailService,
             UserSecurityService userSecurityService,
-            RefreshTokenService refreshTokenService) {
+            RefreshTokenService refreshTokenService,
+            InstanceSettings instanceSettings,
+            InviteCodeService inviteCodeService,
+            MarginLookup marginLookup) {
         this.authenticationManager = authenticationManager;
         this.userLookup = userLookup;
         this.userAccountCommands = userAccountCommands;
@@ -69,6 +75,9 @@ public class AuthenticationService {
         this.emailService = emailService;
         this.userSecurityService = userSecurityService;
         this.refreshTokenService = refreshTokenService;
+        this.instanceSettings = instanceSettings;
+        this.inviteCodeService = inviteCodeService;
+        this.marginLookup = marginLookup;
     }
 
     public AuthResponse authenticateUser(String email, String password) {
@@ -86,6 +95,16 @@ public class AuthenticationService {
             if (!activationKeyService.isUserActivated(user.getId())) {
                 log.warn("Login blocked — userId {} not yet activated", user.getId());
                 return AuthResponse.failure("User is not yet activated");
+            }
+
+            if (user.getStatus() == AccountStatus.PENDING_APPROVAL) {
+                log.warn("Login blocked — userId {} is waiting for approval", user.getId());
+                return AuthResponse.failure("Your account is waiting for an admin to approve it");
+            }
+
+            if (user.getStatus() == AccountStatus.DISABLED) {
+                log.warn("Login blocked — userId {} is disabled", user.getId());
+                return AuthResponse.failure("Your account has been disabled");
             }
 
             UserSecurity security = userSecurityService.get(user.getId());
@@ -143,6 +162,7 @@ public class AuthenticationService {
                 user.getEncryption().getIv());
     }
 
+    /** Self-service sign-up, subject to the instance's registration mode and approval setting. */
     @Transactional
     public ActivationKey registerUser(String displayName,
                                       String email,
@@ -151,7 +171,48 @@ public class AuthenticationService {
                                       String publicKey,
                                       String salt,
                                       String iv,
+                                      String inviteCode,
                                       MultipartFile profilePicture) {
+        if (userAccountCommands.emailIsTaken(email)) {
+            throw new IllegalArgumentException("Email already in use");
+        }
+        requireSignUpAllowed(inviteCode);
+
+        AccountStatus status = instanceSettings.requireAccountApproval()
+                ? AccountStatus.PENDING_APPROVAL
+                : AccountStatus.ACTIVE;
+        return createAccount(displayName, email, password, privateKey, publicKey, salt, iv, profilePicture,
+                Role.USER, status, instanceSettings.requireEmailVerification());
+    }
+
+    private void requireSignUpAllowed(String inviteCode) {
+        switch (instanceSettings.registrationMode()) {
+            case OPEN -> {
+            }
+            case CLOSED -> throw new IllegalArgumentException("Sign-up is closed on this instance");
+            case INVITE -> {
+                // A margin's own invite link counts as an invite, so margin owners can onboard their team.
+                boolean invited = marginLookup.isUsableLinkInvite(inviteCode) || inviteCodeService.redeem(inviteCode);
+                if (!invited) {
+                    throw new IllegalArgumentException("A valid invite code is required to sign up");
+                }
+            }
+        }
+    }
+
+    /** Creates an account without applying registration policy: used by admins and the first-admin setup. */
+    @Transactional
+    public ActivationKey createAccount(String displayName,
+                                       String email,
+                                       String password,
+                                       String privateKey,
+                                       String publicKey,
+                                       String salt,
+                                       String iv,
+                                       MultipartFile profilePicture,
+                                       Role role,
+                                       AccountStatus status,
+                                       boolean requireEmailVerification) {
         if (userAccountCommands.emailIsTaken(email)) {
             throw new IllegalArgumentException("Email already in use");
         }
@@ -163,7 +224,7 @@ public class AuthenticationService {
 
         Long userId = userAccountCommands.register(new UserAccountCommands.NewUser(
                 displayName, email, passwordEncoder.encode(password), profilePictureUrl,
-                publicKey, privateKey, salt, iv));
+                publicKey, privateKey, salt, iv, role, status));
 
         UserSecurity security = new UserSecurity(userId);
         security.setFailedLoginAttempts(0);
@@ -171,9 +232,9 @@ public class AuthenticationService {
 
         ActivationKey activationKey = activationKeyService.generateActivationKey(userId);
 
-        if (!requireEmailActivation) {
+        if (!requireEmailVerification) {
             activationKeyService.findAndConsumeActivationKey(activationKey.getToken());
-            log.info("Email activation disabled — user {} auto-activated", email);
+            log.info("Email verification off — user {} auto-activated", email);
             return activationKey;
         }
 
