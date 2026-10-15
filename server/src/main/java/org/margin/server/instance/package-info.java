@@ -1,5 +1,6 @@
 @ApplicationModule(allowedDependencies = {
-        "shared"
+        "shared",
+        "users::api"
 })
 package org.margin.server.instance;
 

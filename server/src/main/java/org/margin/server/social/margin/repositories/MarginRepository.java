@@ -15,6 +15,8 @@ public interface MarginRepository extends JpaRepository<Margin, Long> {
 
     List<Margin> findByName(String name);
 
+    List<Margin> findAllByDeletedAtIsNullOrderByCreatedAtDesc();
+
     List<Margin> findMarginByMembersIn(Collection<List<MarginMember>> members);
 
     Optional<Margin> findFirstByIconUrlEndsWith(String suffix);

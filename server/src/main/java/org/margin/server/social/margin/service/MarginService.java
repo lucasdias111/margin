@@ -1,6 +1,8 @@
 package org.margin.server.social.margin.service;
 
 import lombok.extern.slf4j.Slf4j;
+import org.margin.server.instance.api.InstanceSettings;
+import org.margin.server.instance.api.MarginCreationPolicy;
 import org.margin.server.users.api.UserLookup;
 import org.margin.server.social.api.MarginIconCommands;
 import org.margin.server.social.margin.events.UserAddedToMarginEvent;
@@ -41,6 +43,7 @@ public class MarginService {
     private final MarginMapper marginMapper;
     private final ApplicationEventPublisher eventPublisher;
     private final UserLookup userLookup;
+    private final InstanceSettings instanceSettings;
 
     public MarginService(MarginRepository marginRepository,
                          MarginIconCommands marginIconCommands,
@@ -48,7 +51,8 @@ public class MarginService {
                          SpacesService spacesService,
                          MarginMapper marginMapper,
                          ApplicationEventPublisher eventPublisher,
-                         UserLookup userLookup) {
+                         UserLookup userLookup,
+                         InstanceSettings instanceSettings) {
         this.marginRepository = marginRepository;
         this.marginIconCommands = marginIconCommands;
         this.marginMemberRepository = marginMemberRepository;
@@ -56,6 +60,7 @@ public class MarginService {
         this.marginMapper = marginMapper;
         this.eventPublisher = eventPublisher;
         this.userLookup = userLookup;
+        this.instanceSettings = instanceSettings;
     }
 
     @Transactional(readOnly = true)
@@ -81,6 +86,10 @@ public class MarginService {
                                   Visibility visibility,
                                   MultipartFile marginIcon,
                                   Long userId) {
+        if (instanceSettings.marginCreationPolicy() == MarginCreationPolicy.ADMINS_ONLY && !userLookup.isAdmin(userId)) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Only instance admins can create margins here");
+        }
+
         String iconUrl = null;
         if (marginIcon != null && !marginIcon.isEmpty()) {
             iconUrl = marginIconCommands.save(marginIcon);

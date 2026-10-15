@@ -24,15 +24,18 @@ public class UserAccountService implements UserAccountCommands {
     private final UserRepository userRepository;
     private final UserCacheService userCacheService;
     private final PasswordEncoder passwordEncoder;
+    private final UserService userService;
 
     public UserAccountService(UserRepository userRepository,
                               UserCacheService userCacheService,
                               PasswordEncoder passwordEncoder,
-                              ApplicationEventPublisher eventPublisher) {
+                              ApplicationEventPublisher eventPublisher,
+                              UserService userService) {
         this.eventPublisher = eventPublisher;
         this.userRepository = userRepository;
         this.userCacheService = userCacheService;
         this.passwordEncoder = passwordEncoder;
+        this.userService = userService;
     }
 
     @Override
@@ -92,6 +95,12 @@ public class UserAccountService implements UserAccountCommands {
         user.setStatus(status);
         userRepository.save(user);
         userCacheService.evictUserCache(userId);
+    }
+
+    @Override
+    @Transactional
+    public void deleteAccount(Long userId) {
+        userService.deleteUser(userRepository.findById(userId).orElseThrow());
     }
 
     @Override

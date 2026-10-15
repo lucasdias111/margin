@@ -14,6 +14,9 @@ public interface UserAccountCommands {
 
     void setStatus(Long userId, AccountStatus status);
 
+    /** Soft-deletes the account the same way a user deleting themselves does. */
+    void deleteAccount(Long userId);
+
     void resetCredentials(Long userId, String encodedPassword);
 
     void updateEncryptionKeys(Long userId, String publicKey, String encryptedPrivateKey, String salt, String iv);

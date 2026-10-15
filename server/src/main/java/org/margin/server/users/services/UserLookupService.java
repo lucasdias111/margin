@@ -1,5 +1,6 @@
 package org.margin.server.users.services;
 
+import org.margin.server.users.api.AccountSummary;
 import org.margin.server.users.api.UserLookup;
 import org.margin.server.users.api.UserSummary;
 import org.margin.server.presence.PresenceService;
@@ -98,5 +99,23 @@ public class UserLookupService implements UserLookup {
     @Transactional(readOnly = true)
     public boolean isGuest(Long userId) {
         return userRepository.findById(userId).map(User::isGuest).orElse(false);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public boolean isAdmin(Long userId) {
+        return userRepository.findById(userId)
+                .filter(user -> user.getDeletedAt() == null)
+                .map(User::isAdmin)
+                .orElse(false);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<AccountSummary> listAccounts() {
+        return userRepository.findAllAccounts().stream()
+                .map(user -> new AccountSummary(user.getId(), user.getDisplayName(), user.getEmail(),
+                        user.getRole(), user.getStatus(), user.getCreatedAt(), user.getLastSeenAt()))
+                .toList();
     }
 }

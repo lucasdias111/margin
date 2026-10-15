@@ -41,6 +41,14 @@ public interface UserRepository extends JpaRepository<User, Long> {
     Optional<User> findByEmail(String email);
 
     @Query("""
+            SELECT u FROM User u
+            WHERE u.accountType = org.margin.server.users.models.UserAccountType.FULL
+              AND u.deletedAt IS NULL
+            ORDER BY u.createdAt DESC
+            """)
+    List<User> findAllAccounts();
+
+    @Query("""
             SELECT COUNT(u) FROM User u
             WHERE u.accountType = org.margin.server.users.models.UserAccountType.FULL
               AND u.deletedAt IS NULL

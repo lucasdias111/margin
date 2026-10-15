@@ -9,7 +9,8 @@ import java.security.SecureRandom;
 import java.time.Instant;
 import java.util.HexFormat;
 import java.util.List;
-import java.util.NoSuchElementException;
+import org.springframework.http.HttpStatus;
+import org.springframework.web.server.ResponseStatusException;
 
 @Service
 public class InviteCodeService {
@@ -39,7 +40,7 @@ public class InviteCodeService {
     @Transactional
     public void revoke(Long inviteCodeId) {
         InviteCode invite = repository.findById(inviteCodeId)
-                .orElseThrow(() -> new NoSuchElementException("Invite code not found"));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Invite code not found"));
         if (invite.getRevokedAt() == null) {
             invite.setRevokedAt(Instant.now());
             repository.save(invite);
