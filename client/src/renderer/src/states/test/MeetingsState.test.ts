@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { meetingsState } from '$src/states/MeetingsState.svelte'
 import { meetingService } from '$src/services/MeetingService'
 import type { MeetingSummary } from '$src/interfaces/Meetings'
@@ -33,8 +33,15 @@ function meeting(
 
 describe('MeetingsState', () => {
   beforeEach(() => {
+    // Pin "now" before the fixture dates, so "upcoming" doesn't rot as the calendar moves on.
+    vi.useFakeTimers({ toFake: ['Date'] })
+    vi.setSystemTime(new Date('2026-09-01T12:00:00Z'))
     meetingsState.reset()
     vi.mocked(meetingService.myMeetings).mockReset()
+  })
+
+  afterEach(() => {
+    vi.useRealTimers()
   })
 
   it('stops loading once the fetch resolves', async () => {
