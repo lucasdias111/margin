@@ -26,7 +26,7 @@ services:
       retries: 5
     logging: *default-logging
   margin-server:
-    image: codeberg.org/margin/margin-server:${SERVER_VERSION:-latest}
+    image: ghcr.io/marginchat/margin-server:${SERVER_VERSION:-latest}
     pull_policy: never
     container_name: margin-server
     restart: unless-stopped
@@ -43,6 +43,7 @@ services:
       SFU_URL: http://margin-sfu:3000
       SFU_PUBLIC_URL: ${SFU_PUBLIC_URL}
       SFU_SECRET: ${SFU_SECRET}
+      MEETING_GUEST_TOKEN_SECRET: ${MEETING_GUEST_TOKEN_SECRET}
       INTERNAL_API_KEY: ${INTERNAL_API_KEY}
       STORAGE_TYPE: ${STORAGE_TYPE:-s3}
       HETZNER_S3_ENDPOINT: ${HETZNER_S3_ENDPOINT}
@@ -75,7 +76,7 @@ services:
     logging: *default-logging
 
   margin-sfu:
-    image: codeberg.org/margin/margin-sfu:${SFU_VERSION:-latest}
+    image: ghcr.io/marginchat/margin-sfu:${SFU_VERSION:-latest}
     pull_policy: never
     container_name: margin-sfu
     restart: unless-stopped
@@ -138,18 +139,23 @@ services:
       - >-
         certbot certonly --webroot -w /var/www/certbot
         --email ${ADMIN_EMAIL} --agree-tos --no-eff-email
+        --keep-until-expiring --non-interactive
         -d ${DOMAIN} -d www.${DOMAIN} &&
         certbot certonly --webroot -w /var/www/certbot
         --email ${ADMIN_EMAIL} --agree-tos --no-eff-email
+        --keep-until-expiring --non-interactive
         -d files.${DOMAIN} &&
         certbot certonly --webroot -w /var/www/certbot
         --email ${ADMIN_EMAIL} --agree-tos --no-eff-email
+        --keep-until-expiring --non-interactive
         -d updates.${DOMAIN} &&
         certbot certonly --webroot -w /var/www/certbot
         --email ${ADMIN_EMAIL} --agree-tos --no-eff-email
+        --keep-until-expiring --non-interactive
         -d analytics.${DOMAIN} &&
         certbot certonly --webroot -w /var/www/certbot
         --email ${ADMIN_EMAIL} --agree-tos --no-eff-email
+        --keep-until-expiring --non-interactive
         -d grafana.${DOMAIN}
     profiles:
       - certbot
