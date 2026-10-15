@@ -2,9 +2,7 @@ package org.margin.server.notifications.listeners;
 
 import org.margin.server.shared.notifications.NotificationType;
 import org.margin.server.social.announcements.events.AnnouncementCreatedEvent;
-import org.margin.server.subscriptions.events.MemberLimitWarningEvent;
 import org.margin.server.social.calls.events.MissedCallEvent;
-import org.margin.server.subscriptions.events.SubscriptionStatusChangedEvent;
 import org.margin.server.social.margin.events.UserAddedToMarginEvent;
 import org.margin.server.social.margin.events.UserInvitedToMarginEvent;
 import org.margin.server.notifications.services.NotificationService;
@@ -139,26 +137,6 @@ public class NotificationEventListener {
                 event.getAuthor().id(),
                 NotificationType.ANNOUNCEMENT,
                 event.getAnnouncementId(),
-                event.getMarginId());
-    }
-
-    @EventListener
-    public void onMemberLimitWarning(MemberLimitWarningEvent event) {
-        notificationService.createForUsers(
-                event.getRecipientIds(),
-                null,
-                NotificationType.SUBSCRIPTION_LIMIT_WARNING,
-                null,
-                event.getMarginId());
-    }
-
-    @EventListener
-    public void onSubscriptionStatusChanged(SubscriptionStatusChangedEvent event) {
-        notificationService.createForUsers(
-                Collections.singletonList(event.getOwnerId()),
-                null,
-                event.getType(),
-                null,
                 event.getMarginId());
     }
 }

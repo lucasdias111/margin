@@ -3,7 +3,6 @@ package org.margin.server.integrationtest;
 import org.junit.jupiter.api.Test;
 import org.margin.server.integrationtest.config.MarginTestRunner;
 import org.margin.server.integrationtest.utils.MarginTestUtils;
-import org.margin.server.integrationtest.utils.SubscriptionTestUtils;
 import org.margin.server.integrationtest.utils.UserTestUtils;
 import org.margin.server.meetings.models.dtos.CreateMeetingRequest;
 import org.margin.server.meetings.models.dtos.GuestSessionResponse;
@@ -11,7 +10,6 @@ import org.margin.server.meetings.models.dtos.MeetingDTO;
 import org.margin.server.meetings.services.MeetingGuestService;
 import org.margin.server.meetings.services.MeetingService;
 import org.margin.server.social.margin.entities.Margin;
-import org.margin.server.subscriptions.models.SubscriptionTier;
 import org.margin.server.users.models.User;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.web.server.LocalServerPort;
@@ -48,7 +46,6 @@ class MeetingGuestSecurityTest extends MarginTestRunner {
     private MeetingDTO newMeeting() {
         User host = UserTestUtils.createUser("alice", "alice@margin.chat");
         Margin margin = MarginTestUtils.createMargin("Acme", host);
-        SubscriptionTestUtils.setActiveSubscription(margin, "c", "s", SubscriptionTier.SMALL);
         return meetingService.createInstantMeeting(host.getId(),
                 new CreateMeetingRequest(margin.getId(), "Standup", null));
     }

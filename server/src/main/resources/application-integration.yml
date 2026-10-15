@@ -49,7 +49,3 @@ sfu:
   internal-api-key: integration-test-internal-api-key
   token-secret: integration-sfu-secret-that-is-long-enough
 
-mollie:
-  api-key: test_integrationdummymolliekey
-  webhook-base-url: http://localhost:8080
-  redirect-base-url: http://localhost:4173

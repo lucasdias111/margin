@@ -3,7 +3,6 @@ package org.margin.server.social.margin.service;
 import lombok.extern.slf4j.Slf4j;
 import org.margin.server.users.api.UserLookup;
 import org.margin.server.social.api.MarginIconCommands;
-import org.margin.server.social.api.MarginSubscriptionPolicy;
 import org.margin.server.social.margin.events.UserAddedToMarginEvent;
 import org.margin.server.social.margin.entities.Margin;
 import org.margin.server.social.margin.entities.MarginMember;
@@ -41,7 +40,6 @@ public class MarginService {
     private final SpacesService spacesService;
     private final MarginMapper marginMapper;
     private final ApplicationEventPublisher eventPublisher;
-    private final MarginSubscriptionPolicy marginSubscriptionPolicy;
     private final UserLookup userLookup;
 
     public MarginService(MarginRepository marginRepository,
@@ -50,7 +48,6 @@ public class MarginService {
                          SpacesService spacesService,
                          MarginMapper marginMapper,
                          ApplicationEventPublisher eventPublisher,
-                         MarginSubscriptionPolicy marginSubscriptionPolicy,
                          UserLookup userLookup) {
         this.marginRepository = marginRepository;
         this.marginIconCommands = marginIconCommands;
@@ -58,7 +55,6 @@ public class MarginService {
         this.spacesService = spacesService;
         this.marginMapper = marginMapper;
         this.eventPublisher = eventPublisher;
-        this.marginSubscriptionPolicy = marginSubscriptionPolicy;
         this.userLookup = userLookup;
     }
 
@@ -96,8 +92,6 @@ public class MarginService {
         margin.setVisibility(visibility);
         margin.setIconUrl(iconUrl);
         margin = marginRepository.save(margin);
-
-        marginSubscriptionPolicy.onMarginCreated(margin.getId());
 
         addUserToMargin(margin.getId(), userId, MarginRole.OWNER, userId, true);
 
@@ -138,8 +132,6 @@ public class MarginService {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Guest accounts cannot join a margin");
         }
 
-        marginSubscriptionPolicy.validateAddMarginMember(marginId);
-
         MarginMember member = margin.getMembers().stream()
                 .filter(m -> m.getUserId().equals(userId))
                 .findFirst()
@@ -156,8 +148,6 @@ public class MarginService {
         if (!isNewlyCreated) {
             eventPublisher.publishEvent(new UserAddedToMarginEvent(userId, addingUserId, marginId));
         }
-
-        marginSubscriptionPolicy.notifyIfApproachingMemberLimit(marginId);
 
         return member;
     }

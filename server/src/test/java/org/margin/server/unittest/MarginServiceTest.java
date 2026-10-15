@@ -16,7 +16,6 @@ import org.margin.server.social.margin.service.MarginService;
 import org.margin.server.social.models.Visibility;
 import org.margin.server.social.space.services.SpacesService;
 import org.margin.server.social.api.MarginIconCommands;
-import org.margin.server.social.api.MarginSubscriptionPolicy;
 import org.margin.server.users.models.User;
 import org.margin.server.users.models.dtos.UserDTO;
 import org.margin.server.users.services.UserService;
@@ -58,8 +57,6 @@ class MarginServiceTest {
     private MarginMapper marginMapper;
     @Mock
     private NotificationService notificationService;
-    @Mock
-    private MarginSubscriptionPolicy marginSubscriptionPolicy;
 
     @InjectMocks
     private MarginService marginService;

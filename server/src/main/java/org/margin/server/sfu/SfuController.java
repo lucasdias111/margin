@@ -5,13 +5,11 @@ import org.margin.server.shared.security.AuthenticatedUser;
 import org.margin.server.sfu.models.PeerJoinedRequest;
 import org.margin.server.sfu.models.PeerLeftRequest;
 import org.margin.server.sfu.models.SfuJoinResponse;
+import org.margin.server.sfu.services.CallCapacity;
 import org.margin.server.sfu.services.SfuService;
 import org.margin.server.sfu.services.SfuTokenService;
-import org.margin.server.social.api.ChannelLookup;
 import org.margin.server.shared.authorization.MarginAccessChecker;
 import org.margin.server.shared.voice.RoomKey;
-import org.margin.server.subscriptions.models.SubscriptionTier;
-import org.margin.server.subscriptions.services.SubscriptionValidationService;
 import org.margin.server.users.models.dtos.UserDTO;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -28,19 +26,16 @@ public class SfuController {
     private final SfuService sfuService;
     private final MarginAccessChecker marginAccessChecker;
     private final SfuTokenService sfuTokenService;
-    private final ChannelLookup channelLookup;
-    private final SubscriptionValidationService subscriptionValidationService;
+    private final CallCapacity callCapacity;
 
     public SfuController(SfuService sfuService,
                          MarginAccessChecker marginAccessChecker,
                          SfuTokenService sfuTokenService,
-                         ChannelLookup channelLookup,
-                         SubscriptionValidationService subscriptionValidationService) {
+                         CallCapacity callCapacity) {
         this.sfuService = sfuService;
         this.marginAccessChecker = marginAccessChecker;
         this.sfuTokenService = sfuTokenService;
-        this.channelLookup = channelLookup;
-        this.subscriptionValidationService = subscriptionValidationService;
+        this.callCapacity = callCapacity;
     }
 
     @PostMapping("create_or_join")
@@ -49,13 +44,10 @@ public class SfuController {
         Long channelId = Long.parseLong(roomId);
         marginAccessChecker.requireChannelMember(user.id(), channelId);
         int currentParticipants = sfuService.getVoiceParticipants(channelId).size();
-        int maxParticipants = subscriptionValidationService.validateChannelVoiceJoin(channelLookup.marginIdOf(channelId), currentParticipants);
+        int maxParticipants = callCapacity.requireRoomFor(currentParticipants);
         sfuService.createOrJoinRoom(roomId, maxParticipants);
         String roomToken = sfuTokenService.generateRoomToken(user.id(), roomId, user.displayName());
-        boolean isFree = subscriptionValidationService
-                .tierForMargin(channelLookup.marginIdOf(channelId)) == SubscriptionTier.FREE;
-        Integer maxVideoHeight = isFree ? 720 : null;
-        return ResponseEntity.ok(new SfuJoinResponse(sfuService.getSfuPublicUrl(), roomToken, maxVideoHeight));
+        return ResponseEntity.ok(new SfuJoinResponse(sfuService.getSfuPublicUrl(), roomToken));
     }
 
     @PostMapping("peer_joined")

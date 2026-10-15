@@ -4,18 +4,14 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.margin.server.integrationtest.config.MarginTestRunner;
 import org.margin.server.integrationtest.utils.MarginTestUtils;
-import org.margin.server.integrationtest.utils.SubscriptionTestUtils;
 import org.margin.server.integrationtest.utils.UserTestUtils;
 import org.margin.server.meetings.models.MeetingRole;
 import org.margin.server.meetings.models.MeetingStatus;
 import org.margin.server.meetings.models.dtos.CreateMeetingRequest;
 import org.margin.server.meetings.models.dtos.EligibleMarginDTO;
 import org.margin.server.meetings.models.dtos.MeetingDTO;
-import org.margin.server.subscriptions.exceptions.SubscriptionLimitExceededException;
-import org.margin.server.subscriptions.models.LimitType;
 import org.margin.server.meetings.services.MeetingService;
 import org.margin.server.social.margin.entities.Margin;
-import org.margin.server.subscriptions.models.SubscriptionTier;
 import org.margin.server.users.models.User;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -41,7 +37,6 @@ class MeetingTest extends MarginTestRunner {
         host = UserTestUtils.createUser("alice", "alice@margin.chat");
         margin = MarginTestUtils.createMargin("Acme", host);
         // Meetings are a paid feature; margins start on FREE.
-        SubscriptionTestUtils.setActiveSubscription(margin, "cust_1", "sub_1", SubscriptionTier.SMALL);
     }
 
     private MeetingDTO createMeeting() {
@@ -69,7 +64,7 @@ class MeetingTest extends MarginTestRunner {
         MeetingDTO meeting = createMeeting();
 
         assertTrue(meeting.maxParticipants() > 0,
-                "the plan limit must be captured so a later tier change cannot shrink a live room");
+                "the room capacity is captured when the meeting is created");
     }
 
     @Test
@@ -143,50 +138,20 @@ class MeetingTest extends MarginTestRunner {
         assertNotEquals(createMeeting().code(), createMeeting().code());
     }
 
-    @Test
-    void createInstantMeeting_onAFreeMarginIsRejectedAsPaymentRequired() {
-        User freeHost = UserTestUtils.createUser("frank", "frank@margin.chat");
-        Margin freeMargin = MarginTestUtils.createMargin("Frugal", freeHost);
-
-        SubscriptionLimitExceededException e = assertThrows(SubscriptionLimitExceededException.class,
-                () -> meetingService.createInstantMeeting(freeHost.getId(),
-                        new CreateMeetingRequest(freeMargin.getId(), "Standup", null)));
-
-        assertEquals(HttpStatus.PAYMENT_REQUIRED, e.getStatus());
-        assertEquals(LimitType.MEETINGS, e.getLimit());
-        assertEquals(SubscriptionTier.FREE, e.getTier());
-    }
 
     @Test
-    void eligibleMargins_listsOnlyPaidMarginsTheUserBelongsTo() {
-        Margin freeMargin = MarginTestUtils.createMargin("Frugal", host);
+    void eligibleMargins_listsEveryMarginTheUserBelongsTo() {
+        Margin second = MarginTestUtils.createMargin("Second", host);
         User outsiderHost = UserTestUtils.createUser("olivia", "olivia@margin.chat");
-        Margin someoneElsesPaidMargin = MarginTestUtils.createMargin("NotMine", outsiderHost);
-        SubscriptionTestUtils.setActiveSubscription(someoneElsesPaidMargin, "c2", "s2", SubscriptionTier.SMALL);
+        Margin someoneElses = MarginTestUtils.createMargin("NotMine", outsiderHost);
 
         List<EligibleMarginDTO> eligible = meetingService.eligibleMargins(host.getId());
 
-        assertEquals(List.of(margin.getId()), eligible.stream().map(EligibleMarginDTO::marginId).toList());
-        assertTrue(eligible.stream().noneMatch(m -> m.marginId().equals(freeMargin.getId())),
-                "free margins cannot host meetings");
-        assertTrue(eligible.stream().noneMatch(m -> m.marginId().equals(someoneElsesPaidMargin.getId())),
+        List<Long> ids = eligible.stream().map(EligibleMarginDTO::marginId).toList();
+        assertTrue(ids.containsAll(List.of(margin.getId(), second.getId())));
+        assertTrue(ids.stream().noneMatch(id -> id.equals(someoneElses.getId())),
                 "membership is still required");
     }
 
-    @Test
-    void eligibleMargins_isEmptyWhenEveryMarginIsFree() {
-        User freeHost = UserTestUtils.createUser("frank", "frank@margin.chat");
-        MarginTestUtils.createMargin("Frugal", freeHost);
 
-        assertTrue(meetingService.eligibleMargins(freeHost.getId()).isEmpty());
-    }
-
-    @Test
-    void downgradingDoesNotEndOrLockAnExistingMeeting() {
-        MeetingDTO created = createMeeting();
-        SubscriptionTestUtils.setActiveSubscription(margin, "cust_1", "sub_1", SubscriptionTier.FREE);
-
-        assertDoesNotThrow(() -> meetingService.getByCode(created.code(), host.getId()),
-                "a downgrade must not lock people out of a meeting that already exists");
-    }
 }

@@ -17,9 +17,8 @@ import org.margin.server.meetings.repositories.MeetingParticipantRepository;
 import org.margin.server.meetings.repositories.MeetingRepository;
 import org.margin.server.shared.authorization.MarginAccessChecker;
 import org.margin.server.social.api.MarginLookup;
-import org.margin.server.subscriptions.models.SubscriptionTier;
-import org.margin.server.subscriptions.services.SubscriptionValidationService;
 import org.margin.server.users.api.UserLookup;
+import org.margin.server.sfu.services.CallCapacity;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -38,14 +37,13 @@ import java.util.UUID;
 public class MeetingSchedulingService {
 
     private static final Duration SCHEDULED_MEETING_GRACE = Duration.ofHours(24);
-    private static final int FREE_TIER_MAX_VIDEO_HEIGHT = 720;
     private static final int MAX_INVITEES = 100;
 
     private final MeetingRepository meetingRepository;
     private final MeetingParticipantRepository participantRepository;
     private final MeetingInviteRepository inviteRepository;
     private final MarginAccessChecker marginAccessChecker;
-    private final SubscriptionValidationService subscriptions;
+    private final CallCapacity callCapacity;
     private final MarginLookup marginLookup;
     private final UserLookup userLookup;
     private final MeetingInviteMailer mailer;
@@ -54,7 +52,7 @@ public class MeetingSchedulingService {
                                     MeetingParticipantRepository participantRepository,
                                     MeetingInviteRepository inviteRepository,
                                     MarginAccessChecker marginAccessChecker,
-                                    SubscriptionValidationService subscriptions,
+                                    CallCapacity callCapacity,
                                     MarginLookup marginLookup,
                                     UserLookup userLookup,
                                     MeetingInviteMailer mailer) {
@@ -62,7 +60,7 @@ public class MeetingSchedulingService {
         this.participantRepository = participantRepository;
         this.inviteRepository = inviteRepository;
         this.marginAccessChecker = marginAccessChecker;
-        this.subscriptions = subscriptions;
+        this.callCapacity = callCapacity;
         this.marginLookup = marginLookup;
         this.userLookup = userLookup;
         this.mailer = mailer;
@@ -87,7 +85,6 @@ public class MeetingSchedulingService {
         }
 
         marginAccessChecker.requireMarginMember(hostUserId, request.marginId());
-        subscriptions.validateMeetingCreation(request.marginId());
 
         Meeting meeting = new Meeting();
         meeting.setCode(MeetingCodes.newCode());
@@ -99,10 +96,7 @@ public class MeetingSchedulingService {
         meeting.setDurationMinutes(request.durationMinutes());
         meeting.setOrganizerTimezone(validTimezone(request.organizerTimezone()));
         meeting.setRequireAdmission(request.requireAdmission() == null || request.requireAdmission());
-        meeting.setMaxParticipants(subscriptions.getMaxCallParticipants(request.marginId()));
-        meeting.setMaxVideoHeight(
-                subscriptions.tierForMargin(request.marginId()) == SubscriptionTier.FREE
-                        ? FREE_TIER_MAX_VIDEO_HEIGHT : null);
+        meeting.setMaxParticipants(callCapacity.maxParticipants());
         meeting.setExpiresAt(expiryFor(request.scheduledAt(), request.durationMinutes()));
 
         Meeting saved = meetingRepository.save(meeting);

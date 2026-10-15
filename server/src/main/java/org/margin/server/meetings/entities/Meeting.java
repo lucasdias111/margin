@@ -50,9 +50,6 @@ public class Meeting {
     @Column(name = "max_participants", nullable = false)
     private int maxParticipants;
 
-    @Column(name = "max_video_height")
-    private Integer maxVideoHeight;
-
     @Column(name = "ics_sequence", nullable = false)
     private int icsSequence = 0;
 

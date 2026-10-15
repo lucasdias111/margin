@@ -7,7 +7,6 @@ import org.margin.server.storage.models.StoredFile;
 import org.margin.server.storage.repositories.StoredFileRepository;
 import org.margin.server.storage.services.StorageService;
 import org.margin.server.storage.services.StoredFileService;
-import org.margin.server.subscriptions.services.SubscriptionValidationService;
 import org.margin.server.users.models.User;
 import org.margin.server.presence.PresenceService;
 import org.mockito.ArgumentCaptor;
@@ -37,8 +36,6 @@ class StoredFileServiceTest {
     private PresenceService presenceService;
     @Mock
     private StorageService storageService;
-    @Mock
-    private SubscriptionValidationService subscriptionValidationService;
 
     @InjectMocks
     private StoredFileService service;

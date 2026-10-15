@@ -72,31 +72,6 @@ sfu:
   token-secret: ${SFU_SECRET}
   token-expiration: 3600000
 
-mollie:
-  api-key: ${MOLLIE_API_KEY}
-  api-base-url: https://api.mollie.com/v2
-  webhook-base-url: ${MOLLIE_WEBHOOK_BASE_URL}
-  redirect-base-url: ${MOLLIE_REDIRECT_BASE_URL}
-  testmode: false
-
-subscriptions:
-  currency: EUR
-  tiers:
-    FREE:
-      maxMembers: 10
-      maxStorageGb: 0
-      maxCallParticipants: 5
-    SMALL:
-      price: 9.99
-      maxMembers: 25
-      maxStorageGb: 50
-      maxCallParticipants: 10
-    MEDIUM:
-      price: 29.99
-      maxMembers: 200
-      maxStorageGb: 100
-      maxCallParticipants: 25
-
 management:
   endpoints:
     web:
