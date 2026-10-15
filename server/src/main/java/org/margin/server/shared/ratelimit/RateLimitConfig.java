@@ -16,6 +16,22 @@ public final class RateLimitConfig {
                 .build();
     }
 
+    /** Per client address, so a stranger can't lock someone out by guessing at their account. */
+    public static Bandwidth login() {
+        return Bandwidth.builder()
+                .capacity(10)
+                .refillGreedy(10, Duration.ofMinutes(15))
+                .build();
+    }
+
+    /** Looking up or redeeming invite codes and links, so codes can't be brute-forced. */
+    public static Bandwidth inviteRedemption() {
+        return Bandwidth.builder()
+                .capacity(20)
+                .refillGreedy(20, Duration.ofHours(1))
+                .build();
+    }
+
     public static Bandwidth register() {
         return Bandwidth.builder()
                 .capacity(5)

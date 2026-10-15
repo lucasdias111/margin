@@ -1,7 +1,7 @@
 package org.margin.server.integrationtest;
 
 import org.junit.jupiter.api.Test;
-import org.margin.server.authentication.entities.BetaKey;
+import org.margin.server.authentication.entities.InviteCode;
 import org.margin.server.authentication.models.AuthResponse;
 import org.margin.server.integrationtest.config.MarginTestRunner;
 import org.margin.server.integrationtest.utils.AuthTestUtils;
@@ -16,8 +16,8 @@ class AuthenticationTest extends MarginTestRunner {
 
     @Test
     void loginWithValidCredentials_returnsTokenAndSuccess() {
-        BetaKey key = AuthTestUtils.createBetaKey();
-        AuthTestUtils.registerAndActivate("alice", "alice@margin.chat", "correct-password", key.getKey());
+        InviteCode key = AuthTestUtils.createInviteCode();
+        AuthTestUtils.registerAndActivate("alice", "alice@margin.chat", "correct-password", key.getCode());
 
         AuthResponse response = AuthTestUtils.login("alice@margin.chat", "correct-password");
 
@@ -28,8 +28,8 @@ class AuthenticationTest extends MarginTestRunner {
 
     @Test
     void loginWithWrongPassword_returnsFalse() {
-        BetaKey key = AuthTestUtils.createBetaKey();
-        AuthTestUtils.registerAndActivate("bob", "bob@margin.chat", "correct-password", key.getKey());
+        InviteCode key = AuthTestUtils.createInviteCode();
+        AuthTestUtils.registerAndActivate("bob", "bob@margin.chat", "correct-password", key.getCode());
 
         AuthResponse response = AuthTestUtils.login("bob@margin.chat", "wrong-password");
 
@@ -47,8 +47,8 @@ class AuthenticationTest extends MarginTestRunner {
 
     @Test
     void loginIsCaseInsensitiveForEmail() {
-        BetaKey key = AuthTestUtils.createBetaKey();
-        AuthTestUtils.registerAndActivate("carol", "carol@margin.chat", "password123", key.getKey());
+        InviteCode key = AuthTestUtils.createInviteCode();
+        AuthTestUtils.registerAndActivate("carol", "carol@margin.chat", "password123", key.getCode());
 
         AuthResponse response = AuthTestUtils.login("CAROL@MARGIN.CHAT", "password123");
 
@@ -58,8 +58,8 @@ class AuthenticationTest extends MarginTestRunner {
 
     @Test
     void failedLoginIncrementsAttemptCounter() {
-        BetaKey key = AuthTestUtils.createBetaKey();
-        AuthTestUtils.registerAndActivate("dave", "dave@margin.chat", "correct", key.getKey());
+        InviteCode key = AuthTestUtils.createInviteCode();
+        AuthTestUtils.registerAndActivate("dave", "dave@margin.chat", "correct", key.getCode());
 
         AuthTestUtils.login("dave@margin.chat", "wrong");
 
@@ -68,12 +68,15 @@ class AuthenticationTest extends MarginTestRunner {
     }
 
     @Test
-    void accountLocksAfterThreeFailedAttempts() {
-        BetaKey key = AuthTestUtils.createBetaKey();
-        AuthTestUtils.registerAndActivate("eve", "eve@margin.chat", "correct", key.getKey());
+    void accountBacksOffAfterTenFailedAttempts() {
+        InviteCode key = AuthTestUtils.createInviteCode();
+        AuthTestUtils.registerAndActivate("eve", "eve@margin.chat", "correct", key.getCode());
 
-        AuthTestUtils.login("eve@margin.chat", "wrong");
-        AuthTestUtils.login("eve@margin.chat", "wrong");
+        for (int i = 0; i < 9; i++) {
+            AuthTestUtils.login("eve@margin.chat", "wrong");
+        }
+        assertNull(AuthTestUtils.securityOf(AuthTestUtils.findByEmail("eve@margin.chat")).getAccountLockedUntil(),
+                "a few typos must not lock anyone out");
         AuthTestUtils.login("eve@margin.chat", "wrong");
 
         User user = AuthTestUtils.findByEmail("eve@margin.chat");
@@ -83,12 +86,12 @@ class AuthenticationTest extends MarginTestRunner {
 
     @Test
     void lockedAccountRejectsLoginEvenWithCorrectPassword() {
-        BetaKey key = AuthTestUtils.createBetaKey();
-        AuthTestUtils.registerAndActivate("frank", "frank@margin.chat", "correct", key.getKey());
+        InviteCode key = AuthTestUtils.createInviteCode();
+        AuthTestUtils.registerAndActivate("frank", "frank@margin.chat", "correct", key.getCode());
 
-        AuthTestUtils.login("frank@margin.chat", "wrong");
-        AuthTestUtils.login("frank@margin.chat", "wrong");
-        AuthTestUtils.login("frank@margin.chat", "wrong");
+        for (int i = 0; i < 10; i++) {
+            AuthTestUtils.login("frank@margin.chat", "wrong");
+        }
 
         AuthResponse response = AuthTestUtils.login("frank@margin.chat", "correct");
 
@@ -98,8 +101,8 @@ class AuthenticationTest extends MarginTestRunner {
 
     @Test
     void successfulLoginResetsFailedAttemptCounter() {
-        BetaKey key = AuthTestUtils.createBetaKey();
-        AuthTestUtils.registerAndActivate("grace", "grace@margin.chat", "correct", key.getKey());
+        InviteCode key = AuthTestUtils.createInviteCode();
+        AuthTestUtils.registerAndActivate("grace", "grace@margin.chat", "correct", key.getCode());
 
         AuthTestUtils.login("grace@margin.chat", "wrong");
         AuthTestUtils.login("grace@margin.chat", "wrong");
@@ -111,10 +114,10 @@ class AuthenticationTest extends MarginTestRunner {
     }
 
     @Test
-    void registerWithValidBetaKey_persistsUser() {
-        BetaKey key = AuthTestUtils.createBetaKey();
+    void registerWithValidInviteCode_persistsUser() {
+        InviteCode key = AuthTestUtils.createInviteCode();
 
-        AuthTestUtils.register("henry", "henry@margin.chat", "password", key.getKey());
+        AuthTestUtils.register("henry", "henry@margin.chat", "password", key.getCode());
 
         User user = AuthTestUtils.findByEmail("henry@margin.chat");
         assertNotNull(user);
@@ -122,9 +125,9 @@ class AuthenticationTest extends MarginTestRunner {
     }
 
     @Test
-    void registerWithValidBetaKey_loginRequiresActivation() {
-        BetaKey key = AuthTestUtils.createBetaKey();
-        AuthTestUtils.register("henrietta", "henrietta@margin.chat", "password", key.getKey());
+    void registerWithValidInviteCode_loginRequiresActivation() {
+        InviteCode key = AuthTestUtils.createInviteCode();
+        AuthTestUtils.register("henrietta", "henrietta@margin.chat", "password", key.getCode());
 
         AuthResponse response = AuthTestUtils.login("henrietta@margin.chat", "password");
 
@@ -133,29 +136,30 @@ class AuthenticationTest extends MarginTestRunner {
     }
 
     @Test
-    void registerMarksKeyAsUsed() {
-        BetaKey key = AuthTestUtils.createBetaKey();
-        AuthTestUtils.register("ivan", "ivan@margin.chat", "password", key.getKey());
+    void registerUsesUpTheInviteCode() {
+        InviteCode key = AuthTestUtils.createInviteCode();
+        AuthTestUtils.register("ivan", "ivan@margin.chat", "password", key.getCode());
 
-        User user = AuthTestUtils.findByEmail("ivan@margin.chat");
-        assertNotNull(user);
-        assertEquals("ivan", user.getDisplayName());
+        assertEquals(1, AuthTestUtils.inviteCode(key.getCode()).getUseCount());
+        assertThrows(IllegalArgumentException.class, () ->
+                AuthTestUtils.register("ivan2", "ivan2@margin.chat", "password", key.getCode()),
+                "a single-use code can't be redeemed twice");
     }
 
     @Test
     void registerWithDuplicateEmail_throws() {
-        BetaKey key1 = AuthTestUtils.createBetaKey();
-        BetaKey key2 = AuthTestUtils.createBetaKey();
-        AuthTestUtils.register("lara", "lara@margin.chat", "password", key1.getKey());
+        InviteCode key1 = AuthTestUtils.createInviteCode();
+        InviteCode key2 = AuthTestUtils.createInviteCode();
+        AuthTestUtils.register("lara", "lara@margin.chat", "password", key1.getCode());
 
         assertThrows(IllegalArgumentException.class, () ->
-                AuthTestUtils.register("lara2", "lara@margin.chat", "password", key2.getKey()));
+                AuthTestUtils.register("lara2", "lara@margin.chat", "password", key2.getCode()));
     }
 
     @Test
     void registerEmailIsStoredLowercase() {
-        BetaKey key = AuthTestUtils.createBetaKey();
-        AuthTestUtils.register("Nina", "NinaUpper@Margin.chat", "password", key.getKey());
+        InviteCode key = AuthTestUtils.createInviteCode();
+        AuthTestUtils.register("Nina", "NinaUpper@Margin.chat", "password", key.getCode());
 
         User user = AuthTestUtils.findByEmail("ninaupper@margin.chat");
         assertEquals("ninaupper@margin.chat", user.getEmail());
@@ -163,8 +167,8 @@ class AuthenticationTest extends MarginTestRunner {
 
     @Test
     void registerPasswordIsNotStoredInPlaintext() {
-        BetaKey key = AuthTestUtils.createBetaKey();
-        AuthTestUtils.register("oscar", "oscar@margin.chat", "my-secret", key.getKey());
+        InviteCode key = AuthTestUtils.createInviteCode();
+        AuthTestUtils.register("oscar", "oscar@margin.chat", "my-secret", key.getCode());
 
         User user = AuthTestUtils.findByEmail("oscar@margin.chat");
         assertNotEquals("my-secret", user.getPassword());

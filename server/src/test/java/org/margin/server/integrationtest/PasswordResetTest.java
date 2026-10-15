@@ -2,7 +2,7 @@ package org.margin.server.integrationtest;
 
 import org.junit.jupiter.api.Test;
 import org.margin.server.authentication.entities.ActivationKey;
-import org.margin.server.authentication.entities.BetaKey;
+import org.margin.server.authentication.entities.InviteCode;
 import org.margin.server.authentication.entities.PasswordResetToken;
 import org.margin.server.authentication.models.AuthResponse;
 import org.margin.server.integrationtest.config.MarginTestRunner;
@@ -122,8 +122,8 @@ class PasswordResetTest extends MarginTestRunner {
     }
 
     private static User registerAndActivate(String displayName, String email) {
-        BetaKey key = AuthTestUtils.createBetaKey();
-        ActivationKey activationKey = AuthTestUtils.register(displayName, email, "password", key.getKey());
+        InviteCode key = AuthTestUtils.createInviteCode();
+        ActivationKey activationKey = AuthTestUtils.register(displayName, email, "password", key.getCode());
         ActivationTestUtils.activate(activationKey.getToken());
         return UserTestUtils.findById(activationKey.getUserId());
     }

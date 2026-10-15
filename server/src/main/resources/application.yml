@@ -1,4 +1,19 @@
 margin:
+  version: ${MARGIN_VERSION:@project.version@}
+  instance:
+    name: ${MARGIN_INSTANCE_NAME:}
+    registration-mode: ${MARGIN_REGISTRATION_MODE:INVITE}
+  admin:
+    email: ${MARGIN_ADMIN_EMAIL:}
+    password: ${MARGIN_ADMIN_PASSWORD:}
+  turn:
+    secret: ${TURN_SECRET:}
+    uris: ${TURN_URIS:}
+    ttl: 12h
+  update-check:
+    enabled: ${UPDATE_CHECK:true}
+  gifs:
+    klipy-api-key: ${KLIPY_API_KEY:}
   meetings:
     guest-token-secret: ${MEETING_GUEST_TOKEN_SECRET}
   app:
@@ -7,6 +22,15 @@ margin:
     from: ${SMTP_FROM:noreply@localhost}
   cors:
     allowed-origins: ${margin.app.base-url},app://
+
+server:
+  # Behind the bundled proxy (or your own), take the client address from X-Forwarded-For, but only
+  # when the request comes from a trusted proxy: private network ranges by default, plus any
+  # addresses matched by TRUSTED_PROXIES (a regular expression). Everyone else can't spoof it.
+  forward-headers-strategy: native
+  tomcat:
+    remoteip:
+      trusted-proxies: ${TRUSTED_PROXIES:}
 
 spring:
   application:
@@ -23,8 +47,8 @@ spring:
       max-lifetime: 1800000
   servlet:
     multipart:
-      max-file-size: 50MB
-      max-request-size: 50MB
+      max-file-size: ${MAX_UPLOAD_SIZE:50MB}
+      max-request-size: ${MAX_UPLOAD_SIZE:50MB}
   threads:
     virtual:
       enabled: true
@@ -33,10 +57,11 @@ spring:
     clean-disabled: true
 
   mail:
-    host: ${SMTP_HOST}
-    port: ${SMTP_PORT}
-    username: ${SMTP_USERNAME}
-    password: ${SMTP_PASSWORD}
+    # Mail is optional: with no SMTP_HOST the instance runs without sending any email.
+    host: ${SMTP_HOST:}
+    port: ${SMTP_PORT:587}
+    username: ${SMTP_USERNAME:}
+    password: ${SMTP_PASSWORD:}
     properties:
       mail:
         smtp:
@@ -51,19 +76,20 @@ jwt:
   refresh-expiration: ${JWT_REFRESH_EXPIRATION:5184000000}
 
 storage:
-  type: ${STORAGE_TYPE}
+  # local keeps files on the server (the uploads volume); s3 uses any S3-compatible store.
+  type: ${STORAGE_TYPE:local}
   s3:
     endpoint: ${S3_ENDPOINT:}
     region: ${S3_REGION:eu-central}
     bucket-name: ${S3_BUCKET:margin}
-    access-key: ${S3_ACCESS_KEY}
-    secret-key: ${S3_SECRET_KEY}
-    base-url: ${APP_BASE_URL}/api/files
+    access-key: ${S3_ACCESS_KEY:}
+    secret-key: ${S3_SECRET_KEY:}
+    base-url: ${margin.app.base-url}/api/files
     cdn-base-url: ${S3_CDN_BASE_URL:}
     presign-ttl-seconds: 21600
   local:
-    upload-dir: /var/margin/uploads/profile-pictures
-    base-url: ${APP_BASE_URL}/api/files
+    upload-dir: ${UPLOAD_DIR:/var/margin/uploads}
+    base-url: ${margin.app.base-url}/api/files
 
 sfu:
   url: ${SFU_URL}

@@ -10,9 +10,16 @@
     </parent>
     <groupId>org.margin</groupId>
     <artifactId>server</artifactId>
-    <version>0.3.3-SNAPSHOT</version>
+    <version>1.0.0</version>
     <name>margin</name>
-    <description>Backend server for Margin</description>
+    <description>Server for margin, a self-hosted team chat with text, voice and video</description>
+    <url>https://github.com/lucasdias111/margin</url>
+    <licenses>
+        <license>
+            <name>AGPL-3.0-only</name>
+            <url>https://www.gnu.org/licenses/agpl-3.0.html</url>
+        </license>
+    </licenses>
 
     <properties>
         <java.version>25</java.version>

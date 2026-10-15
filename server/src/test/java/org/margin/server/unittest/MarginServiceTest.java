@@ -20,6 +20,7 @@ import org.margin.server.users.models.User;
 import org.margin.server.users.models.dtos.UserDTO;
 import org.margin.server.users.services.UserService;
 import org.mockito.ArgumentCaptor;
+import org.margin.server.instance.api.InstanceSettings;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -57,6 +58,8 @@ class MarginServiceTest {
     private MarginMapper marginMapper;
     @Mock
     private NotificationService notificationService;
+    @Mock
+    private InstanceSettings instanceSettings;
 
     @InjectMocks
     private MarginService marginService;

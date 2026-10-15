@@ -38,7 +38,8 @@ class RefreshTokenTest extends MarginTestRunner {
 
     @BeforeEach
     void setUp() {
-        AuthTestUtils.registerAndActivate("refresher", "refresher@margin.chat", PASSWORD, null);
+        AuthTestUtils.registerAndActivate("refresher", "refresher@margin.chat", PASSWORD,
+                AuthTestUtils.createInviteCode().getCode());
         user = AuthTestUtils.findByEmail("refresher@margin.chat");
     }
 

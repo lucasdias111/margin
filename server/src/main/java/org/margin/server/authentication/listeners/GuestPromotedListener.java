@@ -1,5 +1,6 @@
 package org.margin.server.authentication.listeners;
 
+import org.margin.server.instance.api.InstanceSettings;
 import lombok.extern.slf4j.Slf4j;
 import org.margin.server.authentication.entities.ActivationKey;
 import org.margin.server.authentication.entities.UserSecurity;
@@ -8,7 +9,6 @@ import org.margin.server.authentication.services.UserSecurityService;
 import org.margin.server.email.EmailService;
 import org.margin.server.email.events.SendMailEvent;
 import org.margin.server.users.events.GuestPromotedEvent;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;
@@ -19,22 +19,22 @@ import org.springframework.transaction.annotation.Transactional;
 @Component
 public class GuestPromotedListener {
 
-    @Value("${margin.mail.require-email-activation:true}")
-    private boolean requireEmailActivation;
-
     private final UserSecurityService userSecurityService;
     private final ActivationKeyService activationKeyService;
     private final EmailService emailService;
     private final ApplicationEventPublisher eventPublisher;
+    private final InstanceSettings instanceSettings;
 
     public GuestPromotedListener(UserSecurityService userSecurityService,
                                  ActivationKeyService activationKeyService,
                                  EmailService emailService,
-                                 ApplicationEventPublisher eventPublisher) {
+                                 ApplicationEventPublisher eventPublisher,
+                                 InstanceSettings instanceSettings) {
         this.userSecurityService = userSecurityService;
         this.activationKeyService = activationKeyService;
         this.emailService = emailService;
         this.eventPublisher = eventPublisher;
+        this.instanceSettings = instanceSettings;
     }
 
     @EventListener
@@ -46,7 +46,7 @@ public class GuestPromotedListener {
 
         ActivationKey activationKey = activationKeyService.generateActivationKey(event.userId());
 
-        if (!requireEmailActivation) {
+        if (!instanceSettings.requireEmailVerification()) {
             activationKeyService.findAndConsumeActivationKey(activationKey.getToken());
             log.info("Email activation disabled — claimed account {} auto-activated", event.userId());
             return;

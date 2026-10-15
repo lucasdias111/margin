@@ -6,6 +6,8 @@ public record ClaimGuestRequest(
         String publicKey,
         String encryptedPrivateKey,
         String salt,
-        String iv
+        String iv,
+        /** Needed when the instance is invite-only: an instance invite code or a margin invite link. */
+        String inviteCode
 ) {
 }

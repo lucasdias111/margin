@@ -42,6 +42,29 @@ public interface UserRepository extends JpaRepository<User, Long> {
 
     @Query("""
             SELECT u FROM User u
+            WHERE u.accountType = org.margin.server.users.models.UserAccountType.FULL
+              AND u.deletedAt IS NULL
+            ORDER BY u.createdAt DESC
+            """)
+    List<User> findAllAccounts();
+
+    @Query("""
+            SELECT COUNT(u) FROM User u
+            WHERE u.accountType = org.margin.server.users.models.UserAccountType.FULL
+              AND u.deletedAt IS NULL
+            """)
+    long countAccounts();
+
+    @Query("""
+            SELECT COUNT(u) FROM User u
+            WHERE u.role = org.margin.server.users.api.Role.ADMIN
+              AND u.status = org.margin.server.users.api.AccountStatus.ACTIVE
+              AND u.deletedAt IS NULL
+            """)
+    long countActiveAdmins();
+
+    @Query("""
+            SELECT u FROM User u
             WHERE u.accountType = org.margin.server.users.models.UserAccountType.GUEST
               AND u.guestExpiresAt IS NOT NULL
               AND u.guestExpiresAt < :now

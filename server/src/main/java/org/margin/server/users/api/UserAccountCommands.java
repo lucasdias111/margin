@@ -5,6 +5,18 @@ public interface UserAccountCommands {
 
     Long register(NewUser newUser);
 
+    /** Full (non-guest, not deleted) accounts on the instance. */
+    long countAccounts();
+
+    long countActiveAdmins();
+
+    void setRole(Long userId, Role role);
+
+    void setStatus(Long userId, AccountStatus status);
+
+    /** Soft-deletes the account the same way a user deleting themselves does. */
+    void deleteAccount(Long userId);
+
     void resetCredentials(Long userId, String encodedPassword);
 
     void updateEncryptionKeys(Long userId, String publicKey, String encryptedPrivateKey, String salt, String iv);
@@ -24,7 +36,9 @@ public interface UserAccountCommands {
             String publicKey,
             String encryptedPrivateKey,
             String salt,
-            String iv
+            String iv,
+            Role role,
+            AccountStatus status
     ) {
     }
 }

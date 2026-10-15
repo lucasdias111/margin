@@ -45,7 +45,7 @@ public class MeetingInviteMailer {
     }
 
     public void send(Meeting meeting, List<MeetingInvite> invites, boolean cancelled) {
-        if (invites.isEmpty()) {
+        if (invites.isEmpty() || !emailService.isEnabled()) {
             return;
         }
 
@@ -83,6 +83,11 @@ public class MeetingInviteMailer {
             return null;
         }
         return userLookup.contactOf(invite.getUserId()).email();
+    }
+
+    /** The calendar file an organiser sends invitees themselves, e.g. when the instance has no mail. */
+    public String calendarFileFor(Meeting meeting) {
+        return icsBuilder.build(meeting, baseUrl + "/meet/" + meeting.getCode(), false);
     }
 
     private String joinUrl(Meeting meeting, MeetingInvite invite) {

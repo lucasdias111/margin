@@ -37,7 +37,10 @@ public class AuthenticationController {
     }
 
     @PostMapping("/login")
-    public AuthResponse login(@RequestBody LoginRequest request) {
+    public AuthResponse login(HttpServletRequest httpServletRequest, @RequestBody LoginRequest request) {
+        if (!rateLimitService.tryConsume("login:" + httpServletRequest.getRemoteAddr(), RateLimitConfig.login())) {
+            throw new TooManyRequestsException("Too many login attempts. Try again later.");
+        }
         return authenticationService.authenticateUser(
                 request.email(),
                 request.password());
@@ -61,6 +64,10 @@ public class AuthenticationController {
             @RequestPart("data") RegisterRequest request,
             @RequestPart(value = "profilePicture", required = false) MultipartFile profilePicture) {
         rateLimitRegistration(httpServletRequest);
+        if (request.inviteCode() != null && !request.inviteCode().isBlank()
+                && !rateLimitService.tryConsume("invite:" + httpServletRequest.getRemoteAddr(), RateLimitConfig.inviteRedemption())) {
+            throw new TooManyRequestsException("Too many invite attempts. Try again later.");
+        }
 
         try {
             authenticationService.registerUser(
@@ -71,6 +78,7 @@ public class AuthenticationController {
                     request.publicKey(),
                     request.salt(),
                     request.iv(),
+                    request.inviteCode(),
                     profilePicture);
             return ResponseEntity.ok().build();
         } catch (IllegalArgumentException e) {
@@ -114,8 +122,7 @@ public class AuthenticationController {
     }
 
     private void rateLimitRegistration(HttpServletRequest httpServletRequest) {
-        String ip = httpServletRequest.getHeader("X-Forwarded-For");
-        if (ip == null) ip = httpServletRequest.getRemoteAddr();
+        String ip = httpServletRequest.getRemoteAddr();
 
         String key = "register:" + ip;
         if (!rateLimitService.tryConsume(key, RateLimitConfig.register())) {
@@ -124,8 +131,7 @@ public class AuthenticationController {
     }
 
     private void rateLimitForgotPassword(HttpServletRequest httpServletRequest) {
-        String ip = httpServletRequest.getHeader("X-Forwarded-For");
-        if (ip == null) ip = httpServletRequest.getRemoteAddr();
+        String ip = httpServletRequest.getRemoteAddr();
 
         String key = "forgot-password:" + ip;
         if (!rateLimitService.tryConsume(key, RateLimitConfig.forgotPassword())) {
@@ -134,8 +140,7 @@ public class AuthenticationController {
     }
 
     private void rateLimitResetPassword(HttpServletRequest httpServletRequest) {
-        String ip = httpServletRequest.getHeader("X-Forwarded-For");
-        if (ip == null) ip = httpServletRequest.getRemoteAddr();
+        String ip = httpServletRequest.getRemoteAddr();
 
         String key = "reset-password:" + ip;
         if (!rateLimitService.tryConsume(key, RateLimitConfig.resetPassword())) {

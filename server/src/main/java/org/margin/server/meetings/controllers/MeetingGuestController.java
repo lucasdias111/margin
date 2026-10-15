@@ -79,8 +79,7 @@ public class MeetingGuestController {
 
     private void rateLimit(HttpServletRequest request, String prefix,
                            io.github.bucket4j.Bandwidth bandwidth, String message) {
-        String ip = request.getHeader("X-Forwarded-For");
-        if (ip == null) ip = request.getRemoteAddr();
+        String ip = request.getRemoteAddr();
 
         if (!rateLimitService.tryConsume(prefix + ip, bandwidth)) {
             throw new TooManyRequestsException(message);

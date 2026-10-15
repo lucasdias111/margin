@@ -1,0 +1,4 @@
+#!/bin/sh
+# Admin commands for a running margin server; see `margin` with no arguments.
+exec java -cp /app/app.jar -Dloader.main=org.margin.server.cli.MarginCli \
+  org.springframework.boot.loader.launch.PropertiesLauncher "$@"

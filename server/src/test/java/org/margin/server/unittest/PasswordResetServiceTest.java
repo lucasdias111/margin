@@ -44,6 +44,20 @@ class PasswordResetServiceTest {
     @InjectMocks
     private PasswordResetService passwordResetService;
 
+    @org.junit.jupiter.api.BeforeEach
+    void mailIsConfigured() {
+        org.mockito.Mockito.lenient().when(emailService.isEnabled()).thenReturn(true);
+    }
+
+    @Test
+    void requestReset_withoutMail_doesNothing() {
+        org.mockito.Mockito.when(emailService.isEnabled()).thenReturn(false);
+
+        passwordResetService.requestPasswordReset("someone@example.com");
+
+        org.mockito.Mockito.verifyNoInteractions(tokenRepository);
+    }
+
     @Test
     void requestReset_knownEmail_deletesOldTokenAndSavesNew() throws MessagingException {
         User user = makeUser();
@@ -75,12 +89,14 @@ class PasswordResetServiceTest {
     }
 
     @Test
-    void requestReset_unknownEmail_doesNothing() {
+    void requestReset_unknownEmail_doesNothing() throws Exception {
         when(userLookup.findByEmail("nobody@margin.chat")).thenReturn(Optional.empty());
 
         assertDoesNotThrow(() -> passwordResetService.requestPasswordReset("nobody@margin.chat"));
 
-        verifyNoInteractions(tokenRepository, emailService);
+        verifyNoInteractions(tokenRepository);
+        verify(emailService, org.mockito.Mockito.never()).sendEmail(org.mockito.ArgumentMatchers.anyString(),
+                org.mockito.ArgumentMatchers.anyString(), org.mockito.ArgumentMatchers.anyString());
     }
 
     @Test

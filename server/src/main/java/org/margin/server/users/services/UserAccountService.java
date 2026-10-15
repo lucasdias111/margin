@@ -1,5 +1,7 @@
 package org.margin.server.users.services;
 
+import org.margin.server.users.api.AccountStatus;
+import org.margin.server.users.api.Role;
 import org.margin.server.users.api.UserAccountCommands;
 import org.margin.server.users.events.GuestPromotedEvent;
 import org.margin.server.users.models.User;
@@ -22,15 +24,18 @@ public class UserAccountService implements UserAccountCommands {
     private final UserRepository userRepository;
     private final UserCacheService userCacheService;
     private final PasswordEncoder passwordEncoder;
+    private final UserService userService;
 
     public UserAccountService(UserRepository userRepository,
                               UserCacheService userCacheService,
                               PasswordEncoder passwordEncoder,
-                              ApplicationEventPublisher eventPublisher) {
+                              ApplicationEventPublisher eventPublisher,
+                              UserService userService) {
         this.eventPublisher = eventPublisher;
         this.userRepository = userRepository;
         this.userCacheService = userCacheService;
         this.passwordEncoder = passwordEncoder;
+        this.userService = userService;
     }
 
     @Override
@@ -48,6 +53,8 @@ public class UserAccountService implements UserAccountCommands {
         user.setPassword(newUser.encodedPassword());
         user.setProfilePictureUrl(newUser.profilePictureUrl());
         user.setCreatedAt(Instant.now());
+        user.setRole(newUser.role() == null ? Role.USER : newUser.role());
+        user.setStatus(newUser.status() == null ? AccountStatus.ACTIVE : newUser.status());
 
         UserEncryption encryption = new UserEncryption();
         encryption.setUser(user);
@@ -58,6 +65,42 @@ public class UserAccountService implements UserAccountCommands {
         user.setEncryption(encryption);
 
         return userRepository.save(user).getId();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public long countAccounts() {
+        return userRepository.countAccounts();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public long countActiveAdmins() {
+        return userRepository.countActiveAdmins();
+    }
+
+    @Override
+    @Transactional
+    public void setRole(Long userId, Role role) {
+        User user = userRepository.findById(userId).orElseThrow();
+        user.setRole(role);
+        userRepository.save(user);
+        userCacheService.evictUserCache(userId);
+    }
+
+    @Override
+    @Transactional
+    public void setStatus(Long userId, AccountStatus status) {
+        User user = userRepository.findById(userId).orElseThrow();
+        user.setStatus(status);
+        userRepository.save(user);
+        userCacheService.evictUserCache(userId);
+    }
+
+    @Override
+    @Transactional
+    public void deleteAccount(Long userId) {
+        userService.deleteUser(userRepository.findById(userId).orElseThrow());
     }
 
     @Override

@@ -72,7 +72,7 @@ public class SecurityConfig {
     @Order(1)
     public SecurityFilterChain meetingGuestFilterChain(HttpSecurity http) {
         http
-                .securityMatcher("/api/meetings/**")
+                .securityMatcher("/api/meetings/**", "/api/ice-servers")
                 .headers(headers -> headers
                         .contentTypeOptions(Customizer.withDefaults())
                         .frameOptions(HeadersConfigurer.FrameOptionsConfig::deny)
@@ -93,6 +93,8 @@ public class SecurityConfig {
                                 "/api/meetings/*/preview",
                                 "/api/meetings/*/guest-session",
                                 "/api/meetings/rsvp").permitAll()
+                        .requestMatchers("/api/ice-servers").hasAnyAuthority(
+                                JwtAuthenticationFilter.MARGIN_USER, MeetingGuestAuthenticationFilter.MEETING_GUEST)
                         .requestMatchers(
                                 "/api/meetings/*/guest-join",
                                 "/api/meetings/claim",
@@ -137,6 +139,9 @@ public class SecurityConfig {
                                 "/api/auth/register-and-activate-test",
                                 "/api/auth/forgot-password",
                                 "/api/auth/reset-password").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/instance").permitAll()
+                        .requestMatchers("/api/setup", "/api/setup/**").permitAll()
+                        .requestMatchers("/api/internal/**").permitAll()
                         .requestMatchers("/api/sfu/peer_joined", "/api/sfu/peer_left").permitAll()
                         .anyRequest().authenticated()
                 )

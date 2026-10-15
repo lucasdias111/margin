@@ -2,7 +2,7 @@ package org.margin.server.integrationtest;
 
 import org.junit.jupiter.api.Test;
 import org.margin.server.authentication.entities.ActivationKey;
-import org.margin.server.authentication.entities.BetaKey;
+import org.margin.server.authentication.entities.InviteCode;
 import org.margin.server.authentication.repositories.ActivationKeyRepository;
 import org.margin.server.integrationtest.config.MarginTestRunner;
 import org.margin.server.integrationtest.utils.ActivationTestUtils;
@@ -77,7 +77,7 @@ class EmailActivationTest extends MarginTestRunner {
     }
 
     private static ActivationKey registerAndFetch(String displayName, String email) {
-        BetaKey key = AuthTestUtils.createBetaKey();
-        return AuthTestUtils.register(displayName, email, "password", key.getKey());
+        InviteCode key = AuthTestUtils.createInviteCode();
+        return AuthTestUtils.register(displayName, email, "password", key.getCode());
     }
 }

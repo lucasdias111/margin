@@ -9,6 +9,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.margin.server.email.EmailService;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.beans.factory.support.StaticListableBeanFactory;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.test.util.ReflectionTestUtils;
 import org.thymeleaf.spring6.SpringTemplateEngine;
@@ -19,6 +20,7 @@ import java.util.Properties;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -40,7 +42,9 @@ class EmailServiceTest {
         SpringTemplateEngine engine = new SpringTemplateEngine();
         engine.setTemplateResolver(resolver);
 
-        emailService = new EmailService(mailSender, engine);
+        StaticListableBeanFactory beans = new StaticListableBeanFactory();
+        beans.addBean("mailSender", mailSender);
+        emailService = new EmailService(beans.getBeanProvider(JavaMailSender.class), engine, "smtp.example.com");
         ReflectionTestUtils.setField(emailService, "baseUrl", "https://margin.test");
         ReflectionTestUtils.setField(emailService, "fromAddress", "noreply@margin.test");
         ReflectionTestUtils.setField(emailService, "logoUrl", "");
@@ -82,5 +86,17 @@ class EmailServiceTest {
         assertEquals("user@example.com", mime.getAllRecipients()[0].toString());
         assertEquals(1, mime.getFrom().length);
         assertEquals("noreply@margin.test", mime.getFrom()[0].toString());
+    }
+
+    @Test
+    void withoutAnSmtpHostNothingIsSent() throws MessagingException {
+        StaticListableBeanFactory beans = new StaticListableBeanFactory();
+        beans.addBean("mailSender", mailSender);
+        EmailService disabled = new EmailService(beans.getBeanProvider(JavaMailSender.class), new SpringTemplateEngine(), "");
+
+        disabled.sendEmail("user@example.com", "Hello", "<p>hi</p>");
+
+        assertFalse(disabled.isEnabled());
+        verifyNoInteractions(mailSender);
     }
 }

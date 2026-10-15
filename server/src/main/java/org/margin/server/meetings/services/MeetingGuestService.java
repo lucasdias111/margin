@@ -1,5 +1,7 @@
 package org.margin.server.meetings.services;
 
+import org.margin.server.authentication.api.SignUpGate;
+import org.margin.server.users.api.AccountStatus;
 import lombok.extern.slf4j.Slf4j;
 import org.margin.server.meetings.entities.Meeting;
 import org.margin.server.meetings.entities.MeetingParticipant;
@@ -38,6 +40,7 @@ public class MeetingGuestService {
     private final UserLookup userLookup;
     private final MarginLookup marginLookup;
     private final PasswordEncoder passwordEncoder;
+    private final SignUpGate signUpGate;
 
     public MeetingGuestService(MeetingRepository meetingRepository,
                                MeetingParticipantRepository participantRepository,
@@ -45,7 +48,8 @@ public class MeetingGuestService {
                                UserAccountCommands userAccountCommands,
                                UserLookup userLookup,
                                MarginLookup marginLookup,
-                               PasswordEncoder passwordEncoder) {
+                               PasswordEncoder passwordEncoder,
+                               SignUpGate signUpGate) {
         this.meetingRepository = meetingRepository;
         this.participantRepository = participantRepository;
         this.guestTokenService = guestTokenService;
@@ -53,6 +57,7 @@ public class MeetingGuestService {
         this.userLookup = userLookup;
         this.marginLookup = marginLookup;
         this.passwordEncoder = passwordEncoder;
+        this.signUpGate = signUpGate;
     }
 
     @Transactional(readOnly = true)
@@ -132,6 +137,12 @@ public class MeetingGuestService {
         if (userAccountCommands.emailIsTaken(request.email())) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "EMAIL_IN_USE");
         }
+        // Keeping a guest profile creates a full account, so the instance's sign-up rules apply.
+        try {
+            signUpGate.requireSignUpAllowed(request.inviteCode());
+        } catch (SignUpGate.SignUpNotAllowedException e) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "SIGN_UP_NOT_ALLOWED");
+        }
 
         try {
             userAccountCommands.promoteGuest(
@@ -144,6 +155,11 @@ public class MeetingGuestService {
                     request.iv());
         } catch (DataIntegrityViolationException e) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "EMAIL_IN_USE");
+        }
+
+        AccountStatus status = signUpGate.initialStatus();
+        if (status != AccountStatus.ACTIVE) {
+            userAccountCommands.setStatus(guest.userId(), status);
         }
 
         log.info("Guest {} claimed their profile", guest.userId());

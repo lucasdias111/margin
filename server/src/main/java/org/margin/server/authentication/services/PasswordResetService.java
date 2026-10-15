@@ -9,6 +9,7 @@ import org.margin.server.users.api.UserAccountCommands;
 import org.margin.server.users.api.UserLookup;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
@@ -21,6 +22,7 @@ import java.util.UUID;
 public class PasswordResetService {
 
     private static final int EXPIRY_SECONDS = 3600;
+    private static final int ADMIN_LINK_EXPIRY_SECONDS = 7 * 24 * 3600;
 
     private final UserLookup userLookup;
     private final UserAccountCommands userAccountCommands;
@@ -29,6 +31,7 @@ public class PasswordResetService {
     private final EmailService emailService;
     private final UserSecurityService userSecurityService;
     private final RefreshTokenService refreshTokenService;
+    private final String baseUrl;
 
     public PasswordResetService(UserLookup userLookup,
                                 UserAccountCommands userAccountCommands,
@@ -36,7 +39,8 @@ public class PasswordResetService {
                                 PasswordEncoder passwordEncoder,
                                 EmailService emailService,
                                 UserSecurityService userSecurityService,
-                                RefreshTokenService refreshTokenService) {
+                                RefreshTokenService refreshTokenService,
+                                @Value("${margin.app.base-url:http://localhost:8080}") String baseUrl) {
         this.userLookup = userLookup;
         this.userAccountCommands = userAccountCommands;
         this.tokenRepository = tokenRepository;
@@ -44,11 +48,35 @@ public class PasswordResetService {
         this.emailService = emailService;
         this.userSecurityService = userSecurityService;
         this.refreshTokenService = refreshTokenService;
+        this.baseUrl = baseUrl;
+    }
+
+    /**
+     * A one-time link an admin hands to someone out of band, for a forgotten password or a brand new
+     * account. Valid for a week; any earlier link for the same user stops working.
+     */
+    @Transactional
+    public String issueResetLink(Long userId) {
+        tokenRepository.deleteByUserId(userId);
+
+        PasswordResetToken resetToken = new PasswordResetToken();
+        resetToken.setUserId(userId);
+        resetToken.setToken(UUID.randomUUID().toString());
+        resetToken.setExpiresAt(Instant.now().plusSeconds(ADMIN_LINK_EXPIRY_SECONDS));
+        tokenRepository.save(resetToken);
+
+        log.info("Admin-issued password reset link created for userId={}", userId);
+        return baseUrl + "/reset-password/" + resetToken.getToken();
     }
 
     @Transactional
     public void requestPasswordReset(String email) {
         String normalised = email.toLowerCase();
+        if (!emailService.isEnabled()) {
+            // Without mail, people ask an admin for a one-time reset link instead.
+            log.info("Password reset requested for {} but mail is not configured", normalised);
+            return;
+        }
         log.info("Password reset requested for email {}", normalised);
         userLookup.findByEmail(normalised).ifPresent(user -> {
             tokenRepository.deleteByUserId(user.getId());

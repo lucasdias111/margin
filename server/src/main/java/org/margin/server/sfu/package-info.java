@@ -1,4 +1,5 @@
 @ApplicationModule(allowedDependencies = {
+        "instance::api",
         "presence",
         "shared",
         "social::api",

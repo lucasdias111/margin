@@ -51,6 +51,8 @@ class MarginInviteControllerTest {
     private UserLookup userLookup;
     @Mock
     private MarginMapper marginMapper;
+    @Mock
+    private org.margin.server.shared.ratelimit.RateLimitService rateLimitService;
 
     @InjectMocks
     private MarginInviteController marginInviteController;
@@ -64,6 +66,8 @@ class MarginInviteControllerTest {
         adminUser = createUser(1L, "admin");
         targetUser = createUser(2L, "targetUser");
         margin = createMargin(1L, "Test Margin");
+        lenient().when(rateLimitService.tryConsume(org.mockito.ArgumentMatchers.anyString(), org.mockito.ArgumentMatchers.any()))
+                .thenReturn(true);
         lenient().when(userLookup.summaryOf(adminUser.getId()))
                 .thenReturn(new org.margin.server.users.api.UserSummary(adminUser.getId(), adminUser.getDisplayName()));
         lenient().when(userLookup.summaryOf(targetUser.getId()))
@@ -158,7 +162,7 @@ class MarginInviteControllerTest {
         MarginInvite invite = createLinkInvite(margin, adminUser);
         when(marginInviteService.findInviteDetails("abc-123")).thenReturn(Optional.of(invite));
 
-        ResponseEntity<?> response = marginInviteController.getInviteDetails("abc-123");
+        ResponseEntity<?> response = marginInviteController.getInviteDetails("abc-123", principalOf(targetUser));
 
         assertThat(response.getStatusCode().value()).isEqualTo(200);
         MarginInviteDTO body = (MarginInviteDTO) response.getBody();
@@ -172,7 +176,7 @@ class MarginInviteControllerTest {
         invite.setExpiresAt(Instant.now().minus(Duration.ofDays(1)));
         when(marginInviteService.findInviteDetails("abc-123")).thenReturn(Optional.of(invite));
 
-        assertThatThrownBy(() -> marginInviteController.getInviteDetails("abc-123"))
+        assertThatThrownBy(() -> marginInviteController.getInviteDetails("abc-123", principalOf(targetUser)))
                 .isInstanceOf(ResponseStatusException.class);
     }
 

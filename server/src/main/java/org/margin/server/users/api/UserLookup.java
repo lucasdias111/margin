@@ -34,4 +34,9 @@ public interface UserLookup {
     void markLastSeen(Long userId, Instant lastSeenAt);
 
     boolean isGuest(Long userId);
+
+    boolean isAdmin(Long userId);
+
+    /** Every full account that hasn't been deleted, newest first. */
+    List<AccountSummary> listAccounts();
 }

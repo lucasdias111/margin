@@ -1,5 +1,7 @@
 package org.margin.server.authentication.controllers;
 
+import org.margin.server.users.api.AccountStatus;
+import org.margin.server.users.api.Role;
 import lombok.extern.slf4j.Slf4j;
 import org.margin.server.authentication.entities.ActivationKey;
 import org.margin.server.authentication.repositories.ActivationKeyRepository;
@@ -80,7 +82,7 @@ class TestSupportController {
         if (!validSecret(request.secret())) return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
 
         try {
-            ActivationKey key = authenticationService.registerUser(
+            ActivationKey key = authenticationService.createAccount(
                     request.displayName(),
                     request.email(),
                     request.password(),
@@ -88,7 +90,10 @@ class TestSupportController {
                     request.publicKey(),
                     request.salt(),
                     request.iv(),
-                    null);
+                    null,
+                    Role.USER,
+                    AccountStatus.ACTIVE,
+                    false);
 
             key.setActivatedAt(Instant.now());
             activationKeyRepository.save(key);
