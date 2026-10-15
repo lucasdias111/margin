@@ -32,20 +32,8 @@ vi.mock('$src/components/common/user/UserAvatar.svelte', () => ({
   default: vi.fn()
 }))
 
-vi.mock('$src/components/common/modals/PolicyModal.svelte', () => ({
-  default: vi.fn()
-}))
-
 vi.mock('$src/components/common/buttons/Button.svelte', () => ({
   default: vi.fn()
-}))
-
-vi.mock('$src/assets/legal/privacy-policy', () => ({
-  privacyPolicyHtml: '<p>Privacy policy content</p>'
-}))
-
-vi.mock('$src/assets/legal/terms-of-service', () => ({
-  termsOfServiceHtml: '<p>Terms of service content</p>'
 }))
 
 function fillForm(
@@ -89,13 +77,6 @@ function fillForm(
   }
 }
 
-async function acceptPolicies(): Promise<void> {
-  const checkboxes = screen.getAllByRole('checkbox')
-  for (const checkbox of checkboxes) {
-    await fireEvent.click(checkbox)
-  }
-}
-
 async function submitForm(): Promise<void> {
   const form = document.querySelector('form')!
   await fireEvent.submit(form)
@@ -116,7 +97,6 @@ describe('RegisterPage', () => {
     render(RegisterPage)
 
     await fillForm().fill()
-    await acceptPolicies()
     await submitForm()
 
     expect(authenticationService.register).toHaveBeenCalledWith(
@@ -133,7 +113,6 @@ describe('RegisterPage', () => {
 
     const { values } = fillForm()
     await fillForm().fill()
-    await acceptPolicies()
     await submitForm()
 
     await waitFor(() => {
@@ -152,7 +131,6 @@ describe('RegisterPage', () => {
     render(RegisterPage)
 
     await fillForm().fill()
-    await acceptPolicies()
     await submitForm()
 
     await waitFor(() => {
@@ -170,7 +148,6 @@ describe('RegisterPage', () => {
     render(RegisterPage)
 
     await fillForm().fill()
-    await acceptPolicies()
     await submitForm()
 
     await waitFor(() => {
@@ -183,7 +160,6 @@ describe('RegisterPage', () => {
     render(RegisterPage)
 
     await fillForm().fill()
-    await acceptPolicies()
     await submitForm()
 
     await waitFor(() => {
@@ -234,99 +210,16 @@ describe('RegisterPage', () => {
     render(RegisterPage)
 
     await fillForm({ password: 'short', repeatPassword: 'short' }).fill()
-    await acceptPolicies()
     await submitForm()
 
     expect(authenticationService.register).not.toHaveBeenCalled()
   })
 
-  // Policy checkboxes
-
-  it('renders terms of service and privacy policy checkboxes', () => {
-    render(RegisterPage)
-
-    const checkboxes = screen.getAllByRole('checkbox')
-    expect(checkboxes).toHaveLength(2)
-    expect(screen.getByRole('button', { name: /terms of service/i })).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: /privacy policy/i })).toBeInTheDocument()
-  })
-
-  it('does not show policy errors before submit', () => {
-    render(RegisterPage)
-
-    expect(screen.queryByText('You must accept the Terms of Service')).not.toBeInTheDocument()
-    expect(screen.queryByText('You must accept the Privacy Policy')).not.toBeInTheDocument()
-  })
-
-  it('shows both policy errors on submit when neither checkbox is checked', async () => {
-    render(RegisterPage)
-
-    await fillForm().fill()
-    await submitForm()
-
-    await waitFor(() => {
-      expect(screen.getByText('You must accept the Terms of Service')).toBeInTheDocument()
-      expect(screen.getByText('You must accept the Privacy Policy')).toBeInTheDocument()
-    })
-
-    expect(authenticationService.register).not.toHaveBeenCalled()
-  })
-
-  it('shows only privacy error when only terms is checked', async () => {
-    render(RegisterPage)
-
-    await fillForm().fill()
-    const checkboxes = screen.getAllByRole('checkbox')
-    await fireEvent.click(checkboxes[0]) // terms only
-    await submitForm()
-
-    await waitFor(() => {
-      expect(screen.queryByText('You must accept the Terms of Service')).not.toBeInTheDocument()
-      expect(screen.getByText('You must accept the Privacy Policy')).toBeInTheDocument()
-    })
-
-    expect(authenticationService.register).not.toHaveBeenCalled()
-  })
-
-  it('shows only terms error when only privacy is checked', async () => {
-    render(RegisterPage)
-
-    await fillForm().fill()
-    const checkboxes = screen.getAllByRole('checkbox')
-    await fireEvent.click(checkboxes[1]) // privacy only
-    await submitForm()
-
-    await waitFor(() => {
-      expect(screen.getByText('You must accept the Terms of Service')).toBeInTheDocument()
-      expect(screen.queryByText('You must accept the Privacy Policy')).not.toBeInTheDocument()
-    })
-
-    expect(authenticationService.register).not.toHaveBeenCalled()
-  })
-
-  it('clears policy errors when checkboxes are checked after submit', async () => {
-    render(RegisterPage)
-
-    await fillForm().fill()
-    await submitForm()
-
-    await waitFor(() => {
-      expect(screen.getByText('You must accept the Terms of Service')).toBeInTheDocument()
-      expect(screen.getByText('You must accept the Privacy Policy')).toBeInTheDocument()
-    })
-
-    await acceptPolicies()
-
-    expect(screen.queryByText('You must accept the Terms of Service')).not.toBeInTheDocument()
-    expect(screen.queryByText('You must accept the Privacy Policy')).not.toBeInTheDocument()
-  })
-
-  it('submits when both checkboxes are checked and form is valid', async () => {
+  it('submits when the form is valid', async () => {
     vi.mocked(authenticationService.register).mockResolvedValue({ ok: true } as Response)
     render(RegisterPage)
 
     await fillForm().fill()
-    await acceptPolicies()
     await submitForm()
 
     expect(authenticationService.register).toHaveBeenCalled()
