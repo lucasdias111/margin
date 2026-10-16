@@ -84,12 +84,11 @@ services:
       INTERNAL_API_KEY: ${INTERNAL_API_KEY}
       SPRING_URL: http://margin-server:8080
       ANNOUNCED_IP: ${PUBLIC_IP}
-      MEDIASOUP_RTC_MIN_PORT: 40000
-      MEDIASOUP_RTC_MAX_PORT: 40100
       SFU_ALLOWED_ORIGINS: ${SFU_ALLOWED_ORIGINS:-}
       SFU_ROOM_IDLE_MS: ${SFU_ROOM_IDLE_MS:-300000}
     ports:
-      - "40000-40100:40000-40100/udp"
+      - "40000:40000/udp"
+      - "40000:40000/tcp"
     networks:
       - margin-net
     depends_on:
