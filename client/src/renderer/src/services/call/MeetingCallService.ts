@@ -13,7 +13,7 @@ import {
   defaultDeviceConstraint,
   getUserMediaPreferringDefault
 } from '$src/services/DeviceService'
-import { ICE_SERVERS } from '$src/services/call/iceServers'
+import { fetchIceServers, sfuSocketUrl } from '$src/services/call/iceServers'
 import { meetingService } from '$src/services/MeetingService'
 import { meetingGuestService } from '$src/services/MeetingGuestService'
 import { joinFailureMessage } from '$src/utils/MeetingJoinFailure'
@@ -206,7 +206,8 @@ class MeetingCallService {
 
       const { sfuUrl, roomId, roomToken, peerId, displayName, title } = result.info
 
-      const sfuWs = await this.connectToWebSocket(sfuUrl.replace('http', 'ws'))
+      const iceServers = await fetchIceServers()
+      const sfuWs = await this.connectToWebSocket(sfuSocketUrl(sfuUrl))
 
       const rtpCapabilities = await this.getRtpCapabilities(
         sfuWs,
@@ -219,14 +220,14 @@ class MeetingCallService {
       await device.load({ routerRtpCapabilities: rtpCapabilities })
 
       const sendParams = await this.createTransport(sfuWs, 'send', roomId)
-      const sendTransport = device.createSendTransport({ ...sendParams, iceServers: ICE_SERVERS })
+      const sendTransport = device.createSendTransport({ ...sendParams, iceServers })
       this.setupTransportConnection(sendTransport, sfuWs)
       this.setupProducer(sendTransport, sfuWs)
 
       const receiveParameters = await this.createTransport(sfuWs, 'recv', roomId)
       const receiveTransport = device.createRecvTransport({
         ...receiveParameters,
-        iceServers: ICE_SERVERS
+        iceServers
       })
       this.setupTransportConnection(receiveTransport, sfuWs)
       this.setupConsumer(receiveTransport, device, sfuWs, peerId)

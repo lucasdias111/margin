@@ -10,7 +10,7 @@ import {
   defaultDeviceConstraint,
   getUserMediaPreferringDefault
 } from '$src/services/DeviceService'
-import { ICE_SERVERS } from '$src/services/call/iceServers'
+import { fetchIceServers } from '$src/services/call/iceServers'
 
 class CallService {
   private noAnswerTimeout: ReturnType<typeof setTimeout> | null = null
@@ -225,9 +225,9 @@ class CallService {
   }
 
   private async setup(userId: number, isInitiator: boolean): Promise<void> {
-    const localStream = await this.getUserMedia()
+    const [localStream, iceServers] = await Promise.all([this.getUserMedia(), fetchIceServers()])
     const remoteStream = new MediaStream()
-    const peerConnection = this.createPeerConnection(userId, isInitiator, remoteStream)
+    const peerConnection = this.createPeerConnection(userId, isInitiator, remoteStream, iceServers)
 
     if (isInitiator) {
       const transceivers = peerConnection.getTransceivers()
@@ -246,9 +246,10 @@ class CallService {
   private createPeerConnection(
     userId: number,
     isInitiator: boolean,
-    remoteStream: MediaStream
+    remoteStream: MediaStream,
+    iceServers: RTCIceServer[]
   ): RTCPeerConnection {
-    const pc = new RTCPeerConnection({ iceServers: ICE_SERVERS })
+    const pc = new RTCPeerConnection({ iceServers })
 
     if (isInitiator) {
       pc.addTransceiver('audio', { direction: 'sendrecv' })
