@@ -7,8 +7,6 @@
 
 <p align="center">Self-hosted chat, voice and video for your team, on one server you run.</p>
 
-<p align="center"><img src="docs/assets/screenshot.png" alt="A direct conversation in margin" width="800"></p>
-
 ## What it is
 
 margin is a chat platform you host yourself. One `docker compose` stack on one VPS gives you:
