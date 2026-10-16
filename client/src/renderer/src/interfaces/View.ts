@@ -4,5 +4,6 @@ export enum View {
   Settings = 'settings',
   Notifications = 'notifications',
   Manage = 'manage',
-  Meetings = 'meetings'
+  Meetings = 'meetings',
+  Admin = 'admin'
 }

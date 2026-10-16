@@ -74,6 +74,22 @@
             <Icon name="settings"></Icon>
           </button>
 
+          {#if sessionState.currentUser.role === 'ADMIN'}
+            <button
+              class="dropdown-item"
+              onclick={() => {
+                onContentSelected(View.Admin)
+                showDropdown = false
+              }}
+              class:selected={navigationState.view === View.Admin}
+              aria-label="Instance admin"
+              title="Instance admin"
+            >
+              <span class="item-label">Instance admin</span>
+              <Icon name="shield"></Icon>
+            </button>
+          {/if}
+
           {#if !isDesktopShell()}
             <a
               class="dropdown-item"

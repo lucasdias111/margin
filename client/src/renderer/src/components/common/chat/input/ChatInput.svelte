@@ -4,6 +4,7 @@
   import MessageTextarea from './MessageTextarea.svelte'
   import AttachButton from '$src/components/common/chat/input/AttachButton.svelte'
   import GifButton from '$src/components/common/chat/input/GifButton.svelte'
+  import { instanceState } from '$src/states/InstanceState.svelte'
   import EmojiButton from '$src/components/common/chat/input/EmojiButton.svelte'
   import SendButton from '$src/components/common/chat/input/SendButton.svelte'
 
@@ -151,7 +152,9 @@
         onImagePasted={(file) => queuePendingFiles([file], true)}
       />
 
-      <GifButton onSelect={handleGifSelect} />
+      {#if instanceState.gifsEnabled}
+        <GifButton onSelect={handleGifSelect} />
+      {/if}
       <EmojiButton onSelect={handleEmojiSelect} />
 
       <SendButton

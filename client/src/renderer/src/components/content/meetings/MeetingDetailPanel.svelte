@@ -99,6 +99,12 @@
         onClick={copyLink}
       />
       {#if isHost && meeting.status === 'SCHEDULED'}
+        <Button
+          buttonType="secondary"
+          size="small"
+          text="Calendar file"
+          onClick={() => meetingService.downloadCalendarFile(meeting.code)}
+        />
         <Button buttonType="secondary" size="small" text="Edit" onClick={onEdit} />
         <Button buttonType="danger" size="small" text="Cancel meeting" onClick={cancel} />
       {/if}

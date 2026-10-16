@@ -84,6 +84,18 @@ class MeetingService {
     return response.json()
   }
 
+  /** Saves the meeting as an .ics file, so hosts can share it without mail. Host only. */
+  async downloadCalendarFile(code: string): Promise<void> {
+    const response = await authenticatedGet(`meetings/${code}/calendar.ics`)
+    if (!response.ok) return
+    const url = URL.createObjectURL(await response.blob())
+    const link = document.createElement('a')
+    link.href = url
+    link.download = `meeting-${code}.ics`
+    link.click()
+    URL.revokeObjectURL(url)
+  }
+
   /** The canonical meeting link, on the instance's public URL. A real path rather than the
    * app's hash route, so it reads well and survives being pasted anywhere; the web app maps
    * /meet/<code> onto its own route when it loads. */
