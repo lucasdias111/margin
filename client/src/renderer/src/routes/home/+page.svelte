@@ -11,8 +11,7 @@
   import ChannelCallWindow from '$src/components/content/call/ChannelCallWindow.svelte'
   import IncomingCallLayer from '$src/components/content/call/IncomingCallLayer.svelte'
   import ConnectionBar from '$src/components/common/messages/ConnectionBar.svelte'
-  import UpdateToast from '$src/components/common/messages/UpdateToast.svelte'
-  import { useElectronIntegration } from '$src/composables/useElectronIntegration.svelte'
+  import { useDesktopIntegration } from '$src/composables/useDesktopIntegration.svelte'
   import { bootstrapService } from '$src/services/BootstrapService'
   import { registerWebSocketHandlers } from '$src/services/websocket/registerHandlers'
   import { webSocketService } from '$src/services/websocket/WebSocketService'
@@ -21,15 +20,15 @@
   import { marginState } from '$src/states/MarginState.svelte'
   import { navigationState } from '$src/states/NavigationState.svelte'
   import { viewportState } from '$src/states/ViewportState.svelte'
-  import { isElectron } from '$src/utils/platformUtils'
+  import { isDesktopShell } from '$src/utils/platformUtils'
   import PageTransition from '$src/components/common/motion/PageTransition.svelte'
 
   let bootstrapped = $state(false)
-  const showOnboarding = $derived(bootstrapped && (isElectron() || !viewportState.isMobile))
+  const showOnboarding = $derived(bootstrapped && (isDesktopShell() || !viewportState.isMobile))
 
   const resync = (): Promise<void> => bootstrapService.resync()
 
-  useElectronIntegration(resync)
+  useDesktopIntegration(resync)
 
   onMount(() => {
     const unregisterHandlers = registerWebSocketHandlers()
@@ -50,7 +49,6 @@
 <PageTransition>
   <div class="window">
     <ConnectionBar />
-    <UpdateToast />
     {#if callState.isP2PCall}
       <div class="call-overlay" class:minimized={callState.isMinimized}>
         <CallWindow />

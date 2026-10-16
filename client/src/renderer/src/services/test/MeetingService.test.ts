@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { instanceState } from '$src/states/InstanceState.svelte'
 import { meetingService } from '../MeetingService'
 import { authenticatedGet, authenticatedPost } from '$src/services/api'
 
@@ -56,6 +57,20 @@ describe('MeetingService', () => {
   it('builds a share link on a real path, which is what app links can match', () => {
     expect(meetingService.shareLink('abc123')).toContain('/meet/abc123')
     expect(meetingService.shareLink('abc123')).not.toContain('#')
+  })
+
+  it("builds the share link from the instance's public URL, not the page origin", () => {
+    instanceState.info = {
+      name: 'chat',
+      version: '1.0.0',
+      publicUrl: 'https://chat.example.com/',
+      registrationMode: 'INVITE',
+      mailEnabled: false,
+      features: { gifs: false, webPush: true }
+    }
+
+    expect(meetingService.shareLink('abc123')).toBe('https://chat.example.com/meet/abc123')
+    instanceState.info = null
   })
 
   it('posts to the join endpoint for the given code', async () => {

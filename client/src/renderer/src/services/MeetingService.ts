@@ -2,6 +2,7 @@ import { authenticatedGet, authenticatedPatch, authenticatedPost } from '$src/se
 import { webSocketService } from '$src/services/websocket/WebSocketService'
 import { WebSocketMessageType } from '$src/interfaces/WebSocketMessageType'
 import { toJoinResult } from '$src/utils/MeetingJoinFailure'
+import { instanceService } from '$src/services/InstanceService'
 import type {
   EligibleMargin,
   Meeting,
@@ -83,11 +84,11 @@ class MeetingService {
     return response.json()
   }
 
-  /** The canonical meeting link. A real path rather than the app's hash route, because Android
-   * App Links and iOS Universal Links match on the path and never see a fragment; the web page
-   * at /meet/<code> hands off to the desktop app or falls back to /app/#/meet/<code>. */
+  /** The canonical meeting link, on the instance's public URL. A real path rather than the
+   * app's hash route, so it reads well and survives being pasted anywhere; the web app maps
+   * /meet/<code> onto its own route when it loads. */
   shareLink(code: string): string {
-    return `${window.location.origin}/meet/${code}`
+    return instanceService.publicLink(`/meet/${code}`)
   }
 }
 

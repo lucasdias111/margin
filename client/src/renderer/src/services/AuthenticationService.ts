@@ -14,7 +14,7 @@ import type { AuthResponse } from '$src/interfaces/AuthResponse'
 import { errorService } from '$src/services/ErrorService'
 import { webSocketService } from '$src/services/websocket/WebSocketService'
 import { push } from 'svelte-spa-router'
-import { isElectron } from '$src/utils/platformUtils'
+import { desktopBridge, type StoredSession } from '$src/services/DesktopBridge'
 import { navigationService } from '$src/services/NavigationService'
 import { marginState } from '$src/states/MarginState.svelte'
 import { spaceState } from '$src/states/SpaceState.svelte'
@@ -132,8 +132,9 @@ class AuthenticationService {
     privateKey: string,
     refreshToken: string
   ): Promise<void> {
-    if (isElectron()) {
-      await window.secureStorage!.saveSession(token, privateKey, refreshToken)
+    const secureStorage = desktopBridge.secureStorage
+    if (secureStorage) {
+      await secureStorage.save({ token, privateKey, refreshToken })
     } else {
       localStorage.setItem('session_token', token)
       localStorage.setItem('session_privateKey', privateKey)
@@ -141,13 +142,10 @@ class AuthenticationService {
     }
   }
 
-  private async loadSession(): Promise<{
-    token: string
-    privateKey: string
-    refreshToken: string | null
-  } | null> {
-    if (isElectron()) {
-      return window.secureStorage!.loadSession()
+  private async loadSession(): Promise<StoredSession | null> {
+    const secureStorage = desktopBridge.secureStorage
+    if (secureStorage) {
+      return secureStorage.load()
     }
     const token = localStorage.getItem('session_token')
     const privateKey = localStorage.getItem('session_privateKey')
@@ -156,8 +154,9 @@ class AuthenticationService {
   }
 
   private async clearSession(): Promise<void> {
-    if (isElectron()) {
-      await window.secureStorage!.clearSession()
+    const secureStorage = desktopBridge.secureStorage
+    if (secureStorage) {
+      await secureStorage.clear()
     } else {
       localStorage.removeItem('session_token')
       localStorage.removeItem('session_privateKey')

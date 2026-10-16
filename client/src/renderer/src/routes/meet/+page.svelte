@@ -15,7 +15,7 @@
   import { riseIn } from '$src/animations'
   import { isMeetingJoinable } from '$src/utils/MeetingUtils'
   import { joinFailureMessage } from '$src/utils/MeetingJoinFailure'
-  import { isElectron } from '$src/utils/platformUtils'
+  import { isDesktopShell } from '$src/utils/platformUtils'
   import type { Meeting } from '$src/interfaces/Meetings'
 
   const { params }: { params?: { code?: string } } = $props()
@@ -68,7 +68,7 @@
   })
 
   function shouldOfferHandoff(): boolean {
-    return !isElectron() && sessionStorage.getItem(HANDOFF_KEY) === null
+    return !isDesktopShell() && sessionStorage.getItem(HANDOFF_KEY) === null
   }
 
   function offerHandoff(): void {

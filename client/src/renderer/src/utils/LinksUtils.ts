@@ -16,11 +16,8 @@ export function parseLinks(text: string): ContentPart[] {
   })
 }
 
+// Opens in a new browser tab; inside the desktop shell, off-origin links go to the system browser.
 export function openExternalLink(e: MouseEvent, url: string): void {
   e.preventDefault()
-  if (window.api?.openExternal) {
-    window.api.openExternal(url)
-  } else {
-    window.open(url, '_blank')
-  }
+  window.open(url, '_blank', 'noopener,noreferrer')
 }

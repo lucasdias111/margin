@@ -1,17 +1,18 @@
 <script lang="ts">
+  import { onMount } from 'svelte'
   import Router from 'svelte-spa-router'
   import { routes } from '$src/routes'
-  import TitleBar from './TitleBar.svelte'
   import ErrorToast from '$src/components/common/messages/ErrorToast.svelte'
-  import { isElectron } from '$src/utils/platformUtils'
+  import { instanceService } from '$src/services/InstanceService'
+  import { desktopBridge } from '$src/services/DesktopBridge'
 
-  const rounded = window.api?.platform !== 'linux'
+  onMount(() => {
+    instanceService.load()
+    desktopBridge.start()
+  })
 </script>
 
-<div class="app-shell" class:rounded>
-  {#if isElectron()}
-    <TitleBar title="margin" />
-  {/if}
+<div class="app-shell">
   <ErrorToast />
   <div class="app-content">
     <Router {routes} />
@@ -25,17 +26,6 @@
     height: 100vh;
     height: 100dvh;
     overflow: hidden;
-  }
-
-  .app-shell.rounded {
-    border-radius: 14px;
-    background: #f2eee8;
-  }
-
-  @media (prefers-color-scheme: dark) {
-    .app-shell.rounded {
-      background: #2d2d2d;
-    }
   }
 
   .app-content {

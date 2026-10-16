@@ -16,7 +16,7 @@ export default defineConfig({
       $states: path.resolve(__dirname, 'src/renderer/src/states')
     }
   },
-  base: '/app/',
+  base: '/',
   build: {
     outDir: path.resolve(__dirname, 'out/web'),
     emptyOutDir: true
