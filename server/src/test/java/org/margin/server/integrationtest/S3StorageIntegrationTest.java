@@ -9,6 +9,7 @@ import org.margin.server.storage.services.StorageService;
 import org.margin.server.storage.services.StorageUrls;
 import org.springframework.mock.web.MockMultipartFile;
 import org.testcontainers.containers.MinIOContainer;
+import org.testcontainers.utility.DockerImageName;
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
 import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
 import software.amazon.awssdk.regions.Region;
@@ -23,7 +24,9 @@ import java.net.http.HttpResponse;
 import static org.assertj.core.api.Assertions.assertThat;
 
 class S3StorageIntegrationTest {
-    private static final MinIOContainer minio = new MinIOContainer("minio/minio:latest");
+    // minio/minio is no longer published on Docker Hub; Chainguard's build runs the same server.
+    private static final MinIOContainer minio = new MinIOContainer(
+            DockerImageName.parse("chainguard/minio:latest").asCompatibleSubstituteFor("minio/minio"));
     private static StorageService storage;
 
     @BeforeAll

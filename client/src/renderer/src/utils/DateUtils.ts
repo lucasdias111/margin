@@ -95,7 +95,11 @@ export function viewerTimeZone(): string {
 export function availableTimeZones(): string[] {
   const supported = (Intl as unknown as { supportedValuesOf?: (k: string) => string[] })
     .supportedValuesOf
-  return supported ? supported('timeZone') : [viewerTimeZone()]
+  const viewer = viewerTimeZone()
+  if (!supported) return [viewer]
+  // The canonical list leaves out aliases such as "UTC", which a viewer can still resolve to.
+  const zones = supported('timeZone')
+  return zones.includes(viewer) ? zones : [viewer, ...zones]
 }
 
 export function formatInZone(date: Date | string, timeZone: string): string {
