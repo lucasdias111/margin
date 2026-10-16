@@ -1,6 +1,6 @@
-# margin-server
+# margin server
 
-Spring Boot backend for [margin](https://margin.chat). Handles REST, WebSocket, auth, storage, subscriptions, and SFU coordination.
+The Spring Boot server of [margin](../README.md): REST API, WebSocket, auth, storage, instance admin and call coordination.
 
 ## Building
 
@@ -11,10 +11,10 @@ Spring Boot backend for [margin](https://margin.chat). Handles REST, WebSocket, 
 ## Running locally
 
 ```bash
-./mvnw spring-boot:run
+SPRING_PROFILES_ACTIVE=dev ./mvnw spring-boot:run
 ```
 
-Dev defaults are in `application-dev.yml`.
+Dev defaults are in `src/main/resources/application-dev.yml`; [CONTRIBUTING.md](../CONTRIBUTING.md#dev-setup) lists the services it expects.
 
 ## Tests
 
@@ -22,19 +22,8 @@ Dev defaults are in `application-dev.yml`.
 ./mvnw test
 ```
 
-## Got a question?
-
-Check the [wiki](https://github.com/MarginChat/margin-server/wiki) or open an [issue](https://github.com/MarginChat/margin-server/issues).
-
-## Found a bug?
-
-Please search [existing issues](https://github.com/MarginChat/margin-server/issues) before opening a new one.
-
-## Contributing
-
-Open an [issue](https://github.com/MarginChat/margin-server/issues) or send a pull request. There are plenty
-of ways to help that don't require writing code.
+The integration tests use Testcontainers, so Docker must be running.
 
 ## License
 
-Licensed under the GNU GPLv3. See [LICENSE](LICENSE).
+AGPL-3.0-only, like the rest of the repository. See [LICENSE](../LICENSE).
