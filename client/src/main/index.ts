@@ -1,377 +1,125 @@
-import {
-  app,
-  BrowserWindow,
-  desktopCapturer,
-  ipcMain,
-  nativeImage,
-  safeStorage,
-  session,
-  shell
-} from 'electron'
-import { join, resolve } from 'path'
-import { electronApp, is, optimizer } from '@electron-toolkit/utils'
-import icon from '../../resources/icon.png?asset'
-import notificationBadge from '../../resources/notification-badge.png?asset'
-import { API_CONFIG } from '../renderer/src/shared/config'
-import { existsSync, readFileSync, unlinkSync, writeFileSync } from 'fs'
-import pkg from 'electron-updater'
-import { setupPresence } from './presence'
+import { app, BrowserWindow, Menu, type MenuItemConstructorOptions } from 'electron'
+import { resolve } from 'path'
+import { electronApp, is } from '@electron-toolkit/utils'
+import { Shell } from './shell'
 
-const { autoUpdater } = pkg
+// The desktop app is a thin shell: a tab per margin server, each loading that server's own
+// web app. It ships no chat UI of its own.
 
-// Dev builds talk to the local server, so keep their session apart from the installed app's.
+// Dev builds keep their servers and sessions apart from the installed app's.
 if (is.dev) app.setPath('userData', app.getPath('userData') + '-dev')
-
-const SECURE_FILE = join(app.getPath('userData'), 'secure.bin')
-const TOKEN_FILE = join(app.getPath('userData'), 'session.bin')
-const REFRESH_FILE = join(app.getPath('userData'), 'refresh.bin')
-
-const badgeImage = nativeImage.createFromPath(notificationBadge)
-
-function logUpdater(...args: unknown[]): void {
-  console.log('[updater]', ...args)
-}
-
-ipcMain.on('set-badge-count', (_event, count: number) => {
-  if (process.platform === 'darwin') {
-    app.dock?.setBadge(count > 0 ? String(count) : '')
-  } else if (process.platform === 'linux') {
-    app.setBadgeCount(count)
-  } else if (process.platform === 'win32') {
-    const win = BrowserWindow.getAllWindows()[0]
-    if (!win) return
-    if (count > 0) {
-      win.setOverlayIcon(badgeImage, `${count} unread messages`)
-    } else {
-      win.setOverlayIcon(null, '')
-    }
-  }
-})
-
-function writeEncrypted(filePath: string, plaintext: string): void {
-  const encrypted = safeStorage.encryptString(plaintext)
-  writeFileSync(filePath, encrypted)
-}
-
-function readEncrypted(filePath: string): string | null {
-  if (!existsSync(filePath)) return null
-  const encrypted = readFileSync(filePath)
-  return safeStorage.decryptString(encrypted)
-}
-
-ipcMain.handle(
-  'secure:saveSession',
-  (_event, token: string, privateKey: string, refreshToken: string) => {
-    writeEncrypted(TOKEN_FILE, token)
-    writeEncrypted(SECURE_FILE, privateKey)
-    writeEncrypted(REFRESH_FILE, refreshToken)
-  }
-)
-
-ipcMain.handle('secure:loadSession', () => {
-  const token = readEncrypted(TOKEN_FILE)
-  const privateKey = readEncrypted(SECURE_FILE)
-  if (!token || !privateKey) return null
-  return { token, privateKey, refreshToken: readEncrypted(REFRESH_FILE) }
-})
-
-ipcMain.handle('secure:clearSession', () => {
-  if (existsSync(TOKEN_FILE)) unlinkSync(TOKEN_FILE)
-  if (existsSync(SECURE_FILE)) unlinkSync(SECURE_FILE)
-  if (existsSync(REFRESH_FILE)) unlinkSync(REFRESH_FILE)
-})
-
-ipcMain.handle('open-external', (_event, url: string) => {
-  try {
-    const { protocol } = new URL(url)
-    if (protocol === 'http:' || protocol === 'https:' || protocol === 'mailto:') {
-      return shell.openExternal(url)
-    }
-  } catch {
-    // invalid URL — ignore
-  }
-  return undefined
-})
-
-let squirrelReady = false
-let installConfirmed = false
-
-function doQuitAndInstall(): void {
-  logUpdater('Calling quitAndInstall (macOS)')
-  app.removeAllListeners('window-all-closed')
-  autoUpdater.quitAndInstall(false, true)
-  setTimeout(() => {
-    logUpdater('quitAndInstall did not exit after 15s — forcing app.exit(0)')
-    app.exit(0)
-  }, 15000)
-}
-
-ipcMain.on('update-accept', () => {
-  logUpdater('User accepted update — starting download')
-  autoUpdater.downloadUpdate().catch((err) => logUpdater('downloadUpdate error:', err))
-})
-
-ipcMain.on('update-decline', () => {
-  logUpdater('User declined update')
-})
-
-ipcMain.on('update-install', () => {
-  logUpdater('update-install received — platform:', process.platform)
-
-  if (process.platform === 'darwin') {
-    installConfirmed = true
-    if (squirrelReady) {
-      logUpdater('Squirrel already ready — installing now')
-      doQuitAndInstall()
-    } else {
-      logUpdater('Squirrel not ready yet — will install once it signals ready')
-    }
-  } else {
-    logUpdater('Calling quitAndInstall (non-macOS)')
-    autoUpdater.quitAndInstall(false, true)
-  }
-})
-
-autoUpdater.autoDownload = false
-autoUpdater.autoInstallOnAppQuit = false
-
-autoUpdater.logger = {
-  info: (...args: unknown[]) => logUpdater('ℹ', ...args),
-  warn: (...args: unknown[]) => logUpdater('⚠', ...args),
-  error: (...args: unknown[]) => logUpdater('✖', ...args),
-  debug: (...args: unknown[]) => logUpdater('·', ...args)
-} as any
-
-autoUpdater.on('checking-for-update', () => {
-  logUpdater('Checking for update…')
-})
-
-autoUpdater.on('update-available', (info) => {
-  logUpdater('Update available:', info.version, '| releaseName:', info.releaseName)
-  logUpdater('Release date:', info.releaseDate)
-  BrowserWindow.getAllWindows()[0]?.webContents.send('update-available', info.version)
-})
-
-autoUpdater.on('update-not-available', (info) => {
-  logUpdater('No update available. Current version is latest:', info.version)
-})
-
-autoUpdater.on('download-progress', (progress) => {
-  logUpdater(
-    `Download progress: ${progress.percent.toFixed(1)}%`,
-    `| speed: ${(progress.bytesPerSecond / 1024).toFixed(1)} KB/s`,
-    `| transferred: ${(progress.transferred / 1024 / 1024).toFixed(2)} MB`,
-    `/ ${(progress.total / 1024 / 1024).toFixed(2)} MB`
-  )
-  BrowserWindow.getAllWindows()[0]?.webContents.send('update-progress', progress.percent)
-})
-
-autoUpdater.on('update-downloaded', (info) => {
-  logUpdater('Update downloaded:', info.version)
-  logUpdater('Download path:', (info as any).downloadedFile ?? 'unknown')
-
-  BrowserWindow.getAllWindows()[0]?.webContents.send('update-downloaded')
-
-  if (process.platform === 'darwin') {
-    squirrelReady = true
-    logUpdater('Squirrel ready. installConfirmed:', installConfirmed)
-    if (installConfirmed) {
-      logUpdater('User already confirmed — installing now')
-      doQuitAndInstall()
-    } else {
-      logUpdater('Waiting for user to confirm install…')
-    }
-  }
-})
-
-autoUpdater.on('error', (err) => {
-  logUpdater('AutoUpdater error:', err?.message ?? err)
-  logUpdater('Stack:', err?.stack)
-  BrowserWindow.getAllWindows()[0]?.webContents.send('update-error', err?.message ?? String(err))
-})
-
-function checkForUpdates(): void {
-  logUpdater('checkForUpdates called')
-  logUpdater('app version:', app.getVersion())
-  logUpdater('platform:', process.platform, process.arch)
-  logUpdater('userData (update cache lives here):', app.getPath('userData'))
-
-  autoUpdater.checkForUpdates().catch((err) => {
-    logUpdater('checkForUpdates() rejected:', err?.message ?? err)
-  })
-}
-
-function createWindow(): void {
-  const win = new BrowserWindow({
-    width: 1400,
-    height: 1000,
-    minWidth: 1000,
-    minHeight: 800,
-    show: false,
-    frame: false,
-    titleBarStyle: 'hidden',
-    ...(process.platform === 'darwin' ? { trafficLightPosition: { x: 12, y: 10 } } : {}),
-    transparent: process.platform !== 'linux',
-    hasShadow: true,
-    ...(process.platform === 'linux' ? { icon } : {}),
-    webPreferences: {
-      preload: join(__dirname, '../preload/index.cjs'),
-      sandbox: true,
-      contextIsolation: true,
-      nodeIntegration: false
-    }
-  })
-
-  setupPresence(win)
-
-  win.webContents.session.webRequest.onHeadersReceived((details, callback) => {
-    callback({
-      responseHeaders: {
-        ...details.responseHeaders,
-        'Content-Security-Policy': [
-          `default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: ${API_CONFIG.baseUrl} ${API_CONFIG.s3Url} ${API_CONFIG.cdnUrl} https://static.klipy.com; connect-src 'self' ${API_CONFIG.baseUrl} ${API_CONFIG.wsUrl} ${API_CONFIG.sfuUrl} ${API_CONFIG.s3Url} https://api.klipy.com`
-        ]
-      }
-    })
-  })
-
-  mainWindow = win
-
-  win.on('closed', () => {
-    mainWindow = null
-  })
-
-  win.on('ready-to-show', () => {
-    win.show()
-  })
-
-  win.webContents.on('before-input-event', (_event, input) => {
-    if (input.control && input.shift && input.key === 'I') {
-      win.webContents.toggleDevTools()
-    }
-  })
-
-  win.webContents.setWindowOpenHandler((details) => {
-    try {
-      const { protocol } = new URL(details.url)
-      if (protocol === 'http:' || protocol === 'https:' || protocol === 'mailto:') {
-        shell.openExternal(details.url)
-      }
-    } catch {
-      // invalid URL — deny silently
-    }
-    return { action: 'deny' }
-  })
-
-  ipcMain.on('window-minimize', () => win.minimize())
-
-  ipcMain.on('window-maximize', () => {
-    if (win.isMaximized()) {
-      win.unmaximize()
-    } else {
-      win.maximize()
-    }
-  })
-
-  ipcMain.on('window-close', () => win.close())
-
-  ipcMain.on('renderer-ready', () => {
-    logUpdater('renderer-ready received')
-    if (!is.dev) {
-      checkForUpdates()
-    } else {
-      logUpdater('Skipping update check in dev mode')
-    }
-  })
-
-  if (is.dev && process.env['ELECTRON_RENDERER_URL']) {
-    win.loadURL(process.env['ELECTRON_RENDERER_URL'])
-  } else {
-    win.loadFile(join(__dirname, '../renderer/index.html'))
-  }
-}
-
-let mainWindow: BrowserWindow | null = null
 
 const PROTOCOL = 'margin'
 
-function meetingPathFrom(url: string): string | null {
-  const match = url.match(/^margin:\/\/meet\/([A-Za-z0-9_-]+)/)
-  return match ? `/meet/${match[1]}` : null
-}
-
-function routeDeepLink(url: string): void {
-  const path = meetingPathFrom(url)
-  const target = mainWindow
-  if (!path || !target) return
-
-  if (target.isMinimized()) target.restore()
-  target.focus()
-  target.webContents.send('deep-link', path)
-}
+let shell: Shell | null = null
+let launchLink: string | undefined
 
 function deepLinkFromArgv(argv: string[]): string | undefined {
   return argv.find((arg) => arg.startsWith(`${PROTOCOL}://`))
 }
 
-// A protocol activation on Windows and Linux arrives as a second launch, so the lock and the
-// handler have to ship together or the link just opens another window.
-const gotTheLock = app.requestSingleInstanceLock()
+function buildMenu(target: Shell): void {
+  const isMac = process.platform === 'darwin'
+  const tabItems: MenuItemConstructorOptions[] = Array.from({ length: 9 }, (_, index) => ({
+    label: `Server ${index + 1}`,
+    accelerator: `CmdOrCtrl+${index + 1}`,
+    visible: false,
+    click: () => target.selectByIndex(index)
+  }))
 
-if (!gotTheLock) {
-  app.quit()
-} else {
-  app.on('second-instance', (_event, argv) => {
-    const url = deepLinkFromArgv(argv)
-    if (url) routeDeepLink(url)
-    else if (mainWindow) {
-      if (mainWindow.isMinimized()) mainWindow.restore()
-      mainWindow.focus()
+  const template: MenuItemConstructorOptions[] = [
+    ...(isMac ? [{ role: 'appMenu' as const }] : []),
+    { role: 'editMenu' },
+    {
+      label: 'View',
+      submenu: [
+        { label: 'Reload', accelerator: 'CmdOrCtrl+R', click: () => target.reloadActive() },
+        {
+          label: 'Toggle Developer Tools',
+          accelerator: isMac ? 'Alt+Cmd+I' : 'Ctrl+Shift+I',
+          click: () => target.toggleActiveDevTools()
+        },
+        { type: 'separator' },
+        { role: 'resetZoom' },
+        { role: 'zoomIn' },
+        { role: 'zoomOut' },
+        { type: 'separator' },
+        { role: 'togglefullscreen' }
+      ]
+    },
+    {
+      label: 'Window',
+      submenu: [
+        { role: 'minimize' },
+        { role: 'zoom', visible: isMac },
+        { type: 'separator' },
+        { label: 'Next Server', accelerator: 'Ctrl+Tab', click: () => target.selectNext(1) },
+        {
+          label: 'Previous Server',
+          accelerator: 'Ctrl+Shift+Tab',
+          click: () => target.selectNext(-1)
+        },
+        ...tabItems,
+        ...(isMac ? [{ type: 'separator' as const }, { role: 'front' as const }] : []),
+        { role: 'close' }
+      ]
     }
-  })
+  ]
+  Menu.setApplicationMenu(Menu.buildFromTemplate(template))
 }
 
-app.on('open-url', (event, url) => {
-  event.preventDefault()
-  routeDeepLink(url)
-})
+// A protocol activation on Windows and Linux arrives as a second launch, so the lock and the
+// handler have to ship together or the link just opens another window.
+if (!app.requestSingleInstanceLock()) {
+  app.quit()
+} else {
+  launchLink = deepLinkFromArgv(process.argv)
 
-app.whenReady().then(() => {
-  electronApp.setAppUserModelId('com.electron')
+  app.on('second-instance', (_event, argv) => {
+    const link = deepLinkFromArgv(argv)
+    if (link) shell?.openDeepLink(link)
+    else shell?.focus()
+  })
 
-  if (process.defaultApp) {
-    if (process.argv.length >= 2) {
-      app.setAsDefaultProtocolClient(PROTOCOL, process.execPath, [resolve(process.argv[1])])
+  app.on('open-url', (event, url) => {
+    event.preventDefault()
+    if (shell?.window) shell.openDeepLink(url)
+    else launchLink = url
+  })
+
+  // No page may open webviews, and nothing gets Node.
+  app.on('web-contents-created', (_event, contents) => {
+    contents.on('will-attach-webview', (event) => event.preventDefault())
+  })
+
+  app.whenReady().then(() => {
+    electronApp.setAppUserModelId('com.margin.app')
+
+    if (process.defaultApp) {
+      if (process.argv.length >= 2) {
+        app.setAsDefaultProtocolClient(PROTOCOL, process.execPath, [resolve(process.argv[1])])
+      }
+    } else {
+      app.setAsDefaultProtocolClient(PROTOCOL)
     }
-  } else {
-    app.setAsDefaultProtocolClient(PROTOCOL)
-  }
 
-  app.on('browser-window-created', (_, window) => {
-    optimizer.watchWindowShortcuts(window)
+    shell = new Shell()
+    buildMenu(shell)
+    shell.createWindow()
+    shell.start()
+
+    if (launchLink) {
+      shell.openDeepLink(launchLink)
+      launchLink = undefined
+    }
+
+    app.on('activate', () => {
+      if (BrowserWindow.getAllWindows().length === 0) shell?.createWindow()
+      else shell?.focus()
+    })
   })
 
-  session.defaultSession.setDisplayMediaRequestHandler(async (_request, callback) => {
-    const sources = await desktopCapturer.getSources({ types: ['screen'] })
-    callback({ video: sources[0], audio: 'loopback' })
+  app.on('window-all-closed', () => {
+    if (process.platform !== 'darwin') app.quit()
   })
-
-  ipcMain.on('ping', () => console.log('pong'))
-
-  createWindow()
-
-  const launchUrl = deepLinkFromArgv(process.argv)
-  if (launchUrl) {
-    mainWindow?.webContents.once('did-finish-load', () => routeDeepLink(launchUrl))
-  }
-
-  app.on('activate', function () {
-    if (BrowserWindow.getAllWindows().length === 0) createWindow()
-  })
-})
-
-app.on('window-all-closed', () => {
-  if (process.platform !== 'darwin') {
-    app.quit()
-  }
-})
+}

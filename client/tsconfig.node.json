@@ -4,6 +4,7 @@
     "electron.vite.config.*",
     "src/main/**/*",
     "src/preload/**/*",
+    "src/common/**/*",
     "src/renderer/src/shared/**/*"
   ],
   "compilerOptions": {
