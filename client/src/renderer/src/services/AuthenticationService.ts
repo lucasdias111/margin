@@ -15,6 +15,7 @@ import { errorService } from '$src/services/ErrorService'
 import { webSocketService } from '$src/services/websocket/WebSocketService'
 import { push } from 'svelte-spa-router'
 import { desktopBridge, type StoredSession } from '$src/services/DesktopBridge'
+import { webPushService } from '$src/services/WebPushService'
 import { navigationService } from '$src/services/NavigationService'
 import { marginState } from '$src/states/MarginState.svelte'
 import { spaceState } from '$src/states/SpaceState.svelte'
@@ -297,6 +298,8 @@ class AuthenticationService {
   }
 
   async logoutUser(): Promise<void> {
+    // A signed-out browser shouldn't keep receiving this user's notifications.
+    await webPushService.disable().catch(() => {})
     const refreshToken = sessionStorage.getItem('refreshToken')
     const response = await authenticatedPost({ refreshToken }, 'auth/logout')
     if (!response.ok) {

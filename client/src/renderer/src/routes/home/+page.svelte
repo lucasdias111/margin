@@ -13,6 +13,8 @@
   import ConnectionBar from '$src/components/common/messages/ConnectionBar.svelte'
   import { useDesktopIntegration } from '$src/composables/useDesktopIntegration.svelte'
   import { bootstrapService } from '$src/services/BootstrapService'
+  import { webPushService } from '$src/services/WebPushService'
+  import { instanceService } from '$src/services/InstanceService'
   import { registerWebSocketHandlers } from '$src/services/websocket/registerHandlers'
   import { webSocketService } from '$src/services/websocket/WebSocketService'
   import { View } from '$src/interfaces/View'
@@ -36,6 +38,7 @@
     const unobserveViewport = viewportState.observe()
 
     bootstrapService.loadInitialData().then(() => (bootstrapped = true))
+    instanceService.load().then(() => webPushService.resume())
     webSocketService.connect()
 
     return () => {

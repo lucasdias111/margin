@@ -5,6 +5,8 @@
   import ConfirmationModal from '$src/components/common/modals/ConfirmationModal.svelte'
   import Button from '$src/components/common/buttons/Button.svelte'
   import { sessionState } from '$src/states/SessionState.svelte'
+  import { webPushService } from '$src/services/WebPushService'
+  import { onMount } from 'svelte'
 
   let newProfilePicture = $state<File | null>(null)
   let previewUrl = $state<string | null>(sessionState.currentUser.profilePictureUrl)
@@ -101,6 +103,32 @@
     }
   }
 
+  let pushOn = $state(false)
+  let pushBusy = $state(false)
+  let pushMessage = $state('')
+
+  onMount(async () => {
+    pushOn = await webPushService.isSubscribed()
+  })
+
+  async function togglePush(): Promise<void> {
+    pushBusy = true
+    pushMessage = ''
+    try {
+      if (pushOn) {
+        await webPushService.disable()
+        pushOn = false
+      } else {
+        pushOn = await webPushService.enable()
+        if (!pushOn) pushMessage = 'Notifications are blocked for this site in your browser.'
+      }
+    } catch {
+      pushMessage = 'Could not change push notifications here.'
+    } finally {
+      pushBusy = false
+    }
+  }
+
   async function onDeleteAccount(): Promise<void> {
     try {
       await usersService.deleteAccount()
@@ -182,6 +210,30 @@
       />
       <Button buttonType="primary" size="small" text="Save changes" onClick={onSave} />
     </div>
+
+    {#if webPushService.supported}
+      <div class="divider"></div>
+
+      <h2 class="page-title">Notifications</h2>
+      <div class="danger-zone">
+        <div class="danger-info">
+          <span class="setting-title">Push notifications on this device</span>
+          <span class="danger-description">
+            Get notified about messages, invites and meetings while margin is closed.
+          </span>
+          {#if pushMessage}
+            <span class="danger-description">{pushMessage}</span>
+          {/if}
+        </div>
+        <Button
+          buttonType={pushOn ? 'secondary' : 'primary'}
+          size="small"
+          text={pushBusy ? '…' : pushOn ? 'Turn off' : 'Turn on'}
+          disabled={pushBusy}
+          onClick={togglePush}
+        />
+      </div>
+    {/if}
 
     <div class="divider"></div>
 
@@ -424,6 +476,12 @@
     display: flex;
     flex-direction: column;
     gap: 4px;
+  }
+
+  .setting-title {
+    font-size: 0.88rem;
+    font-weight: 600;
+    color: #1a1a1a;
   }
 
   .danger-title {

@@ -5,10 +5,12 @@
   import ErrorToast from '$src/components/common/messages/ErrorToast.svelte'
   import { instanceService } from '$src/services/InstanceService'
   import { desktopBridge } from '$src/services/DesktopBridge'
+  import { webPushService } from '$src/services/WebPushService'
 
   onMount(() => {
     instanceService.load()
     desktopBridge.start()
+    webPushService.registerWorker()
   })
 </script>
 
