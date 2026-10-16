@@ -1,0 +1,87 @@
+# The server, client and SFU tests. Runs on pull requests and on main, and
+# release.yml calls it before publishing a release.
+name: Tests
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+  workflow_call:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: tests-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  server:
+    name: Server
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    defaults:
+      run:
+        working-directory: server
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: "25"
+          cache: maven
+          cache-dependency-path: server/pom.xml
+      # Unit and integration tests; the integration tests start Postgres and
+      # MinIO with Testcontainers on the runner's Docker.
+      - run: ./mvnw -B -ntp verify
+      - if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: server-test-reports
+          path: server/target/surefire-reports/
+          retention-days: 7
+
+  client:
+    name: Client
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: client
+    env:
+      HUSKY: "0"
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: client/package-lock.json
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm run test:ci
+      - run: npm run build:web
+
+  sfu:
+    name: SFU
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: sfu
+    env:
+      # Skips mediasoup's postinstall worker download or build: the tests don't
+      # start a worker, and the image installs its own (see sfu/Dockerfile).
+      MEDIASOUP_WORKER_BIN: /usr/local/bin/mediasoup-worker
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: sfu/package-lock.json
+      - run: npm ci
+      - run: npm run typecheck:test
+      - run: npm test
+      - run: npm run build

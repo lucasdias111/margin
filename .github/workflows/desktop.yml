@@ -1,0 +1,184 @@
+# Builds the desktop shell on a desktop-vX.Y.Z tag and publishes it to a GitHub
+# Release of that tag: a universal dmg and zip for macOS, NSIS for Windows, and
+# an AppImage and .deb for Linux, with electron-builder's latest*.yml files,
+# which the shell's updater reads from the newest desktop-v* release.
+#
+# Builds are unsigned unless signing secrets are set:
+#   Windows: WIN_CSC_LINK (base64 .pfx) and WIN_CSC_KEY_PASSWORD.
+#   macOS:   MAC_CSC_LINK (base64 .p12), MAC_CSC_KEY_PASSWORD and MAC_CSC_NAME
+#            (the identity, e.g. "Developer ID Application: … (TEAMID)"); with
+#            APPLE_ID, APPLE_APP_SPECIFIC_PASSWORD and APPLE_TEAM_ID as well,
+#            the app is also notarized.
+name: Desktop release
+
+on:
+  push:
+    tags: ["desktop-v*"]
+
+permissions:
+  contents: read
+
+jobs:
+  prepare:
+    name: Prepare
+    runs-on: ubuntu-24.04
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      prerelease: ${{ steps.version.outputs.prerelease }}
+    steps:
+      - uses: actions/checkout@v5
+      # electron-builder names the artifacts and latest*.yml after package.json,
+      # and the updater compares the tag with the running app's version, so the
+      # two must agree.
+      - id: version
+        name: Check the tag against client/package.json
+        env:
+          TAG: ${{ github.ref_name }}
+        run: |
+          version="${TAG#desktop-v}"
+          if ! printf '%s' "$version" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$'; then
+            echo "::error::tag $TAG isn't desktop-vX.Y.Z or desktop-vX.Y.Z-prerelease"
+            exit 1
+          fi
+          package_version="$(jq -r .version client/package.json)"
+          if [ "$package_version" != "$version" ]; then
+            echo "::error file=client/package.json::version is $package_version but the tag is $TAG; bump it and re-tag"
+            exit 1
+          fi
+          case "$version" in *-*) prerelease=true ;; *) prerelease=false ;; esac
+          echo "version=$version" >>"$GITHUB_OUTPUT"
+          echo "prerelease=$prerelease" >>"$GITHUB_OUTPUT"
+
+  build:
+    name: Build (${{ matrix.os }})
+    needs: prepare
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: mac
+            runner: macos-14
+          - os: win
+            runner: windows-2022
+          - os: linux
+            runner: ubuntu-24.04
+    defaults:
+      run:
+        shell: bash
+        working-directory: client
+    env:
+      HUSKY: "0"
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: client/package-lock.json
+      - run: npm ci
+      - run: npm run build
+
+      - name: Package
+        env:
+          OS: ${{ matrix.os }}
+          WIN_CSC_LINK: ${{ secrets.WIN_CSC_LINK }}
+          WIN_CSC_KEY_PASSWORD: ${{ secrets.WIN_CSC_KEY_PASSWORD }}
+          MAC_CSC_LINK: ${{ secrets.MAC_CSC_LINK }}
+          MAC_CSC_KEY_PASSWORD: ${{ secrets.MAC_CSC_KEY_PASSWORD }}
+          MAC_CSC_NAME: ${{ secrets.MAC_CSC_NAME }}
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        run: |
+          set -- "--$OS" --publish never
+          # Never let electron-builder pick up a stray identity from the runner.
+          export CSC_IDENTITY_AUTO_DISCOVERY=false
+          case "$OS" in
+          win)
+            if [ -n "$WIN_CSC_LINK" ]; then
+              echo "Signing with WIN_CSC_LINK"
+            else
+              echo "No Windows signing secrets; building unsigned"
+              unset WIN_CSC_LINK WIN_CSC_KEY_PASSWORD
+            fi
+            ;;
+          mac)
+            if [ -n "$MAC_CSC_LINK" ] && [ -n "$MAC_CSC_NAME" ]; then
+              echo "Signing as $MAC_CSC_NAME"
+              export CSC_LINK="$MAC_CSC_LINK" CSC_KEY_PASSWORD="$MAC_CSC_KEY_PASSWORD"
+              set -- "$@" "-c.mac.identity=$MAC_CSC_NAME"
+              if [ -n "$APPLE_ID" ] && [ -n "$APPLE_APP_SPECIFIC_PASSWORD" ] && [ -n "$APPLE_TEAM_ID" ]; then
+                echo "Notarizing"
+                set -- "$@" -c.mac.notarize=true
+              fi
+            else
+              echo "No macOS signing secrets; building unsigned"
+            fi
+            ;;
+          esac
+          npx electron-builder "$@"
+
+      - name: Collect the artifacts
+        run: |
+          mkdir -p ../release
+          find dist -maxdepth 1 -type f \
+            \( -name '*.dmg' -o -name '*.zip' -o -name '*.exe' -o -name '*.AppImage' -o -name '*.deb' \
+               -o -name '*.blockmap' -o -name 'latest*.yml' \) \
+            -exec cp {} ../release/ \;
+          ls -l ../release
+          ls ../release/latest*.yml >/dev/null
+      - uses: actions/upload-artifact@v4
+        with:
+          name: desktop-${{ matrix.os }}
+          path: release/*
+          if-no-files-found: error
+          retention-days: 7
+
+  release:
+    name: GitHub Release
+    needs: [prepare, build]
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: release
+          pattern: desktop-*
+          merge-multiple: true
+      - name: Check the update feeds are all there
+        working-directory: release
+        run: |
+          ls -l
+          for f in latest.yml latest-linux.yml latest-mac.yml; do
+            [ -f "$f" ] || { echo "::error::$f is missing"; exit 1; }
+          done
+      - name: Publish the release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+          TAG: ${{ github.ref_name }}
+          VERSION: ${{ needs.prepare.outputs.version }}
+          PRERELEASE: ${{ needs.prepare.outputs.prerelease }}
+        run: |
+          cat >notes.md <<EOF
+          The margin desktop app $VERSION: a shell that opens your margin servers in tabs.
+
+          - **macOS:** \`margin-$VERSION.dmg\` (Apple silicon and Intel). It isn't signed, so the first launch needs System Settings → Privacy & Security → Open Anyway (or, if macOS calls it damaged, \`xattr -dr com.apple.quarantine /Applications/margin.app\`).
+          - **Windows:** \`margin-$VERSION-setup.exe\`. SmartScreen may warn about an unknown publisher; choose More info → Run anyway.
+          - **Linux:** \`margin-$VERSION.AppImage\` or \`margin_${VERSION}_amd64.deb\`.
+
+          Windows and Linux update themselves; macOS shows a notice when a new version is out. See [installing the desktop app](https://github.com/$GH_REPO/blob/main/docs/desktop.md).
+          EOF
+          # The instance installer is fetched from releases/latest, so a desktop
+          # release must never become latest.
+          set -- --latest=false
+          if [ "$PRERELEASE" = true ]; then set -- "$@" --prerelease; fi
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            gh release edit "$TAG" --title "margin desktop $VERSION" --notes-file notes.md "$@"
+            gh release upload "$TAG" release/* --clobber
+          else
+            gh release create "$TAG" release/* --verify-tag --title "margin desktop $VERSION" --notes-file notes.md "$@"
+          fi
