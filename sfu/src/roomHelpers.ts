@@ -1,7 +1,7 @@
 import {Room} from "./types.js"
 import {types as MediasoupTypes} from 'mediasoup'
 
-export async function getOrCreateRoom(rooms: Map<string, Room>, roomId: string, worker: MediasoupTypes.Worker, maxParticipants: number): Promise<Room> {
+export async function getOrCreateRoom(rooms: Map<string, Room>, roomId: string, worker: MediasoupTypes.Worker, webRtcServer: MediasoupTypes.WebRtcServer, maxParticipants: number): Promise<Room> {
     const existing = rooms.get(roomId)
     if (existing) {
         existing.maxParticipants = maxParticipants
@@ -27,6 +27,7 @@ export async function getOrCreateRoom(rooms: Map<string, Room>, roomId: string, 
     const room: Room = {
         id: roomId,
         router,
+        webRtcServer,
         peers: new Map(),
         maxParticipants,
         lastEmptyAt: Date.now()

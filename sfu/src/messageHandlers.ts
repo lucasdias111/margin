@@ -58,7 +58,7 @@ export async function handleCreateWebRtcTransport(
     peer: Peer,
     room: Room
 ): Promise<void> {
-    const transport = await createWebRtcTransport(room.router)
+    const transport = await createWebRtcTransport(room.router, room.webRtcServer)
     peer.transports.set(transport.id, transport)
 
     ws.send(JSON.stringify({

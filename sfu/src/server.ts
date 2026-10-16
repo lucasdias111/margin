@@ -6,26 +6,51 @@ import {peersByRoom} from './peerHelpers.js'
 import {initMediaSoupServer} from './mediaSoupHelper.js'
 import {requireInternalApiKey} from "./authorizationHelper.js";
 import {DEFAULT_IDLE_MS, reapIdleRooms} from './roomReaper.js'
+import {readRtcConfig, RtcConfig} from './rtcConfig.js'
 
+const rtcConfig = readRtcConfigOrExit()
 const rooms = new Map<string, Room>()
 let worker: MediasoupTypes.Worker
+let webRtcServer: MediasoupTypes.WebRtcServer
+
+function readRtcConfigOrExit(): RtcConfig {
+    try {
+        return readRtcConfig(process.env)
+    } catch (err) {
+        console.error(err instanceof Error ? err.message : err)
+        process.exit(1)
+    }
+}
 
 async function initMediasoup() {
-    worker = await mediasoup.createWorker({
-        rtcMinPort: parseInt(process.env.MEDIASOUP_RTC_MIN_PORT ?? '40000'),
-        rtcMaxPort: parseInt(process.env.MEDIASOUP_RTC_MAX_PORT ?? '49999')
-    })
+    worker = await mediasoup.createWorker()
 
     worker.on('died', () => {
         console.error('mediasoup worker died')
         process.exit(1)
     })
 
-    console.log('mediasoup worker ready')
+    // One UDP and one TCP port shared by every transport, instead of a port per transport.
+    const {announcedAddress, port} = rtcConfig
+    webRtcServer = await worker.createWebRtcServer({
+        listenInfos: [
+            {protocol: 'udp', ip: '0.0.0.0', announcedAddress, port},
+            {protocol: 'tcp', ip: '0.0.0.0', announcedAddress, port}
+        ]
+    })
+
+    console.log(`mediasoup worker ready (media on ${announcedAddress}:${port} udp+tcp)`)
 }
 
 const app = express()
 app.use(express.json())
+
+app.get('/health', (_req, res) => {
+    if (!worker || worker.closed || !webRtcServer || webRtcServer.closed) {
+        return res.status(503).json({status: 'unavailable'})
+    }
+    res.json({status: 'ok'})
+})
 
 app.post('/rooms/:roomId', requireInternalApiKey, async (req, res) => {
     const maxParticipants = Number(req.body?.maxParticipants)
@@ -33,7 +58,7 @@ app.post('/rooms/:roomId', requireInternalApiKey, async (req, res) => {
         return res.status(400).json({error: 'maxParticipants must be a positive integer'})
     }
 
-    const room = await getOrCreateRoom(rooms, req.params.roomId, worker, maxParticipants)
+    const room = await getOrCreateRoom(rooms, req.params.roomId, worker, webRtcServer, maxParticipants)
 
     res.json({
         roomId: room.id,

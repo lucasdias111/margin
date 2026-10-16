@@ -45,6 +45,10 @@ RUN set -eu; \
 
 COPY --from=builder /app/dist ./dist
 
-EXPOSE 3000
+# Signaling and the internal HTTP API on 3000; media on one UDP and one TCP port.
+EXPOSE 3000 40000/udp 40000/tcp
+
+HEALTHCHECK --interval=15s --timeout=5s --start-period=10s --retries=3 \
+    CMD ["node", "-e", "fetch('http://127.0.0.1:3000/health').then(r => process.exit(r.ok ? 0 : 1), () => process.exit(1))"]
 
 CMD ["node", "dist/server.js"]

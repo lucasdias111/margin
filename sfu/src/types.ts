@@ -13,6 +13,7 @@ export interface Peer {
 export interface Room {
     id: string
     router: MediasoupTypes.Router
+    webRtcServer: MediasoupTypes.WebRtcServer
     peers: Map<string, Peer>
     maxParticipants: number
     lastEmptyAt: number | null
