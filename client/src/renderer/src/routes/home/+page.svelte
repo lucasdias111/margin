@@ -22,11 +22,21 @@
   import { marginState } from '$src/states/MarginState.svelte'
   import { navigationState } from '$src/states/NavigationState.svelte'
   import { viewportState } from '$src/states/ViewportState.svelte'
+  import { meetingsState } from '$src/states/MeetingsState.svelte'
   import { isDesktopShell } from '$src/utils/platformUtils'
   import PageTransition from '$src/components/common/motion/PageTransition.svelte'
 
   let bootstrapped = $state(false)
   const showOnboarding = $derived(bootstrapped && (isDesktopShell() || !viewportState.isMobile))
+
+  // On a phone only one pane fits: the list until something is picked, then the content.
+  // Settings and admin have nothing to pick, so they go straight to the content.
+  const showsContent = $derived(
+    navigationState.hasSelection ||
+      navigationState.view === View.Settings ||
+      navigationState.view === View.Admin ||
+      (navigationState.view === View.Meetings && meetingsState.selectedCode !== null)
+  )
 
   const resync = (): Promise<void> => bootstrapService.resync()
 
@@ -69,10 +79,12 @@
     {:else if navigationState.view === View.Notifications}
       <Notifications />
     {:else}
-      <div class="sidebar-pane" class:mobile-hidden={navigationState.hasSelection}>
-        <Sidebar />
-      </div>
-      <div class="content-pane" class:mobile-hidden={!navigationState.hasSelection}>
+      {#if navigationState.view !== View.Admin}
+        <div class="sidebar-pane" class:mobile-hidden={showsContent}>
+          <Sidebar />
+        </div>
+      {/if}
+      <div class="content-pane" class:mobile-hidden={!showsContent}>
         <ContentWindow />
       </div>
     {/if}

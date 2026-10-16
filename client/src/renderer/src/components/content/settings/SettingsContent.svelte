@@ -215,7 +215,7 @@
       <div class="divider"></div>
 
       <h2 class="page-title">Notifications</h2>
-      <div class="danger-zone">
+      <div class="setting-row">
         <div class="danger-info">
           <span class="setting-title">Push notifications on this device</span>
           <span class="danger-description">
@@ -460,6 +460,21 @@
   .password-success {
     font-size: 0.8rem;
     color: #3d8a52;
+  }
+
+  .setting-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 16px;
+    border: 1px solid #ece8e0;
+    border-radius: 10px;
+  }
+
+  .setting-row :global(button) {
+    flex-shrink: 0;
+    white-space: nowrap;
   }
 
   .danger-zone {

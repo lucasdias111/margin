@@ -87,7 +87,7 @@
     <Button buttonType="primary" size="small" text="Create code" onClick={create} />
   </div>
   {#if newest}
-    <span class="admin-label">Sign-up link for code {newest.code}</span>
+    <span class="admin-label">Sign-up link</span>
     <CopyLink link={signUpLink(newest)} onDismiss={() => (newest = null)} />
   {/if}
 </section>
