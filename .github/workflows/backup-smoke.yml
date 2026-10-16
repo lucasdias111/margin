@@ -1,0 +1,58 @@
+# Builds the three images, installs an instance from the deploy bundle, and
+# checks a backup survives a wipe and a restore onto a fresh install. See
+# .github/scripts/backup-smoke.sh. release.yml calls it before publishing.
+name: Backup smoke test
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+  workflow_call:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: backup-smoke-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  smoke:
+    name: Backup and restore
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    env:
+      MARGIN_VERSION: 0.0.0-ci
+    steps:
+      - uses: actions/checkout@v5
+      - uses: docker/setup-buildx-action@v3
+
+      - name: Build margin-server
+        uses: docker/build-push-action@v6
+        with:
+          context: server
+          load: true
+          tags: ghcr.io/lucasdias111/margin-server:0.0.0-ci
+          cache-from: type=gha,scope=smoke-server
+          cache-to: type=gha,scope=smoke-server,mode=max
+      - name: Build margin-sfu
+        uses: docker/build-push-action@v6
+        with:
+          context: sfu
+          load: true
+          tags: ghcr.io/lucasdias111/margin-sfu:0.0.0-ci
+          cache-from: type=gha,scope=smoke-sfu
+          cache-to: type=gha,scope=smoke-sfu,mode=max
+      - name: Build margin-web
+        uses: docker/build-push-action@v6
+        with:
+          context: client
+          file: client/Dockerfile.web
+          load: true
+          tags: ghcr.io/lucasdias111/margin-web:0.0.0-ci
+          cache-from: type=gha,scope=smoke-web
+          cache-to: type=gha,scope=smoke-web,mode=max
+
+      - name: Install, seed, back up, wipe, restore, check
+        run: .github/scripts/backup-smoke.sh "$RUNNER_TEMP/margin-smoke"
