@@ -3,8 +3,7 @@
   "include": [
     "src/renderer/src/env.d.ts",
     "src/renderer/src/**/*",
-    "src/renderer/src/**/*.svelte",
-    "src/preload/*.d.ts"
+    "src/renderer/src/**/*.svelte"
 , "src/renderer/routes/home/Home.svelte", "src/renderer/routes/Login.svelte"  ],
   "compilerOptions": {
     "verbatimModuleSyntax": true,

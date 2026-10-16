@@ -13,7 +13,9 @@ files:
   - '!svelte.config.mjs'
   - '!{.eslintcache,eslint.config.mjs,.prettierignore,.prettierrc.yaml,dev-app-update.yml,CHANGELOG.md,README.md}'
   - '!{.env,.env.*,pnpm-lock.yaml}'
-  - '!{tsconfig.json,tsconfig.node.json,tsconfig.web.json}'
+  - '!{tsconfig.json,tsconfig.node.json,tsconfig.web.json,tsconfig.shell.json}'
+  - '!{Dockerfile.web,nginx.web.conf,vite.config.web.ts,vitest.config.ts,vitest.setup.ts,playwright.config.ts}'
+  - '!{e2e,build,out/web,coverage,playwright-report,test-results}/**'
 asarUnpack:
   - resources/**
 win:
@@ -27,9 +29,9 @@ nsis:
 mac:
   target:
     - target: dmg
-      arch: [ universal ]
+      arch: [universal]
     - target: zip
-      arch: [ universal ]
+      arch: [universal]
   icon: build/icons/mac/icon.icon
   hardenedRuntime: true
   gatekeeperAssess: false
@@ -47,10 +49,14 @@ dmg:
 linux:
   target:
     - target: AppImage
-      arch: [ x64 ]
+      arch: [x64]
+    - target: deb
+      arch: [x64]
   maintainer: margin contributors
   category: Communication
   icon: build/icons/png
+deb:
+  artifactName: ${name}_${version}_${arch}.${ext}
 appImage:
   artifactName: ${name}-${version}.${ext}
 npmRebuild: false
