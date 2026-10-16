@@ -1,6 +1,8 @@
 <script lang="ts">
   import { authenticationService } from '$src/services/AuthenticationService'
-  import { push } from 'svelte-spa-router'
+  import { push, querystring } from 'svelte-spa-router'
+  import { instanceState } from '$src/states/InstanceState.svelte'
+  import { inviteCodeFrom } from '$src/services/MarginInviteService'
   import marginLogo from '$src/assets/pics/margin.png'
   import UploadImageButton from '$src/components/common/buttons/UploadImageButton.svelte'
   import UserAvatar from '$src/components/common/user/UserAvatar.svelte'
@@ -16,6 +18,11 @@
   let password = $state('')
   let repeatPassword = $state('')
   let email = $state('')
+  let inviteCode = $state(new URLSearchParams($querystring ?? '').get('invite') ?? '')
+  const registrationMode = $derived(instanceState.info?.registrationMode ?? 'INVITE')
+  // A margin invite link carried over from /invite/<code> needs no separate field.
+  const carriedInvite = new URLSearchParams($querystring ?? '').get('invite') !== null
+  const needsInviteCode = $derived(registrationMode === 'INVITE' && !carriedInvite)
   let profilePicture = $state<File | null>(null)
   let isLoading = $state(false)
   let previewUrl = $state<string | null>(avatar)
@@ -32,7 +39,9 @@
 
   const fieldHints: Record<string, string> = {
     displayName: 'This is how others see you in Margin. You can change it any time.',
-    email: "Used to sign in and recover your account. You'll need to verify it.",
+    email: 'Used to sign in and recover your account.',
+    inviteCode:
+      'Ask an admin of this instance, or someone who invited you, for an invite code or link.',
     password: 'At least 8 characters.',
     repeatPassword: 'Re-enter your password to confirm they match.'
   }
@@ -50,7 +59,8 @@
   }
 
   let hasErrors = $derived(
-    !displayName ||
+    (needsInviteCode && !inviteCode.trim()) ||
+      !displayName ||
       !email ||
       !password ||
       !repeatPassword ||
@@ -72,7 +82,8 @@
         displayName,
         password,
         email,
-        profilePicture || undefined
+        profilePicture || undefined,
+        inviteCodeFrom(inviteCode) || undefined
       )
 
       if (!response.ok) {
@@ -123,12 +134,35 @@
             <polyline points="22,6 12,13 2,6" />
           </svg>
         </div>
-        <h1 class="success-title">Check your email</h1>
+        {#if instanceState.mailEnabled}
+          <h1 class="success-title">Check your email</h1>
+          <p class="success-body">
+            If this instance asks you to confirm your email, we've sent an activation link to
+            <strong>{registeredEmail}</strong>. Otherwise you can sign in right away.
+          </p>
+          <p class="success-hint">Didn't get it? Check your spam folder.</p>
+        {:else}
+          <h1 class="success-title">Account created</h1>
+          <p class="success-body">
+            You can sign in now. If this instance needs an admin to approve new accounts, you'll be
+            able to sign in once they have.
+          </p>
+        {/if}
+        <Button
+          buttonType="primary"
+          size="medium"
+          text="Back to sign in"
+          fullWidth
+          onClick={goBack}
+        />
+      </div>
+    {:else if registrationMode === 'CLOSED'}
+      <div class="card success-card">
+        <img src={marginLogo} alt="margin" class="logo" />
+        <h1 class="success-title">Sign-up is closed</h1>
         <p class="success-body">
-          We've sent an activation link to <strong>{registeredEmail}</strong>. Click the link in the
-          email to activate your account before signing in.
+          Accounts on this instance are created by its admins. Ask one of them to add you.
         </p>
-        <p class="success-hint">Didn't get it? Check your spam folder.</p>
         <Button
           buttonType="primary"
           size="medium"
@@ -152,6 +186,25 @@
         </div>
 
         <form class="form" onsubmit={handleRegistration}>
+          {#if needsInviteCode}
+            <div class="field">
+              <label class="label" for="invite-code">Invite code</label>
+              <input
+                id="invite-code"
+                class="input"
+                type="text"
+                name="inviteCode"
+                placeholder="Invite code or link"
+                bind:value={inviteCode}
+                required
+                autocomplete="off"
+                onfocus={() => (focusedField = 'inviteCode')}
+                onblur={() => (focusedField = null)}
+              />
+              <Tooltip open={focusedField === 'inviteCode'} text={fieldHints.inviteCode} />
+            </div>
+          {/if}
+
           <div class="field">
             <label class="label" for="display-name">Display name</label>
             <input

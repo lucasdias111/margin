@@ -1,13 +1,14 @@
-# margin-desktop
+# margin client
 
-Desktop and web client for [margin](https://margin.chat) — a collaboratory communications platform with text, voice, and
-video chat.
+The web app every margin instance serves, and the desktop shell that opens instances in tabs. margin is a self-hosted
+communications platform with text, voice and video chat.
 
-[Download the app](https://margin.chat/download) or run it in your browser at [margin.chat](https://margin.chat).
+Each instance serves this web app at its own address. Desktop builds are on the
+[releases page](https://github.com/lucasdias111/margin/releases).
 
 ## Got a question?
 
-Check the [wiki](https://github.com/MarginChat/margin-desktop/wiki) or open an [issue](https://github.com/MarginChat/margin-desktop/issues).
+Open an [issue](https://github.com/lucasdias111/margin/issues).
 
 ## Found a bug?
 

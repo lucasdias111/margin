@@ -4,6 +4,7 @@
   import ListView from '$src/components/common/datatables/ListView.svelte'
   import { formatTimestamp } from '$src/utils/DateUtils'
   import { marginInviteService } from '$src/services/MarginInviteService'
+  import { instanceService } from '$src/services/InstanceService'
   import Button from '$src/components/common/buttons/Button.svelte'
   import { sessionState } from '$src/states/SessionState.svelte'
 
@@ -39,7 +40,7 @@
     inviteLoading = true
     try {
       const result = await marginInviteService.createLinkInvite(margin.marginId)
-      inviteLink = result.inviteCode
+      inviteLink = instanceService.publicLink(`/invite/${result.inviteCode}`)
     } catch (e) {
       console.error('Failed to create invite link:', e)
     } finally {
@@ -81,7 +82,7 @@
 
     {#if inviteLink}
       <div class="invite-link-bar">
-        <span class="invite-label">Invite code</span>
+        <span class="invite-label">Invite link</span>
         <div class="invite-link-row">
           <input class="invite-code-input" type="text" value={inviteLink} readonly />
           <Button buttonType="primary" size="small" onClick={copyInviteLink} text="Copy" />

@@ -4,6 +4,8 @@
   import MarginContent from '$src/components/content/margin/MarginContent.svelte'
   import MeetingsContent from '$src/components/content/meetings/MeetingsContent.svelte'
   import SettingsContent from '$src/components/content/settings/SettingsContent.svelte'
+  import AdminContent from '$src/components/content/admin/AdminContent.svelte'
+  import { sessionState } from '$src/states/SessionState.svelte'
   import { navigationState } from '$src/states/NavigationState.svelte'
   import { viewIn, viewOut } from '$src/animations'
 
@@ -32,6 +34,8 @@
         <MeetingsContent />
       {:else if selectedContent === 'settings'}
         <SettingsContent />
+      {:else if selectedContent === 'admin' && sessionState.currentUser?.role === 'ADMIN'}
+        <AdminContent />
       {/if}
     </div>
   {/key}

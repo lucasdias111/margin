@@ -1,0 +1,15 @@
+{
+  "name": "margin",
+  "short_name": "margin",
+  "description": "Chat, channels and calls for your team, on your own server.",
+  "id": "/",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#f2eee8",
+  "theme_color": "#f2eee8",
+  "icons": [
+    { "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" }
+  ]
+}

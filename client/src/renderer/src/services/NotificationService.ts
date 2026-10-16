@@ -79,10 +79,16 @@ class NotificationService {
       content = `${message.user.displayName}: ${message.content}`
     }
 
-    const notification = new Notification(title, {
-      body: content,
-      silent: true
-    })
+    let notification: globalThis.Notification
+    try {
+      notification = new Notification(title, {
+        body: content,
+        silent: true
+      })
+    } catch {
+      // Android browsers only allow notifications through the service worker.
+      return
+    }
 
     const conversationId = message.conversationId
     if (!this.pendingNotifications.has(conversationId)) {

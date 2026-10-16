@@ -14,7 +14,7 @@ import {
   defaultDeviceConstraint,
   getUserMediaPreferringDefault
 } from '$src/services/DeviceService'
-import { ICE_SERVERS } from '$src/services/call/iceServers'
+import { fetchIceServers, sfuSocketUrl } from '$src/services/call/iceServers'
 import { sessionState } from '$src/states/SessionState.svelte'
 import { webSocketService } from '$src/services/websocket/WebSocketService'
 import { WebSocketMessageType } from '$src/interfaces/WebSocketMessageType'
@@ -206,21 +206,22 @@ class ChannelCallService {
       }
 
       const { sfuUrl, roomToken } = await response.json()
-      const sfuWs = await this.connectToWebSocket(sfuUrl.replace('http', 'ws'))
+      const iceServers = await fetchIceServers()
+      const sfuWs = await this.connectToWebSocket(sfuSocketUrl(sfuUrl))
 
       const rtpCapabilities = await this.getRtpCapabilities(sfuWs, channelId, roomToken)
       const device = new Device()
       await device.load({ routerRtpCapabilities: rtpCapabilities })
 
       const sendParams = await this.createTransport(sfuWs, 'send', channelId)
-      const sendTransport = device.createSendTransport({ ...sendParams, iceServers: ICE_SERVERS })
+      const sendTransport = device.createSendTransport({ ...sendParams, iceServers })
       this.setupTransportConnection(sendTransport, sfuWs)
       this.setupProducer(sendTransport, sfuWs)
 
       const receiveParameters = await this.createTransport(sfuWs, 'recv', channelId)
       const receiveTransport = device.createRecvTransport({
         ...receiveParameters,
-        iceServers: ICE_SERVERS
+        iceServers
       })
       this.setupTransportConnection(receiveTransport, sfuWs)
       this.setupConsumer(receiveTransport, device, sfuWs)

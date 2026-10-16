@@ -1,7 +1,8 @@
 {
   "name": "margin",
-  "version": "0.3.4",
-  "description": "Desktop application for margin",
+  "version": "1.0.0",
+  "description": "The margin web app and desktop shell",
+  "license": "AGPL-3.0-only",
   "main": "./out/main/index.js",
   "author": "margin contributors",
   "homepage": "https://github.com/lucasdias111/margin",

@@ -25,6 +25,7 @@ import org.margin.server.social.margin.entities.Margin;
 import org.margin.server.users.api.AccountStatus;
 import org.margin.server.users.api.AccountSummary;
 import org.margin.server.users.api.Role;
+import org.margin.server.users.controllers.UserController;
 import org.margin.server.users.models.User;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -51,6 +52,9 @@ class AdminTest extends MarginTestRunner {
 
     @Autowired
     private InstanceSettingsService settings;
+
+    @Autowired
+    private UserController users;
 
     private User admin;
     private User member;
@@ -180,5 +184,11 @@ class AdminTest extends MarginTestRunner {
 
         assertThrows(ResponseStatusException.class, () -> MarginTestUtils.createMargin("Nope", member));
         assertDoesNotThrow(() -> MarginTestUtils.createMargin("Yes", admin));
+    }
+
+    @Test
+    void theCurrentUserLearnsTheirInstanceRole() {
+        assertEquals(Role.ADMIN, users.getCurrentUser(principalOf(admin)).role());
+        assertEquals(Role.USER, users.getCurrentUser(principalOf(member)).role());
     }
 }

@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { instanceState } from '$src/states/InstanceState.svelte'
   import { backdrop, modalIn } from '$src/animations'
   import { onMount } from 'svelte'
   import { meetingService } from '$src/services/MeetingService'
@@ -142,7 +143,7 @@
         </select>
       </label>
 
-      {#if !isEdit}
+      {#if !isEdit && instanceState.mailEnabled}
         <label class="field">
           <span class="field-label">Invite by email</span>
           <input

@@ -2,6 +2,9 @@
   import { onMount, onDestroy } from 'svelte'
   import { srcObject } from '$src/actions/srcObject'
   import { meetingGuestService, type MeetingPreview } from '$src/services/MeetingGuestService'
+  import { inviteCodeFrom } from '$src/services/MarginInviteService'
+  import { instanceState } from '$src/states/InstanceState.svelte'
+  import OpenInDesktopButton from '$src/components/authentication/OpenInDesktopButton.svelte'
   import Button from '$src/components/common/buttons/Button.svelte'
   import Icon from '$src/components/common/icons/Icon.svelte'
   import { riseIn } from '$src/animations'
@@ -26,6 +29,8 @@
   let micOn = $state(true)
   let cameraOn = $state(false)
   let signingUp = $state(false)
+  let inviteCode = $state('')
+  const registrationMode = $derived(instanceState.info?.registrationMode ?? 'INVITE')
   let email = $state('')
   let password = $state('')
 
@@ -103,6 +108,10 @@
       message = 'Enter an email and a password, or join as a guest instead.'
       return
     }
+    if (signingUp && registrationMode === 'INVITE' && !inviteCode.trim()) {
+      message = 'This instance needs an invite code to create an account.'
+      return
+    }
 
     phase = 'joining'
     message = ''
@@ -115,7 +124,11 @@
     }
 
     if (signingUp) {
-      const outcome = await meetingGuestService.claim(email.trim(), password)
+      const outcome = await meetingGuestService.claim(
+        email.trim(),
+        password,
+        registrationMode === 'INVITE' ? inviteCodeFrom(inviteCode) : undefined
+      )
       if (outcome === 'email-in-use') {
         phase = 'lobby'
         message = 'That email already has an account. Sign in instead, or join as a guest.'
@@ -202,6 +215,12 @@
           <span class="field-label">Password</span>
           <input type="password" bind:value={password} placeholder="••••••••" />
         </label>
+        {#if registrationMode === 'INVITE'}
+          <label class="field">
+            <span class="field-label">Invite code</span>
+            <input type="text" bind:value={inviteCode} placeholder="Invite code or link" />
+          </label>
+        {/if}
       {/if}
 
       {#if message}
@@ -221,21 +240,27 @@
         onClick={joinAsGuest}
       />
 
-      <Button
-        buttonType="secondary"
-        size="small"
-        fullWidth
-        disabled={phase === 'joining'}
-        text={signingUp ? 'Just join as a guest' : 'Create a margin account'}
-        onClick={() => {
-          signingUp = !signingUp
-          message = ''
-        }}
-      />
+      <OpenInDesktopButton path={`/meet/${code}`} />
+
+      {#if registrationMode !== 'CLOSED'}
+        <Button
+          buttonType="secondary"
+          size="small"
+          fullWidth
+          disabled={phase === 'joining'}
+          text={signingUp ? 'Just join as a guest' : 'Create a margin account'}
+          onClick={() => {
+            signingUp = !signingUp
+            message = ''
+          }}
+        />
+      {/if}
 
       <p class="note">
         {signingUp
-          ? 'You keep your place in the meeting; confirm your email afterwards to sign in later.'
+          ? instanceState.mailEnabled
+            ? 'You keep your place in the meeting; confirm your email afterwards to sign in later.'
+            : 'You keep your place in the meeting and can sign in later.'
           : preview?.requireAdmission
             ? 'The host will let you in.'
             : 'You will join the meeting straight away.'}

@@ -9,7 +9,7 @@
   import Icon from '$src/components/common/icons/Icon.svelte'
   import BugReportModal from '$src/components/common/modals/BugReportModal.svelte'
   import { usersService } from '$src/services/UsersService'
-  import { isElectron } from '$src/utils/platformUtils'
+  import { isDesktopShell } from '$src/utils/platformUtils'
   import { navigationState } from '$src/states/NavigationState.svelte'
   import { sessionState } from '$src/states/SessionState.svelte'
   import { notificationService } from '$src/services/NotificationService'
@@ -74,7 +74,23 @@
             <Icon name="settings"></Icon>
           </button>
 
-          {#if !isElectron()}
+          {#if sessionState.currentUser.role === 'ADMIN'}
+            <button
+              class="dropdown-item"
+              onclick={() => {
+                onContentSelected(View.Admin)
+                showDropdown = false
+              }}
+              class:selected={navigationState.view === View.Admin}
+              aria-label="Instance admin"
+              title="Instance admin"
+            >
+              <span class="item-label">Instance admin</span>
+              <Icon name="shield"></Icon>
+            </button>
+          {/if}
+
+          {#if !isDesktopShell()}
             <a
               class="dropdown-item"
               href="https://github.com/lucasdias111/margin/releases"

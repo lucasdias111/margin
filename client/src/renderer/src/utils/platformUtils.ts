@@ -1,1 +1,3 @@
-export const isElectron = (): boolean => typeof window !== 'undefined' && 'secureStorage' in window
+// True inside the margin desktop shell, which exposes its bridge only to its own server's pages.
+export const isDesktopShell = (): boolean =>
+  typeof window !== 'undefined' && window.marginDesktop !== undefined

@@ -1,7 +1,7 @@
-import { CONFIG } from '$src/shared/config'
+import { authenticatedGet } from '$src/services/api'
 
-const BASE_URL = 'https://api.klipy.com/api/v1'
-const PER_PAGE = 24
+// Searches go through the instance, which holds the operator's KLIPY key and passes KLIPY's
+// response through unchanged. The picker is only shown when the instance has GIFs turned on.
 
 export interface Gif {
   id: string
@@ -52,19 +52,6 @@ interface KlipyResponse {
   }
 }
 
-function buildUrl(path: string, params: Record<string, string>): string {
-  if (!CONFIG.apiKey) {
-    throw new Error('KLIPY API key not configured (set VITE_KLIPY_API_KEY)')
-  }
-  const url = new URL(`${BASE_URL}/${CONFIG.apiKey}${path}`)
-  url.searchParams.set('per_page', String(PER_PAGE))
-  url.searchParams.set('format_filter', 'gif')
-  for (const [k, v] of Object.entries(params)) {
-    if (v) url.searchParams.set(k, v)
-  }
-  return url.toString()
-}
-
 function mapResult(raw: KlipyRawResult): Gif | null {
   const full = raw.file?.md?.gif ?? raw.file?.hd?.gif
   const thumb = raw.file?.sm?.gif ?? raw.file?.xs?.gif ?? full
@@ -80,8 +67,9 @@ function mapResult(raw: KlipyRawResult): Gif | null {
 }
 
 async function fetchPage(path: string, params: Record<string, string>): Promise<GifPage> {
-  const response = await fetch(buildUrl(path, params))
-  if (!response.ok) throw new Error(`KLIPY request failed: ${response.status}`)
+  const query = new URLSearchParams(Object.entries(params).filter(([, value]) => value))
+  const response = await authenticatedGet(`gifs${path}?${query}`)
+  if (!response.ok) throw new Error(`GIF request failed: ${response.status}`)
   const body: KlipyResponse = await response.json()
   if (!body.result) throw new Error('KLIPY request returned result=false')
   const next = body.data.has_next ? String(body.data.current_page + 1) : ''
@@ -95,11 +83,11 @@ export const gifService = {
   featured(page = ''): Promise<GifPage> {
     const params: Record<string, string> = {}
     if (page) params.page = page
-    return fetchPage('/gifs/trending', params)
+    return fetchPage('/trending', params)
   },
   search(query: string, page = ''): Promise<GifPage> {
     const params: Record<string, string> = { q: query }
     if (page) params.page = page
-    return fetchPage('/gifs/search', params)
+    return fetchPage('/search', params)
   }
 }

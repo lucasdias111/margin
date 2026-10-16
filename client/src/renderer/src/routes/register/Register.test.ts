@@ -1,5 +1,8 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/svelte'
-import { describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { writable } from 'svelte/store'
+import { instanceState } from '$src/states/InstanceState.svelte'
+import type { RegistrationMode } from '$src/interfaces/Instance'
 import RegisterPage from './+page.svelte'
 import { authenticationService } from '$src/services/AuthenticationService'
 import { errorService } from '$src/services/ErrorService'
@@ -17,9 +20,25 @@ vi.mock('$src/services/ErrorService', () => ({
   }
 }))
 
+const { querystring } = vi.hoisted(() => ({ querystring: { value: '' } }))
+
 vi.mock('svelte-spa-router', () => ({
-  push: vi.fn()
+  push: vi.fn(),
+  querystring: {
+    subscribe: (run: (value: string) => void) => writable(querystring.value).subscribe(run)
+  }
 }))
+
+function instance(registrationMode: RegistrationMode, mailEnabled = true): void {
+  instanceState.info = {
+    name: 'chat.example.com',
+    version: '1.0.0',
+    publicUrl: 'https://chat.example.com',
+    registrationMode,
+    mailEnabled,
+    features: { gifs: false, webPush: true }
+  }
+}
 
 vi.mock('$src/assets/pics/margin.png', () => ({ default: 'margin-logo.png' }))
 vi.mock('$src/assets/pics/anonym-avatar.png', () => ({ default: 'anonym-avatar.png' }))
@@ -83,6 +102,11 @@ async function submitForm(): Promise<void> {
 }
 
 describe('RegisterPage', () => {
+  beforeEach(() => {
+    querystring.value = ''
+    instance('OPEN')
+  })
+
   it('renders all form fields', () => {
     render(RegisterPage)
 
@@ -103,6 +127,7 @@ describe('RegisterPage', () => {
       'John Doe',
       'secret123',
       'john@test.com',
+      undefined,
       undefined
     )
   })
@@ -223,5 +248,63 @@ describe('RegisterPage', () => {
     await submitForm()
 
     expect(authenticationService.register).toHaveBeenCalled()
+  })
+
+  it('asks for an invite code on an invite-only instance and sends it', async () => {
+    instance('INVITE')
+    vi.mocked(authenticationService.register).mockResolvedValue({ ok: true } as Response)
+    render(RegisterPage)
+
+    await fireEvent.input(screen.getByLabelText('Invite code'), {
+      target: { value: 'https://chat.example.com/invite/abc123' }
+    })
+    await fillForm().fill()
+    await submitForm()
+
+    expect(authenticationService.register).toHaveBeenCalledWith(
+      'John Doe',
+      'secret123',
+      'john@test.com',
+      undefined,
+      'abc123'
+    )
+  })
+
+  it('carries the margin invite from an invite link without asking again', async () => {
+    instance('INVITE')
+    querystring.value = 'invite=xyz789'
+    vi.mocked(authenticationService.register).mockResolvedValue({ ok: true } as Response)
+    render(RegisterPage)
+
+    expect(screen.queryByLabelText('Invite code')).not.toBeInTheDocument()
+    await fillForm().fill()
+    await submitForm()
+
+    expect(authenticationService.register).toHaveBeenCalledWith(
+      'John Doe',
+      'secret123',
+      'john@test.com',
+      undefined,
+      'xyz789'
+    )
+  })
+
+  it('explains that sign-up is closed', () => {
+    instance('CLOSED')
+    render(RegisterPage)
+
+    expect(screen.getByText('Sign-up is closed')).toBeInTheDocument()
+    expect(screen.queryByLabelText('Display name')).not.toBeInTheDocument()
+  })
+
+  it('tells people without mail that they can sign in', async () => {
+    instance('OPEN', false)
+    vi.mocked(authenticationService.register).mockResolvedValue({ ok: true } as Response)
+    render(RegisterPage)
+
+    await fillForm().fill()
+    await submitForm()
+
+    await waitFor(() => expect(screen.getByText('Account created')).toBeInTheDocument())
   })
 })

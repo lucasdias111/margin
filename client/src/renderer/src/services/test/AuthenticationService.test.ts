@@ -1,3 +1,4 @@
+import type { MarginDesktop } from '$src/services/DesktopBridge'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { authenticationService } from '../AuthenticationService'
 import { encryptionService } from '$src/services/EncryptionService'
@@ -80,17 +81,22 @@ function buildAuthResponse(overrides: Partial<AuthResponse> = {}): AuthResponse 
   }
 }
 
+// The desktop shell's bridge, offering secure storage for this tab's origin.
 function mockSecureStorage(): {
-  saveSession: ReturnType<typeof vi.fn>
-  loadSession: ReturnType<typeof vi.fn>
-  clearSession: ReturnType<typeof vi.fn>
+  save: ReturnType<typeof vi.fn>
+  load: ReturnType<typeof vi.fn>
+  clear: ReturnType<typeof vi.fn>
 } {
   const mock = {
-    saveSession: vi.fn().mockResolvedValue(undefined),
-    loadSession: vi.fn().mockResolvedValue(null),
-    clearSession: vi.fn().mockResolvedValue(undefined)
+    save: vi.fn().mockResolvedValue(undefined),
+    load: vi.fn().mockResolvedValue(null),
+    clear: vi.fn().mockResolvedValue(undefined)
   }
-  Object.defineProperty(window, 'secureStorage', { value: mock, writable: true })
+  window.marginDesktop = {
+    shellVersion: '1.0.0',
+    capabilities: ['secureStorage'],
+    secureStorage: mock as unknown as MarginDesktop['secureStorage']
+  }
   return mock
 }
 
@@ -147,11 +153,11 @@ describe('AuthenticationService', () => {
 
       await authenticationService.login('lucas@margin.chat', 'password123', true)
 
-      expect(secureStorage.saveSession).toHaveBeenCalledWith(
-        'jwt-token-123',
-        'decrypted-private-key',
-        'refresh-token-123'
-      )
+      expect(secureStorage.save).toHaveBeenCalledWith({
+        token: 'jwt-token-123',
+        privateKey: 'decrypted-private-key',
+        refreshToken: 'refresh-token-123'
+      })
     })
 
     it('does not save to secure storage when keepLoggedIn is false', async () => {
@@ -163,7 +169,7 @@ describe('AuthenticationService', () => {
 
       await authenticationService.login('lucas@margin.chat', 'password123', false)
 
-      expect(secureStorage.saveSession).not.toHaveBeenCalled()
+      expect(secureStorage.save).not.toHaveBeenCalled()
     })
 
     it('throws and reports error on failed login', async () => {
@@ -236,9 +242,44 @@ describe('AuthenticationService', () => {
     })
   })
 
+  describe('without the desktop shell', () => {
+    beforeEach(() => {
+      delete window.marginDesktop
+      localStorage.clear()
+    })
+
+    it('keeps the session in browser storage', async () => {
+      vi.mocked(api.unauthenticatedPost).mockResolvedValue({
+        json: async () => buildAuthResponse()
+      } as Response)
+      vi.mocked(encryptionService.decryptPrivateKey).mockResolvedValue('decrypted-private-key')
+
+      await authenticationService.login('lucas@margin.chat', 'password123', true)
+
+      expect(secureStorage.save).not.toHaveBeenCalled()
+      expect(localStorage.getItem('session_token')).toBe('jwt-token-123')
+      expect(localStorage.getItem('session_refreshToken')).toBe('refresh-token-123')
+    })
+
+    it('ignores a shell that lacks the secureStorage capability', async () => {
+      window.marginDesktop = {
+        shellVersion: '1.0.0',
+        capabilities: [],
+        secureStorage: secureStorage as unknown as MarginDesktop['secureStorage']
+      }
+      localStorage.setItem('session_token', 'browser-token')
+      localStorage.setItem('session_privateKey', 'browser-key')
+      localStorage.setItem('session_refreshToken', 'browser-refresh')
+
+      expect(await authenticationService.tryRestoreSession()).toBe(true)
+      expect(secureStorage.load).not.toHaveBeenCalled()
+      expect(sessionStorage.getItem('authToken')).toBe('browser-token')
+    })
+  })
+
   describe('tryRestoreSession', () => {
     it('restores session from secure storage and returns true', async () => {
-      secureStorage.loadSession.mockResolvedValue({
+      secureStorage.load.mockResolvedValue({
         token: 'stored-token',
         privateKey: 'stored-key',
         refreshToken: 'stored-refresh-token'
@@ -255,7 +296,7 @@ describe('AuthenticationService', () => {
     it('refuses a session stored before refresh tokens existed', async () => {
       // Its access token is long expired and there is nothing to renew it with, so treating it
       // as restorable would just strand the user on a dead session.
-      secureStorage.loadSession.mockResolvedValue({
+      secureStorage.load.mockResolvedValue({
         token: 'stored-token',
         privateKey: 'stored-key',
         refreshToken: null
@@ -265,7 +306,7 @@ describe('AuthenticationService', () => {
     })
 
     it('returns false when no stored session exists', async () => {
-      secureStorage.loadSession.mockResolvedValue(null)
+      secureStorage.load.mockResolvedValue(null)
 
       const result = await authenticationService.tryRestoreSession()
 
@@ -375,7 +416,7 @@ describe('AuthenticationService', () => {
       expect(usersState.reset).toHaveBeenCalled()
       expect(navigationService.reset).toHaveBeenCalled()
       expect(callState.endCall).toHaveBeenCalled()
-      expect(secureStorage.clearSession).toHaveBeenCalled()
+      expect(secureStorage.clear).toHaveBeenCalled()
       expect(svelteRouter.push).toHaveBeenCalledWith('/')
     })
 

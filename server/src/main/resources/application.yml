@@ -93,7 +93,7 @@ storage:
 
 sfu:
   url: ${SFU_URL}
-  public-url: ${SFU_PUBLIC_URL}
+  public-url: ${SFU_PUBLIC_URL:/sfu}
   internal-api-key: ${INTERNAL_API_KEY}
   token-secret: ${SFU_SECRET}
   token-expiration: 3600000

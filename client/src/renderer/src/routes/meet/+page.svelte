@@ -15,16 +15,13 @@
   import { riseIn } from '$src/animations'
   import { isMeetingJoinable } from '$src/utils/MeetingUtils'
   import { joinFailureMessage } from '$src/utils/MeetingJoinFailure'
-  import { isElectron } from '$src/utils/platformUtils'
+  import OpenInDesktopButton from '$src/components/authentication/OpenInDesktopButton.svelte'
   import type { Meeting } from '$src/interfaces/Meetings'
 
   const { params }: { params?: { code?: string } } = $props()
   const code = $derived(params?.code ?? '')
 
-  type Phase = 'loading' | 'handoff' | 'ready' | 'lobby' | 'knocking' | 'in-call' | 'unavailable'
-
-  const HANDOFF_KEY = 'meetingHandoffTried'
-  const HANDOFF_TIMEOUT = 2000
+  type Phase = 'loading' | 'ready' | 'lobby' | 'knocking' | 'in-call' | 'unavailable'
 
   let phase = $state<Phase>('loading')
   let meeting = $state<Meeting | null>(null)
@@ -40,10 +37,6 @@
 
     if (!signedIn) {
       isGuest = true
-      if (shouldOfferHandoff()) {
-        offerHandoff()
-        return
-      }
       phase = 'lobby'
       return
     }
@@ -66,39 +59,6 @@
     }
     phase = 'ready'
   })
-
-  function shouldOfferHandoff(): boolean {
-    return !isElectron() && sessionStorage.getItem(HANDOFF_KEY) === null
-  }
-
-  function offerHandoff(): void {
-    sessionStorage.setItem(HANDOFF_KEY, 'yes')
-    phase = 'handoff'
-
-    let settled = false
-    const settle = (): void => {
-      if (settled) return
-      settled = true
-      document.removeEventListener('visibilitychange', onHidden)
-      if (phase === 'handoff') phase = 'lobby'
-    }
-
-    function onHidden(): void {
-      if (document.hidden) {
-        settled = true
-        document.removeEventListener('visibilitychange', onHidden)
-      }
-    }
-
-    document.addEventListener('visibilitychange', onHidden)
-    setTimeout(settle, HANDOFF_TIMEOUT)
-
-    window.location.href = `margin://meet/${code}`
-  }
-
-  function skipHandoff(): void {
-    phase = 'lobby'
-  }
 
   async function join(): Promise<void> {
     phase = 'in-call'
@@ -169,8 +129,6 @@
         <div class="header-text">
           {#if phase === 'loading'}
             <h1 class="meet-title">Meeting</h1>
-          {:else if phase === 'handoff'}
-            <h1 class="meet-title">Opening the margin app</h1>
           {:else if phase === 'unavailable'}
             <h1 class="meet-title">Meeting unavailable</h1>
           {:else if phase === 'knocking'}
@@ -186,23 +144,13 @@
 
       {#if phase === 'loading'}
         <p class="meet-status">Loading meeting…</p>
-      {:else if phase === 'handoff'}
-        <p class="meet-status">
-          If nothing happens, you can join right here in your browser instead.
-        </p>
-        <Button
-          buttonType="secondary"
-          size="large"
-          fullWidth
-          text="Continue in this browser"
-          onClick={skipHandoff}
-        />
       {:else if phase === 'unavailable'}
         <p class="meet-status">{message}</p>
       {:else if phase === 'knocking'}
         <p class="meet-status">The host has been notified. Keep this page open.</p>
       {:else}
         <Button buttonType="primary" size="large" fullWidth text="Join meeting" onClick={join} />
+        <OpenInDesktopButton path={`/meet/${code}`} />
       {/if}
     </div>
   {/if}

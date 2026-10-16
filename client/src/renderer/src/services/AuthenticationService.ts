@@ -14,7 +14,8 @@ import type { AuthResponse } from '$src/interfaces/AuthResponse'
 import { errorService } from '$src/services/ErrorService'
 import { webSocketService } from '$src/services/websocket/WebSocketService'
 import { push } from 'svelte-spa-router'
-import { isElectron } from '$src/utils/platformUtils'
+import { desktopBridge, type StoredSession } from '$src/services/DesktopBridge'
+import { webPushService } from '$src/services/WebPushService'
 import { navigationService } from '$src/services/NavigationService'
 import { marginState } from '$src/states/MarginState.svelte'
 import { spaceState } from '$src/states/SpaceState.svelte'
@@ -132,8 +133,9 @@ class AuthenticationService {
     privateKey: string,
     refreshToken: string
   ): Promise<void> {
-    if (isElectron()) {
-      await window.secureStorage!.saveSession(token, privateKey, refreshToken)
+    const secureStorage = desktopBridge.secureStorage
+    if (secureStorage) {
+      await secureStorage.save({ token, privateKey, refreshToken })
     } else {
       localStorage.setItem('session_token', token)
       localStorage.setItem('session_privateKey', privateKey)
@@ -141,13 +143,10 @@ class AuthenticationService {
     }
   }
 
-  private async loadSession(): Promise<{
-    token: string
-    privateKey: string
-    refreshToken: string | null
-  } | null> {
-    if (isElectron()) {
-      return window.secureStorage!.loadSession()
+  private async loadSession(): Promise<StoredSession | null> {
+    const secureStorage = desktopBridge.secureStorage
+    if (secureStorage) {
+      return secureStorage.load()
     }
     const token = localStorage.getItem('session_token')
     const privateKey = localStorage.getItem('session_privateKey')
@@ -156,8 +155,9 @@ class AuthenticationService {
   }
 
   private async clearSession(): Promise<void> {
-    if (isElectron()) {
-      await window.secureStorage!.clearSession()
+    const secureStorage = desktopBridge.secureStorage
+    if (secureStorage) {
+      await secureStorage.clear()
     } else {
       localStorage.removeItem('session_token')
       localStorage.removeItem('session_privateKey')
@@ -176,7 +176,8 @@ class AuthenticationService {
     displayName: string,
     password: string,
     email: string,
-    profilePicture?: File
+    profilePicture?: File,
+    inviteCode?: string
   ): Promise<Response> {
     const { publicKey, privateKey } = await encryptionService.generateKeyPair()
 
@@ -194,7 +195,8 @@ class AuthenticationService {
       publicKey,
       encryptedPrivateKey: encryptedKey,
       salt,
-      iv
+      iv,
+      ...(inviteCode ? { inviteCode } : {})
     }
 
     formData.append(
@@ -221,6 +223,73 @@ class AuthenticationService {
     return response
   }
 
+  /** Whether a first-admin setup link is still valid. */
+  async isSetupTokenValid(token: string): Promise<boolean> {
+    try {
+      const response = await fetch(`${API_CONFIG.baseUrl}setup/${encodeURIComponent(token)}`)
+      return response.ok
+    } catch {
+      return false
+    }
+  }
+
+  /** Creates the instance's first admin from the one-time setup link. */
+  async completeSetup(
+    token: string,
+    displayName: string,
+    email: string,
+    password: string
+  ): Promise<boolean> {
+    const { publicKey, privateKey } = await encryptionService.generateKeyPair()
+    const { encryptedKey, salt, iv } = await encryptionService.encryptPrivateKey(
+      privateKey,
+      password
+    )
+    const response = await fetch(`${API_CONFIG.baseUrl}setup`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        token,
+        displayName,
+        email,
+        password,
+        publicKey,
+        encryptedPrivateKey: encryptedKey,
+        salt,
+        iv
+      })
+    })
+    return response.ok
+  }
+
+  async activateAccount(token: string): Promise<boolean> {
+    try {
+      const response = await fetch(
+        `${API_CONFIG.baseUrl}auth/activate/${encodeURIComponent(token)}`,
+        { method: 'POST' }
+      )
+      return response.ok
+    } catch {
+      return false
+    }
+  }
+
+  /** Returns null on success, otherwise the server's reason. */
+  async resetPassword(token: string, newPassword: string): Promise<string | null> {
+    try {
+      const response = await fetch(`${API_CONFIG.baseUrl}auth/reset-password`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token, newPassword })
+      })
+      if (response.ok) return null
+      const body = await response.json().catch(() => null)
+      return body?.message ?? body?.detail ?? 'This reset link is invalid or has expired.'
+    } catch {
+      return 'Could not reach the server.'
+    }
+  }
+
   clearToken(): void {
     if (typeof window !== 'undefined') {
       sessionStorage.removeItem('authToken')
@@ -229,6 +298,8 @@ class AuthenticationService {
   }
 
   async logoutUser(): Promise<void> {
+    // A signed-out browser shouldn't keep receiving this user's notifications.
+    await webPushService.disable().catch(() => {})
     const refreshToken = sessionStorage.getItem('refreshToken')
     const response = await authenticatedPost({ refreshToken }, 'auth/logout')
     if (!response.ok) {
