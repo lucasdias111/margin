@@ -1,24 +1,23 @@
 # margin client
 
-The web app every margin instance serves, and the desktop shell that opens instances in tabs. margin is a self-hosted
-communications platform with text, voice and video chat.
+The web app every margin instance serves, and the desktop shell that opens instances in tabs. See the [main README](../README.md) for what margin is.
 
-Each instance serves this web app at its own address. Desktop builds are on the
-[releases page](https://github.com/lucasdias111/margin/releases).
+- `src/renderer/`: the web app (Svelte), built with `npm run build:web` into the `margin-web` image (`Dockerfile.web`, Caddy config in `caddy/`).
+- `src/main/`, `src/preload/`, `src/shell/`: the Electron shell. See [building the desktop app](../docs/building-desktop.md).
 
-## Got a question?
+Desktop builds are on the [releases page](https://github.com/lucasdias111/margin/releases); see [installing the desktop app](../docs/desktop.md).
 
-Open an [issue](https://github.com/lucasdias111/margin/issues).
+## Development
 
-## Found a bug?
+```bash
+npm ci
+npm run dev:web   # the web app on http://localhost:5274
+npm run dev       # the desktop shell
+npm test
+```
 
-Please search [existing issues](https://github.com/MarginChat/margin-desktop/issues) before opening a new one.
-
-## Contributing
-
-Open an [issue](https://github.com/MarginChat/margin-desktop/issues) or send a pull request. There are plenty
-of ways to help that don't require writing code.
+[CONTRIBUTING.md](../CONTRIBUTING.md#dev-setup) covers running the server and SFU alongside.
 
 ## License
 
-Licensed under the GNU AGPLv3: https://www.gnu.org/licenses/agpl-3.0.html
+AGPL-3.0-only, like the rest of the repository. See [LICENSE](../LICENSE).
