@@ -1,3 +1,4 @@
+import type { MarginDesktop } from '$src/services/DesktopBridge'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { authenticationService } from '../AuthenticationService'
 import { encryptionService } from '$src/services/EncryptionService'
@@ -94,7 +95,7 @@ function mockSecureStorage(): {
   window.marginDesktop = {
     shellVersion: '1.0.0',
     capabilities: ['secureStorage'],
-    secureStorage: mock
+    secureStorage: mock as unknown as MarginDesktop['secureStorage']
   }
   return mock
 }
@@ -261,7 +262,11 @@ describe('AuthenticationService', () => {
     })
 
     it('ignores a shell that lacks the secureStorage capability', async () => {
-      window.marginDesktop = { shellVersion: '1.0.0', capabilities: [], secureStorage }
+      window.marginDesktop = {
+        shellVersion: '1.0.0',
+        capabilities: [],
+        secureStorage: secureStorage as unknown as MarginDesktop['secureStorage']
+      }
       localStorage.setItem('session_token', 'browser-token')
       localStorage.setItem('session_privateKey', 'browser-key')
       localStorage.setItem('session_refreshToken', 'browser-refresh')

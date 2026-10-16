@@ -5,6 +5,8 @@
   import { riseIn } from '$src/animations'
   import Button from '$src/components/common/buttons/Button.svelte'
   import Spinner from '$src/components/common/Spinner.svelte'
+  import { instanceState } from '$src/states/InstanceState.svelte'
+  import { takePostLoginRoute } from '$src/utils/postLoginRoute'
 
   const REMEMBERED_EMAIL_KEY = 'margin_remembered_email'
   const STAGGER_DELAY = 250
@@ -39,13 +41,15 @@
 
     try {
       await authenticationService.login(email, password, keepLoggedIn)
-      await push('/home')
+      await push(takePostLoginRoute())
     } catch (e: unknown) {
       hasError = true
       const message = e instanceof Error ? e.message : ''
       if (/not yet activated/i.test(message)) {
         loginResponse =
           'Please activate your account first — we sent an activation link to your email.'
+      } else if (/approve|disabled/i.test(message)) {
+        loginResponse = message
       } else {
         loginResponse = 'Invalid email or password'
       }
@@ -134,18 +138,20 @@
       {/if}
     </form>
 
-    <div class="divider" in:riseIn={{ delay: STAGGER_DELAY, index: 6, stagger: STAGGER_STEP }}>
-      <span>or</span>
-    </div>
-    <div in:riseIn={{ delay: STAGGER_DELAY, index: 7, stagger: STAGGER_STEP }}>
-      <Button
-        buttonType="secondary"
-        onClick={goToRegister}
-        size="medium"
-        text="Create an account"
-        fullWidth
-      />
-    </div>
+    {#if instanceState.info?.registrationMode !== 'CLOSED'}
+      <div class="divider" in:riseIn={{ delay: STAGGER_DELAY, index: 6, stagger: STAGGER_STEP }}>
+        <span>or</span>
+      </div>
+      <div in:riseIn={{ delay: STAGGER_DELAY, index: 7, stagger: STAGGER_STEP }}>
+        <Button
+          buttonType="secondary"
+          onClick={goToRegister}
+          size="medium"
+          text="Create an account"
+          fullWidth
+        />
+      </div>
+    {/if}
   </div>
 </div>
 

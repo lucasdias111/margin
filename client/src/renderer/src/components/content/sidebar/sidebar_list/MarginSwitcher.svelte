@@ -6,7 +6,7 @@
   import UnreadNotificationBadge from '$src/components/common/chat/UnreadNotificationBadge.svelte'
   import { notificationService } from '$src/services/NotificationService'
   import Icon from '$src/components/common/icons/Icon.svelte'
-  import { marginInviteService } from '$src/services/MarginInviteService'
+  import { inviteCodeFrom, marginInviteService } from '$src/services/MarginInviteService'
   import Button from '$src/components/common/buttons/Button.svelte'
   import { navigationState } from '$src/states/NavigationState.svelte'
   import { marginState } from '$src/states/MarginState.svelte'
@@ -23,7 +23,7 @@
     joinLoading = true
     joinError = null
     try {
-      const margin = await marginInviteService.acceptLinkInvite(joinCode.trim())
+      const margin = await marginInviteService.acceptLinkInvite(inviteCodeFrom(joinCode))
       marginService.addNewMargin(margin)
       joinCode = ''
       open = false
@@ -97,12 +97,12 @@
       />
 
       <div class="join-section">
-        <span class="join-label">Join with invite code</span>
+        <span class="join-label">Join with an invite link</span>
         <div class="join-row">
           <input
             class="join-input"
             type="text"
-            placeholder="Paste code"
+            placeholder="Paste link or code"
             bind:value={joinCode}
             maxlength="36"
             onkeydown={(e) => {

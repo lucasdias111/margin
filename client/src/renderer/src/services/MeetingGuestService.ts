@@ -43,7 +43,8 @@ class MeetingGuestService {
     return session
   }
 
-  async claim(email: string, password: string): Promise<ClaimOutcome> {
+  /** Turns the guest into a full account; invite-only instances also need an invite code. */
+  async claim(email: string, password: string, inviteCode?: string): Promise<ClaimOutcome> {
     const { publicKey, privateKey } = await encryptionService.generateKeyPair()
     const { encryptedKey, salt, iv } = await encryptionService.encryptPrivateKey(
       privateKey,
@@ -56,7 +57,8 @@ class MeetingGuestService {
       publicKey,
       encryptedPrivateKey: encryptedKey,
       salt,
-      iv
+      iv,
+      ...(inviteCode ? { inviteCode } : {})
     })
 
     if (response.ok) return 'claimed'

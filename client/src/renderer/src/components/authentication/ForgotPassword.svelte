@@ -3,6 +3,7 @@
   import { authenticationService } from '$src/services/AuthenticationService'
   import Button from '$src/components/common/buttons/Button.svelte'
   import Spinner from '$src/components/common/Spinner.svelte'
+  import { instanceState } from '$src/states/InstanceState.svelte'
 
   let email = $state('')
   let isLoading = $state(false)
@@ -27,7 +28,22 @@
 
 <div class="page">
   <div class="card">
-    {#if submitted}
+    {#if instanceState.info && !instanceState.mailEnabled}
+      <div class="header">
+        <h1 class="title">Forgot password?</h1>
+        <p class="subtitle">
+          This instance doesn't send email. Contact your admin: they can give you a link to set a
+          new password.
+        </p>
+      </div>
+      <Button
+        buttonType="secondary"
+        size="medium"
+        text="Back to sign in"
+        onClick={() => push('/')}
+        fullWidth
+      />
+    {:else if submitted}
       <div class="header">
         <h1 class="title">Check your email</h1>
         <p class="subtitle">

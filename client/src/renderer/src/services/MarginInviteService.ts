@@ -16,6 +16,13 @@ export interface PendingInvite {
   inviteCode: string
 }
 
+/** Accepts a bare invite code or a pasted invite link (https://<instance>/invite/<code>). */
+export function inviteCodeFrom(input: string): string {
+  const trimmed = input.trim()
+  const match = trimmed.match(/\/invite\/([^/?#\s]+)/)
+  return match ? decodeURIComponent(match[1]) : trimmed
+}
+
 class MarginInviteService {
   async createLinkInvite(marginId: number, maxUses?: number): Promise<{ inviteCode: string }> {
     const params = maxUses ? `?maxUses=${maxUses}` : ''

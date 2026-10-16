@@ -175,7 +175,8 @@ class AuthenticationService {
     displayName: string,
     password: string,
     email: string,
-    profilePicture?: File
+    profilePicture?: File,
+    inviteCode?: string
   ): Promise<Response> {
     const { publicKey, privateKey } = await encryptionService.generateKeyPair()
 
@@ -193,7 +194,8 @@ class AuthenticationService {
       publicKey,
       encryptedPrivateKey: encryptedKey,
       salt,
-      iv
+      iv,
+      ...(inviteCode ? { inviteCode } : {})
     }
 
     formData.append(
@@ -218,6 +220,73 @@ class AuthenticationService {
     }
 
     return response
+  }
+
+  /** Whether a first-admin setup link is still valid. */
+  async isSetupTokenValid(token: string): Promise<boolean> {
+    try {
+      const response = await fetch(`${API_CONFIG.baseUrl}setup/${encodeURIComponent(token)}`)
+      return response.ok
+    } catch {
+      return false
+    }
+  }
+
+  /** Creates the instance's first admin from the one-time setup link. */
+  async completeSetup(
+    token: string,
+    displayName: string,
+    email: string,
+    password: string
+  ): Promise<boolean> {
+    const { publicKey, privateKey } = await encryptionService.generateKeyPair()
+    const { encryptedKey, salt, iv } = await encryptionService.encryptPrivateKey(
+      privateKey,
+      password
+    )
+    const response = await fetch(`${API_CONFIG.baseUrl}setup`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        token,
+        displayName,
+        email,
+        password,
+        publicKey,
+        encryptedPrivateKey: encryptedKey,
+        salt,
+        iv
+      })
+    })
+    return response.ok
+  }
+
+  async activateAccount(token: string): Promise<boolean> {
+    try {
+      const response = await fetch(
+        `${API_CONFIG.baseUrl}auth/activate/${encodeURIComponent(token)}`,
+        { method: 'POST' }
+      )
+      return response.ok
+    } catch {
+      return false
+    }
+  }
+
+  /** Returns null on success, otherwise the server's reason. */
+  async resetPassword(token: string, newPassword: string): Promise<string | null> {
+    try {
+      const response = await fetch(`${API_CONFIG.baseUrl}auth/reset-password`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token, newPassword })
+      })
+      if (response.ok) return null
+      const body = await response.json().catch(() => null)
+      return body?.message ?? body?.detail ?? 'This reset link is invalid or has expired.'
+    } catch {
+      return 'Could not reach the server.'
+    }
   }
 
   clearToken(): void {

@@ -14,6 +14,18 @@ export const routes = {
   '/forgot-password': wrap({
     asyncComponent: () => import('$src/routes/forgot-password/+page.svelte')
   }),
+  '/setup': wrap({
+    asyncComponent: () => import('$src/routes/setup/+page.svelte')
+  }),
+  '/email-activation/:token': wrap({
+    asyncComponent: () => import('$src/routes/email-activation/+page.svelte')
+  }),
+  '/reset-password/:token': wrap({
+    asyncComponent: () => import('$src/routes/reset-password/+page.svelte')
+  }),
+  '/invite/:code': wrap({
+    asyncComponent: () => import('$src/routes/invite/+page.svelte')
+  }),
   '/meet/:code': wrap({
     asyncComponent: () => import('$src/routes/meet/+page.svelte')
   })

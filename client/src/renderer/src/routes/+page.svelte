@@ -5,11 +5,12 @@
   import { push } from 'svelte-spa-router'
   import { authenticationService } from '$src/services/AuthenticationService'
   import PageTransition from '$src/components/common/motion/PageTransition.svelte'
+  import { takePostLoginRoute } from '$src/utils/postLoginRoute'
 
   onMount(async () => {
     const restored = await authenticationService.tryRestoreSession()
     if (restored) {
-      await push('/home')
+      await push(takePostLoginRoute())
     }
   })
 </script>
