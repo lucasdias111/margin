@@ -1,4 +1,4 @@
 .env
-coturn/turnserver.conf
-.idea
+backups/
 secrets/
+.idea

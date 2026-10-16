@@ -1,0 +1,66 @@
+# The edge of a margin instance: serves the web app at / and proxies the
+# server and SFU on the same origin. The MARGIN_* values are set by
+# entrypoint.sh from the instance's .env.
+{
+	admin off
+	{$MARGIN_GLOBAL_OPTIONS}
+	servers {
+		# Only 80 and 443 TCP are published, so don't advertise HTTP/3.
+		protocols h1 h2
+		{$MARGIN_TRUSTED_PROXIES}
+	}
+}
+
+{$MARGIN_SITE_ADDRESS} {
+	encode zstd gzip
+
+	request_body {
+		max_size {$MARGIN_MAX_BODY}
+	}
+
+	header {
+		Strict-Transport-Security "max-age=31536000"
+		X-Content-Type-Options "nosniff"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		X-Frame-Options "DENY"
+		Content-Security-Policy "{$MARGIN_CSP}"
+		-Server
+	}
+
+	handle /api/* {
+		reverse_proxy margin-server:8080
+	}
+
+	# Netty WebSocket. The JWT rides in ?token=, and Caddy keeps no access log.
+	handle /ws {
+		reverse_proxy margin-server:8081
+	}
+
+	# The SFU is reachable only for its signaling WebSocket, never its HTTP API.
+	@sfu {
+		path /sfu /sfu/*
+		header Connection *Upgrade*
+		header Upgrade websocket
+	}
+	handle @sfu {
+		uri strip_prefix /sfu
+		reverse_proxy margin-sfu:3000
+	}
+	handle /sfu* {
+		respond 404
+	}
+
+	handle {
+		root * /srv
+		header /assets/* Cache-Control "public, max-age=31536000, immutable"
+		@revalidate path / /index.html /sw.js /manifest.webmanifest
+		header @revalidate Cache-Control "no-cache"
+		try_files {path} /index.html
+		file_server
+	}
+}
+
+# Container healthcheck; not published.
+http://:2020 {
+	respond /healthz "ok" 200
+}
