@@ -1,0 +1,160 @@
+# A margin instance on one host. Configure it in .env (see .env.example);
+# install.sh writes one for you.
+name: margin
+
+x-logging: &default-logging
+  driver: json-file
+  options:
+    max-size: "50m"
+    max-file: "5"
+
+services:
+  postgres:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: margin
+      POSTGRES_USER: margin
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U margin -d margin"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    logging: *default-logging
+
+  margin-server:
+    image: ghcr.io/lucasdias111/margin-server:${MARGIN_VERSION:?set MARGIN_VERSION in .env}
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      MARGIN_VERSION: ${MARGIN_VERSION}
+      APP_BASE_URL: https://${DOMAIN:?set DOMAIN in .env}
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/margin
+      SPRING_DATASOURCE_USERNAME: margin
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD}
+      JWT_SECRET: ${JWT_SECRET:?set JWT_SECRET in .env}
+      MEETING_GUEST_TOKEN_SECRET: ${MEETING_GUEST_TOKEN_SECRET:?set MEETING_GUEST_TOKEN_SECRET in .env}
+      SFU_URL: http://margin-sfu:3000
+      SFU_SECRET: ${SFU_SECRET:?set SFU_SECRET in .env}
+      INTERNAL_API_KEY: ${INTERNAL_API_KEY:?set INTERNAL_API_KEY in .env}
+      TURN_SECRET: ${TURN_SECRET:?set TURN_SECRET in .env}
+      TURN_URIS: ${TURN_URIS:-}
+      TRUSTED_PROXIES: ${TRUSTED_PROXIES:-}
+      MARGIN_ADMIN_EMAIL: ${MARGIN_ADMIN_EMAIL:-}
+      MARGIN_ADMIN_PASSWORD: ${MARGIN_ADMIN_PASSWORD:-}
+      SMTP_HOST: ${SMTP_HOST:-}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_USERNAME: ${SMTP_USERNAME:-}
+      SMTP_PASSWORD: ${SMTP_PASSWORD:-}
+      SMTP_FROM: ${SMTP_FROM:-noreply@${DOMAIN}}
+      STORAGE_TYPE: ${STORAGE_TYPE:-local}
+      S3_ENDPOINT: ${S3_ENDPOINT:-}
+      S3_BUCKET: ${S3_BUCKET:-margin}
+      S3_REGION: ${S3_REGION:-eu-central}
+      S3_ACCESS_KEY: ${S3_ACCESS_KEY:-}
+      S3_SECRET_KEY: ${S3_SECRET_KEY:-}
+      S3_CDN_BASE_URL: ${S3_CDN_BASE_URL:-}
+      MAX_UPLOAD_SIZE: ${MAX_UPLOAD_SIZE:-50MB}
+      KLIPY_API_KEY: ${KLIPY_API_KEY:-}
+      UPDATE_CHECK: ${UPDATE_CHECK:-true}
+      FCM_SERVICE_ACCOUNT_FILE: ${FCM_SERVICE_ACCOUNT_FILE:-}
+      APNS_KEY_FILE: ${APNS_KEY_FILE:-}
+      APNS_KEY_ID: ${APNS_KEY_ID:-}
+      APNS_TEAM_ID: ${APNS_TEAM_ID:-}
+      APNS_BUNDLE_ID: ${APNS_BUNDLE_ID:-}
+      APNS_PRODUCTION: ${APNS_PRODUCTION:-false}
+      JAVA_TOOL_OPTIONS: -Djava.net.preferIPv4Stack=true
+    volumes:
+      - uploads:/var/margin/uploads
+      # FCM/APNs key files, only for custom native builds.
+      - ./secrets:/run/secrets:ro
+    healthcheck:
+      # The image has no curl or wget.
+      test: ["CMD", "bash", "-c", "exec 3<>/dev/tcp/127.0.0.1/9090 && printf 'GET /actuator/health HTTP/1.0\\r\\n\\r\\n' >&3 && grep -q '\"UP\"' <&3"]
+      interval: 15s
+      timeout: 5s
+      start_period: 90s
+      retries: 5
+    logging: *default-logging
+
+  margin-sfu:
+    image: ghcr.io/lucasdias111/margin-sfu:${MARGIN_VERSION}
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      PUBLIC_IP: ${PUBLIC_IP:?set PUBLIC_IP in .env}
+      SFU_SECRET: ${SFU_SECRET}
+      INTERNAL_API_KEY: ${INTERNAL_API_KEY}
+      SPRING_URL: http://margin-server:8080
+      SFU_ALLOWED_ORIGINS: https://${DOMAIN}
+    ports:
+      - "40000:40000/udp"
+      - "40000:40000/tcp"
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000/health').then(r => process.exit(r.ok ? 0 : 1), () => process.exit(1))"]
+      interval: 15s
+      timeout: 5s
+      start_period: 10s
+      retries: 3
+    logging: *default-logging
+
+  coturn:
+    image: coturn/coturn:4.7
+    restart: unless-stopped
+    network_mode: host
+    environment:
+      DOMAIN: ${DOMAIN}
+      PUBLIC_IP: ${PUBLIC_IP}
+      TURN_SECRET: ${TURN_SECRET}
+    volumes:
+      - ./coturn/turnserver.conf.template:/etc/coturn/turnserver.conf.template:ro
+    entrypoint:
+      - sh
+      - -c
+      - >-
+        sed -e "s|@DOMAIN@|$$DOMAIN|g" -e "s|@PUBLIC_IP@|$$PUBLIC_IP|g" -e "s|@TURN_SECRET@|$$TURN_SECRET|g"
+        /etc/coturn/turnserver.conf.template > /tmp/turnserver.conf
+        && exec turnserver -c /tmp/turnserver.conf
+    healthcheck:
+      test: ["CMD", "turnutils_stunclient", "-p", "3478", "127.0.0.1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    logging: *default-logging
+
+  margin-web:
+    image: ghcr.io/lucasdias111/margin-web:${MARGIN_VERSION}
+    restart: unless-stopped
+    depends_on:
+      - margin-server
+      - margin-sfu
+    environment:
+      DOMAIN: ${DOMAIN}
+      BEHIND_PROXY: ${BEHIND_PROXY:-false}
+      MAX_UPLOAD_SIZE: ${MAX_UPLOAD_SIZE:-50MB}
+      GIFS_ENABLED: ${KLIPY_API_KEY:+true}
+      STORAGE_TYPE: ${STORAGE_TYPE:-local}
+      S3_ENDPOINT: ${S3_ENDPOINT:-}
+      S3_CDN_BASE_URL: ${S3_CDN_BASE_URL:-}
+    ports:
+      - "${HTTP_PORT:-80}:80"
+      - "${HTTPS_PORT:-443}:443"
+    volumes:
+      - caddy_data:/data
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:2020/healthz"]
+      interval: 15s
+      timeout: 5s
+      start_period: 10s
+      retries: 3
+    logging: *default-logging
+
+volumes:
+  pgdata:
+  uploads:
+  caddy_data:

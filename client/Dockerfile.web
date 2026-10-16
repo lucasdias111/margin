@@ -1,11 +1,16 @@
-FROM node:22-alpine AS builder
+FROM --platform=$BUILDPLATFORM node:22-alpine AS builder
 WORKDIR /app
 COPY package*.json ./
 RUN npm ci
 COPY . .
 RUN npm run build:web
 
-FROM nginx:alpine
-COPY --from=builder /app/out/web /usr/share/nginx/html
-COPY nginx.web.conf /etc/nginx/conf.d/default.conf
-EXPOSE 80
+# The instance's edge: Caddy serves the web app and proxies the server and SFU.
+FROM caddy:2-alpine
+COPY --from=builder /app/out/web /srv
+COPY caddy/Caddyfile /etc/caddy/Caddyfile
+COPY --chmod=755 caddy/entrypoint.sh /usr/local/bin/margin-web
+EXPOSE 80 443
+HEALTHCHECK --interval=15s --timeout=5s --start-period=10s --retries=3 \
+    CMD ["wget", "-q", "-O", "/dev/null", "http://127.0.0.1:2020/healthz"]
+ENTRYPOINT ["/usr/local/bin/margin-web"]

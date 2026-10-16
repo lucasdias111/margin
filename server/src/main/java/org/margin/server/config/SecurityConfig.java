@@ -130,6 +130,9 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                         .requestMatchers("/error").permitAll()
+                        // The container healthcheck. Actuator listens on the management port only,
+                        // which the bundled proxy never exposes.
+                        .requestMatchers("/actuator/health").permitAll()
                         .requestMatchers(
                                 "/api/auth/login",
                                 "/api/auth/refresh",

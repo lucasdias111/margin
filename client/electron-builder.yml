@@ -14,8 +14,8 @@ files:
   - '!{.eslintcache,eslint.config.mjs,.prettierignore,.prettierrc.yaml,dev-app-update.yml,CHANGELOG.md,README.md}'
   - '!{.env,.env.*,pnpm-lock.yaml}'
   - '!{tsconfig.json,tsconfig.node.json,tsconfig.web.json,tsconfig.shell.json}'
-  - '!{Dockerfile.web,nginx.web.conf,vite.config.web.ts,vitest.config.ts,vitest.setup.ts,playwright.config.ts}'
-  - '!{e2e,build,out/web,coverage,playwright-report,test-results}/**'
+  - '!{Dockerfile.web,vite.config.web.ts,vitest.config.ts,vitest.setup.ts,playwright.config.ts}'
+  - '!{caddy,e2e,build,out/web,coverage,playwright-report,test-results}/**'
 asarUnpack:
   - resources/**
 win:
